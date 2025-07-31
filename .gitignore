@@ -16,18 +16,14 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
 # Virtual Environment
 .venv/
 venv/
 ENV/
-env/
 
 # IDE
 .vscode/
@@ -38,13 +34,18 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-
-# Config files with sensitive data
-config.json
+*.tmp
 
 # Excel temporary files
 ~$*.xlsx
 ~$*.xls
 
-# Log files
+# Application specific
+config.json
+drawings_data.json
 *.log
+
+# Test files
+test_*.py
+debug_*.py
+temp_*.py

@@ -1,1 +1,0 @@
-# FactorySync - Package initialization
