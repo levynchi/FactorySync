@@ -601,11 +601,9 @@ class OptitexAnalyzerGUI:
             # הכנת הנתונים לאייר טייבל
             airtable_record = {
                 'שם הקובץ': os.path.splitext(os.path.basename(self.rib_file))[0] if self.rib_file else '',
-                'אורך הגיזרה': 0.0,  # ערך ברירת מחדל
-                'אורך גיזרה כולל קיפול': 0.0,  # ערך ברירת מחדל
             }
             
-            # הוספת הדגמים והכמויות
+            # הוספת הדגמים והכמויות לעמודות נפרדות
             model_index = 1
             for _, row in self.output_df.iterrows():
                 if model_index > 21:  # מקסימום 21 דגמים באייר טייבל
@@ -615,9 +613,10 @@ class OptitexAnalyzerGUI:
                 size = row['מידה']
                 quantity = row['כמות']
                 
-                # יצירת מחרוזת דגם משולבת
+                # יצירת מחרוזת דגם משולבת (טקסט רגיל, לא Linked Record)
                 model_name = f"{product_name} {size}"
                 
+                # הוספה לעמודות (כטקסט רגיל)
                 airtable_record[f'דגם {model_index}'] = model_name
                 airtable_record[f'כמות דגם {model_index}'] = int(quantity) if quantity == int(quantity) else quantity
                 
@@ -634,6 +633,7 @@ class OptitexAnalyzerGUI:
             self.log_message(f"\nשם הקובץ: {airtable_record['שם הקובץ']}")
             self.log_message(f"מספר דגמים שהועלו: {model_index-1}")
             
+            # הצגת הדגמים שהועלו
             for i in range(1, model_index):
                 model = airtable_record.get(f'דגם {i}', '')
                 quantity = airtable_record.get(f'כמות דגם {i}', '')
