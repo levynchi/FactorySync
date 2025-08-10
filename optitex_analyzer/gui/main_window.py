@@ -148,6 +148,38 @@ class MainWindow:
         tk.Button(btns, text="💾 שמור קליטה", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
         tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+
+        # --- Products received table (new) ---
+        products_frame = ttk.LabelFrame(scan_tab, text="מוצרים שנקלטו (מוצר->כמות)", padding=8)
+        products_frame.pack(fill='x', padx=8, pady=4)
+        pf_top = tk.Frame(products_frame); pf_top.pack(fill='x', pady=(0,6))
+        # Load product names from analyzer mapping if available
+        product_names = sorted(set(self.file_analyzer.product_mapping.values())) if getattr(self.file_analyzer,'product_mapping',{}) else []
+        self.return_product_var = tk.StringVar()
+        self.return_product_cb = ttk.Combobox(pf_top, textvariable=self.return_product_var, values=product_names, width=30)
+        self.return_product_cb.grid(row=0,column=0,padx=4,sticky='w')
+        tk.Label(pf_top, text="מוצר", anchor='w').grid(row=1,column=0,sticky='w',padx=4)
+        self.return_product_qty_var = tk.StringVar()
+        tk.Entry(pf_top, textvariable=self.return_product_qty_var, width=8).grid(row=0,column=1,padx=4,sticky='w')
+        tk.Label(pf_top, text="כמות", anchor='w').grid(row=1,column=1,sticky='w',padx=4)
+        self.return_product_source_type = tk.StringVar(value='גיזרה')  # 'גיזרה' | 'ציור'
+        ttk.Combobox(pf_top, textvariable=self.return_product_source_type, values=['גיזרה','ציור'], width=10, state='readonly').grid(row=0,column=2,padx=4,sticky='w')
+        tk.Label(pf_top, text="מקור", anchor='w').grid(row=1,column=2,sticky='w',padx=4)
+        self.return_origin_drawing_var = tk.StringVar()
+        tk.Entry(pf_top, textvariable=self.return_origin_drawing_var, width=10).grid(row=0,column=3,padx=4,sticky='w')
+        tk.Label(pf_top, text="ציור מקור", anchor='w').grid(row=1,column=3,sticky='w',padx=4)
+        tk.Button(pf_top, text="➕ הוסף", bg='#2980b9', fg='white', command=self._add_return_product).grid(row=0,column=4,padx=6,sticky='w')
+        tk.Button(pf_top, text="🗑️ מחק", bg='#c0392b', fg='white', command=self._delete_return_product).grid(row=0,column=5,padx=2,sticky='w')
+        # Tree
+        pr_cols = ('product','quantity','source_type','origin_drawing')
+        self.return_products_tree = ttk.Treeview(products_frame, columns=pr_cols, show='headings', height=5)
+        headers = {'product':'מוצר','quantity':'כמות','source_type':'מקור','origin_drawing':'ציור מקור'}
+        widths = {'product':220,'quantity':70,'source_type':80,'origin_drawing':90}
+        for c in pr_cols:
+            self.return_products_tree.heading(c, text=headers[c])
+            self.return_products_tree.column(c, width=widths[c], anchor='center')
+        self.return_products_tree.pack(fill='x')
+        self._returned_products = []  # list of dicts
         # --- List tab ---
         list_tab = tk.Frame(inner_nb, bg='#ffffff')
         inner_nb.add(list_tab, text="רשימת ציורים שנקלטו")
@@ -242,6 +274,49 @@ class MainWindow:
         count = len(self._scanned_barcodes)
         self.return_summary_var.set(f"{count} ברקודים נסרקו")
 
+    def _add_return_product(self):
+        name = self.return_product_var.get().strip()
+        qty_raw = self.return_product_qty_var.get().strip()
+        source_type = self.return_product_source_type.get().strip()
+        origin = self.return_origin_drawing_var.get().strip()
+        if not name:
+            messagebox.showerror("שגיאה", "בחר מוצר")
+            return
+        try:
+            qty = int(qty_raw)
+            if qty <= 0:
+                raise ValueError
+        except Exception:
+            messagebox.showerror("שגיאה", "כמות לא חוקית")
+            return
+        if source_type == 'ציור' and not origin:
+            messagebox.showerror("שגיאה", "חובה למלא ציור מקור כאשר המקור הוא 'ציור'")
+            return
+        rec = {
+            'product': name,
+            'quantity': qty,
+            'source_type': source_type,
+            'origin_drawing': origin if source_type == 'ציור' else ''
+        }
+        self._returned_products.append(rec)
+        self.return_products_tree.insert('', 'end', values=(rec['product'], rec['quantity'], rec['source_type'], rec['origin_drawing']))
+        # reset qty only
+        self.return_product_qty_var.set('')
+        self.return_origin_drawing_var.set('')
+
+    def _delete_return_product(self):
+        sel = self.return_products_tree.selection()
+        if not sel:
+            return
+        for item in sel:
+            vals = self.return_products_tree.item(item, 'values')
+            self.return_products_tree.delete(item)
+            # remove from list
+            for idx, rec in enumerate(self._returned_products):
+                if rec['product'] == vals[0] and str(rec['quantity']) == str(vals[1]) and rec['source_type'] == vals[2] and rec['origin_drawing'] == vals[3]:
+                    del self._returned_products[idx]
+                    break
+
     def _save_returned_drawing(self):
         drawing_id = self.return_drawing_id_var.get().strip()
         date_str = self.return_date_var.get().strip()
@@ -268,7 +343,14 @@ class MainWindow:
             messagebox.showerror("שגיאה", "אין ברקודים לשמירה")
             return
         try:
-            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=source or None, layers=layers_val)
+            new_id = self.data_processor.add_returned_drawing(
+                drawing_id,
+                date_str,
+                self._scanned_barcodes,
+                source=source or None,
+                layers=layers_val,
+                products_details=self._returned_products if getattr(self, '_returned_products', None) else None
+            )
             # אם קיים ציור עם ID זה במנהל הציורים – עדכון סטטוס ל"נחתך"
             try:
                 did = int(drawing_id)
@@ -294,6 +376,11 @@ class MainWindow:
                     pass
             messagebox.showinfo("הצלחה", f"הקליטה נשמרה בהצלחה!\nID: {new_id}\nעודכנו סטטוסים ל-{updated} גלילים")
             self._clear_all_barcodes()
+            # ניקוי טבלת מוצרים
+            if hasattr(self, 'return_products_tree'):
+                for i in self.return_products_tree.get_children():
+                    self.return_products_tree.delete(i)
+            self._returned_products = []
             self._populate_returned_drawings_table()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
