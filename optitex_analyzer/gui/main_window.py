@@ -58,7 +58,7 @@ class MainWindow:
         tk.Label(form, text="ציור ID:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=0,pady=4,sticky='w')
         self.return_drawing_id_var = tk.StringVar()
         tk.Entry(form, textvariable=self.return_drawing_id_var, width=30).grid(row=0,column=1,pady=4,sticky='w')
-        tk.Label(form, text="מקור קבלה:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=2,pady=4,sticky='w')
+        tk.Label(form, text="שם הספק:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=2,pady=4,sticky='w')
         self.return_source_var = tk.StringVar()
         tk.Entry(form, textvariable=self.return_source_var, width=25).grid(row=0,column=3,pady=4,sticky='w')
         # Row 1
@@ -122,27 +122,42 @@ class MainWindow:
         code = self.barcode_var.get().strip()
         if not code:
             return
-        # prevent immediate duplicate scan
+        # prevent immediate duplicate scan (במקרה שהסורק שולח פעמיים מהר)
         if self._scanned_barcodes and self._scanned_barcodes[-1] == code:
             self.barcode_var.set("")
             return
-        self._scanned_barcodes.append(code)
+        # חיפוש הבד במלאי
         fabric = next((rec for rec in reversed(self.data_processor.fabrics_inventory) if str(rec.get('barcode')) == code), None)
         if not fabric:
-            values = (code,'','','','','','','','','')
-        else:
-            values = (
-                fabric.get('barcode',''),
-                fabric.get('fabric_type',''),
-                fabric.get('color_name',''),
-                fabric.get('color_no',''),
-                fabric.get('design_code',''),
-                fabric.get('width',''),
-                f"{fabric.get('net_kg',0):.2f}",
-                f"{fabric.get('meters',0):.2f}",
-                f"{fabric.get('price',0):.2f}",
-                fabric.get('location','')
-            )
+            # לא קיים במלאי – לא מוסיפים לרשימת הסרוקים
+            messagebox.showwarning("ברקוד לא נמצא", f"הברקוד {code} לא קיים במלאי הבדים")
+            self.barcode_var.set("")
+            return
+        # בדיקה אם הבד כבר מסומן כנגזר
+        status = fabric.get('status', 'במלאי')
+        if status == 'נגזר':
+            messagebox.showwarning("ברקוד כבר נגזר", f"הברקוד {code} כבר מסומן כ'נגזר' במלאי ולכן לא ניתן לקלוט אותו")
+            self.barcode_var.set("")
+            return
+        # (אופציונלי) מניעת כפילות מוקדמת ברשימת הסרוקים
+        if code in self._scanned_barcodes:
+            messagebox.showinfo("כפילות", f"הברקוד {code} כבר סרוק ברשימה")
+            self.barcode_var.set("")
+            return
+        # הכל תקין – מוסיפים
+        self._scanned_barcodes.append(code)
+        values = (
+            fabric.get('barcode',''),
+            fabric.get('fabric_type',''),
+            fabric.get('color_name',''),
+            fabric.get('color_no',''),
+            fabric.get('design_code',''),
+            fabric.get('width',''),
+            f"{fabric.get('net_kg',0):.2f}",
+            f"{fabric.get('meters',0):.2f}",
+            f"{fabric.get('price',0):.2f}",
+            fabric.get('location','')
+        )
         self.scanned_fabrics_tree.insert('', 'end', values=values)
         self.barcode_var.set("")
         self._update_return_summary()
