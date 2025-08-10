@@ -919,7 +919,35 @@ class MainWindow:
         lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
         entry_bar = tk.Frame(lines_frame, bg='#f7f9fa'); entry_bar.pack(fill='x', pady=(0,6))
         self.sup_product_var = tk.StringVar(); self.sup_size_var = tk.StringVar(); self.sup_qty_var = tk.StringVar(); self.sup_note_var = tk.StringVar()
-        tk.Entry(entry_bar, textvariable=self.sup_product_var, width=18)
+        # רשימת מוצרים מאושרת (נשלפת ממיפוי המוצרים אם נטען)
+        self._supplier_products_allowed = []
+        try:
+            if getattr(self.file_analyzer, 'product_mapping', None):
+                self._supplier_products_allowed = sorted(set(self.file_analyzer.product_mapping.values()))
+            elif self.products_file and os.path.exists(self.products_file):
+                # ניסיון טעינה עצמאית אם עוד לא נטען
+                try:
+                    self.file_analyzer.load_products_mapping(self.products_file)
+                    self._supplier_products_allowed = sorted(set(self.file_analyzer.product_mapping.values()))
+                except Exception:
+                    pass
+        except Exception:
+            self._supplier_products_allowed = []
+        from tkinter import ttk as _ttk
+        self.sup_product_combo = _ttk.Combobox(entry_bar, textvariable=self.sup_product_var, width=16, state='readonly', values=self._supplier_products_allowed)
+        # הסרת פתיחה אוטומטית כדי למנוע "תקיעה" לאחר בחירה; המשתמש ילחץ חץ מטה
+        # הוספת קיצור Enter מעבר לשדה הבא
+        def _product_chosen(event=None):
+            # אחרי בחירה נעבור לשדה מידה
+            try:
+                widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
+            except Exception:
+                widgets_after = []
+            # נמצא את שדה המידה (עם textvariable sup_size_var)
+            for w in widgets_after:
+                if hasattr(w, 'cget') and w.cget('textvariable') == str(self.sup_size_var):
+                    w.focus_set(); break
+        self.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
         tk.Entry(entry_bar, textvariable=self.sup_size_var, width=10)
         tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7)
         tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)
@@ -929,7 +957,7 @@ class MainWindow:
         entry_bar.grid_columnconfigure(1,weight=0)
         # Place entries under labels
         widgets = [
-            tk.Entry(entry_bar, textvariable=self.sup_product_var, width=18),
+            self.sup_product_combo,
             tk.Entry(entry_bar, textvariable=self.sup_size_var, width=10),
             tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7),
             tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)
@@ -961,7 +989,12 @@ class MainWindow:
         qty_raw = self.sup_qty_var.get().strip()
         note = self.sup_note_var.get().strip()
         if not product or not qty_raw:
-            messagebox.showerror("שגיאה", "חובה למלא מוצר וכמות")
+            messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות")
+            return
+        # אימות שהמוצר מתוך הרשימה
+        if hasattr(self, '_supplier_products_allowed') and self._supplier_products_allowed:
+            if product not in self._supplier_products_allowed:
+                messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד")
             return
         try:
             qty = int(qty_raw)
