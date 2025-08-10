@@ -386,44 +386,13 @@ class DrawingsManagerWindow:
             self.window = None
     
     def delete_record(self):
-        """מחק רשומה נבחרת"""
-        selection = self.current_tree.selection()
-        if not selection:
-            messagebox.showwarning("Warning", "Please select a record to delete")
-            return
-        
-        # Get record details
-        item = self.current_tree.item(selection[0])
-        record_id = int(item['values'][0])
-        file_name = item['values'][1]
-        
-        # Confirm deletion
-        if messagebox.askyesno("Confirm Delete", 
-                              f"Are you sure you want to delete this drawing?\n\n"
-                              f"File: {file_name}\n"
-                              f"ID: {record_id}\n\n"
-                              f"This action cannot be undone!"):
-            try:
-                # Remove from data
-                original_count = len(self.data_processor.drawings_data)
-                self.data_processor.drawings_data = [
-                    r for r in self.data_processor.drawings_data 
-                    if r.get('id') != record_id
-                ]
-                
-                if len(self.data_processor.drawings_data) < original_count:
-                    # Save changes
-                    self.data_processor.save_drawings_data()
-                    
-                    # Refresh display
-                    self._refresh_table()
-                    
-                    messagebox.showinfo("Success", f"Drawing '{file_name}' deleted successfully!")
-                else:
-                    messagebox.showerror("Error", "Drawing not found or not deleted")
-                    
-            except Exception as e:
-                messagebox.showerror("Error", f"Error deleting drawing: {str(e)}")
+        """(legacy method wrapper) קורא למחיקה הפעילה אם יש בחירה"""
+        try:
+            # מפה ישנה שקראה delete_record(tree) - כאן אין tree אז נשתמש ב-current_tree
+            if hasattr(self, 'current_tree') and self.current_tree:
+                self.delete_selected_drawing()
+        except Exception:
+            pass
     
     def delete_selected_drawing(self):
         """מחיקת ציור נבחר מהטבלה"""

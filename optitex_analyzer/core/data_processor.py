@@ -305,6 +305,8 @@ class DataProcessor:
                     'last_modified': cleaned.get('Last Modified', ''),
                     'purpose': cleaned.get('מטרה', ''),
                     'import_log_id': temp_log_id,
+                    # סטטוס מלאי: ברירת מחדל "במלאי" בעת קליטה
+                    'status': 'במלאי'
                 }
                 if record['barcode']:
                     self.fabrics_inventory.append(record)
@@ -427,3 +429,20 @@ class DataProcessor:
         except Exception as e:
             print(f"שגיאה במחיקת לוג ורשומות מלאי: {e}")
             return result
+
+    # ===== Fabric Status Management =====
+    def update_fabric_status(self, barcode: str, new_status: str) -> bool:
+        """עדכון סטטוס בד לפי ברקוד. מחזיר True אם עודכן."""
+        try:
+            changed = False
+            for rec in self.fabrics_inventory:
+                if str(rec.get('barcode')) == str(barcode):
+                    if rec.get('status') != new_status:
+                        rec['status'] = new_status
+                        changed = True
+            if changed:
+                self.save_fabrics_inventory()
+            return changed
+        except Exception as e:
+            print(f"שגיאה בעדכון סטטוס: {e}")
+            return False
