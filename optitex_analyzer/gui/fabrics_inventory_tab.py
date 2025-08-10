@@ -1,0 +1,106 @@
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+
+class FabricsInventoryTabMixin:
+    """Mixin לטאב מלאי בדים."""
+    def _create_fabrics_inventory_tab(self):
+        tab = tk.Frame(self.notebook, bg='#f7f9fa'); self.notebook.add(tab, text="מלאי בדים")
+        tk.Label(tab, text="מלאי בדים", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=15, pady=5)
+        tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg='#2980b9', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
+        inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
+        table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
+        self.fabrics_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
+        headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','status':'סטטוס'}
+        widths = {'barcode':120,'fabric_type':140,'color_name':110,'color_no':80,'design_code':110,'width':60,'net_kg':80,'meters':80,'price':80,'location':90,'status':80}
+        for c in cols:
+            self.fabrics_tree.heading(c, text=headers[c]); self.fabrics_tree.column(c, width=widths[c], anchor='center')
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.fabrics_tree.yview); self.fabrics_tree.configure(yscroll=vsb.set)
+        self.fabrics_tree.grid(row=0,column=0,sticky='nsew'); vsb.grid(row=0,column=1,sticky='ns')
+        table_frame.grid_columnconfigure(0,weight=1); table_frame.grid_rowconfigure(0,weight=1)
+        self._fabric_status_menu = tk.Menu(self.fabrics_tree, tearoff=0)
+        for status in ("במלאי","נשלח","נגזר"):
+            self._fabric_status_menu.add_command(label=status, command=lambda s=status: self._change_selected_fabric_status(s))
+        self.fabrics_tree.bind('<Button-3>', self._on_fabrics_right_click)
+        logs_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(logs_tab, text="קבצים שעלו")
+        logs_frame = tk.Frame(logs_tab, bg='#ffffff'); logs_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        log_cols = ('id','file_name','imported_at','records_added','delete')
+        self.fabrics_logs_tree = ttk.Treeview(logs_frame, columns=log_cols, show='headings')
+        log_headers = {'id':'ID','file_name':'שם קובץ','imported_at':'תאריך העלאה','records_added':'רשומות','delete':'מחיקה'}
+        log_widths = {'id':50,'file_name':220,'imported_at':140,'records_added':70,'delete':60}
+        for c in log_cols:
+            self.fabrics_logs_tree.heading(c, text=log_headers[c]); self.fabrics_logs_tree.column(c, width=log_widths[c], anchor='center')
+        lsvb = ttk.Scrollbar(logs_frame, orient='vertical', command=self.fabrics_logs_tree.yview); self.fabrics_logs_tree.configure(yscroll=lsvb.set)
+        self.fabrics_logs_tree.grid(row=0,column=0,sticky='nsew'); lsvb.grid(row=0,column=1,sticky='ns')
+        logs_frame.grid_columnconfigure(0,weight=1); logs_frame.grid_rowconfigure(0,weight=1)
+        self.fabrics_logs_tree.bind('<Button-1>', self._handle_logs_click)
+        self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
+        tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
+        self._populate_fabrics_table(); self._populate_fabrics_logs(); self._update_fabrics_summary()
+
+    def _populate_fabrics_table(self):
+        for item in self.fabrics_tree.get_children(): self.fabrics_tree.delete(item)
+        for rec in self.data_processor.fabrics_inventory[-1000:]:
+            self.fabrics_tree.insert('', 'end', values=(rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''), rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')))
+
+    def _on_fabrics_right_click(self, event):
+        row_id = self.fabrics_tree.identify_row(event.y)
+        if row_id:
+            self.fabrics_tree.selection_set(row_id)
+            try:
+                self._fabric_status_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                self._fabric_status_menu.grab_release()
+
+    def _change_selected_fabric_status(self, new_status):
+        sel = self.fabrics_tree.selection()
+        if not sel: return
+        values = list(self.fabrics_tree.item(sel[0], 'values'))
+        if not values: return
+        barcode = values[0]
+        if self.data_processor.update_fabric_status(barcode, new_status):
+            values[-1] = new_status; self.fabrics_tree.item(sel[0], values=values)
+
+    def _update_fabrics_summary(self):
+        summary = self.data_processor.get_fabrics_summary()
+        self.fabrics_summary_var.set(f"סה\"כ רשומות: {summary['total_records']} | מטרים: {summary['total_meters']:.2f} | ק\"ג נטו: {summary['total_net_kg']:.2f}")
+
+    def _refresh_fabrics_table(self):
+        self.data_processor.fabrics_inventory = self.data_processor.load_fabrics_inventory()
+        self._populate_fabrics_table()
+        if hasattr(self.data_processor, 'fabrics_import_logs'):
+            self.data_processor.fabrics_import_logs = self.data_processor.load_fabrics_import_logs(); self._populate_fabrics_logs()
+        self._update_fabrics_summary()
+
+    def _import_fabrics_csv(self):
+        file_path = filedialog.askopenfilename(title="בחר קובץ CSV של משלוח בדים", filetypes=[("CSV files","*.csv"),("All files","*.*")])
+        if not file_path: return
+        try:
+            added = self.data_processor.import_fabrics_csv(file_path); self._refresh_fabrics_table(); messagebox.showinfo("הצלחה", f"נוספו {added} רשומות מהמשלוח")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _populate_fabrics_logs(self):
+        for item in self.fabrics_logs_tree.get_children(): self.fabrics_logs_tree.delete(item)
+        logs = getattr(self.data_processor, 'fabrics_import_logs', [])
+        for log in sorted(logs, key=lambda x: x.get('id', 0)):
+            self.fabrics_logs_tree.insert('', 'end', values=(log.get('id',''), log.get('file_name',''), log.get('imported_at',''), log.get('records_added',''), '🗑'))
+
+    def _handle_logs_click(self, event):
+        region = self.fabrics_logs_tree.identify('region', event.x, event.y)
+        if region != 'cell': return
+        col = self.fabrics_logs_tree.identify_column(event.x)
+        if col != '#5': return
+        item_id = self.fabrics_logs_tree.identify_row(event.y)
+        if not item_id: return
+        values = self.fabrics_logs_tree.item(item_id, 'values')
+        if not values: return
+        try: log_id = int(values[0])
+        except Exception: return
+        if not messagebox.askyesno("אישור", "למחוק רשומת לוג זו?"): return
+        result = self.data_processor.delete_fabric_import_log_and_fabrics(log_id)
+        if result.get('logs_deleted'):
+            self._populate_fabrics_logs(); self._populate_fabrics_table()
