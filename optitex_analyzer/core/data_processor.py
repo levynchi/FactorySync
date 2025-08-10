@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
     """מעבד נתונים וייצוא"""
     
-    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json"):
+    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json"):
         self.drawings_file = drawings_file
         # קובץ לקליטת ציורים שחזרו מייצור
         self.returned_drawings_file = returned_drawings_file
@@ -21,11 +21,14 @@ class DataProcessor:
         self.fabrics_imports_file = fabrics_imports_file
         # קובץ קליטות מספק (הזנה ידנית של מוצרים וכמויות)
         self.supplier_receipts_file = supplier_receipts_file
+        # קובץ קטלוג מוצרים (חדש)
+        self.products_catalog_file = products_catalog_file
         self.drawings_data = self.load_drawings_data()
         self.returned_drawings_data = self.load_returned_drawings_data()
         self.fabrics_inventory = self.load_fabrics_inventory()
         self.fabrics_import_logs = self.load_fabrics_import_logs()
         self.supplier_receipts = self.load_supplier_receipts()
+        self.products_catalog = self.load_products_catalog()
     
     def load_drawings_data(self) -> List[Dict]:
         """טעינת נתוני ציורים מקומיים"""
@@ -535,3 +538,72 @@ class DataProcessor:
         except Exception as e:
             print(f"שגיאה בעדכון סטטוס: {e}")
             return False
+
+    # ===== Products Catalog (New) =====
+    def load_products_catalog(self) -> List[Dict]:
+        """טעינת קטלוג המוצרים המקומי."""
+        try:
+            if os.path.exists(self.products_catalog_file):
+                with open(self.products_catalog_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    # שמירה על רשימה
+                    if isinstance(data, list):
+                        return data
+            return []
+        except Exception as e:
+            print(f"שגיאה בטעינת קטלוג מוצרים: {e}")
+            return []
+
+    def save_products_catalog(self) -> bool:
+        """שמירת קטלוג המוצרים לקובץ."""
+        try:
+            with open(self.products_catalog_file, 'w', encoding='utf-8') as f:
+                json.dump(self.products_catalog, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"שגיאה בשמירת קטלוג מוצרים: {e}")
+            return False
+
+    def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str) -> int:
+        """הוספת מוצר לקטלוג. מחזיר ID חדש."""
+        try:
+            if not name:
+                raise ValueError("חובה להזין שם מוצר")
+            new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
+            record = {
+                'id': new_id,
+                'name': name.strip(),
+                'size': size.strip(),
+                'fabric_type': fabric_type.strip(),
+                'fabric_color': fabric_color.strip(),
+                'print_name': print_name.strip(),
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.products_catalog.append(record)
+            self.save_products_catalog()
+            return new_id
+        except Exception as e:
+            raise Exception(f"שגיאה בהוספת מוצר: {str(e)}")
+
+    def delete_product_catalog_entry(self, entry_id: int) -> bool:
+        """מחיקת מוצר לפי ID. מחזיר True אם נמחק."""
+        before = len(self.products_catalog)
+        self.products_catalog = [p for p in self.products_catalog if int(p.get('id', 0)) != int(entry_id)]
+        if len(self.products_catalog) != before:
+            self.save_products_catalog(); return True
+        return False
+
+    def refresh_products_catalog(self):
+        """רענון קטלוג מהמחשב."""
+        self.products_catalog = self.load_products_catalog()
+
+    def export_products_catalog_to_excel(self, file_path: str) -> bool:
+        """ייצוא קטלוג מוצרים ל-Excel."""
+        try:
+            if not self.products_catalog:
+                raise ValueError("אין מוצרים לייצוא")
+            df = pd.DataFrame(self.products_catalog)
+            df.to_excel(file_path, index=False)
+            return True
+        except Exception as e:
+            raise Exception(f"שגיאה בייצוא קטלוג מוצרים: {str(e)}")

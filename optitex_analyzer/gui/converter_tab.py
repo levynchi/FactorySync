@@ -24,13 +24,18 @@ class ConverterTabMixin:
     def _create_files_section(self):
         files_frame = ttk.LabelFrame(self.root, text="בחירת קבצים", padding=15)
         files_frame.pack(fill="x", padx=20, pady=10)
-    # RIB file
+        # RIB file
         rib_frame = tk.Frame(files_frame); rib_frame.pack(fill="x", pady=8)
         tk.Label(rib_frame, text="קובץ אופטיטקס:", font=('Arial', 10, 'bold'), width=15, anchor="w").pack(side="left")
         self.rib_label = tk.Label(rib_frame, text="לא נבחר קובץ", bg="white", relief="sunken", width=60, anchor="w", padx=5)
         self.rib_label.pack(side="left", padx=10)
         tk.Button(rib_frame, text="📁 בחר קובץ", command=self._select_rib_file, bg='#3498db', fg='white', font=('Arial', 9, 'bold'), width=12).pack(side="right")
-    # Products file selection moved to 'קובץ מוצרים' tab.
+        # Products file
+        products_frame = tk.Frame(files_frame); products_frame.pack(fill="x", pady=8)
+        tk.Label(products_frame, text="קובץ מוצרים:", font=('Arial', 10, 'bold'), width=15, anchor="w").pack(side="left")
+        self.products_label = tk.Label(products_frame, text="לא נבחר קובץ", bg="white", relief="sunken", width=60, anchor="w", padx=5)
+        self.products_label.pack(side="left", padx=10)
+        tk.Button(products_frame, text="📁 בחר קובץ", command=self._select_products_file, bg='#3498db', fg='white', font=('Arial', 9, 'bold'), width=12).pack(side="right")
 
     def _create_options_section(self):
         options_frame = ttk.LabelFrame(self.root, text="אפשרויות", padding=15)
@@ -65,7 +70,12 @@ class ConverterTabMixin:
             self.rib_label.config(text=os.path.basename(file_path))
             self._update_status(f"נבחר קובץ אופטיטקס: {os.path.basename(file_path)}")
 
-    # Products file selection handled in ProductsFileTabMixin
+    def _select_products_file(self):
+        file_path = filedialog.askopenfilename(title="בחר קובץ רשימת מוצרים", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+        if file_path:
+            self.products_file = file_path
+            self.products_label.config(text=os.path.basename(file_path))
+            self._update_status(f"נבחר קובץ מוצרים: {os.path.basename(file_path)}")
 
     # Analysis
     def _analyze_files(self):

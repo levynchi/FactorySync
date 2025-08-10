@@ -8,6 +8,7 @@ from .converter_tab import ConverterTabMixin
 from .returned_drawing_tab import ReturnedDrawingTabMixin
 from .fabrics_inventory_tab import FabricsInventoryTabMixin
 from .supplier_intake_tab import SupplierIntakeTabMixin
+from .products_catalog_tab import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
 
 
@@ -16,6 +17,7 @@ class MainWindow(
     ReturnedDrawingTabMixin,
     FabricsInventoryTabMixin,
     SupplierIntakeTabMixin,
+    ProductsCatalogTabMixin,
     DrawingsManagerTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
@@ -85,6 +87,7 @@ class MainWindow(
         self._create_returned_drawing_tab()
         self._create_fabrics_inventory_tab()
         self._create_supplier_intake_tab()
+        self._create_products_catalog_tab()
         self._create_drawings_manager_tab()
 
         # ----- Footer / Status -----

@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "בגד גוף ש.א",
+    "size": "0-3",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-10 20:46:52"
+  },
+  {
+    "id": 2,
+    "name": "בגד גוף ש.א",
+    "size": "3-6",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-10 20:48:07"
+  },
+  {
+    "id": 3,
+    "name": "בגד גוף ש.א",
+    "size": "6-12",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-10 20:49:11"
+  }
+]
