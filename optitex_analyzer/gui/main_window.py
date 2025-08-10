@@ -8,30 +8,38 @@ from datetime import datetime
 
 class MainWindow:
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
+        """Initialize main window and build all primary tabs."""
         self.root = root
         self.settings = settings_manager
         self.file_analyzer = file_analyzer
         self.data_processor = data_processor
 
+        # Window basic setup
         self.root.title("FactorySync - ממיר אופטיטקס")
         try:
             self.root.geometry(self.settings.get("app.window_size", "1400x900"))
         except Exception:
             self.root.geometry("1400x900")
 
+        # State vars
         self.rib_file = ""
         self.products_file = self.settings.get("app.products_file", "")
         if self.products_file and not os.path.exists(self.products_file):
             self.products_file = ""
         self.current_results = []
-        self.drawings_manager_window = None
+        self.drawings_manager_window = None  # legacy (window mode removed)
 
+        # Notebook (main tabs)
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True)
+
         # Build tabs
         self._create_converter_tab()
         self._create_returned_drawing_tab()
         self._create_fabrics_inventory_tab()
+        self._create_drawings_manager_tab()  # new main tab instead of popup window
+
+        # Status bar + settings load
         self._create_status_bar()
         self._load_initial_settings()
 
@@ -611,7 +619,7 @@ class MainWindow:
         tk.Button(
             row2,
             text="📁 מנהל ציורים",
-            command=self._open_drawings_manager,
+            command=self._show_drawings_manager_tab,
             bg='#2980b9',
             fg='white',
             font=('Arial', 11, 'bold'),
@@ -835,6 +843,205 @@ class MainWindow:
             )
         
         self.drawings_manager_window.show()
+
+    # ===== טאב מנהל ציורים (חדש כטאב ראשי) =====
+    def _create_drawings_manager_tab(self):
+        """יוצר טאב חדש לניהול הציורים (במקום חלון נפרד)."""
+        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        self.notebook.add(tab, text="מנהל ציורים")
+        self._drawings_tab = tab
+        tk.Label(tab, text="מנהל ציורים - טבלה מקומית", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=12, pady=(0,8))
+        # Left buttons group
+        left = tk.Frame(actions, bg='#f7f9fa'); left.pack(side='left')
+        tk.Button(left, text="🔄 רענן", command=self._refresh_drawings_tree, bg='#3498db', fg='white', font=('Arial',10,'bold'), width=10).pack(side='left', padx=4)
+        tk.Button(left, text="📊 ייצא לאקסל", command=self._export_drawings_to_excel_tab, bg='#27ae60', fg='white', font=('Arial',10,'bold'), width=12).pack(side='left', padx=4)
+        # Right buttons group
+        right = tk.Frame(actions, bg='#f7f9fa'); right.pack(side='right')
+        tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
+        tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
+        # Table frame
+        table_frame = tk.Frame(tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=12, pady=8)
+        cols = ("id","file_name","created_at","products","total_quantity")
+        self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
+        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות"}
+        widths = {"id":70,"file_name":300,"created_at":160,"products":90,"total_quantity":100}
+        for c in cols:
+            self.drawings_tree.heading(c, text=headers[c]); self.drawings_tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(table_frame, orient='vertical', command=self.drawings_tree.yview); self.drawings_tree.configure(yscroll=vs.set)
+        self.drawings_tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns')
+        table_frame.grid_columnconfigure(0,weight=1); table_frame.grid_rowconfigure(0,weight=1)
+        self.drawings_tree.bind('<Double-1>', self._on_drawings_double_click)
+        self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
+        # Stats bar
+        self.drawings_stats_var = tk.StringVar(value="אין נתונים")
+        tk.Label(tab, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial',10)).pack(fill='x', side='bottom')
+        self._populate_drawings_tree(); self._update_drawings_stats()
+
+    def _show_drawings_manager_tab(self):
+        """מעבר לטאב מנהל הציורים"""
+        # איתור אינדקס הטאב לפי טקסט
+        for i in range(len(self.notebook.tabs())):
+            if self.notebook.tab(i, 'text') == "מנהל ציורים":
+                self.notebook.select(i)
+                break
+
+    def _populate_drawings_tree(self):
+        if not hasattr(self, 'drawings_tree'):
+            return
+        for item in self.drawings_tree.get_children():
+            self.drawings_tree.delete(item)
+        for record in self.data_processor.drawings_data:
+            products_count = len(record.get('מוצרים', []))
+            total_quantity = record.get('סך כמויות', 0)
+            self.drawings_tree.insert('', 'end', values=(
+                record.get('id',''),
+                record.get('שם הקובץ',''),
+                record.get('תאריך יצירה',''),
+                products_count,
+                f"{total_quantity:.1f}" if isinstance(total_quantity, (int,float)) else total_quantity
+            ))
+
+    def _update_drawings_stats(self):
+        total_drawings = len(self.data_processor.drawings_data)
+        total_quantity = sum(r.get('סך כמויות', 0) for r in self.data_processor.drawings_data)
+        self.drawings_stats_var.set(f"סך הכל: {total_drawings} ציורים | סך כמויות: {total_quantity:.1f}")
+
+    def _refresh_drawings_tree(self):
+        if hasattr(self.data_processor, 'refresh_drawings_data'):
+            try:
+                self.data_processor.refresh_drawings_data()
+            except Exception:
+                pass
+        self._populate_drawings_tree(); self._update_drawings_stats()
+
+    def _on_drawings_double_click(self, event):
+        item_id = self.drawings_tree.focus()
+        if not item_id:
+            return
+        vals = self.drawings_tree.item(item_id, 'values')
+        if not vals:
+            return
+        try:
+            rec_id = int(vals[0])
+        except Exception:
+            return
+        record = self.data_processor.get_drawing_by_id(rec_id) if hasattr(self.data_processor, 'get_drawing_by_id') else None
+        if not record:
+            return
+        self._show_drawing_details(record)
+
+    def _on_drawings_right_click(self, event):
+        row_id = self.drawings_tree.identify_row(event.y)
+        if row_id:
+            self.drawings_tree.selection_set(row_id)
+        sel = self.drawings_tree.selection()
+        if not sel:
+            return
+        menu = tk.Menu(self.drawings_tree, tearoff=0)
+        menu.add_command(label="📋 הצג פרטים", command=lambda: self._on_drawings_double_click(None))
+        menu.add_separator()
+        menu.add_command(label="🗑️ מחק", command=self._delete_selected_drawing_tab)
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _show_drawing_details(self, record):
+        top = tk.Toplevel(self.root)
+        top.title(f"פרטי ציור - {record.get('שם הקובץ','')}")
+        top.geometry('900x700')
+        top.configure(bg='#f0f0f0')
+        tk.Label(top, text=f"פרטי ציור: {record.get('שם הקובץ','')}", font=('Arial',14,'bold'), bg='#f0f0f0').pack(pady=10)
+        info = tk.LabelFrame(top, text="מידע כללי", bg='#f0f0f0')
+        info.pack(fill='x', padx=12, pady=6)
+        txt = (
+            f"ID: {record.get('id','')}\n"
+            f"תאריך יצירה: {record.get('תאריך יצירה','')}\n"
+            f"מספר מוצרים: {len(record.get('מוצרים', []))}\n"
+            f"סך הכמויות: {record.get('סך כמויות',0)}"
+        )
+        tk.Label(info, text=txt, bg='#f0f0f0', justify='left', anchor='w').pack(fill='x', padx=8, pady=6)
+        tk.Label(top, text="פירוט מוצרים ומידות:", font=('Arial',12,'bold'), bg='#f0f0f0').pack(anchor='w', padx=12, pady=(6,2))
+        st = scrolledtext.ScrolledText(top, height=20, font=('Courier New',10))
+        st.pack(fill='both', expand=True, padx=12, pady=4)
+        for product in record.get('מוצרים', []):
+            st.insert(tk.END, f"\n📦 {product.get('שם המוצר','')}\n")
+            st.insert(tk.END, "="*60 + "\n")
+            total_prod_q = 0
+            for size_info in product.get('מידות', []):
+                size = size_info.get('מידה','')
+                quantity = size_info.get('כמות',0)
+                note = size_info.get('הערה','')
+                total_prod_q += quantity
+                st.insert(tk.END, f"   מידה {size:>8}: {quantity:>8} - {note}\n")
+            st.insert(tk.END, f"\nסך עבור מוצר זה: {total_prod_q}\n")
+            st.insert(tk.END, "-"*60 + "\n")
+        st.config(state='disabled')
+        tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial',11,'bold'), width=12).pack(pady=10)
+
+    def _delete_selected_drawing_tab(self):
+        sel = self.drawings_tree.selection()
+        if not sel:
+            return
+        vals = self.drawings_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        rec_id = vals[0]
+        file_name = vals[1]
+        if not messagebox.askyesno("אישור מחיקה", f"למחוק את הציור:\n{file_name}? פעולה זו אינה הפיכה"):
+            return
+        # שימוש במתודה קיימת ב-data_processor אם קיימת
+        deleted = False
+        if hasattr(self.data_processor, 'delete_drawing'):
+            try:
+                deleted = self.data_processor.delete_drawing(rec_id)
+            except Exception:
+                deleted = False
+        if not deleted:
+            # נפילה אחורה – מחיקה ידנית
+            before = len(self.data_processor.drawings_data)
+            self.data_processor.drawings_data = [r for r in self.data_processor.drawings_data if str(r.get('id')) != str(rec_id)]
+            if len(self.data_processor.drawings_data) < before and hasattr(self.data_processor, 'save_drawings_data'):
+                try:
+                    self.data_processor.save_drawings_data(); deleted = True
+                except Exception:
+                    pass
+        if deleted:
+            self._refresh_drawings_tree()
+            messagebox.showinfo("הצלחה", "נמחק בהצלחה")
+        else:
+            messagebox.showerror("שגיאה", "המחיקה נכשלה")
+
+    def _clear_all_drawings_tab(self):
+        if not self.data_processor.drawings_data:
+            messagebox.showinfo("מידע", "אין ציורים למחיקה")
+            return
+        if not messagebox.askyesno("אישור מחיקה", f"למחוק את כל {len(self.data_processor.drawings_data)} הציורים? הפעולה לא ניתנת לשחזור"):
+            return
+        cleared = False
+        if hasattr(self.data_processor, 'clear_all_drawings'):
+            try:
+                cleared = self.data_processor.clear_all_drawings()
+            except Exception:
+                cleared = False
+        if cleared:
+            self._refresh_drawings_tree(); messagebox.showinfo("הצלחה", "כל הציורים נמחקו")
+        else:
+            messagebox.showerror("שגיאה", "מחיקה נכשלה")
+
+    def _export_drawings_to_excel_tab(self):
+        if not self.data_processor.drawings_data:
+            messagebox.showwarning("אזהרה", "אין ציורים לייצוא")
+            return
+        file_path = filedialog.asksaveasfilename(title="ייצא ציורים לאקסל", defaultextension=".xlsx", filetypes=[("Excel files","*.xlsx"),("All files","*.*")])
+        if not file_path:
+            return
+        try:
+            self.data_processor.export_drawings_to_excel(file_path)
+            messagebox.showinfo("הצלחה", f"הציורים יוצאו אל:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
     
     # Utility Methods
     def _update_status(self, message):
