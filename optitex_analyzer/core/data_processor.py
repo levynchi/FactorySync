@@ -104,6 +104,17 @@ class DataProcessor:
     def refresh_returned_drawings(self):
         """רענון נתוני ציורים חוזרים"""
         self.returned_drawings_data = self.load_returned_drawings_data()
+
+    def delete_returned_drawing(self, record_id: int) -> bool:
+        """מחיקת רשומת ציור חוזר לפי ID.
+        :return: True אם נמחקה רשומה.
+        """
+        before = len(self.returned_drawings_data)
+        self.returned_drawings_data = [r for r in self.returned_drawings_data if int(r.get('id', 0)) != int(record_id)]
+        if len(self.returned_drawings_data) != before:
+            self.save_returned_drawings_data()
+            return True
+        return False
     
     def results_to_dataframe(self, results: List[Dict]) -> pd.DataFrame:
         """המרת תוצאות ל-DataFrame"""

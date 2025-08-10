@@ -86,10 +86,10 @@ class MainWindow:
         inner_nb.add(list_tab, text="רשימת ציורים שנקלטו")
         lf = tk.Frame(list_tab, bg='#ffffff')
         lf.pack(fill='both', expand=True, padx=6, pady=6)
-        rcols = ('id','drawing_id','date','barcodes_count')
+        rcols = ('id','drawing_id','date','barcodes_count','delete')
         self.returned_drawings_tree = ttk.Treeview(lf, columns=rcols, show='headings')
-        h = {'id':'ID','drawing_id':'ציור','date':'תאריך','barcodes_count':'# ברקודים'}
-        w = {'id':60,'drawing_id':140,'date':110,'barcodes_count':90}
+        h = {'id':'ID','drawing_id':'ציור','date':'תאריך','barcodes_count':'# ברקודים','delete':'מחיקה'}
+        w = {'id':60,'drawing_id':140,'date':110,'barcodes_count':90,'delete':70}
         for c in rcols:
             self.returned_drawings_tree.heading(c, text=h[c])
             self.returned_drawings_tree.column(c, width=w[c], anchor='center')
@@ -100,6 +100,7 @@ class MainWindow:
         lf.grid_columnconfigure(0,weight=1)
         lf.grid_rowconfigure(0,weight=1)
         self.returned_drawings_tree.bind('<Double-1>', self._on_returned_drawing_double_click)
+        self.returned_drawings_tree.bind('<Button-1>', self._on_returned_drawings_click)
         self._scanned_barcodes = []
         self._populate_returned_drawings_table()
 
@@ -198,7 +199,8 @@ class MainWindow:
                 rec.get('id',''),
                 rec.get('drawing_id',''),
                 rec.get('date',''),
-                len(rec.get('barcodes', []))
+                len(rec.get('barcodes', [])),
+                '🗑'
             ))
 
     def _on_returned_drawing_double_click(self, event):
@@ -230,6 +232,25 @@ class MainWindow:
         for c in barcodes:
             lb.insert(tk.END, c)
         tk.Label(top, text=f"סה""כ {len(barcodes)} ברקודים", anchor='w').pack(fill='x')
+
+    def _on_returned_drawings_click(self, event):
+        region = self.returned_drawings_tree.identify('region', event.x, event.y)
+        if region != 'cell':
+            return
+        col = self.returned_drawings_tree.identify_column(event.x)
+        if col != '#5':  # delete column
+            return
+        item_id = self.returned_drawings_tree.identify_row(event.y)
+        if not item_id:
+            return
+        vals = self.returned_drawings_tree.item(item_id, 'values')
+        if not vals:
+            return
+        rec_id = vals[0]
+        if not messagebox.askyesno("אישור", "למחוק קליטה זו? הפעולה לא ניתנת לשחזור"):
+            return
+        if self.data_processor.delete_returned_drawing(rec_id):
+            self._populate_returned_drawings_table()
 
 
     # ===== טאב מלאי בדים =====
