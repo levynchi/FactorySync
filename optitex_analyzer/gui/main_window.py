@@ -16,10 +16,55 @@ class MainWindow:
 
         # Window basic setup
         self.root.title("FactorySync - ממיר אופטיטקס")
+        # --- Safe geometry apply (prevents hidden / off-screen window) ---
+        desired_geom = None
         try:
-            self.root.geometry(self.settings.get("app.window_size", "1400x900"))
+            desired_geom = self.settings.get("app.window_size", "1400x900")
+            if not isinstance(desired_geom, str):
+                desired_geom = "1400x900"
         except Exception:
-            self.root.geometry("1400x900")
+            desired_geom = "1400x900"
+
+        def _safe_apply_geometry(g: str):
+            # Parse WxH+X+Y if exists
+            import re
+            scr_w = self.root.winfo_screenwidth()
+            scr_h = self.root.winfo_screenheight()
+            m = re.match(r"^(\d+)x(\d+)([+-]\d+)?([+-]\d+)?$", g.strip())
+            if not m:
+                return "1400x900+50+50"
+            w = max(600, min(int(m.group(1)), scr_w))
+            h = max(400, min(int(m.group(2)), scr_h))
+            # Offsets
+            x = 50
+            y = 50
+            if m.group(3) and m.group(4):
+                try:
+                    x = int(m.group(3))
+                    y = int(m.group(4))
+                except ValueError:
+                    x, y = 50, 50
+            # If off-screen adjust
+            if x < 0 or x > scr_w - 100:
+                x = 50
+            if y < 0 or y > scr_h - 100:
+                y = 50
+            return f"{w}x{h}+{x}+{y}"
+
+        safe_geom = _safe_apply_geometry(desired_geom or "1400x900")
+        try:
+            self.root.geometry(safe_geom)
+        except Exception:
+            self.root.geometry("1400x900+50+50")
+        # Bring to front briefly (in case hidden behind other windows)
+        self.root.update_idletasks()
+        self.root.deiconify()
+        self.root.lift()
+        try:
+            self.root.attributes('-topmost', True)
+            self.root.after(500, lambda: self.root.attributes('-topmost', False))
+        except Exception:
+            pass
 
         # State vars
         self.rib_file = ""
@@ -862,10 +907,10 @@ class MainWindow:
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         # Table frame
         table_frame = tk.Frame(tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        cols = ("id","file_name","created_at","products","total_quantity")
+        cols = ("id","file_name","created_at","products","total_quantity","status")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות"}
-        widths = {"id":70,"file_name":300,"created_at":160,"products":90,"total_quantity":100}
+        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס"}
+        widths = {"id":70,"file_name":280,"created_at":140,"products":80,"total_quantity":90,"status":90}
         for c in cols:
             self.drawings_tree.heading(c, text=headers[c]); self.drawings_tree.column(c, width=widths[c], anchor='center')
         vs = ttk.Scrollbar(table_frame, orient='vertical', command=self.drawings_tree.yview); self.drawings_tree.configure(yscroll=vs.set)
@@ -873,6 +918,10 @@ class MainWindow:
         table_frame.grid_columnconfigure(0,weight=1); table_frame.grid_rowconfigure(0,weight=1)
         self.drawings_tree.bind('<Double-1>', self._on_drawings_double_click)
         self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
+        # תפריט סטטוס ציור
+        self._drawing_status_menu = tk.Menu(self.drawings_tree, tearoff=0)
+        for st in ("טרם נשלח","נשלח","הוחזר"):
+            self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
         # Stats bar
         self.drawings_stats_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial',10)).pack(fill='x', side='bottom')
@@ -899,7 +948,8 @@ class MainWindow:
                 record.get('שם הקובץ',''),
                 record.get('תאריך יצירה',''),
                 products_count,
-                f"{total_quantity:.1f}" if isinstance(total_quantity, (int,float)) else total_quantity
+                f"{total_quantity:.1f}" if isinstance(total_quantity, (int,float)) else total_quantity,
+                record.get('status','נשלח')
             ))
 
     def _update_drawings_stats(self):
@@ -940,12 +990,30 @@ class MainWindow:
             return
         menu = tk.Menu(self.drawings_tree, tearoff=0)
         menu.add_command(label="📋 הצג פרטים", command=lambda: self._on_drawings_double_click(None))
+        menu.add_cascade(label="סטטוס", menu=self._drawing_status_menu)
         menu.add_separator()
         menu.add_command(label="🗑️ מחק", command=self._delete_selected_drawing_tab)
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
+
+    def _change_selected_drawing_status(self, new_status):
+        sel = self.drawings_tree.selection()
+        if not sel:
+            return
+        vals = self.drawings_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        try:
+            rec_id = int(vals[0])
+        except Exception:
+            return
+        if hasattr(self.data_processor, 'update_drawing_status') and self.data_processor.update_drawing_status(rec_id, new_status):
+            # update row display
+            new_vals = list(vals)
+            new_vals[-1] = new_status
+            self.drawings_tree.item(sel[0], values=new_vals)
 
     def _show_drawing_details(self, record):
         top = tk.Toplevel(self.root)

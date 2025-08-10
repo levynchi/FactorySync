@@ -150,7 +150,9 @@ class DataProcessor:
                 'שם הקובץ': os.path.splitext(os.path.basename(file_name))[0] if file_name else 'לא ידוע',
                 'תאריך יצירה': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'מוצרים': [],
-                'סך כמויות': 0
+                'סך כמויות': 0,
+                # סטטוס ציור: נשלח (ברירת מחדל) | הוחזר | טרם נשלח
+                'status': 'נשלח'
             }
             
             # קיבוץ לפי מוצרים
@@ -240,6 +242,23 @@ class DataProcessor:
     def refresh_drawings_data(self):
         """רענון נתוני הציורים מהקובץ"""
         self.drawings_data = self.load_drawings_data()
+
+    def update_drawing_status(self, drawing_id: int, new_status: str) -> bool:
+        """עדכון סטטוס לציור (נשלח / הוחזר / טרם נשלח). מחזיר True אם עודכן."""
+        try:
+            changed = False
+            for rec in self.drawings_data:
+                if rec.get('id') == drawing_id:
+                    if rec.get('status') != new_status:
+                        rec['status'] = new_status
+                        changed = True
+                        break
+            if changed:
+                self.save_drawings_data()
+            return changed
+        except Exception as e:
+            print(f"שגיאה בעדכון סטטוס ציור: {e}")
+            return False
 
     # ===== Fabrics Inventory =====
     def load_fabrics_inventory(self) -> List[Dict]:
