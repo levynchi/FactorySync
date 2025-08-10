@@ -1,198 +1,145 @@
-"""
-החלון הראשי של התוכנה
-"""
-
+"""Main application window (clean single implementation)."""
+import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
-import os
 from threading import Thread
+from datetime import datetime
 
 
 class MainWindow:
-    """החלון הראשי של התוכנה"""
-
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         self.root = root
         self.settings = settings_manager
         self.file_analyzer = file_analyzer
         self.data_processor = data_processor
 
-        # משתנים
-        self.rib_file = ""
-        self.products_file = ""
-        self.current_results = []
+        self.root.title("FactorySync - ממיר אופטיטקס")
+        try:
+            self.root.geometry(self.settings.get("app.window_size", "1400x900"))
+        except Exception:
+            self.root.geometry("1400x900")
 
-        # חלונות מנהל
+        self.rib_file = ""
+        self.products_file = self.settings.get("app.products_file", "")
+        if self.products_file and not os.path.exists(self.products_file):
+            self.products_file = ""
+        self.current_results = []
         self.drawings_manager_window = None
 
-        self._setup_window()
-        self._create_widgets()
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill='both', expand=True)
+        # Build tabs
+        self._create_converter_tab()
+        self._create_returned_drawing_tab()
+        self._create_fabrics_inventory_tab()
+        self._create_status_bar()
         self._load_initial_settings()
 
-    def _setup_window(self):
-        """הגדרת החלון הראשי"""
-        self.root.title("FactorySync - ממיר אופטיטקס לאקסל")
-        window_size = self.settings.get("app.window_size", "900x700")
-        self.root.geometry(window_size)
-        self.root.configure(bg='#f0f0f0')
+    # ===== Converter Tab =====
+    def _create_converter_tab(self):
+        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        self.notebook.add(tab, text="ממיר קבצים")
+        for builder in (self._create_files_section, self._create_options_section, self._create_action_buttons, self._create_results_section):
+            orig = self.root; self.root = tab; builder(); self.root = orig
 
-        # מינימום גודל חלון
-        self.root.minsize(800, 600)
-
-        # מרכוז החלון
-        self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth() // 2) - (900 // 2)
-        y = (self.root.winfo_screenheight() // 2) - (700 // 2)
-        self.root.geometry(f"900x700+{x}+{y}")
-
-    def _create_widgets(self):
-        """יצירת הרכיבים"""
-        # שימוש ב-Notebook לטאבים
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True)
-
-        # Tab ראשי (קיים)
-        main_tab = tk.Frame(self.notebook, bg='#f0f0f0')
-        self.notebook.add(main_tab, text="ממיר אופטיטקס")
-
-        # כותרת
-        title_label = tk.Label(
-            main_tab,
-            text="FactorySync - ממיר אופטיטקס לאקסל",
-            font=('Arial', 18, 'bold'),
-            bg='#f0f0f0',
-            fg='#2c3e50'
-        )
-        title_label.pack(pady=15)
-
-        # מסגרת קבצים
-        self._create_files_section_parent(main_tab)
-
-        # מסגרת אפשרויות
-        self._create_options_section_parent(main_tab)
-
-        # כפתורי פעולה
-        self._create_action_buttons_parent(main_tab)
-
-        # אזור תוצאות
-        self._create_results_section_parent(main_tab)
-
-        # טאב חדש - קליטת ציור חוזר
-        self._create_returned_drawing_tab()
-
-        # טאב מלאי בדים
-        self._create_fabrics_inventory_tab()
-
-        # שורת סטטוס
-        self._create_status_bar()
-    # ===== התאמות לפונקציות יצירת רכיבים עבור parent דינמי =====
-    def _create_files_section_parent(self, parent):
-        orig_root = self.root
-        self.root = parent
-        self._create_files_section()
-        self.root = orig_root
-
-    def _create_options_section_parent(self, parent):
-        orig_root = self.root
-        self.root = parent
-        self._create_options_section()
-        self.root = orig_root
-
-    def _create_action_buttons_parent(self, parent):
-        orig_root = self.root
-        self.root = parent
-        self._create_action_buttons()
-        self.root = orig_root
-
-    def _create_results_section_parent(self, parent):
-        orig_root = self.root
-        self.root = parent
-        self._create_results_section()
-        self.root = orig_root
-
-    # ===== טאב קליטת ציור חוזר =====
+    # ===== Returned Drawing Tab =====
     def _create_returned_drawing_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="קליטת ציור חוזר")
-
-        header = tk.Label(tab, text="קליטת ציור שחזר מייצור", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50')
-        header.pack(pady=12)
-
-        form_frame = ttk.LabelFrame(tab, text="פרטי קליטה", padding=15)
-        form_frame.pack(fill="x", padx=25, pady=10)
-
-        # שדה ID ציור
-        tk.Label(form_frame, text="ציור ID:", font=('Arial', 10, 'bold'), width=15, anchor='w').grid(row=0, column=0, pady=5, sticky='w')
-        self.return_drawing_id_var = tk.StringVar()
-        tk.Entry(form_frame, textvariable=self.return_drawing_id_var, width=40).grid(row=0, column=1, pady=5, sticky='w')
-
-        # שדה תאריך
-        tk.Label(form_frame, text="תאריך קליטה (YYYY-MM-DD):", font=('Arial', 10, 'bold'), width=25, anchor='w').grid(row=1, column=0, pady=5, sticky='w')
-        self.return_date_var = tk.StringVar()
-        from datetime import datetime
-        self.return_date_var.set(datetime.now().strftime('%Y-%m-%d'))
-        tk.Entry(form_frame, textvariable=self.return_date_var, width=20).grid(row=1, column=1, pady=5, sticky='w')
-
-        # הוראות סריקה
-        instructions = tk.Label(form_frame, text="סרוק ברקודים (הסורק מוסיף Enter). כל ברקוד יוצג ברשימה למטה.", bg='#f7f9fa', fg='#34495e', anchor='w', justify='left')
-        instructions.grid(row=2, column=0, columnspan=2, pady=(10,5), sticky='w')
-
-        # אזור סריקת ברקודים
-        scan_frame = ttk.LabelFrame(tab, text="סריקת ברקודים", padding=10)
-        scan_frame.pack(fill='both', expand=True, padx=25, pady=5)
-
-        self.barcode_var = tk.StringVar()
-        barcode_entry = tk.Entry(scan_frame, textvariable=self.barcode_var, font=('Consolas', 12), width=40)
-        barcode_entry.pack(pady=5, anchor='w')
-        barcode_entry.bind('<Return>', self._handle_barcode_enter)
-
-        # רשימת ברקודים
-        self.barcodes_listbox = tk.Listbox(scan_frame, height=12, font=('Consolas', 11))
-        self.barcodes_listbox.pack(fill='both', expand=True, padx=5, pady=5)
-
-        # כפתורים
-        buttons_frame = tk.Frame(scan_frame, bg='#f7f9fa')
-        buttons_frame.pack(fill='x', pady=5)
-
-        tk.Button(buttons_frame, text="🗑️ מחק נבחר", command=self._delete_selected_barcode, bg='#e67e22', fg='white').pack(side='left', padx=5)
-        tk.Button(buttons_frame, text="❌ נקה הכל", command=self._clear_all_barcodes, bg='#e74c3c', fg='white').pack(side='left', padx=5)
-        tk.Button(buttons_frame, text="💾 שמור קליטה", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=5)
-
-        # סיכום
-        self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
-        summary_label = tk.Label(tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial', 10))
-        summary_label.pack(fill='x', side='bottom')
-
-        # מאחסן רשימת ברקודים בזיכרון
+        tk.Label(tab, text="קליטת ציור שחזר מייצור", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        inner_nb = ttk.Notebook(tab)
+        inner_nb.pack(fill='both', expand=True, padx=8, pady=5)
+        # Scan tab
+        scan_tab = tk.Frame(inner_nb, bg='#f7f9fa'); inner_nb.add(scan_tab, text="סריקת ציור")
+        form = ttk.LabelFrame(scan_tab, text="פרטי קליטה", padding=12); form.pack(fill='x', padx=8, pady=6)
+        tk.Label(form, text="ציור ID:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=0,pady=4,sticky='w')
+        self.return_drawing_id_var = tk.StringVar(); tk.Entry(form, textvariable=self.return_drawing_id_var, width=30).grid(row=0,column=1,pady=4,sticky='w')
+        tk.Label(form, text="תאריך:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1,column=0,pady=4,sticky='w')
+        self.return_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d')); tk.Entry(form, textvariable=self.return_date_var, width=20).grid(row=1,column=1,pady=4,sticky='w')
+        tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=2,column=0,columnspan=2,pady=(6,2),sticky='w')
+        scan_frame = ttk.LabelFrame(scan_tab, text="ברקודים נסרקים", padding=8); scan_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.barcode_var = tk.StringVar(); be = tk.Entry(scan_frame, textvariable=self.barcode_var, font=('Consolas',12), width=32); be.pack(pady=4, anchor='w'); be.bind('<Return>', self._handle_barcode_enter)
+        cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location')
+        self.scanned_fabrics_tree = ttk.Treeview(scan_frame, columns=cols, show='headings', height=11)
+        headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen','width':'רוחב','net_kg':'נטו','meters':'מטרים','price':'מחיר','location':'מיקום'}
+        widths = {'barcode':110,'fabric_type':150,'color_name':90,'color_no':70,'design_code':90,'width':55,'net_kg':60,'meters':65,'price':55,'location':70}
+        for c in cols:
+            self.scanned_fabrics_tree.heading(c, text=headers[c])
+            self.scanned_fabrics_tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(scan_frame, orient='vertical', command=self.scanned_fabrics_tree.yview)
+        self.scanned_fabrics_tree.configure(yscroll=vs.set)
+        self.scanned_fabrics_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4); vs.pack(side='right', fill='y', pady=4)
+        btns = tk.Frame(scan_frame, bg='#f7f9fa'); btns.pack(fill='x', pady=4)
+        tk.Button(btns, text="🗑️ מחק נבחר", command=self._delete_selected_barcode, bg='#e67e22', fg='white').pack(side='left', padx=4)
+        tk.Button(btns, text="❌ נקה הכל", command=self._clear_all_barcodes, bg='#e74c3c', fg='white').pack(side='left', padx=4)
+        tk.Button(btns, text="💾 שמור קליטה", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו"); tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        # List tab
+        list_tab = tk.Frame(inner_nb, bg='#ffffff'); inner_nb.add(list_tab, text="רשימת ציורים שנקלטו")
+        lf = tk.Frame(list_tab, bg='#ffffff'); lf.pack(fill='both', expand=True, padx=6, pady=6)
+        rcols = ('id','drawing_id','date','barcodes_count')
+        self.returned_drawings_tree = ttk.Treeview(lf, columns=rcols, show='headings')
+        h = {'id':'ID','drawing_id':'ציור','date':'תאריך','barcodes_count':'# ברקודים'}; w={'id':60,'drawing_id':140,'date':110,'barcodes_count':90}
+        for c in rcols:
+            self.returned_drawings_tree.heading(c, text=h[c])
+            self.returned_drawings_tree.column(c, width=w[c], anchor='center')
+        lsv = ttk.Scrollbar(lf, orient='vertical', command=self.returned_drawings_tree.yview)
+        self.returned_drawings_tree.configure(yscroll=lsv.set)
+        self.returned_drawings_tree.grid(row=0,column=0,sticky='nsew'); lsv.grid(row=0,column=1,sticky='ns'); lf.grid_columnconfigure(0,weight=1); lf.grid_rowconfigure(0,weight=1)
+        self.returned_drawings_tree.bind('<Double-1>', self._on_returned_drawing_double_click)
         self._scanned_barcodes = []
+        self._populate_returned_drawings_table()
 
-    # ===== לוגיקת סריקה וקליטה =====
     def _handle_barcode_enter(self, event=None):
         code = self.barcode_var.get().strip()
         if not code:
             return
-        # מניעת כפילויות רצופות
+        # prevent immediate duplicate scan
         if self._scanned_barcodes and self._scanned_barcodes[-1] == code:
             self.barcode_var.set("")
             return
         self._scanned_barcodes.append(code)
-        self.barcodes_listbox.insert(tk.END, code)
+        fabric = next((rec for rec in reversed(self.data_processor.fabrics_inventory) if str(rec.get('barcode')) == code), None)
+        if not fabric:
+            values = (code,'','','','','','','','','')
+        else:
+            values = (
+                fabric.get('barcode',''),
+                fabric.get('fabric_type',''),
+                fabric.get('color_name',''),
+                fabric.get('color_no',''),
+                fabric.get('design_code',''),
+                fabric.get('width',''),
+                f"{fabric.get('net_kg',0):.2f}",
+                f"{fabric.get('meters',0):.2f}",
+                f"{fabric.get('price',0):.2f}",
+                fabric.get('location','')
+            )
+        self.scanned_fabrics_tree.insert('', 'end', values=values)
         self.barcode_var.set("")
         self._update_return_summary()
 
     def _delete_selected_barcode(self):
-        selection = list(self.barcodes_listbox.curselection())
-        if not selection:
-            return
-        # מחיקה מהסוף להתחלה לשמירה על אינדקסים
-        for idx in reversed(selection):
-            del self._scanned_barcodes[idx]
-            self.barcodes_listbox.delete(idx)
+        if hasattr(self, 'scanned_fabrics_tree'):
+            sel = self.scanned_fabrics_tree.selection()
+            if not sel:
+                return
+            # חישוב אינדקסים לפי סדר הצגה
+            all_items = self.scanned_fabrics_tree.get_children()
+            indices = [all_items.index(i) for i in sel]
+            for item in sel:
+                self.scanned_fabrics_tree.delete(item)
+            # מחיקת הברקודים מהרשימה בזיכרון (מהסוף להתחלה)
+            for idx in sorted(indices, reverse=True):
+                if 0 <= idx < len(self._scanned_barcodes):
+                    del self._scanned_barcodes[idx]
         self._update_return_summary()
 
     def _clear_all_barcodes(self):
         self._scanned_barcodes = []
-        self.barcodes_listbox.delete(0, tk.END)
+        if hasattr(self, 'scanned_fabrics_tree'):
+            for item in self.scanned_fabrics_tree.get_children():
+                self.scanned_fabrics_tree.delete(item)
         self._update_return_summary()
 
     def _update_return_summary(self):
@@ -212,8 +159,52 @@ class MainWindow:
             new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes)
             messagebox.showinfo("הצלחה", f"הקליטה נשמרה בהצלחה!\nID: {new_id}")
             self._clear_all_barcodes()
+            self._populate_returned_drawings_table()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+    
+    def _populate_returned_drawings_table(self):
+        if not hasattr(self, 'returned_drawings_tree'):
+            return
+        for item in self.returned_drawings_tree.get_children():
+            self.returned_drawings_tree.delete(item)
+        for rec in self.data_processor.returned_drawings_data:
+            self.returned_drawings_tree.insert('', 'end', values=(
+                rec.get('id',''),
+                rec.get('drawing_id',''),
+                rec.get('date',''),
+                len(rec.get('barcodes', []))
+            ))
+
+    def _on_returned_drawing_double_click(self, event):
+        item_id = self.returned_drawings_tree.focus()
+        if not item_id:
+            return
+        vals = self.returned_drawings_tree.item(item_id, 'values')
+        if not vals:
+            return
+        rec_id = vals[0]
+        # מציאת הרשומה
+        record = None
+        for r in self.data_processor.returned_drawings_data:
+            if str(r.get('id')) == str(rec_id):
+                record = r
+                break
+        if not record:
+            return
+        barcodes = record.get('barcodes', [])
+        if not barcodes:
+            messagebox.showinfo("ברקודים", "אין ברקודים לרשומה זו")
+            return
+        # הצגת ברקודים בחלון נפרד
+        top = tk.Toplevel(self.root)
+        top.title(f"ברקודים - ציור {record.get('drawing_id','')}")
+        top.geometry('400x400')
+        lb = tk.Listbox(top, font=('Consolas', 11))
+        lb.pack(fill='both', expand=True, padx=8, pady=8)
+        for c in barcodes:
+            lb.insert(tk.END, c)
+        tk.Label(top, text=f"סה""כ {len(barcodes)} ברקודים", anchor='w').pack(fill='x')
 
 
     # ===== טאב מלאי בדים =====
