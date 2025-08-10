@@ -28,7 +28,112 @@ class SupplierIntakeTabMixin:
                     pass
         except Exception:
             self._supplier_products_allowed = []
-        self.sup_product_combo = ttk.Combobox(entry_bar, textvariable=self.sup_product_var, width=16, state='readonly', values=self._supplier_products_allowed)
+        # Autocomplete using popup Listbox (more reliable than mutating Combobox values each keystroke)
+        self._supplier_products_allowed_full = list(self._supplier_products_allowed)
+        self.sup_product_combo = ttk.Combobox(entry_bar, textvariable=self.sup_product_var, width=16, state='normal')
+        self.sup_product_combo['values'] = self._supplier_products_allowed_full
+
+        # Popup elements
+        self._sup_ac_popup = None
+        self._sup_ac_list = None
+
+        def _ensure_popup():
+            if self._sup_ac_popup and self._sup_ac_popup.winfo_exists():
+                return
+            popup = tk.Toplevel(self.sup_product_combo)
+            popup.overrideredirect(True)
+            popup.attributes('-topmost', True)
+            lb = tk.Listbox(popup, height=8, activestyle='dotbox')
+            lb.pack(fill='both', expand=True)
+            self._sup_ac_popup = popup
+            self._sup_ac_list = lb
+
+            def _choose(event=None):
+                sel = lb.curselection()
+                if not sel:
+                    _hide_popup(); return
+                val = lb.get(sel[0])
+                self.sup_product_var.set(val)
+                _hide_popup()
+                # Move focus to size field automatically for flow
+                try:
+                    size_entry = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)][0]
+                    size_entry.focus_set()
+                except Exception:
+                    pass
+            lb.bind('<Return>', _choose)
+            lb.bind('<Double-Button-1>', _choose)
+            lb.bind('<Escape>', lambda e: _hide_popup())
+
+        def _hide_popup():
+            if self._sup_ac_popup and self._sup_ac_popup.winfo_exists():
+                self._sup_ac_popup.destroy()
+
+        def _position_popup():
+            if not (self._sup_ac_popup and self._sup_ac_popup.winfo_exists()):
+                return
+            try:
+                x = self.sup_product_combo.winfo_rootx()
+                y = self.sup_product_combo.winfo_rooty() + self.sup_product_combo.winfo_height()
+                w = self.sup_product_combo.winfo_width()
+                self._sup_ac_popup.geometry(f"{w}x180+{x}+{y}")
+            except Exception:
+                pass
+
+        def _filter_products(event=None):
+            if event and event.keysym in ('Escape',):
+                _hide_popup(); return
+            text = self.sup_product_var.get().strip()
+            base = self._supplier_products_allowed_full
+            if not text:
+                matches = base[:50]
+            else:
+                tokens = [t for t in text.lower().replace('-', ' ').split() if t]
+                def match(prod):
+                    pl = prod.lower()
+                    words = pl.replace('-', ' ').split()
+                    for tok in tokens:
+                        if not any(w.startswith(tok) or tok in w for w in words):
+                            return None
+                    prefix_hits = sum(any(w.startswith(tok) for w in words) for tok in tokens)
+                    first_idx_sum = sum(min((i for i,w in enumerate(words) if (w.startswith(tok) or tok in w)), default=99) for tok in tokens)
+                    return (-prefix_hits, first_idx_sum, len(prod))
+                scored = []
+                for p in base:
+                    sc = match(p)
+                    if sc is not None:
+                        scored.append((sc,p))
+                scored.sort(key=lambda x: x[0])
+                matches = [p for _,p in scored][:50]
+            if not matches:
+                _hide_popup(); return
+            _ensure_popup(); _position_popup()
+            lb = self._sup_ac_list
+            lb.delete(0, tk.END)
+            for m in matches:
+                lb.insert(tk.END, m)
+            lb.selection_clear(0, tk.END)
+            lb.selection_set(0)
+            lb.activate(0)
+
+        def _on_key(event):
+            if event.keysym in ('Down','Up') and self._sup_ac_popup and self._sup_ac_popup.winfo_exists():
+                lb = self._sup_ac_list; size = lb.size()
+                if size == 0: return
+                cur = lb.curselection()
+                idx = cur[0] if cur else 0
+                if event.keysym == 'Down': idx = (idx + 1) % size
+                else: idx = (idx - 1) % size
+                lb.selection_clear(0, tk.END); lb.selection_set(idx); lb.activate(idx)
+                return 'break'
+            if event.keysym == 'Return' and self._sup_ac_popup and self._sup_ac_popup.winfo_exists():
+                lb = self._sup_ac_list; cur = lb.curselection()
+                if cur:
+                    self.sup_product_var.set(lb.get(cur[0])); _hide_popup(); return 'break'
+            _filter_products()
+
+        self.sup_product_combo.bind('<KeyRelease>', _on_key)
+        self.sup_product_combo.bind('<FocusOut>', lambda e: self.root.after(150, _hide_popup))
         def _product_chosen(event=None):
             try:
                 widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
@@ -69,6 +174,12 @@ class SupplierIntakeTabMixin:
         line = {'product': product, 'size': size, 'quantity': qty, 'note': note}
         self._supplier_lines.append(line); self.supplier_tree.insert('', 'end', values=(product,size,qty,note))
         self.sup_product_var.set(''); self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
+        # Restore full suggestions list after adding a line
+        if hasattr(self, 'sup_product_combo'):
+            try:
+                self.sup_product_combo['values'] = self._supplier_products_allowed_full
+            except Exception:
+                pass
         self._update_supplier_summary()
 
     def _delete_supplier_selected(self):
