@@ -49,14 +49,28 @@ class MainWindow:
         tk.Label(tab, text="קליטת ציור שחזר מייצור", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=8, pady=5)
-        # Scan tab
-        scan_tab = tk.Frame(inner_nb, bg='#f7f9fa'); inner_nb.add(scan_tab, text="סריקת ציור")
-        form = ttk.LabelFrame(scan_tab, text="פרטי קליטה", padding=12); form.pack(fill='x', padx=8, pady=6)
+        # --- Scan tab ---
+        scan_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(scan_tab, text="סריקת ציור")
+        form = ttk.LabelFrame(scan_tab, text="פרטי קליטה", padding=12)
+        form.pack(fill='x', padx=8, pady=6)
+        # Row 0
         tk.Label(form, text="ציור ID:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=0,pady=4,sticky='w')
-        self.return_drawing_id_var = tk.StringVar(); tk.Entry(form, textvariable=self.return_drawing_id_var, width=30).grid(row=0,column=1,pady=4,sticky='w')
+        self.return_drawing_id_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.return_drawing_id_var, width=30).grid(row=0,column=1,pady=4,sticky='w')
+        tk.Label(form, text="מקור קבלה:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0,column=2,pady=4,sticky='w')
+        self.return_source_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.return_source_var, width=25).grid(row=0,column=3,pady=4,sticky='w')
+        # Row 1
         tk.Label(form, text="תאריך:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1,column=0,pady=4,sticky='w')
-        self.return_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d')); tk.Entry(form, textvariable=self.return_date_var, width=20).grid(row=1,column=1,pady=4,sticky='w')
-        tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=2,column=0,columnspan=2,pady=(6,2),sticky='w')
+        self.return_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        tk.Entry(form, textvariable=self.return_date_var, width=20).grid(row=1,column=1,pady=4,sticky='w')
+        tk.Label(form, text="שכבות:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1,column=2,pady=4,sticky='w')
+        self.return_layers_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.return_layers_var, width=10).grid(row=1,column=3,pady=4,sticky='w')
+        # Instruction
+        tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=2,column=0,columnspan=4,pady=(6,2),sticky='w')
+        # Barcode list
         scan_frame = ttk.LabelFrame(scan_tab, text="ברקודים נסרקים", padding=8)
         scan_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.barcode_var = tk.StringVar()
@@ -81,7 +95,7 @@ class MainWindow:
         tk.Button(btns, text="💾 שמור קליטה", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
         tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
-        # List tab
+        # --- List tab ---
         list_tab = tk.Frame(inner_nb, bg='#ffffff')
         inner_nb.add(list_tab, text="רשימת ציורים שנקלטו")
         lf = tk.Frame(list_tab, bg='#ffffff')
@@ -163,6 +177,12 @@ class MainWindow:
     def _save_returned_drawing(self):
         drawing_id = self.return_drawing_id_var.get().strip()
         date_str = self.return_date_var.get().strip()
+        source = getattr(self, 'return_source_var', tk.StringVar()).get().strip() if hasattr(self, 'return_source_var') else ''
+        layers_raw = getattr(self, 'return_layers_var', tk.StringVar()).get().strip() if hasattr(self, 'return_layers_var') else ''
+        try:
+            layers_val = int(layers_raw) if layers_raw else None
+        except ValueError:
+            layers_val = None
         if not drawing_id:
             messagebox.showerror("שגיאה", "אנא הכנס ציור ID")
             return
@@ -170,7 +190,7 @@ class MainWindow:
             messagebox.showerror("שגיאה", "אין ברקודים לשמירה")
             return
         try:
-            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes)
+            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=source or None, layers=layers_val)
             # עדכון סטטוס הבדים שנקלטו ל"נגזר"
             updated = 0
             unique_codes = set(self._scanned_barcodes)

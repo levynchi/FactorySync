@@ -67,7 +67,7 @@ class DataProcessor:
             print(f"שגיאה בשמירת ציורים חוזרים: {e}")
             return False
     
-    def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str]) -> int:
+    def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str], source: str = None, layers: int = None) -> int:
         """הוספת קליטת ציור חוזר
         :param drawing_id: מזהה הציור (טקסט / מספר)
         :param date_str: תאריך הקליטה (YYYY-MM-DD)
@@ -86,6 +86,10 @@ class DataProcessor:
                 'barcodes': barcodes,
                 'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
+            if source:
+                record['source'] = source
+            if layers is not None:
+                record['layers'] = layers
             self.returned_drawings_data.append(record)
             self.save_returned_drawings_data()
             return new_id
