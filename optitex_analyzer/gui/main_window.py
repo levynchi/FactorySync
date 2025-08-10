@@ -254,6 +254,16 @@ class MainWindow:
         if not drawing_id:
             messagebox.showerror("שגיאה", "אנא הכנס ציור ID")
             return
+        # דרישת שדות חובה: שם ספק + שכבות
+        if not source:
+            messagebox.showerror("שגיאה", "חובה למלא 'שם ספק'")
+            return
+        if layers_val is None:
+            messagebox.showerror("שגיאה", "חובה למלא 'שכבות' (מספר שלם)")
+            return
+        if layers_val <= 0:
+            messagebox.showerror("שגיאה", "ערך 'שכבות' חייב להיות גדול מ-0")
+            return
         if not self._scanned_barcodes:
             messagebox.showerror("שגיאה", "אין ברקודים לשמירה")
             return
