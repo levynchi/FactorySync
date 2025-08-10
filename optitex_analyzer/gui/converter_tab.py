@@ -45,6 +45,19 @@ class ConverterTabMixin:
         tk.Checkbutton(processing_frame, text="טיפול אוטומטי ב-Layout Tubular (חלוקה ב-2)", variable=self.tubular_var, font=('Arial', 10)).pack(anchor="w")
         self.only_positive_var = tk.BooleanVar(value=True)
         tk.Checkbutton(processing_frame, text="הצג רק מידות עם כמות גדולה מ-0", variable=self.only_positive_var, font=('Arial', 10)).pack(anchor="w")
+        # Fabric type selection
+        fabric_type_frame = tk.Frame(options_frame); fabric_type_frame.pack(fill="x", pady=5)
+        tk.Label(fabric_type_frame, text="סוג בד:", font=('Arial', 10, 'bold'), width=15, anchor='w').pack(side='left')
+        self.fabric_type_options = ["בחר סוג בד", "פלנל לבן", "טריקו לבן", "פלנל מודפס", "טריקו מודפס"]
+        self.fabric_type_var = tk.StringVar(value=self.fabric_type_options[0])
+        self.fabric_type_combo = ttk.Combobox(
+            fabric_type_frame,
+            textvariable=self.fabric_type_var,
+            values=self.fabric_type_options,
+            state='readonly',
+            width=20
+        )
+        self.fabric_type_combo.pack(side='left', padx=5)
 
     def _create_action_buttons(self):
         buttons_frame = tk.Frame(self.root, bg='#f0f0f0'); buttons_frame.pack(fill="x", padx=20, pady=15)
@@ -160,7 +173,11 @@ class ConverterTabMixin:
             messagebox.showwarning("אזהרה", "אין נתונים להוספה. אנא בצע ניתוח תחילה.")
             return
         try:
-            record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file)
+            fabric_type = self.fabric_type_var.get() if hasattr(self, 'fabric_type_var') else ""
+            if not fabric_type or (hasattr(self, 'fabric_type_options') and fabric_type == self.fabric_type_options[0]):
+                messagebox.showwarning("אזהרה", "אנא בחר סוג בד לפני ההוספה לטבלה המקומית")
+                return
+            record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file, fabric_type=fabric_type)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")
             self._log_message(f"ID רשומה חדשה: {record_id}")
             file_name = os.path.splitext(os.path.basename(self.rib_file))[0] if self.rib_file else 'לא ידוע'
@@ -168,6 +185,12 @@ class ConverterTabMixin:
             self._log_message(f"שם הקובץ: {file_name}")
             self._log_message(f"סך כמויות: {total_quantity}")
             self._update_status("נוסף לטבלה המקומית")
+            # Refresh drawings manager tab if exists
+            if hasattr(self, '_refresh_drawings_tree'):
+                try:
+                    self._refresh_drawings_tree()
+                except Exception:
+                    pass
             messagebox.showinfo("הצלחה", f"הציור נוסף בהצלחה לטבלה המקומית!\nID: {record_id}")
         except Exception as e:
             error_msg = str(e)
@@ -192,3 +215,6 @@ class ConverterTabMixin:
                 self.products_file = ""; self.products_label.config(text="לא נבחר קובץ"); self._update_status("מוכן לעבודה")
         else:
             self._update_status("מוכן לעבודה")
+        # Reset fabric type selection if exists
+        if hasattr(self, 'fabric_type_var') and hasattr(self, 'fabric_type_options'):
+            self.fabric_type_var.set(self.fabric_type_options[0])
