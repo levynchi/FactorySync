@@ -11,12 +11,18 @@ from typing import Dict, List, Any
 class DataProcessor:
     """מעבד נתונים וייצוא"""
     
-    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json"):
+    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json"):
         self.drawings_file = drawings_file
         # קובץ לקליטת ציורים שחזרו מייצור
         self.returned_drawings_file = returned_drawings_file
+        # קובץ מלאי בדים
+        self.fabrics_inventory_file = fabrics_inventory_file
+        # קובץ לוג של ייבוא קבצי מלאי בדים
+        self.fabrics_imports_file = fabrics_imports_file
         self.drawings_data = self.load_drawings_data()
         self.returned_drawings_data = self.load_returned_drawings_data()
+        self.fabrics_inventory = self.load_fabrics_inventory()
+        self.fabrics_import_logs = self.load_fabrics_import_logs()
     
     def load_drawings_data(self) -> List[Dict]:
         """טעינת נתוני ציורים מקומיים"""
@@ -219,3 +225,205 @@ class DataProcessor:
     def refresh_drawings_data(self):
         """רענון נתוני הציורים מהקובץ"""
         self.drawings_data = self.load_drawings_data()
+
+    # ===== Fabrics Inventory =====
+    def load_fabrics_inventory(self) -> List[Dict]:
+        """טעינת מלאי בדים"""
+        try:
+            if os.path.exists(self.fabrics_inventory_file):
+                with open(self.fabrics_inventory_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            print(f"שגיאה בטעינת מלאי בדים: {e}")
+            return []
+
+    def save_fabrics_inventory(self) -> bool:
+        """שמירת מלאי בדים"""
+        try:
+            with open(self.fabrics_inventory_file, 'w', encoding='utf-8') as f:
+                json.dump(self.fabrics_inventory, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"שגיאה בשמירת מלאי בדים: {e}")
+            return False
+
+    def import_fabrics_csv(self, file_path: str) -> int:
+        """ייבוא משלוח בדים מקובץ CSV
+        :return: מספר רשומות שנוספו
+        """
+        import csv
+        added = 0
+        try:
+            # ניצור מראש לוג (לשייך ID לרשומות) – נעדכן כמות לאחר הספירה
+            temp_log_id = self.add_fabric_import_log(file_path, 0)
+            # ניסיון קריאה ב-UTF-8 עם BOM, ואם לא מצליח נופל ל-latin-1
+            encodings = ['utf-8-sig', 'cp1255', 'latin-1']
+            rows = []
+            for enc in encodings:
+                try:
+                    with open(file_path, 'r', encoding=enc, newline='') as f:
+                        reader = csv.DictReader(f)
+                        for r in reader:
+                            rows.append(r)
+                    if rows:
+                        break
+                except Exception:
+                    rows = []
+                    continue
+            if not rows:
+                raise ValueError("לא נקראו רשומות מהקובץ")
+
+            # ניקוי כותרות וטרנספורמציה
+            def to_float(val):
+                try:
+                    if val is None:
+                        return 0.0
+                    v = str(val).strip().replace(',', '')
+                    if v == '':
+                        return 0.0
+                    return float(v)
+                except Exception:
+                    return 0.0
+
+            for r in rows:
+                cleaned = { (k.strip() if k else ''): (v.strip() if isinstance(v, str) else v) for k,v in r.items() }
+                record = {
+                    'barcode': cleaned.get('BARCODE NO', ''),
+                    'fabric_type': cleaned.get('סוג בד', ''),
+                    'color_name': cleaned.get('COLOR NAME', ''),
+                    'color_no': cleaned.get('COLOR NO', ''),
+                    'design_code': cleaned.get('Desen Kodu', ''),
+                    'width': cleaned.get('WIDTH', ''),
+                    'gr': cleaned.get('GR', ''),
+                    'net_kg': to_float(cleaned.get('NET KG')),
+                    'gross_kg': to_float(cleaned.get('GROSS KG')),
+                    'meters': to_float(cleaned.get('METER')),
+                    'price': to_float(cleaned.get('PRICE')) if 'PRICE' in cleaned else to_float(cleaned.get('PRICE ','0')),
+                    'total': to_float(cleaned.get('TOTAL')) if 'TOTAL' in cleaned else to_float(cleaned.get('TOTAL  ','0')),
+                    'location': cleaned.get('location', ''),
+                    'last_modified': cleaned.get('Last Modified', ''),
+                    'purpose': cleaned.get('מטרה', ''),
+                    'import_log_id': temp_log_id,
+                }
+                if record['barcode']:
+                    self.fabrics_inventory.append(record)
+                    added += 1
+
+            if added:
+                self.save_fabrics_inventory()
+                # עדכון הלוג עם מספר רשומות
+                for log in self.fabrics_import_logs:
+                    if log.get('id') == temp_log_id:
+                        log['records_added'] = added
+                        break
+                self.save_fabrics_import_logs()
+            else:
+                # אם לא נוספו רשומות – למחוק לוג ריק
+                self.fabrics_import_logs = [l for l in self.fabrics_import_logs if l.get('id') != temp_log_id]
+                self.save_fabrics_import_logs()
+            return added
+        except Exception as e:
+            raise Exception(f"שגיאה בייבוא מלאי בדים: {str(e)}")
+
+    def get_fabrics_summary(self) -> Dict[str, Any]:
+        """סיכום מלאי בדים"""
+        total = len(self.fabrics_inventory)
+        total_meters = sum(item.get('meters', 0) for item in self.fabrics_inventory)
+        total_net = sum(item.get('net_kg', 0) for item in self.fabrics_inventory)
+        return {
+            'total_records': total,
+            'total_meters': total_meters,
+            'total_net_kg': total_net
+        }
+
+    def refresh_fabrics_inventory(self):
+        """רענון מלאי בדים מהדיסק"""
+        self.fabrics_inventory = self.load_fabrics_inventory()
+
+    def export_fabrics_to_excel(self, file_path: str) -> bool:
+        """ייצוא מלאי הבדים לקובץ Excel"""
+        try:
+            if not self.fabrics_inventory:
+                raise ValueError("אין נתוני מלאי לייצוא")
+            df = pd.DataFrame(self.fabrics_inventory)
+            df.to_excel(file_path, index=False)
+            return True
+        except Exception as e:
+            raise Exception(f"שגיאה בייצוא מלאי בדים: {str(e)}")
+
+    # ===== Fabrics Import Logs =====
+    def load_fabrics_import_logs(self) -> List[Dict]:
+        """טעינת לוג ייבוא קבצי מלאי בדים"""
+        try:
+            if os.path.exists(self.fabrics_imports_file):
+                with open(self.fabrics_imports_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            print(f"שגיאה בטעינת לוג ייבוא בדים: {e}")
+            return []
+
+    def save_fabrics_import_logs(self) -> bool:
+        """שמירת לוג ייבוא קבצי מלאי בדים"""
+        try:
+            with open(self.fabrics_imports_file, 'w', encoding='utf-8') as f:
+                json.dump(self.fabrics_import_logs, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"שגיאה בשמירת לוג ייבוא בדים: {e}")
+            return False
+
+    def add_fabric_import_log(self, file_path: str, records_added: int):
+        """הוספת רשומת לוג חדשה עבור קובץ שיובא"""
+        try:
+            log_id = max([r.get('id', 0) for r in self.fabrics_import_logs], default=0) + 1
+            self.fabrics_import_logs.append({
+                'id': log_id,
+                'file_name': os.path.basename(file_path),
+                'full_path': os.path.abspath(file_path),
+                'records_added': records_added,
+                'imported_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            self.save_fabrics_import_logs()
+            return log_id
+        except Exception as e:
+            print(f"שגיאה בהוספת לוג ייבוא: {e}")
+            return None
+
+    def delete_fabric_import_log(self, log_id: int) -> bool:
+        """מחיקת רשומת לוג לפי ID"""
+        try:
+            before = len(self.fabrics_import_logs)
+            self.fabrics_import_logs = [r for r in self.fabrics_import_logs if r.get('id') != log_id]
+            if len(self.fabrics_import_logs) != before:
+                return self.save_fabrics_import_logs()
+            return False
+        except Exception as e:
+            print(f"שגיאה במחיקת לוג ייבוא: {e}")
+            return False
+
+    def delete_fabric_import_log_and_fabrics(self, log_id: int) -> Dict[str, int]:
+        """מחיקת לוג והקבצים שייבא (רשומות מלאי) לפי import_log_id.
+        :return: {'logs_deleted': int, 'fabrics_deleted': int}
+        """
+        result = {'logs_deleted': 0, 'fabrics_deleted': 0}
+        try:
+            # מחיקת רשומות מלאי עם אותו import_log_id
+            before_f = len(self.fabrics_inventory)
+            self.fabrics_inventory = [r for r in self.fabrics_inventory if r.get('import_log_id') != log_id]
+            after_f = len(self.fabrics_inventory)
+            if after_f != before_f:
+                result['fabrics_deleted'] = before_f - after_f
+                self.save_fabrics_inventory()
+            # מחיקת הלוג עצמו
+            before_l = len(self.fabrics_import_logs)
+            self.fabrics_import_logs = [r for r in self.fabrics_import_logs if r.get('id') != log_id]
+            after_l = len(self.fabrics_import_logs)
+            if after_l != before_l:
+                result['logs_deleted'] = before_l - after_l
+                self.save_fabrics_import_logs()
+            return result
+        except Exception as e:
+            print(f"שגיאה במחיקת לוג ורשומות מלאי: {e}")
+            return result
