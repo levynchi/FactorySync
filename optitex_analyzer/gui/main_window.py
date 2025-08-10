@@ -16,7 +16,6 @@ class MainWindow:
 
         # Window basic setup
         self.root.title("FactorySync - ממיר אופטיטקס")
-        # --- Safe geometry apply (prevents hidden / off-screen window) ---
         desired_geom = None
         try:
             desired_geom = self.settings.get("app.window_size", "1400x900")
@@ -26,7 +25,6 @@ class MainWindow:
             desired_geom = "1400x900"
 
         def _safe_apply_geometry(g: str):
-            # Parse WxH+X+Y if exists
             import re
             scr_w = self.root.winfo_screenwidth()
             scr_h = self.root.winfo_screenheight()
@@ -35,20 +33,14 @@ class MainWindow:
                 return "1400x900+50+50"
             w = max(600, min(int(m.group(1)), scr_w))
             h = max(400, min(int(m.group(2)), scr_h))
-            # Offsets
-            x = 50
-            y = 50
+            x = 50; y = 50
             if m.group(3) and m.group(4):
                 try:
-                    x = int(m.group(3))
-                    y = int(m.group(4))
+                    x = int(m.group(3)); y = int(m.group(4))
                 except ValueError:
                     x, y = 50, 50
-            # If off-screen adjust
-            if x < 0 or x > scr_w - 100:
-                x = 50
-            if y < 0 or y > scr_h - 100:
-                y = 50
+            if x < 0 or x > scr_w - 100: x = 50
+            if y < 0 or y > scr_h - 100: y = 50
             return f"{w}x{h}+{x}+{y}"
 
         safe_geom = _safe_apply_geometry(desired_geom or "1400x900")
@@ -56,13 +48,9 @@ class MainWindow:
             self.root.geometry(safe_geom)
         except Exception:
             self.root.geometry("1400x900+50+50")
-        # Bring to front briefly (in case hidden behind other windows)
-        self.root.update_idletasks()
-        self.root.deiconify()
-        self.root.lift()
+        self.root.update_idletasks(); self.root.deiconify(); self.root.lift()
         try:
-            self.root.attributes('-topmost', True)
-            self.root.after(500, lambda: self.root.attributes('-topmost', False))
+            self.root.attributes('-topmost', True); self.root.after(500, lambda: self.root.attributes('-topmost', False))
         except Exception:
             pass
 
@@ -72,19 +60,20 @@ class MainWindow:
         if self.products_file and not os.path.exists(self.products_file):
             self.products_file = ""
         self.current_results = []
-        self.drawings_manager_window = None  # legacy (window mode removed)
+        self.drawings_manager_window = None
 
-        # Notebook (main tabs)
+        # Notebook
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True)
 
-        # Build tabs
+        # Tabs
         self._create_converter_tab()
         self._create_returned_drawing_tab()
         self._create_fabrics_inventory_tab()
-        self._create_drawings_manager_tab()  # new main tab instead of popup window
+        self._create_supplier_intake_tab()
+        self._create_drawings_manager_tab()
 
-        # Status bar + settings load
+        # Footer / status
         self._create_status_bar()
         self._load_initial_settings()
 
@@ -148,38 +137,6 @@ class MainWindow:
         tk.Button(btns, text="💾 שמור קליטה", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
         tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
-
-        # --- Products received table (new) ---
-        products_frame = ttk.LabelFrame(scan_tab, text="מוצרים שנקלטו (מוצר->כמות)", padding=8)
-        products_frame.pack(fill='x', padx=8, pady=4)
-        pf_top = tk.Frame(products_frame); pf_top.pack(fill='x', pady=(0,6))
-        # Load product names from analyzer mapping if available
-        product_names = sorted(set(self.file_analyzer.product_mapping.values())) if getattr(self.file_analyzer,'product_mapping',{}) else []
-        self.return_product_var = tk.StringVar()
-        self.return_product_cb = ttk.Combobox(pf_top, textvariable=self.return_product_var, values=product_names, width=30)
-        self.return_product_cb.grid(row=0,column=0,padx=4,sticky='w')
-        tk.Label(pf_top, text="מוצר", anchor='w').grid(row=1,column=0,sticky='w',padx=4)
-        self.return_product_qty_var = tk.StringVar()
-        tk.Entry(pf_top, textvariable=self.return_product_qty_var, width=8).grid(row=0,column=1,padx=4,sticky='w')
-        tk.Label(pf_top, text="כמות", anchor='w').grid(row=1,column=1,sticky='w',padx=4)
-        self.return_product_source_type = tk.StringVar(value='גיזרה')  # 'גיזרה' | 'ציור'
-        ttk.Combobox(pf_top, textvariable=self.return_product_source_type, values=['גיזרה','ציור'], width=10, state='readonly').grid(row=0,column=2,padx=4,sticky='w')
-        tk.Label(pf_top, text="מקור", anchor='w').grid(row=1,column=2,sticky='w',padx=4)
-        self.return_origin_drawing_var = tk.StringVar()
-        tk.Entry(pf_top, textvariable=self.return_origin_drawing_var, width=10).grid(row=0,column=3,padx=4,sticky='w')
-        tk.Label(pf_top, text="ציור מקור", anchor='w').grid(row=1,column=3,sticky='w',padx=4)
-        tk.Button(pf_top, text="➕ הוסף", bg='#2980b9', fg='white', command=self._add_return_product).grid(row=0,column=4,padx=6,sticky='w')
-        tk.Button(pf_top, text="🗑️ מחק", bg='#c0392b', fg='white', command=self._delete_return_product).grid(row=0,column=5,padx=2,sticky='w')
-        # Tree
-        pr_cols = ('product','quantity','source_type','origin_drawing')
-        self.return_products_tree = ttk.Treeview(products_frame, columns=pr_cols, show='headings', height=5)
-        headers = {'product':'מוצר','quantity':'כמות','source_type':'מקור','origin_drawing':'ציור מקור'}
-        widths = {'product':220,'quantity':70,'source_type':80,'origin_drawing':90}
-        for c in pr_cols:
-            self.return_products_tree.heading(c, text=headers[c])
-            self.return_products_tree.column(c, width=widths[c], anchor='center')
-        self.return_products_tree.pack(fill='x')
-        self._returned_products = []  # list of dicts
         # --- List tab ---
         list_tab = tk.Frame(inner_nb, bg='#ffffff')
         inner_nb.add(list_tab, text="רשימת ציורים שנקלטו")
@@ -274,49 +231,6 @@ class MainWindow:
         count = len(self._scanned_barcodes)
         self.return_summary_var.set(f"{count} ברקודים נסרקו")
 
-    def _add_return_product(self):
-        name = self.return_product_var.get().strip()
-        qty_raw = self.return_product_qty_var.get().strip()
-        source_type = self.return_product_source_type.get().strip()
-        origin = self.return_origin_drawing_var.get().strip()
-        if not name:
-            messagebox.showerror("שגיאה", "בחר מוצר")
-            return
-        try:
-            qty = int(qty_raw)
-            if qty <= 0:
-                raise ValueError
-        except Exception:
-            messagebox.showerror("שגיאה", "כמות לא חוקית")
-            return
-        if source_type == 'ציור' and not origin:
-            messagebox.showerror("שגיאה", "חובה למלא ציור מקור כאשר המקור הוא 'ציור'")
-            return
-        rec = {
-            'product': name,
-            'quantity': qty,
-            'source_type': source_type,
-            'origin_drawing': origin if source_type == 'ציור' else ''
-        }
-        self._returned_products.append(rec)
-        self.return_products_tree.insert('', 'end', values=(rec['product'], rec['quantity'], rec['source_type'], rec['origin_drawing']))
-        # reset qty only
-        self.return_product_qty_var.set('')
-        self.return_origin_drawing_var.set('')
-
-    def _delete_return_product(self):
-        sel = self.return_products_tree.selection()
-        if not sel:
-            return
-        for item in sel:
-            vals = self.return_products_tree.item(item, 'values')
-            self.return_products_tree.delete(item)
-            # remove from list
-            for idx, rec in enumerate(self._returned_products):
-                if rec['product'] == vals[0] and str(rec['quantity']) == str(vals[1]) and rec['source_type'] == vals[2] and rec['origin_drawing'] == vals[3]:
-                    del self._returned_products[idx]
-                    break
-
     def _save_returned_drawing(self):
         drawing_id = self.return_drawing_id_var.get().strip()
         date_str = self.return_date_var.get().strip()
@@ -343,14 +257,7 @@ class MainWindow:
             messagebox.showerror("שגיאה", "אין ברקודים לשמירה")
             return
         try:
-            new_id = self.data_processor.add_returned_drawing(
-                drawing_id,
-                date_str,
-                self._scanned_barcodes,
-                source=source or None,
-                layers=layers_val,
-                products_details=self._returned_products if getattr(self, '_returned_products', None) else None
-            )
+            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=source or None, layers=layers_val)
             # אם קיים ציור עם ID זה במנהל הציורים – עדכון סטטוס ל"נחתך"
             try:
                 did = int(drawing_id)
@@ -376,11 +283,6 @@ class MainWindow:
                     pass
             messagebox.showinfo("הצלחה", f"הקליטה נשמרה בהצלחה!\nID: {new_id}\nעודכנו סטטוסים ל-{updated} גלילים")
             self._clear_all_barcodes()
-            # ניקוי טבלת מוצרים
-            if hasattr(self, 'return_products_tree'):
-                for i in self.return_products_tree.get_children():
-                    self.return_products_tree.delete(i)
-            self._returned_products = []
             self._populate_returned_drawings_table()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
@@ -998,6 +900,121 @@ class MainWindow:
         self.drawings_manager_window.show()
 
     # ===== טאב מנהל ציורים (חדש כטאב ראשי) =====
+
+    def _create_supplier_intake_tab(self):
+        """טאב קליטה מספק - הזנה ידנית של מוצרים וכמויות"""
+        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        self.notebook.add(tab, text="קליטת ספק")
+        tk.Label(tab, text="קליטת מוצרים מספק (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        form = ttk.LabelFrame(tab, text="פרטי קליטה", padding=10)
+        form.pack(fill='x', padx=10, pady=6)
+        tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
+        self.supplier_name_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.supplier_name_var, width=30).grid(row=0,column=1,sticky='w',padx=4,pady=4)
+        tk.Label(form, text="תאריך:", font=('Arial',10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
+        self.supplier_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        tk.Entry(form, textvariable=self.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
+        # Lines section
+        lines_frame = ttk.LabelFrame(tab, text="שורות קליטה", padding=8)
+        lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
+        entry_bar = tk.Frame(lines_frame, bg='#f7f9fa'); entry_bar.pack(fill='x', pady=(0,6))
+        self.sup_product_var = tk.StringVar(); self.sup_size_var = tk.StringVar(); self.sup_qty_var = tk.StringVar(); self.sup_note_var = tk.StringVar()
+        tk.Entry(entry_bar, textvariable=self.sup_product_var, width=18)
+        tk.Entry(entry_bar, textvariable=self.sup_size_var, width=10)
+        tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7)
+        tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)
+        lbls = ["מוצר","מידה","כמות","הערה"]
+        for i,lbl in enumerate(lbls):
+            tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
+        entry_bar.grid_columnconfigure(1,weight=0)
+        # Place entries under labels
+        widgets = [
+            tk.Entry(entry_bar, textvariable=self.sup_product_var, width=18),
+            tk.Entry(entry_bar, textvariable=self.sup_size_var, width=10),
+            tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7),
+            tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)
+        ]
+        for i,w in enumerate(widgets):
+            w.grid(row=1,column=i*2,sticky='w',padx=2)
+        tk.Button(entry_bar, text="➕ הוסף", command=self._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=8,padx=6)
+        tk.Button(entry_bar, text="🗑️ מחק נבחר", command=self._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=9,padx=4)
+        tk.Button(entry_bar, text="❌ נקה הכל", command=self._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=10,padx=4)
+        cols = ('product','size','quantity','note')
+        self.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
+        headers = {'product':'מוצר','size':'מידה','quantity':'כמות','note':'הערה'}
+        widths = {'product':180,'size':80,'quantity':80,'note':240}
+        for c in cols:
+            self.supplier_tree.heading(c, text=headers[c]); self.supplier_tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(lines_frame, orient='vertical', command=self.supplier_tree.yview)
+        self.supplier_tree.configure(yscroll=vs.set)
+        self.supplier_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
+        vs.pack(side='right', fill='y', pady=4)
+        bottom_actions = tk.Frame(tab, bg='#f7f9fa'); bottom_actions.pack(fill='x', padx=10, pady=6)
+        tk.Button(bottom_actions, text="💾 שמור קליטה", command=self._save_supplier_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
+        self.supplier_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
+        tk.Label(tab, textvariable=self.supplier_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        self._supplier_lines = []
+
+    def _add_supplier_line(self):
+        product = self.sup_product_var.get().strip()
+        size = self.sup_size_var.get().strip()
+        qty_raw = self.sup_qty_var.get().strip()
+        note = self.sup_note_var.get().strip()
+        if not product or not qty_raw:
+            messagebox.showerror("שגיאה", "חובה למלא מוצר וכמות")
+            return
+        try:
+            qty = int(qty_raw)
+            if qty <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+            return
+        line = {'product': product, 'size': size, 'quantity': qty, 'note': note}
+        self._supplier_lines.append(line)
+        self.supplier_tree.insert('', 'end', values=(product,size,qty,note))
+        self.sup_product_var.set(''); self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
+        self._update_supplier_summary()
+
+    def _delete_supplier_selected(self):
+        sel = self.supplier_tree.selection()
+        if not sel:
+            return
+        all_items = self.supplier_tree.get_children()
+        indices = [all_items.index(i) for i in sel]
+        for item in sel:
+            self.supplier_tree.delete(item)
+        for idx in sorted(indices, reverse=True):
+            if 0 <= idx < len(self._supplier_lines):
+                del self._supplier_lines[idx]
+        self._update_supplier_summary()
+
+    def _clear_supplier_lines(self):
+        self._supplier_lines = []
+        for item in self.supplier_tree.get_children():
+            self.supplier_tree.delete(item)
+        self._update_supplier_summary()
+
+    def _update_supplier_summary(self):
+        total_rows = len(self._supplier_lines)
+        total_qty = sum(l.get('quantity',0) for l in self._supplier_lines)
+        self.supplier_summary_var.set(f"{total_rows} שורות | {total_qty} כמות")
+
+    def _save_supplier_receipt(self):
+        supplier = self.supplier_name_var.get().strip()
+        date_str = self.supplier_date_var.get().strip()
+        if not supplier:
+            messagebox.showerror("שגיאה", "חובה למלא שם ספק")
+            return
+        if not self._supplier_lines:
+            messagebox.showerror("שגיאה", "אין שורות לשמירה")
+            return
+        try:
+            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines)
+            messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
+            self._clear_supplier_lines()
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
     def _create_drawings_manager_tab(self):
         """יוצר טאב חדש לניהול הציורים (במקום חלון נפרד)."""
         tab = tk.Frame(self.notebook, bg='#f7f9fa')

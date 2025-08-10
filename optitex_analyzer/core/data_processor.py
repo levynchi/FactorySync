@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
     """מעבד נתונים וייצוא"""
     
-    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json"):
+    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json"):
         self.drawings_file = drawings_file
         # קובץ לקליטת ציורים שחזרו מייצור
         self.returned_drawings_file = returned_drawings_file
@@ -19,10 +19,13 @@ class DataProcessor:
         self.fabrics_inventory_file = fabrics_inventory_file
         # קובץ לוג של ייבוא קבצי מלאי בדים
         self.fabrics_imports_file = fabrics_imports_file
+        # קובץ קליטות מספק (הזנה ידנית של מוצרים וכמויות)
+        self.supplier_receipts_file = supplier_receipts_file
         self.drawings_data = self.load_drawings_data()
         self.returned_drawings_data = self.load_returned_drawings_data()
         self.fabrics_inventory = self.load_fabrics_inventory()
         self.fabrics_import_logs = self.load_fabrics_import_logs()
+        self.supplier_receipts = self.load_supplier_receipts()
     
     def load_drawings_data(self) -> List[Dict]:
         """טעינת נתוני ציורים מקומיים"""
@@ -66,8 +69,60 @@ class DataProcessor:
         except Exception as e:
             print(f"שגיאה בשמירת ציורים חוזרים: {e}")
             return False
+
+    # ===== Supplier Receipts (Manual Products Intake) =====
+    def load_supplier_receipts(self) -> List[Dict]:
+        """טעינת קליטות מספק"""
+        try:
+            if os.path.exists(self.supplier_receipts_file):
+                with open(self.supplier_receipts_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            print(f"שגיאה בטעינת קליטות ספק: {e}")
+            return []
+
+    def save_supplier_receipts(self) -> bool:
+        """שמירת קליטות מספק"""
+        try:
+            with open(self.supplier_receipts_file, 'w', encoding='utf-8') as f:
+                json.dump(self.supplier_receipts, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"שגיאה בשמירת קליטות ספק: {e}")
+            return False
+
+    def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict]) -> int:
+        """הוספת קליטה מספק.
+        :param supplier: שם ספק
+        :param date_str: תאריך (YYYY-MM-DD)
+        :param lines: רשימת שורות: {product, size, quantity, note}
+        """
+        try:
+            if not supplier:
+                raise ValueError("חסר שם ספק")
+            if not lines:
+                raise ValueError("אין שורות לקליטה")
+            new_id = max([r.get('id', 0) for r in self.supplier_receipts], default=0) + 1
+            total_quantity = sum(int(l.get('quantity', 0)) for l in lines)
+            receipt = {
+                'id': new_id,
+                'supplier': supplier,
+                'date': date_str,
+                'lines': lines,
+                'total_quantity': total_quantity,
+                'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            self.supplier_receipts.append(receipt)
+            self.save_supplier_receipts()
+            return new_id
+        except Exception as e:
+            raise Exception(f"שגיאה בהוספת קליטת ספק: {str(e)}")
+
+    def refresh_supplier_receipts(self):
+        self.supplier_receipts = self.load_supplier_receipts()
     
-    def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str], source: str = None, layers: int = None, products_details: List[Dict[str, Any]] | None = None) -> int:
+    def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str], source: str = None, layers: int = None) -> int:
         """הוספת קליטת ציור חוזר
         :param drawing_id: מזהה הציור (טקסט / מספר)
         :param date_str: תאריך הקליטה (YYYY-MM-DD)
@@ -90,9 +145,6 @@ class DataProcessor:
                 record['source'] = source
             if layers is not None:
                 record['layers'] = layers
-            if products_details:
-                # שמירת רשימת מוצרים שנקלטו (כל פריט: product, quantity, source_type, origin_drawing)
-                record['products_details'] = products_details
             self.returned_drawings_data.append(record)
             self.save_returned_drawings_data()
             return new_id
