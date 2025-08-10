@@ -1053,24 +1053,67 @@ class MainWindow:
             f"מספר מוצרים: {len(record.get('מוצרים', []))}\n"
             f"סך הכמויות: {record.get('סך כמויות',0)}"
         )
+        status_val = record.get('status','')
+        txt += f"\nסטטוס: {status_val}"
         tk.Label(info, text=txt, bg='#f0f0f0', justify='left', anchor='w').pack(fill='x', padx=8, pady=6)
         tk.Label(top, text="פירוט מוצרים ומידות:", font=('Arial',12,'bold'), bg='#f0f0f0').pack(anchor='w', padx=12, pady=(6,2))
         st = scrolledtext.ScrolledText(top, height=20, font=('Courier New',10))
         st.pack(fill='both', expand=True, padx=12, pady=4)
+        layers_used = None
+        if status_val == 'נחתך':
+            layers_used = self._get_layers_for_drawing(record.get('id'))
+        overall_expected = 0
         for product in record.get('מוצרים', []):
             st.insert(tk.END, f"\n📦 {product.get('שם המוצר','')}\n")
             st.insert(tk.END, "="*60 + "\n")
             total_prod_q = 0
+            total_expected_product = 0
             for size_info in product.get('מידות', []):
                 size = size_info.get('מידה','')
                 quantity = size_info.get('כמות',0)
                 note = size_info.get('הערה','')
                 total_prod_q += quantity
-                st.insert(tk.END, f"   מידה {size:>8}: {quantity:>8} - {note}\n")
-            st.insert(tk.END, f"\nסך עבור מוצר זה: {total_prod_q}\n")
-            st.insert(tk.END, "-"*60 + "\n")
+                line = f"   מידה {size:>8}: {quantity:>8}"
+                if layers_used and isinstance(layers_used, int) and layers_used > 0:
+                    expected_qty = quantity * layers_used
+                    total_expected_product += expected_qty
+                    overall_expected += expected_qty
+                    line += f"  | לאחר גזירה (שכבות {layers_used}): {expected_qty}"
+                if note:
+                    line += f"  - {note}"
+                st.insert(tk.END, line + "\n")
+            st.insert(tk.END, f"\nסך עבור מוצר זה: {total_prod_q}")
+            if total_expected_product:
+                st.insert(tk.END, f" | סך צפוי לאחר גזירה: {total_expected_product}")
+            st.insert(tk.END, "\n" + "-"*60 + "\n")
+        if layers_used and overall_expected:
+            st.insert(tk.END, f"\n➡ סך כמות צפויה לאחר גזירה לכל הציור: {overall_expected}\n")
         st.config(state='disabled')
         tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial',11,'bold'), width=12).pack(pady=10)
+
+    def _get_layers_for_drawing(self, drawing_id):
+        """החזרת מספר שכבות מהקליטה האחרונה של ציור חוזר (אם יש)."""
+        try:
+            did_str = str(drawing_id)
+            candidates = [r for r in getattr(self.data_processor, 'returned_drawings_data', []) if str(r.get('drawing_id')) == did_str and r.get('layers')]
+            if not candidates:
+                return None
+            # בחירת האחרונה לפי created_at
+            def _dt(rec):
+                from datetime import datetime
+                ts = rec.get('created_at') or rec.get('date')
+                try:
+                    return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    return datetime.min
+            candidates.sort(key=_dt, reverse=True)
+            layers_val = candidates[0].get('layers')
+            try:
+                return int(layers_val)
+            except Exception:
+                return None
+        except Exception:
+            return None
 
     def _delete_selected_drawing_tab(self):
         sel = self.drawings_tree.selection()
