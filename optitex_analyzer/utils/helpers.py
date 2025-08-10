@@ -98,7 +98,7 @@ class DataHelper:
         return []
 
 class ValidationHelper:
-    """עוזר לוולידציה"""
+    """עוזר לוולידציה כללית (נוקה מקוד Airtable)"""
     
     @staticmethod
     def is_valid_email(email: str) -> bool:
@@ -111,25 +111,6 @@ class ValidationHelper:
         """בדיקת תקינות URL"""
         pattern = r'^https?://[^\s/$.?#].[^\s]*$'
         return bool(re.match(pattern, str(url)))
-    
-    @staticmethod
-    def validate_airtable_config(config: Dict[str, Any]) -> tuple[bool, str]:
-        """בדיקת תקינות הגדרות אייר טייבל"""
-        required_fields = ['api_key', 'base_id', 'table_name']
-        
-        for field in required_fields:
-            if field not in config or not config[field]:
-                return False, f"חסר שדה: {field}"
-        
-        # בדיקת פורמט API Key
-        if not config['api_key'].startswith('pat'):
-            return False, "API Key חייב להתחיל ב-pat"
-        
-        # בדיקת פורמט Base ID
-        if not config['base_id'].startswith('app'):
-            return False, "Base ID חייב להתחיל ב-app"
-        
-        return True, "תקין"
 
 class FormatHelper:
     """עוזר לעיצוב נתונים"""

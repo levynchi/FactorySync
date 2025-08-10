@@ -72,7 +72,7 @@ class SettingsManager:
             return False
     
     def get(self, key_path: str, default=None):
-        """קבלת ערך לפי נתיב (למשל: 'airtable.api_key')"""
+        """קבלת ערך לפי נתיב (למשל: 'app.window_size')"""
         keys = key_path.split('.')
         value = self.config
         

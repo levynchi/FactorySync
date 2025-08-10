@@ -11,9 +11,12 @@ from typing import Dict, List, Any
 class DataProcessor:
     """מעבד נתונים וייצוא"""
     
-    def __init__(self, drawings_file: str = "drawings_data.json"):
+    def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json"):
         self.drawings_file = drawings_file
+        # קובץ לקליטת ציורים שחזרו מייצור
+        self.returned_drawings_file = returned_drawings_file
         self.drawings_data = self.load_drawings_data()
+        self.returned_drawings_data = self.load_returned_drawings_data()
     
     def load_drawings_data(self) -> List[Dict]:
         """טעינת נתוני ציורים מקומיים"""
@@ -35,6 +38,66 @@ class DataProcessor:
         except Exception as e:
             print(f"שגיאה בשמירת נתוני ציורים: {e}")
             return False
+    
+    # ===== Returned Drawings Handling =====
+    def load_returned_drawings_data(self) -> List[Dict]:
+        """טעינת נתוני ציורים שחזרו מייצור"""
+        try:
+            if os.path.exists(self.returned_drawings_file):
+                with open(self.returned_drawings_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            print(f"שגיאה בטעינת ציורים חוזרים: {e}")
+            return []
+    
+    def save_returned_drawings_data(self) -> bool:
+        """שמירת נתוני ציורים שחזרו"""
+        try:
+            with open(self.returned_drawings_file, 'w', encoding='utf-8') as f:
+                json.dump(self.returned_drawings_data, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"שגיאה בשמירת ציורים חוזרים: {e}")
+            return False
+    
+    def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str]) -> int:
+        """הוספת קליטת ציור חוזר
+        :param drawing_id: מזהה הציור (טקסט / מספר)
+        :param date_str: תאריך הקליטה (YYYY-MM-DD)
+        :param barcodes: רשימת ברקודים שנקלטו
+        :return: ID פנימי של הרשומה החדשה
+        """
+        try:
+            if not barcodes:
+                raise ValueError("לא נקלטו ברקודים")
+            # יצירת מזהה חדש
+            new_id = max([r.get('id', 0) for r in self.returned_drawings_data], default=0) + 1
+            record = {
+                'id': new_id,
+                'drawing_id': drawing_id,
+                'date': date_str,
+                'barcodes': barcodes,
+                'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            self.returned_drawings_data.append(record)
+            self.save_returned_drawings_data()
+            return new_id
+        except Exception as e:
+            raise Exception(f"שגיאה בהוספת ציור חוזר: {str(e)}")
+    
+    def get_returned_drawings_summary(self) -> Dict[str, Any]:
+        """סיכום מהיר של הקליטות"""
+        total = len(self.returned_drawings_data)
+        total_barcodes = sum(len(r.get('barcodes', [])) for r in self.returned_drawings_data)
+        return {
+            'total_records': total,
+            'total_barcodes': total_barcodes
+        }
+    
+    def refresh_returned_drawings(self):
+        """רענון נתוני ציורים חוזרים"""
+        self.returned_drawings_data = self.load_returned_drawings_data()
     
     def results_to_dataframe(self, results: List[Dict]) -> pd.DataFrame:
         """המרת תוצאות ל-DataFrame"""
