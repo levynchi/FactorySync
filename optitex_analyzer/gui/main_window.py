@@ -259,6 +259,17 @@ class MainWindow:
             return
         try:
             new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=source or None, layers=layers_val)
+            # אם קיים ציור עם ID זה במנהל הציורים – עדכון סטטוס ל"נחתך"
+            try:
+                did = int(drawing_id)
+            except ValueError:
+                did = None
+            if did is not None and hasattr(self.data_processor, 'update_drawing_status'):
+                if self.data_processor.update_drawing_status(did, "נחתך"):
+                    try:
+                        self._refresh_drawings_tree()
+                    except Exception:
+                        pass
             # עדכון סטטוס הבדים שנקלטו ל"נגזר"
             updated = 0
             unique_codes = set(self._scanned_barcodes)
@@ -920,8 +931,11 @@ class MainWindow:
         self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
         # תפריט סטטוס ציור
         self._drawing_status_menu = tk.Menu(self.drawings_tree, tearoff=0)
-        for st in ("טרם נשלח","נשלח","הוחזר"):
-            self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
+        for st in ("טרם נשלח","נשלח","הוחזר","נחתך"):
+            self._drawing_status_menu.add_command(
+                label=st,
+                command=lambda s=st: self._change_selected_drawing_status(s)
+            )
         # Stats bar
         self.drawings_stats_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial',10)).pack(fill='x', side='bottom')
