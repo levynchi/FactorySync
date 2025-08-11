@@ -132,16 +132,17 @@ class ConverterTabMixin:
 
     def _display_detailed_results(self):
         self._log_message("\n=== תוצאות הניתוח ===")
+        # If tubular layout handled, show a single header note instead of repeating per line
+        if getattr(self.file_analyzer, 'is_tubular', False):
+            self._log_message("(Layout Tubular) הכמויות שלהלן לאחר חלוקה ב-2 מהמקור")
         current_product = None
         for result in self.current_results:
             if current_product != result['שם המוצר']:
                 current_product = result['שם המוצר']
                 self._log_message(f"\n📦 {current_product}:")
                 self._log_message("-" * 60)
-            quantity_text = f"{result['כמות']}"
-            if result['כמות מקורית'] != result['כמות']:
-                quantity_text += f" (מקורי: {result['כמות מקורית']})"
-            self._log_message(f"   מידה {result['מידה']:>8}: {quantity_text:>10} - {result['הערה']}")
+            # Show only the processed quantity; avoid per-line Tubular/original annotations
+            self._log_message(f"   מידה {result['מידה']:>8}: {str(result['כמות']):>10}")
 
     def _display_statistics(self, summary):
         self._log_message("\n" + "=" * 70)
