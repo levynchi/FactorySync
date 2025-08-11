@@ -131,23 +131,55 @@ class DrawingsManagerTabMixin:
 
     def _print_drawing_record(self, record):
         """Open a printable-style window and offer system print if possible."""
-        # Build textual representation (RTL each line with RLM prefix)
-        lines = []
-        lines.append(f"ציור: {record.get('שם הקובץ','')}")
-        lines.append(f"ID: {record.get('id','')}")
-        lines.append(f"תאריך יצירה: {record.get('תאריך יצירה','')}")
+        # Header info first (RTL lines)
+        header_lines = []
+        header_lines.append(f"ציור: {record.get('שם הקובץ','')}")
+        header_lines.append(f"ID: {record.get('id','')}")
+        header_lines.append(f"תאריך יצירה: {record.get('תאריך יצירה','')}")
         if 'סוג בד' in record:
-            lines.append(f"סוג בד: {record.get('סוג בד')}")
-        lines.append(f"סטטוס: {record.get('status','')}")
-        lines.append("")
+            header_lines.append(f"סוג בד: {record.get('סוג בד')}")
+        header_lines.append(f"סטטוס: {record.get('status','')}")
+
+        # Flatten products into single table rows: product(model), size, quantity
+        rows = []
+        import re
+        def _size_key(size_str: str):
+            """מפתח מיון לגדלים (תמיכה בפורמטים שונים כמו 0-3, 12m-18m, 3, 24-30)."""
+            if not isinstance(size_str, str):
+                return 0, size_str
+            # החלפת אות m (months) כדי להשוות מספרים בלבד
+            cleaned = size_str.lower().replace('m','')
+            # קח את הספרות הראשונות
+            m = re.match(r"(\d+)", cleaned.strip())
+            base = int(m.group(1)) if m else 0
+            # עדיפות: טווח לפני מספר בודד? נשתמש באורך לקביעת סדר יציב
+            return base, cleaned
         for product in record.get('מוצרים', []):
-            lines.append(f"מוצר: {product.get('שם המוצר','')}")
-            for size_info in product.get('מידות', []):
-                note = size_info.get('הערה','')
-                extra = f" - {note}" if note else ''
-                lines.append(f"  מידה {size_info.get('מידה','')}: {size_info.get('כמות',0)}{extra}")
-            lines.append("")
-        content = "\n".join([RLM + l for l in lines])
+            prod_name = product.get('שם המוצר','')
+            # מיון לוגי של המידות לפני יצירת השורות
+            sorted_sizes = sorted(product.get('מידות', []), key=lambda si: _size_key(si.get('מידה','')))
+            for size_info in sorted_sizes:
+                size = size_info.get('מידה','')
+                qty = size_info.get('כמות',0)
+                rows.append((prod_name, size, qty))
+
+        # Determine column widths (in characters)
+        prod_w = max([len(str(r[0])) for r in rows] + [4])
+        size_w = max([len(str(r[1])) for r in rows] + [4])
+        qty_w  = max([len(str(r[2])) for r in rows] + [4])
+
+        # Build table header (remember RTL: we want Product on right, then Size, then Quantity on left)
+        # Using monospaced font; we compose as Product | Size | Quantity in logical order, RLM will render RTL
+        table_lines = []
+        header_row = f"{ 'דגם'.ljust(prod_w) }  { 'מידה'.ljust(size_w) }  { 'כמות'.rjust(qty_w) }"
+        sep_row = '-' * len(header_row)
+        table_lines.append(header_row)
+        table_lines.append(sep_row)
+        for prod, size, qty in rows:
+            line = f"{ str(prod).ljust(prod_w) }  { str(size).ljust(size_w) }  { str(qty).rjust(qty_w) }"
+            table_lines.append(line)
+
+        content = "\n".join([RLM + l for l in header_lines]) + "\n\n" + "\n".join([RLM + l for l in table_lines])
 
         top = tk.Toplevel(self.root); top.title("תצוגת הדפסה"); top.geometry('600x700'); top.configure(bg='#f0f0f0')
         txt = scrolledtext.ScrolledText(top, font=('Courier New',10), wrap='word')
@@ -209,7 +241,17 @@ class DrawingsManagerTabMixin:
             st.insert(tk.END, RLM + f"\n📦 {product.get('שם המוצר','')}\n", 'rtl')
             st.insert(tk.END, RLM + "="*60 + "\n", 'rtl')
             total_prod_q = 0; total_expected_product = 0
-            for size_info in product.get('מידות', []):
+            # מיון לוגי של המידות להצגה עקבית
+            import re
+            def _size_key(size_str: str):
+                if not isinstance(size_str, str):
+                    return 0, size_str
+                cleaned = size_str.lower().replace('m','')
+                m = re.match(r"(\d+)", cleaned.strip())
+                base = int(m.group(1)) if m else 0
+                return base, cleaned
+            product_sizes_sorted = sorted(product.get('מידות', []), key=lambda si: _size_key(si.get('מידה','')))
+            for size_info in product_sizes_sorted:
                 size = size_info.get('מידה',''); quantity = size_info.get('כמות',0); note = size_info.get('הערה',''); total_prod_q += quantity
                 line = f"   מידה {size:>8}: {quantity:>8}"
                 if layers_used and isinstance(layers_used, int) and layers_used > 0:
