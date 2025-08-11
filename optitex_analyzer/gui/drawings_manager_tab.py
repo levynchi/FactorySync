@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
+# סימן כיווניות RTL לטקסט עברי (Right-To-Left Mark)
+RLM = '\u200f'
+
 class DrawingsManagerTabMixin:
     """Mixin עבור טאב מנהל ציורים."""
     def _create_drawings_manager_tab(self):
@@ -15,15 +18,21 @@ class DrawingsManagerTabMixin:
         tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         table_frame = tk.Frame(tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        cols = ("id","file_name","created_at","products","total_quantity","status")
+        # Added 'print' column for per-row print action
+        cols = ("id","file_name","created_at","products","total_quantity","status","print")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס"}
-        widths = {"id":70,"file_name":280,"created_at":140,"products":80,"total_quantity":90,"status":90}
-        for c in cols: self.drawings_tree.heading(c, text=headers[c]); self.drawings_tree.column(c, width=widths[c], anchor='center')
-        vs = ttk.Scrollbar(table_frame, orient='vertical', command=self.drawings_tree.yview); self.drawings_tree.configure(yscroll=vs.set)
+        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס","print":"הדפס"}
+        widths = {"id":70,"file_name":260,"created_at":140,"products":80,"total_quantity":90,"status":90,"print":60}
+        for c in cols:
+            self.drawings_tree.heading(c, text=headers[c])
+            self.drawings_tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(table_frame, orient='vertical', command=self.drawings_tree.yview)
+        self.drawings_tree.configure(yscroll=vs.set)
         self.drawings_tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns')
         table_frame.grid_columnconfigure(0,weight=1); table_frame.grid_rowconfigure(0,weight=1)
-        self.drawings_tree.bind('<Double-1>', self._on_drawings_double_click); self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
+        self.drawings_tree.bind('<Double-1>', self._on_drawings_double_click)
+        self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
+        self.drawings_tree.bind('<Button-1>', self._on_drawings_click)
         self._drawing_status_menu = tk.Menu(self.drawings_tree, tearoff=0)
         for st in ("טרם נשלח","נשלח","הוחזר","נחתך"):
             self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
@@ -39,7 +48,15 @@ class DrawingsManagerTabMixin:
         for item in self.drawings_tree.get_children(): self.drawings_tree.delete(item)
         for record in self.data_processor.drawings_data:
             products_count = len(record.get('מוצרים', [])); total_quantity = record.get('סך כמויות', 0)
-            self.drawings_tree.insert('', 'end', values=(record.get('id',''), record.get('שם הקובץ',''), record.get('תאריך יצירה',''), products_count, f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity, record.get('status','נשלח')))
+            self.drawings_tree.insert('', 'end', values=(
+                record.get('id',''),
+                record.get('שם הקובץ',''),
+                record.get('תאריך יצירה',''),
+                products_count,
+                f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
+                record.get('status','נשלח'),
+                "🖨️"  # print icon
+            ))
 
     def _update_drawings_stats(self):
         total_drawings = len(self.data_processor.drawings_data); total_quantity = sum(r.get('סך כמויות', 0) for r in self.data_processor.drawings_data)
@@ -82,21 +99,115 @@ class DrawingsManagerTabMixin:
         try: rec_id = int(vals[0])
         except Exception: return
         if hasattr(self.data_processor, 'update_drawing_status') and self.data_processor.update_drawing_status(rec_id, new_status):
-            new_vals = list(vals); new_vals[-1] = new_status; self.drawings_tree.item(sel[0], values=new_vals)
+            # status column is index 5 in the defined columns order
+            new_vals = list(vals)
+            if len(new_vals) >= 6:
+                new_vals[5] = new_status
+            self.drawings_tree.item(sel[0], values=new_vals)
+
+    # === New: Click handling for print column ===
+    def _on_drawings_click(self, event):
+        try:
+            col_id = self.drawings_tree.identify_column(event.x)  # e.g. '#1'
+            row_id = self.drawings_tree.identify_row(event.y)
+            if not row_id:
+                return
+            # Determine column name
+            columns = self.drawings_tree['columns']
+            idx = int(col_id.replace('#','')) - 1
+            if 0 <= idx < len(columns) and columns[idx] == 'print':
+                vals = self.drawings_tree.item(row_id, 'values')
+                if not vals: return
+                try:
+                    rec_id = int(vals[0])
+                except Exception:
+                    return
+                record = self.data_processor.get_drawing_by_id(rec_id) if hasattr(self.data_processor, 'get_drawing_by_id') else None
+                if record:
+                    self._print_drawing_record(record)
+                return 'break'  # prevent selection change flicker
+        except Exception:
+            pass
+
+    def _print_drawing_record(self, record):
+        """Open a printable-style window and offer system print if possible."""
+        # Build textual representation (RTL each line with RLM prefix)
+        lines = []
+        lines.append(f"ציור: {record.get('שם הקובץ','')}")
+        lines.append(f"ID: {record.get('id','')}")
+        lines.append(f"תאריך יצירה: {record.get('תאריך יצירה','')}")
+        if 'סוג בד' in record:
+            lines.append(f"סוג בד: {record.get('סוג בד')}")
+        lines.append(f"סטטוס: {record.get('status','')}")
+        lines.append("")
+        for product in record.get('מוצרים', []):
+            lines.append(f"מוצר: {product.get('שם המוצר','')}")
+            for size_info in product.get('מידות', []):
+                note = size_info.get('הערה','')
+                extra = f" - {note}" if note else ''
+                lines.append(f"  מידה {size_info.get('מידה','')}: {size_info.get('כמות',0)}{extra}")
+            lines.append("")
+        content = "\n".join([RLM + l for l in lines])
+
+        top = tk.Toplevel(self.root); top.title("תצוגת הדפסה"); top.geometry('600x700'); top.configure(bg='#f0f0f0')
+        txt = scrolledtext.ScrolledText(top, font=('Courier New',10), wrap='word')
+        txt.pack(fill='both', expand=True, padx=8, pady=8)
+        txt.tag_configure('rtl', justify='right')
+        txt.insert(tk.END, content, 'rtl'); txt.config(state='disabled')
+        btns = tk.Frame(top, bg='#f0f0f0'); btns.pack(fill='x', pady=6)
+        tk.Button(btns, text="הדפס", command=lambda: self._attempt_system_print(content), bg='#2c3e50', fg='white', width=12).pack(side='left', padx=10)
+        tk.Button(btns, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', width=12).pack(side='right', padx=10)
+
+    def _attempt_system_print(self, text_content: str):
+        """Try to print using Windows default printer. Fallback: copy to clipboard."""
+        try:
+            import tempfile, os, sys
+            # ודא שהקובץ מתחיל ב-RLM כדי לשמר יישור RTL גם בהדפסה טקסטואלית
+            if not text_content.startswith(RLM):
+                text_content = RLM + text_content
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8')
+            tmp.write(text_content)
+            tmp.close()
+            # Windows specific printing via shell
+            if sys.platform.startswith('win'):
+                try:
+                    os.startfile(tmp.name, 'print')  # type: ignore[attr-defined]
+                    messagebox.showinfo("הודעה", "נשלח להדפסה (ייתכן עיכוב שניות ספורות)")
+                    return
+                except Exception:
+                    pass
+            # Fallback copy to clipboard
+            self.root.clipboard_clear(); self.root.clipboard_append(text_content)
+            messagebox.showinfo("הודעה", "לא ניתן להדפיס ישירות. התוכן הועתק ללוח – הדבק לקובץ ונסה להדפיס.")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"כשל בהדפסה: {e}")
 
     def _show_drawing_details(self, record):
         top = tk.Toplevel(self.root); top.title(f"פרטי ציור - {record.get('שם הקובץ','')}"); top.geometry('900x700'); top.configure(bg='#f0f0f0')
-        tk.Label(top, text=f"פרטי ציור: {record.get('שם הקובץ','')}", font=('Arial',14,'bold'), bg='#f0f0f0').pack(pady=10)
+        tk.Label(top, text=f"פרטי ציור: {record.get('שם הקובץ','')}", font=('Arial',14,'bold'), bg='#f0f0f0', anchor='e', justify='right').pack(pady=10, fill='x')
         info = tk.LabelFrame(top, text="מידע כללי", bg='#f0f0f0'); info.pack(fill='x', padx=12, pady=6)
-        txt = (f"ID: {record.get('id','')}\n" f"תאריך יצירה: {record.get('תאריך יצירה','')}\n" f"מספר מוצרים: {len(record.get('מוצרים', []))}\n" f"סך הכמויות: {record.get('סך כמויות',0)}")
-        status_val = record.get('status',''); txt += f"\nסטטוס: {status_val}"; tk.Label(info, text=txt, bg='#f0f0f0', justify='left', anchor='w').pack(fill='x', padx=8, pady=6)
-        tk.Label(top, text="פירוט מוצרים ומידות:", font=('Arial',12,'bold'), bg='#f0f0f0').pack(anchor='w', padx=12, pady=(6,2))
-        st = scrolledtext.ScrolledText(top, height=20, font=('Courier New',10)); st.pack(fill='both', expand=True, padx=12, pady=4)
+        base_txt = (
+            f"ID: {record.get('id','')}\n"
+            f"תאריך יצירה: {record.get('תאריך יצירה','')}\n"
+            f"מספר מוצרים: {len(record.get('מוצרים', []))}\n"
+            f"סך הכמויות: {record.get('סך כמויות',0)}"
+        )
+        if 'סוג בד' in record:
+            base_txt += f"\nסוג בד: {record.get('סוג בד')}"
+        status_val = record.get('status','')
+        base_txt += f"\nסטטוס: {status_val}"
+        tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)
+        tk.Label(top, text="פירוט מוצרים ומידות:", font=('Arial',12,'bold'), bg='#f0f0f0', anchor='e', justify='right').pack(anchor='e', padx=12, pady=(6,2), fill='x')
+        st = scrolledtext.ScrolledText(top, height=20, font=('Courier New',10), wrap='word')
+        st.pack(fill='both', expand=True, padx=12, pady=4)
+        st.tag_configure('rtl', justify='right')
         layers_used = None
-        if status_val == 'נחתך': layers_used = self._get_layers_for_drawing(record.get('id'))
+        if status_val == 'נחתך':
+            layers_used = self._get_layers_for_drawing(record.get('id'))
         overall_expected = 0
         for product in record.get('מוצרים', []):
-            st.insert(tk.END, f"\n📦 {product.get('שם המוצר','')}\n"); st.insert(tk.END, "="*60 + "\n")
+            st.insert(tk.END, RLM + f"\n📦 {product.get('שם המוצר','')}\n", 'rtl')
+            st.insert(tk.END, RLM + "="*60 + "\n", 'rtl')
             total_prod_q = 0; total_expected_product = 0
             for size_info in product.get('מידות', []):
                 size = size_info.get('מידה',''); quantity = size_info.get('כמות',0); note = size_info.get('הערה',''); total_prod_q += quantity
@@ -105,12 +216,15 @@ class DrawingsManagerTabMixin:
                     expected_qty = quantity * layers_used; total_expected_product += expected_qty; overall_expected += expected_qty
                     line += f"  | לאחר גזירה (שכבות {layers_used}): {expected_qty}"
                 if note: line += f"  - {note}"
-                st.insert(tk.END, line + "\n")
-            st.insert(tk.END, f"\nסך עבור מוצר זה: {total_prod_q}")
-            if total_expected_product: st.insert(tk.END, f" | סך צפוי לאחר גזירה: {total_expected_product}")
-            st.insert(tk.END, "\n" + "-"*60 + "\n")
-        if layers_used and overall_expected: st.insert(tk.END, f"\n➡ סך כמות צפויה לאחר גזירה לכל הציור: {overall_expected}\n")
-        st.config(state='disabled'); tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial',11,'bold'), width=12).pack(pady=10)
+                st.insert(tk.END, RLM + line + "\n", 'rtl')
+            st.insert(tk.END, RLM + f"\nסך עבור מוצר זה: {total_prod_q}", 'rtl')
+            if total_expected_product:
+                st.insert(tk.END, RLM + f" | סך צפוי לאחר גזירה: {total_expected_product}", 'rtl')
+            st.insert(tk.END, RLM + "\n" + "-"*60 + "\n", 'rtl')
+        if layers_used and overall_expected:
+            st.insert(tk.END, RLM + f"\n➡ סך כמות צפויה לאחר גזירה לכל הציור: {overall_expected}\n", 'rtl')
+        st.config(state='disabled')
+        tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial',11,'bold'), width=12).pack(pady=10)
 
     def _get_layers_for_drawing(self, drawing_id):
         try:
