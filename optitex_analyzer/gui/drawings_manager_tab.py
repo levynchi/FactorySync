@@ -130,24 +130,24 @@ class DrawingsManagerTabMixin:
             pass
 
     def _export_single_drawing_to_excel(self, record):
-        """Create a temporary Excel file for one drawing and open it in Excel with bold headers."""
+        """Create a temporary Excel file (דגם/מידה/כמות) with RTL, bold + size16 headers, size16 centered cells."""
         try:
             import pandas as pd, tempfile, os
             from openpyxl import load_workbook
-            from openpyxl.styles import Font
+            from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
             rows = []
             for product in record.get('מוצרים', []):
                 for size_info in product.get('מידות', []):
                     rows.append({
                         'דגם': product.get('שם המוצר',''),
                         'מידה': size_info.get('מידה',''),
-                        'כמות': size_info.get('כמות',0),
-                        'הערה': size_info.get('הערה','')
+                        'כמות': size_info.get('כמות',0)
                     })
             if not rows:
                 messagebox.showwarning("אין נתונים", "אין שורות לייצוא לציור זה")
                 return
-            df = pd.DataFrame(rows)
+            # DataFrame without 'הערה' column per user request
+            df = pd.DataFrame(rows, columns=['דגם','מידה','כמות'])
             # Create temp file
             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f"_drawing_{record.get('id')}.xlsx")
             tmp_path = tmp.name
@@ -156,10 +156,36 @@ class DrawingsManagerTabMixin:
             # Style header
             wb = load_workbook(tmp_path)
             ws = wb.active
+            # גליון RTL
+            try: ws.sheet_view.rightToLeft = True
+            except Exception: pass
+            header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+            header_font = Font(bold=True, size=16)
+            base_font = Font(size=16)
             for cell in ws[1]:
-                cell.font = Font(bold=True)
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.fill = header_fill
+            # יישור וגבולות לכל התאים + חישוב רוחב עמודה (מרכז לכל התאים)
+            thin = Side(border_style='thin', color='000000')
+            col_max = {col: len(str(ws.cell(row=1, column=col).value or '')) for col in range(1, ws.max_column+1)}
+            for r in range(2, ws.max_row+1):
+                for c in range(1, ws.max_column+1):
+                    cell = ws.cell(row=r, column=c)
+                    cell.font = base_font
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                    val_len = len(str(cell.value)) if cell.value is not None else 0
+                    if val_len > col_max[c]:
+                        col_max[c] = val_len
+            # התאמת רוחב עמודות (המרה גסה: תווים * 1.2 + מרווח)
+            for c in range(1, ws.max_column+1):
+                width = min(80, col_max[c]*1.2 + 2)
+                ws.column_dimensions[ws.cell(row=1, column=c).column_letter].width = width
             # Optional metadata sheet
             meta = wb.create_sheet('פרטי ציור')
+            try: meta.sheet_view.rightToLeft = True
+            except Exception: pass
             meta.append(['שם קובץ', record.get('שם הקובץ','')])
             meta.append(['ID', record.get('id','')])
             meta.append(['תאריך יצירה', record.get('תאריך יצירה','')])
@@ -168,7 +194,11 @@ class DrawingsManagerTabMixin:
             for row in meta.iter_rows(min_row=1, max_row=5, min_col=1, max_col=2):
                 for cell in row:
                     if cell.column == 1:
-                        cell.font = Font(bold=True)
+                        cell.font = Font(bold=True, size=16)
+                        cell.alignment = Alignment(horizontal='right', vertical='center')
+                    else:
+                        cell.font = base_font
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
             wb.save(tmp_path)
             # Open with Excel
             try:
