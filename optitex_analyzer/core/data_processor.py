@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json"):
 		self.drawings_file = drawings_file
 		# קובץ לקליטת ציורים שחזרו מייצור
 		self.returned_drawings_file = returned_drawings_file
@@ -23,12 +23,70 @@ class DataProcessor:
 		self.supplier_receipts_file = supplier_receipts_file
 		# קובץ קטלוג מוצרים (חדש)
 		self.products_catalog_file = products_catalog_file
+		# קובץ ספקים
+		self.suppliers_file = suppliers_file
 		self.drawings_data = self.load_drawings_data()
 		self.returned_drawings_data = self.load_returned_drawings_data()
 		self.fabrics_inventory = self.load_fabrics_inventory()
 		self.fabrics_import_logs = self.load_fabrics_import_logs()
 		self.supplier_receipts = self.load_supplier_receipts()
 		self.products_catalog = self.load_products_catalog()
+		self.suppliers = self.load_suppliers()
+
+	def load_suppliers(self) -> List[Dict]:
+		"""טעינת רשימת ספקים"""
+		try:
+			if os.path.exists(self.suppliers_file):
+				with open(self.suppliers_file, 'r', encoding='utf-8') as f:
+					return json.load(f)
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת ספקים: {e}"); return []
+
+	def save_suppliers(self) -> bool:
+		"""שמירת ספקים"""
+		try:
+			with open(self.suppliers_file, 'w', encoding='utf-8') as f:
+				json.dump(self.suppliers, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת ספקים: {e}"); return False
+
+	def add_supplier(self, business_name: str, phone: str = '', address: str = '', business_number: str = '', notes: str = '', first_name: str = '') -> int:
+		"""הוספת ספק חדש (שם עסק + שם פרטי אופציונלי). מחזיר ID חדש.
+
+		שדות:
+		- business_name: שם העסק (חובה)
+		- first_name: שם פרטי איש קשר (לא חובה)
+		- phone, address, business_number, notes: פרטים נוספים.
+		"""
+		try:
+			if not business_name:
+				raise ValueError("חובה להזין שם עסק")
+			new_id = max([s.get('id',0) for s in self.suppliers], default=0) + 1
+			record = {
+				'id': new_id,
+				'business_name': business_name.strip(),
+				'first_name': first_name.strip(),
+				'phone': phone.strip(),
+				'address': address.strip(),
+				'business_number': business_number.strip(),
+				'notes': notes.strip(),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.suppliers.append(record)
+			self.save_suppliers()
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת ספק: {e}")
+
+	def delete_supplier(self, supplier_id: int) -> bool:
+		"""מחיקת ספק לפי ID"""
+		before = len(self.suppliers)
+		self.suppliers = [s for s in self.suppliers if int(s.get('id',0)) != int(supplier_id)]
+		if len(self.suppliers) != before:
+			self.save_suppliers(); return True
+		return False
     
 	def load_drawings_data(self) -> List[Dict]:
 		"""טעינת נתוני ציורים מקומיים"""
