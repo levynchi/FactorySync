@@ -72,8 +72,28 @@ class ConverterTabMixin:
     def _create_results_section(self):
         results_frame = ttk.LabelFrame(self.root, text="תוצאות וסטטוס", padding=10)
         results_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        self.results_text = scrolledtext.ScrolledText(results_frame, height=15, font=('Consolas', 10), wrap=tk.WORD, bg='#f8f9fa', fg='#2c3e50')
-        self.results_text.pack(fill="both", expand=True)
+        # --- Analysis summary info (updates after run) ---
+        info_frame = tk.Frame(results_frame, bg='#f7f9fa'); info_frame.pack(fill='x', pady=(0,6))
+        self.analysis_info_var = tk.StringVar(value="הרץ ניתוח להצגת נתוני הציור (Tubular, סוג בד, קובץ וכו')")
+        tk.Label(info_frame, textvariable=self.analysis_info_var, anchor='e', justify='right', bg='#f7f9fa', fg='#2c3e50', font=('Arial',10,'bold')).pack(fill='x')
+        # --- Results table ---
+        table_container = tk.Frame(results_frame)
+        table_container.pack(fill='both', expand=True)
+        cols = ('model','size','quantity')  # order right->left visually in RTL
+        self.results_tree = ttk.Treeview(table_container, columns=cols, show='headings', height=14)
+        headers = {'model':'דגם','size':'מידה','quantity':'כמות'}
+        widths = {'model':200,'size':90,'quantity':90}
+        for c in cols:
+            self.results_tree.heading(c, text=headers[c])
+            # align right for Hebrew readability
+            self.results_tree.column(c, width=widths[c], anchor='e', stretch=False)
+        vs = ttk.Scrollbar(table_container, orient='vertical', command=self.results_tree.yview)
+        self.results_tree.configure(yscroll=vs.set)
+        self.results_tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns')
+        table_container.grid_rowconfigure(0,weight=1); table_container.grid_columnconfigure(0,weight=1)
+        # --- Log area (small) to preserve existing _log_message usage ---
+        self.results_text = scrolledtext.ScrolledText(results_frame, height=6, font=('Consolas', 10), wrap=tk.WORD, bg='#f0f3f5', fg='#2c3e50')
+        self.results_text.pack(fill='x', expand=False, pady=(8,0))
 
     # File Selection
     def _select_rib_file(self):
@@ -131,28 +151,33 @@ class ConverterTabMixin:
             messagebox.showerror("שגיאה", str(e))
 
     def _display_detailed_results(self):
-        self._log_message("\n=== תוצאות הניתוח ===")
-        # If tubular layout handled, show a single header note instead of repeating per line
+        # Populate the results table instead of verbose text lines
+        try:
+            for iid in self.results_tree.get_children():
+                self.results_tree.delete(iid)
+        except Exception:
+            pass
+        for row in self.current_results:
+            self.results_tree.insert('', 'end', values=(row.get('שם המוצר',''), row.get('מידה',''), row.get('כמות','')))
+        # Add a concise header note to log area
+        self._log_message("=== תוצאות הניתוח (תצוגת טבלה) ===")
         if getattr(self.file_analyzer, 'is_tubular', False):
-            self._log_message("(Layout Tubular) הכמויות שלהלן לאחר חלוקה ב-2 מהמקור")
-        current_product = None
-        for result in self.current_results:
-            if current_product != result['שם המוצר']:
-                current_product = result['שם המוצר']
-                self._log_message(f"\n📦 {current_product}:")
-                self._log_message("-" * 60)
-            # Show only the processed quantity; avoid per-line Tubular/original annotations
-            self._log_message(f"   מידה {result['מידה']:>8}: {str(result['כמות']):>10}")
+            self._log_message("(Layout Tubular) הכמויות בטבלה לאחר חלוקה ב-2 מהמקור")
 
     def _display_statistics(self, summary):
-        self._log_message("\n" + "=" * 70)
-        self._log_message(f"\n=== סיכום ===")
-        self._log_message(f"מוצרים: {summary['unique_products']}")
-        self._log_message(f"מידות שונות: {summary['unique_sizes']}")
-        self._log_message(f"סך רשומות: {summary['total_records']}")
-        self._log_message(f"סך כמויות: {summary['total_quantity']:.1f}")
-        if summary['is_tubular']:
-            self._log_message("🔄 הכמויות חולקו ב-2 בגלל Layout: Tubular")
+        # Update header info
+        try:
+            fabric_type = self.fabric_type_var.get() if hasattr(self,'fabric_type_var') else '—'
+        except Exception:
+            fabric_type = '—'
+        file_name = os.path.basename(self.rib_file) if getattr(self,'rib_file','') else '—'
+        tubular_txt = 'Tubular (חולק ב-2)' if summary.get('is_tubular') else 'רגיל'
+        info = f"סוג בד: {fabric_type} | Layout: {tubular_txt} | קובץ: {file_name} | מוצרים: {summary.get('unique_products')} | מידות: {summary.get('unique_sizes')} | רשומות: {summary.get('total_records')} | סך כמות: {summary.get('total_quantity'): .1f}"
+        self.analysis_info_var.set(info)
+        # Minimal log section
+        self._log_message("=== סיכום ניתוח ===")
+        if summary.get('is_tubular'):
+            self._log_message("(Tubular) הכמויות בטבלה הן לאחר חלוקה ב-2")
 
     # Export & Local Table
     def _save_excel(self):
@@ -200,7 +225,14 @@ class ConverterTabMixin:
 
     # Clearing
     def _clear_results(self):
-        self.results_text.delete(1.0, tk.END)
+        # Clear table and log
+        if hasattr(self, 'results_tree'):
+            try:
+                self.results_tree.delete(*self.results_tree.get_children())
+            except Exception:
+                pass
+        if hasattr(self, 'results_text'):
+            self.results_text.delete(1.0, tk.END)
 
     def _clear_all(self):
         self.rib_file = ""; self.current_results = []

@@ -127,9 +127,26 @@ class MainWindow(
         self.root.update()
     
     def _log_message(self, message):
-        self.results_text.insert(tk.END, message + "\n")
-        self.results_text.see(tk.END)
-        self.root.update()
+        """Append a log line to results_text in RTL (Hebrew) orientation.
+
+        שימוש בסימן RLM (\u200f) + תג עם justify='right' כדי לוודא יישור מימין לשמאל גם בטקסט מעורב.
+        """
+        try:
+            if not hasattr(self.results_text, 'rtl_tag_configured'):
+                try:
+                    self.results_text.tag_configure('rtl', justify='right')
+                    self.results_text.rtl_tag_configured = True  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+            rlm = '\u200f'
+            self.results_text.insert(tk.END, rlm + str(message) + "\n", 'rtl')
+            self.results_text.see(tk.END)
+            self.root.update()
+        except Exception:
+            # Fallback without RTL formatting
+            self.results_text.insert(tk.END, str(message) + "\n")
+            self.results_text.see(tk.END)
+            self.root.update()
     
     # clear handled in mixin
     
