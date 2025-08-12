@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
+import re  # עבור פיצול מידות מרובות (וריאנטים)
 
 class ProductsCatalogTabMixin:
     """Mixin לטאב ניהול קטלוג מוצרים (הוספה / מחיקה / ייצוא)."""
@@ -11,7 +12,8 @@ class ProductsCatalogTabMixin:
         form = ttk.LabelFrame(tab, text="הוספת מוצר", padding=10)
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
-        labels = [("שם מוצר", self.prod_name_var, 25), ("מידה", self.prod_size_var, 10), ("סוג בד", self.prod_fabric_type_var, 15), ("צבע בד", self.prod_fabric_color_var, 15), ("שם פרינט", self.prod_print_name_var, 15)]
+        # עדכון: שדה המידה תומך במספר וריאנטים בבת אחת מופרדים בפסיק / רווח (למשל: "0-3,3-6,6-12")
+        labels = [("שם מוצר", self.prod_name_var, 25), ("מידות (פסיק)", self.prod_size_var, 18), ("סוג בד", self.prod_fabric_type_var, 15), ("צבע בד", self.prod_fabric_color_var, 15), ("שם פרינט", self.prod_print_name_var, 15)]
         for i,(lbl,var,width) in enumerate(labels):
             tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0, column=i*2, sticky='w', padx=4, pady=4)
             tk.Entry(form, textvariable=var, width=width).grid(row=0, column=i*2+1, sticky='w', padx=2, pady=4)
@@ -45,14 +47,28 @@ class ProductsCatalogTabMixin:
             pass
 
     def _add_product_catalog_entry(self):
-        name = self.prod_name_var.get().strip(); size = self.prod_size_var.get().strip(); ft = self.prod_fabric_type_var.get().strip(); fc = self.prod_fabric_color_var.get().strip(); pn = self.prod_print_name_var.get().strip()
+        """הוספת מוצר לקטלוג. תומך בווריאנטים (מספר מידות בשדה אחד)."""
+        name = self.prod_name_var.get().strip(); sizes_raw = self.prod_size_var.get().strip(); ft = self.prod_fabric_type_var.get().strip(); fc = self.prod_fabric_color_var.get().strip(); pn = self.prod_print_name_var.get().strip()
         if not name:
             messagebox.showerror("שגיאה", "חובה להזין שם מוצר")
             return
+        # פיצול וריאנטים: מפרידים בפסיק או רווחים
+        if sizes_raw:
+            size_tokens = [s.strip() for s in re.split(r'[;,\s]+', sizes_raw) if s.strip()]
+        else:
+            size_tokens = ['']  # אפשרות למוצר בלי מידה
+        if not size_tokens:
+            size_tokens = ['']
+        added_ids = []
         try:
-            new_id = self.data_processor.add_product_catalog_entry(name, size, ft, fc, pn)
-            self.products_tree.insert('', 'end', values=(new_id, name, size, ft, fc, pn, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            for sz in size_tokens:
+                new_id = self.data_processor.add_product_catalog_entry(name, sz, ft, fc, pn)
+                added_ids.append((new_id, sz))
+                self.products_tree.insert('', 'end', values=(new_id, name, sz, ft, fc, pn, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            # ניקוי שדות – נשאיר שם מוצר אם המשתמש רוצה להמשיך להזין וריאנטים נוספים לאותו מוצר? לפי נוחות – נשאיר ריק.
             self.prod_name_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set('')
+            if len(added_ids) > 1:
+                messagebox.showinfo("הצלחה", f"נוספו {len(added_ids)} וריאנטים למוצר '{name}'")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 

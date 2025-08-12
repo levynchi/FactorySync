@@ -16,18 +16,10 @@ class SupplierIntakeTabMixin:
         lines_frame = ttk.LabelFrame(tab, text="שורות קליטה", padding=8); lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
         entry_bar = tk.Frame(lines_frame, bg='#f7f9fa'); entry_bar.pack(fill='x', pady=(0,6))
         self.sup_product_var = tk.StringVar(); self.sup_size_var = tk.StringVar(); self.sup_qty_var = tk.StringVar(); self.sup_note_var = tk.StringVar()
+        # רשימת המוצרים תגיע מעכשיו ישירות מקטלוג המוצרים (data_processor.products_catalog)
+        # ולא ממיפוי קובץ ה-RIB.
         self._supplier_products_allowed = []
-        try:
-            if getattr(self.file_analyzer, 'product_mapping', None):
-                self._supplier_products_allowed = sorted(set(self.file_analyzer.product_mapping.values()))
-            elif self.products_file and os.path.exists(self.products_file):
-                try:
-                    self.file_analyzer.load_products_mapping(self.products_file)
-                    self._supplier_products_allowed = sorted(set(self.file_analyzer.product_mapping.values()))
-                except Exception:
-                    pass
-        except Exception:
-            self._supplier_products_allowed = []
+        self._refresh_supplier_products_allowed(initial=True)
         # Autocomplete using popup Listbox (more reliable than mutating Combobox values each keystroke)
         self._supplier_products_allowed_full = list(self._supplier_products_allowed)
         self.sup_product_combo = ttk.Combobox(entry_bar, textvariable=self.sup_product_var, width=16, state='normal')
@@ -145,8 +137,21 @@ class SupplierIntakeTabMixin:
         self.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
         lbls = ["מוצר","מידה","כמות","הערה"]
         for i,lbl in enumerate(lbls): tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
-        widgets = [self.sup_product_combo, tk.Entry(entry_bar, textvariable=self.sup_size_var, width=10), tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7), tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)]
-        for i,w in enumerate(widgets): w.grid(row=1,column=i*2,sticky='w',padx=2)
+        # קומבו של מידות יתעדכן לפי המוצר הנבחר (וריאנטים מהקטלוג)
+        self.sup_size_combo = ttk.Combobox(entry_bar, textvariable=self.sup_size_var, width=10, state='readonly')
+        widgets = [self.sup_product_combo, self.sup_size_combo, tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7), tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)]
+        for i,w in enumerate(widgets):
+            w.grid(row=1,column=i*2,sticky='w',padx=2)
+        # טרייס לעדכון מידות עם שינוי מוצר
+        def _on_product_change(*_a):
+            try:
+                self._update_supplier_size_options()
+            except Exception:
+                pass
+        try:
+            self.sup_product_var.trace_add('write', _on_product_change)
+        except Exception:
+            pass
         tk.Button(entry_bar, text="➕ הוסף", command=self._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=8,padx=6)
         tk.Button(entry_bar, text="🗑️ מחק נבחר", command=self._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=9,padx=4)
         tk.Button(entry_bar, text="❌ נקה הכל", command=self._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=10,padx=4)
@@ -161,6 +166,76 @@ class SupplierIntakeTabMixin:
         self.supplier_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
         tk.Label(tab, textvariable=self.supplier_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
         self._supplier_lines = []
+
+    def _refresh_supplier_products_allowed(self, initial: bool = False):
+        """רענון רשימת המוצרים האפשריים מתוך קטלוג המוצרים.
+
+        אם אין קטלוג נטען -> רשימה ריקה. נשמר סדר אלפביתי וייחודיות.
+        מופעל בטעינה ראשונית ובעדכונים מהטאב של הקטלוג.
+        """
+        try:
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
+            self._supplier_products_allowed = names
+            self._supplier_products_allowed_full = list(names)
+            # עדכון קומבובוקס אם כבר נוצרה
+            if hasattr(self, 'sup_product_combo'):
+                try:
+                    current = self.sup_product_var.get()
+                    self.sup_product_combo['values'] = self._supplier_products_allowed_full
+                    # אם המוצר הנוכחי כבר לא קיים ננקה
+                    if current and current not in self._supplier_products_allowed_full:
+                        self.sup_product_var.set('')
+                except Exception:
+                    pass
+        except Exception:
+            self._supplier_products_allowed = []
+            self._supplier_products_allowed_full = []
+
+    def _update_supplier_size_options(self):
+        """עדכון רשימת המידות (וריאנטים) עבור המוצר שנבחר מקטלוג המוצרים.
+
+        לוגיקה: אוסף כל הרשומות בקטלוג עם אותו name ומוציא את השדה size (לא ריק) בצורה ממויינת לוגית.
+        אם אין מידות -> מנקה.
+        """
+        product = (self.sup_product_var.get() or '').strip()
+        sizes = []
+        if product:
+            try:
+                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                for rec in catalog:
+                    if (rec.get('name') or '').strip() == product:
+                        sz = (rec.get('size') or '').strip()
+                        if sz:
+                            sizes.append(sz)
+                # מיון לוגי (מספר תחילי אם קיים)
+                import re
+                def _size_key(s):
+                    m = re.match(r"(\d+)", s)
+                    base = int(m.group(1)) if m else 0
+                    return (base, s)
+                sizes = sorted({s for s in sizes}, key=_size_key)
+            except Exception:
+                sizes = []
+        # עדכון קומבובוקס
+        if hasattr(self, 'sup_size_combo'):
+            try:
+                self.sup_size_combo['values'] = sizes
+                if sizes:
+                    self.sup_size_combo.state(['!disabled','readonly'])
+                    # אם המידה הנוכחית לא ברשימה – ננקה
+                    if self.sup_size_var.get() not in sizes:
+                        self.sup_size_var.set('')
+                else:
+                    self.sup_size_var.set('')
+                    # ללא מידות – נעבור למצב מושבת כדי לא להטעות
+                    self.sup_size_combo.set('')
+                    try:
+                        self.sup_size_combo.state(['disabled'])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
     def _add_supplier_line(self):
         product = self.sup_product_var.get().strip(); size = self.sup_size_var.get().strip(); qty_raw = self.sup_qty_var.get().strip(); note = self.sup_note_var.get().strip()
