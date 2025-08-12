@@ -457,6 +457,17 @@ class SupplierIntakeTabMixin:
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+        # אם אין כלל צורות אריזה – בקשת אישור מהמשתמש לפני המשך שמירה
+        try:
+            if not self._supplier_packages:
+                proceed = messagebox.askyesno(
+                    "אישור",
+                    "לא הוזנו צורות אריזה (שקיות / שקים / בדים).\nהאם לשמור את הקליטה ללא כמות שקים?"
+                )
+                if not proceed:
+                    return
+        except Exception:
+            pass
         try:
             new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
             messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
