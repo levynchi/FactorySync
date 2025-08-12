@@ -18,11 +18,11 @@ class DrawingsManagerTabMixin:
         tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         table_frame = tk.Frame(tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        # Added 'print' column for per-row print action
-        cols = ("id","file_name","created_at","products","total_quantity","status","print")
+        # Added 'excel' column for per-row Excel export action
+        cols = ("id","file_name","created_at","products","total_quantity","status","excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס","print":"הדפס"}
-        widths = {"id":70,"file_name":260,"created_at":140,"products":80,"total_quantity":90,"status":90,"print":60}
+        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס","excel":"Excel"}
+        widths = {"id":70,"file_name":260,"created_at":140,"products":80,"total_quantity":90,"status":90,"excel":60}
         for c in cols:
             self.drawings_tree.heading(c, text=headers[c])
             self.drawings_tree.column(c, width=widths[c], anchor='center')
@@ -55,7 +55,7 @@ class DrawingsManagerTabMixin:
                 products_count,
                 f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
                 record.get('status','נשלח'),
-                "🖨️"  # print icon
+                "📄"  # excel icon
             ))
 
     def _update_drawings_stats(self):
@@ -105,7 +105,7 @@ class DrawingsManagerTabMixin:
                 new_vals[5] = new_status
             self.drawings_tree.item(sel[0], values=new_vals)
 
-    # === New: Click handling for print column ===
+    # === Click handling for per-row Excel export column ===
     def _on_drawings_click(self, event):
         try:
             col_id = self.drawings_tree.identify_column(event.x)  # e.g. '#1'
@@ -115,7 +115,7 @@ class DrawingsManagerTabMixin:
             # Determine column name
             columns = self.drawings_tree['columns']
             idx = int(col_id.replace('#','')) - 1
-            if 0 <= idx < len(columns) and columns[idx] == 'print':
+            if 0 <= idx < len(columns) and columns[idx] == 'excel':
                 vals = self.drawings_tree.item(row_id, 'values')
                 if not vals: return
                 try:
@@ -124,10 +124,59 @@ class DrawingsManagerTabMixin:
                     return
                 record = self.data_processor.get_drawing_by_id(rec_id) if hasattr(self.data_processor, 'get_drawing_by_id') else None
                 if record:
-                    self._print_drawing_record(record)
+                    self._export_single_drawing_to_excel(record)
                 return 'break'  # prevent selection change flicker
         except Exception:
             pass
+
+    def _export_single_drawing_to_excel(self, record):
+        """Create a temporary Excel file for one drawing and open it in Excel with bold headers."""
+        try:
+            import pandas as pd, tempfile, os
+            from openpyxl import load_workbook
+            from openpyxl.styles import Font
+            rows = []
+            for product in record.get('מוצרים', []):
+                for size_info in product.get('מידות', []):
+                    rows.append({
+                        'דגם': product.get('שם המוצר',''),
+                        'מידה': size_info.get('מידה',''),
+                        'כמות': size_info.get('כמות',0),
+                        'הערה': size_info.get('הערה','')
+                    })
+            if not rows:
+                messagebox.showwarning("אין נתונים", "אין שורות לייצוא לציור זה")
+                return
+            df = pd.DataFrame(rows)
+            # Create temp file
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f"_drawing_{record.get('id')}.xlsx")
+            tmp_path = tmp.name
+            tmp.close()
+            df.to_excel(tmp_path, index=False)
+            # Style header
+            wb = load_workbook(tmp_path)
+            ws = wb.active
+            for cell in ws[1]:
+                cell.font = Font(bold=True)
+            # Optional metadata sheet
+            meta = wb.create_sheet('פרטי ציור')
+            meta.append(['שם קובץ', record.get('שם הקובץ','')])
+            meta.append(['ID', record.get('id','')])
+            meta.append(['תאריך יצירה', record.get('תאריך יצירה','')])
+            meta.append(['סוג בד', record.get('סוג בד','')])
+            meta.append(['סטטוס', record.get('status','')])
+            for row in meta.iter_rows(min_row=1, max_row=5, min_col=1, max_col=2):
+                for cell in row:
+                    if cell.column == 1:
+                        cell.font = Font(bold=True)
+            wb.save(tmp_path)
+            # Open with Excel
+            try:
+                os.startfile(tmp_path)  # type: ignore[attr-defined]
+            except Exception:
+                messagebox.showinfo("קובץ נוצר", f"הקובץ נוצר ב:\n{tmp_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"כשל ביצירת קובץ Excel: {e}")
 
     def _print_drawing_record(self, record):
         """Open a printable-style window and offer system print if possible."""
