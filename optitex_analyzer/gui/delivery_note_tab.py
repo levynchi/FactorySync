@@ -6,12 +6,23 @@ class DeliveryNoteTabMixin:
     """Mixin לטאב 'תעודת משלוח' (העתק של קליטת סחורה מספק עם שמות מבודדים)."""
 
     def _create_delivery_note_tab(self):
+        # Tab container
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="תעודת משלוח")
-        tk.Label(tab, text="תעודת משלוח (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        tk.Label(tab, text="תעודת משלוח (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=4)
+
+        # Inner notebook (entry + list)
+        inner_nb = ttk.Notebook(tab)
+        inner_nb.pack(fill='both', expand=True, padx=4, pady=4)
+        entry_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(entry_wrapper, text="קליטה")
+        inner_nb.add(list_wrapper, text="תעודות שמורות")
+
+        container = entry_wrapper
 
         # Header form
-        form = ttk.LabelFrame(tab, text="פרטי תעודה", padding=10)
+        form = ttk.LabelFrame(container, text="פרטי תעודה", padding=10)
         form.pack(fill='x', padx=10, pady=6)
         tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
         self.dn_supplier_name_var = tk.StringVar()
@@ -27,7 +38,7 @@ class DeliveryNoteTabMixin:
         tk.Entry(form, textvariable=self.dn_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
         # Lines frame
-        lines_frame = ttk.LabelFrame(tab, text="שורות תעודה", padding=8)
+        lines_frame = ttk.LabelFrame(container, text="שורות תעודה", padding=8)
         lines_frame.pack(fill='both', expand=False, padx=10, pady=4)
         entry_bar = tk.Frame(lines_frame, bg='#f7f9fa')
         entry_bar.pack(fill='x', pady=(0,6))
@@ -217,7 +228,7 @@ class DeliveryNoteTabMixin:
         vs.pack(side='right', fill='y')
 
         # Packaging section
-        pkg_frame = ttk.LabelFrame(tab, text="צורות אריזה", padding=8)
+        pkg_frame = ttk.LabelFrame(container, text="צורות אריזה", padding=8)
         pkg_frame.pack(fill='x', padx=10, pady=(4,4))
         self.pkg_type_var = tk.StringVar(value='שקית קטנה')
         self.pkg_qty_var = tk.StringVar()
@@ -236,12 +247,30 @@ class DeliveryNoteTabMixin:
         self.packages_tree.column('quantity', width=70, anchor='center')
         self.packages_tree.grid(row=1,column=0,columnspan=7, sticky='ew', padx=2, pady=(6,2))
 
-        bottom_actions = tk.Frame(tab, bg='#f7f9fa')
+        bottom_actions = tk.Frame(container, bg='#f7f9fa')
         bottom_actions.pack(fill='x', padx=10, pady=6)
         tk.Button(bottom_actions, text="💾 שמור תעודה", command=self._save_delivery_note, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
         self.delivery_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
-        tk.Label(tab, textvariable=self.delivery_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(container, textvariable=self.delivery_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
+        # Saved delivery notes list tab
+        self.delivery_notes_tree = ttk.Treeview(list_wrapper, columns=('id','date','supplier','total','packages'), show='headings')
+        for col, txt, w in (
+            ('id','ID',60),('date','תאריך',110),('supplier','ספק',180),('total','סה"כ כמות',90),('packages','אריזות',140)
+        ):
+            self.delivery_notes_tree.heading(col, text=txt)
+            self.delivery_notes_tree.column(col, width=w, anchor='center')
+        vs2 = ttk.Scrollbar(list_wrapper, orient='vertical', command=self.delivery_notes_tree.yview)
+        self.delivery_notes_tree.configure(yscroll=vs2.set)
+        self.delivery_notes_tree.grid(row=0,column=0,sticky='nsew', padx=6, pady=6)
+        vs2.grid(row=0,column=1,sticky='ns', pady=6)
+        list_wrapper.grid_columnconfigure(0, weight=1)
+        list_wrapper.grid_rowconfigure(0, weight=1)
+        refresh_btn = tk.Button(list_wrapper, text="🔄 רענן", command=self._refresh_delivery_notes_list, bg='#3498db', fg='white')
+        refresh_btn.grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
+        self._refresh_delivery_notes_list()
+
+        # Internal state lists
         self._delivery_lines = []
         self._packages = []
 
@@ -396,10 +425,14 @@ class DeliveryNoteTabMixin:
         except Exception:
             pass
         try:
-            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages)
+            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
             self._clear_packages()
+            try:
+                self._refresh_delivery_notes_list()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -432,3 +465,21 @@ class DeliveryNoteTabMixin:
         self._packages = []
         for item in self.packages_tree.get_children():
             self.packages_tree.delete(item)
+
+    # ---- Delivery notes list ----
+    def _refresh_delivery_notes_list(self):
+        try:
+            # Always refresh from disk to include external additions
+            self.data_processor.refresh_supplier_receipts()
+            notes = self.data_processor.get_delivery_notes()
+        except Exception:
+            notes = []
+        # Clear
+        if hasattr(self, 'delivery_notes_tree'):
+            for iid in self.delivery_notes_tree.get_children():
+                self.delivery_notes_tree.delete(iid)
+            for rec in notes:
+                pkg_summary = ', '.join(f"{p.get('package_type')}:{p.get('quantity')}" for p in rec.get('packages', [])[:4])
+                if len(rec.get('packages', [])) > 4:
+                    pkg_summary += ' ...'
+                self.delivery_notes_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))

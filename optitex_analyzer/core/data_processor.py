@@ -153,12 +153,13 @@ class DataProcessor:
 			print(f"שגיאה בשמירת קליטות ספק: {e}")
 			return False
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
 		"""הוספת קליטה / תעודת משלוח מספק.
 		:param supplier: שם ספק
 		:param date_str: תאריך (YYYY-MM-DD)
 		:param lines: רשימת שורות מוצרים: {product, size, fabric_type, fabric_color, print_name, quantity, note}
 		:param packages: רשימת חבילות / צורות אריזה (אופציונלי): {package_type, quantity}
+		:param receipt_kind: סוג הרשומה ('supplier_intake' / 'delivery_note')
 		"""
 		try:
 			if not supplier:
@@ -174,6 +175,7 @@ class DataProcessor:
 				'lines': lines,
 				'total_quantity': total_quantity,
 				'packages': packages or [],
+				'receipt_kind': receipt_kind,
 				'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 			}
 			self.supplier_receipts.append(receipt)
@@ -181,6 +183,10 @@ class DataProcessor:
 			return new_id
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת קליטת ספק: {str(e)}")
+
+	def get_delivery_notes(self) -> List[Dict]:
+		"""החזרת כל הרשומות שהן תעודות משלוח (receipt_kind == 'delivery_note')."""
+		return [r for r in self.supplier_receipts if r.get('receipt_kind') == 'delivery_note']
 
 	def refresh_supplier_receipts(self):
 		self.supplier_receipts = self.load_supplier_receipts()
