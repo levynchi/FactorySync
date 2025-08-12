@@ -80,6 +80,30 @@ class ProductsCatalogTabMixin:
         fc_tokens = _split(fcolors_raw)
         pn_tokens = _split(prints_raw)
 
+        # נרמול טוקנים של מידות – תיקון שגיאות הקלדה נפוצות כמו "-1218" או "1218" -> "12-18"
+        def _normalize_size(tok: str) -> str:
+            t = tok.strip()
+            if not t:
+                return t
+            # הסר מקף מוביל שגוי
+            if t.startswith('-'):
+                t = t[1:]
+            # אם אין מקף וקיימות רק ספרות באורך 3-4 → ננסה לפצל באמצע (לדוגמה 1218 -> 12-18)
+            if '-' not in t and t.isdigit() and 3 <= len(t) <= 4:
+                # ננסה לחלק לשתי קבוצות (חצי ראשון / חצי שני)
+                mid = len(t)//2
+                a, b = t[:mid], t[mid:]
+                # ודא ששני החלקים מספריים וקטנים מ-60 (חודשים סבירים)
+                try:
+                    ai = int(a); bi = int(b)
+                    if 0 <= ai <= 60 and 0 <= bi <= 60 and ai < bi:
+                        return f"{ai}-{bi}"
+                except Exception:
+                    pass
+            return t
+
+        size_tokens = [_normalize_size(s) for s in size_tokens]
+
         from itertools import product
         combos = list(product(size_tokens, ft_tokens, fc_tokens, pn_tokens))
         if not combos:
