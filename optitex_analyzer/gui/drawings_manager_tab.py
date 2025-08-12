@@ -174,20 +174,16 @@ class DrawingsManagerTabMixin:
                 else:
                     # אם כבר רק תאריך באורך 10 (YYYY-MM-DD) נשאיר
                     formatted_date = raw_dt
-            ws.cell(row=1, column=1, value=f"ID: {record.get('id','')}")
+            # שינוי בקשת המשתמש: במקום 'ID' יוצג 'ציור מספר'
+            ws.cell(row=1, column=1, value=f"ציור מספר: {record.get('id','')}")
             ws.cell(row=1, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
             ws.cell(row=1, column=3, value=f"תאריך יצירה: {formatted_date}")
             meta_font = Font(bold=True, size=16)
             for c in range(1, min(3, max_col)+1):
                 cell = ws.cell(row=1, column=c)
                 cell.font = meta_font
-                # יישור: ID לימין (A), סוג בד למרכז (B), תאריך לשמאל (C) תוך RTL
-                if c == 1:
-                    cell.alignment = Alignment(horizontal='right', vertical='center')
-                elif c == 2:
-                    cell.alignment = Alignment(horizontal='center', vertical='center')
-                else:
-                    cell.alignment = Alignment(horizontal='left', vertical='center')
+                # עדכון: כל שלושת התאים בשורת המטא במרכז (בקשת משתמש)
+                cell.alignment = Alignment(horizontal='center', vertical='center')
             # שורה ריקה (2) לרווח
             for c in range(1, max_col+1):
                 ws.cell(row=2, column=c).value = None
@@ -225,7 +221,8 @@ class DrawingsManagerTabMixin:
             try: meta.sheet_view.rightToLeft = True
             except Exception: pass
             meta.append(['שם קובץ', record.get('שם הקובץ','')])
-            meta.append(['ID', record.get('id','')])
+            # התאמה לשם החדש 'ציור מספר'
+            meta.append(['ציור מספר', record.get('id','')])
             # תאריך ביצירת גליון המטא - גם כאן רק תאריך
             meta_date = raw_dt.split()[0] if isinstance(raw_dt, str) and raw_dt else raw_dt
             meta.append(['תאריך יצירה', meta_date])
