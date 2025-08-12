@@ -12,6 +12,7 @@ from .delivery_note_tab import DeliveryNoteTabMixin
 from .products_catalog_tab import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
 from .suppliers_tab import SuppliersTabMixin
+from .shipments_tab import ShipmentsTabMixin
 
 
 class MainWindow(
@@ -23,6 +24,7 @@ class MainWindow(
     ProductsCatalogTabMixin,
     DrawingsManagerTabMixin,
     SuppliersTabMixin,
+    ShipmentsTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -102,6 +104,11 @@ class MainWindow(
         self._create_products_catalog_tab()
         self._create_drawings_manager_tab()
         self._create_suppliers_tab()
+        # Shipments summary tab
+        try:
+            self._create_shipments_tab()
+        except Exception:
+            pass
 
         # ----- Footer / Status -----
         self._create_status_bar()

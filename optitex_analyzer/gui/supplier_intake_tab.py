@@ -509,6 +509,11 @@ class SupplierIntakeTabMixin:
                 self._refresh_supplier_intake_list()
             except Exception:
                 pass
+            # עדכון טאב משלוחים אם קיים
+            try:
+                self._notify_new_receipt_saved()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 

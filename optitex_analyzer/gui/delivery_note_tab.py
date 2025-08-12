@@ -437,6 +437,11 @@ class DeliveryNoteTabMixin:
                 self._refresh_delivery_notes_list()
             except Exception:
                 pass
+            # עדכון טאב משלוחים אם קיים
+            try:
+                self._notify_new_receipt_saved()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
