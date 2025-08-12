@@ -90,7 +90,7 @@ class MainWindow(
 
         # Create each tab from its mixin
     # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
-        self._create_returned_drawing_tab()
+    # Returned (cut) drawings now embedded inside 'מנהל ציורים' tab
         self._create_fabrics_inventory_tab()
         self._create_supplier_intake_tab()
         # Delivery note tab (duplicate logic for separate process)

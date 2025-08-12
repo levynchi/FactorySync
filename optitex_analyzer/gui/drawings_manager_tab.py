@@ -7,18 +7,37 @@ RLM = '\u200f'
 class DrawingsManagerTabMixin:
     """Mixin עבור טאב מנהל ציורים."""
     def _create_drawings_manager_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa'); self.notebook.add(tab, text="מנהל ציורים")
+        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        self.notebook.add(tab, text="מנהל ציורים")
         self._drawings_tab = tab
         tk.Label(tab, text="מנהל ציורים - טבלה מקומית", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
-        actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=12, pady=(0,8))
+        # Inner notebook to host drawings table and embedded converter
+        inner_nb = ttk.Notebook(tab)
+        inner_nb.pack(fill='both', expand=True, padx=6, pady=(0,6))
+        table_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        converter_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        cut_drawings_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(table_page, text="טבלת ציורים")
+        inner_nb.add(converter_page, text="ממיר קבצים")
+        # Embed cut drawings (returned drawings) tab if builder exists
+        try:
+            if hasattr(self, '_build_returned_drawings_content'):
+                inner_nb.add(cut_drawings_page, text="ציורים שנחתכו")
+                self._build_returned_drawings_content(cut_drawings_page)
+        except Exception:
+            pass
+
+        actions = tk.Frame(table_page, bg='#f7f9fa')
+        actions.pack(fill='x', padx=12, pady=(0,8))
         left = tk.Frame(actions, bg='#f7f9fa'); left.pack(side='left')
         tk.Button(left, text="🔄 רענן", command=self._refresh_drawings_tree, bg='#3498db', fg='white', font=('Arial',10,'bold'), width=10).pack(side='left', padx=4)
         tk.Button(left, text="📊 ייצא לאקסל", command=self._export_drawings_to_excel_tab, bg='#27ae60', fg='white', font=('Arial',10,'bold'), width=12).pack(side='left', padx=4)
         right = tk.Frame(actions, bg='#f7f9fa'); right.pack(side='right')
         tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial',10,'bold'), width=10).pack(side='right', padx=4)
-        table_frame = tk.Frame(tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        # Added 'excel' column for per-row Excel export action
+
+        table_frame = tk.Frame(table_page, bg='#ffffff')
+        table_frame.pack(fill='both', expand=True, padx=12, pady=8)
         cols = ("id","file_name","created_at","products","total_quantity","status","excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
         headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס","excel":"Excel"}
@@ -28,8 +47,10 @@ class DrawingsManagerTabMixin:
             self.drawings_tree.column(c, width=widths[c], anchor='center')
         vs = ttk.Scrollbar(table_frame, orient='vertical', command=self.drawings_tree.yview)
         self.drawings_tree.configure(yscroll=vs.set)
-        self.drawings_tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns')
-        table_frame.grid_columnconfigure(0,weight=1); table_frame.grid_rowconfigure(0,weight=1)
+        self.drawings_tree.grid(row=0,column=0,sticky='nsew')
+        vs.grid(row=0,column=1,sticky='ns')
+        table_frame.grid_columnconfigure(0,weight=1)
+        table_frame.grid_rowconfigure(0,weight=1)
         self.drawings_tree.bind('<Double-1>', self._on_drawings_double_click)
         self.drawings_tree.bind('<Button-3>', self._on_drawings_right_click)
         self.drawings_tree.bind('<Button-1>', self._on_drawings_click)
@@ -37,8 +58,16 @@ class DrawingsManagerTabMixin:
         for st in ("טרם נשלח","נשלח","הוחזר","נחתך"):
             self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
         self.drawings_stats_var = tk.StringVar(value="אין נתונים")
-        tk.Label(tab, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial',10)).pack(fill='x', side='bottom')
-        self._populate_drawings_tree(); self._update_drawings_stats()
+        tk.Label(table_page, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial',10)).pack(fill='x', side='bottom')
+
+        # Build converter content inside second inner tab if available
+        try:
+            if hasattr(self, '_build_converter_tab_content'):
+                self._build_converter_tab_content(converter_page)
+        except Exception:
+            pass
+        self._populate_drawings_tree()
+        self._update_drawings_stats()
 
     def _show_drawings_manager_tab(self):
         for i in range(len(self.notebook.tabs())):
