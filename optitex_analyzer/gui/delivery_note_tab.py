@@ -384,6 +384,17 @@ class DeliveryNoteTabMixin:
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._delivery_lines:
             messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+        # Confirm saving without any packages defined (parallel to supplier intake tab)
+        try:
+            if not self._packages:
+                proceed = messagebox.askyesno(
+                    "אישור",
+                    "לא הוזנו צורות אריזה (שקיות / שקים / בדים).\nהאם לשמור את התעודה ללא כמות שקים?"
+                )
+                if not proceed:
+                    return
+        except Exception:
+            pass
         try:
             new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages)
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
