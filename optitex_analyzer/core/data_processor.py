@@ -11,27 +11,37 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json"):
+		"""
+		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
+		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
+		עדיין נשמרת תאימות לאחור: אם הקובץ הישן קיים – מתבצעת העברה חד‑פעמית.
+		"""
 		self.drawings_file = drawings_file
-		# קובץ לקליטת ציורים שחזרו מייצור
 		self.returned_drawings_file = returned_drawings_file
-		# קובץ מלאי בדים
 		self.fabrics_inventory_file = fabrics_inventory_file
-		# קובץ לוג של ייבוא קבצי מלאי בדים
 		self.fabrics_imports_file = fabrics_imports_file
-		# קובץ קליטות מספק (הזנה ידנית של מוצרים וכמויות)
+		# legacy combined file (לצורך מיגרציה בלבד)
 		self.supplier_receipts_file = supplier_receipts_file
-		# קובץ קטלוג מוצרים (חדש)
+		# new split files
+		self.supplier_intakes_file = supplier_intakes_file
+		self.delivery_notes_file = delivery_notes_file
 		self.products_catalog_file = products_catalog_file
-		# קובץ ספקים
 		self.suppliers_file = suppliers_file
+		# load base datasets
 		self.drawings_data = self.load_drawings_data()
 		self.returned_drawings_data = self.load_returned_drawings_data()
 		self.fabrics_inventory = self.load_fabrics_inventory()
 		self.fabrics_import_logs = self.load_fabrics_import_logs()
-		self.supplier_receipts = self.load_supplier_receipts()
 		self.products_catalog = self.load_products_catalog()
 		self.suppliers = self.load_suppliers()
+		# load split receipts (may be empty on first run)
+		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
+		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
+		# migration from legacy combined file if needed
+		self._migrate_legacy_supplier_receipts()
+		# combined view (backward compatibility for old UI code)
+		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -132,64 +142,114 @@ class DataProcessor:
 			return False
 
 	# ===== Supplier Receipts (Manual Products Intake) =====
-	def load_supplier_receipts(self) -> List[Dict]:
-		"""טעינת קליטות מספק"""
+	def _load_json_list(self, path: str) -> List[Dict]:
 		try:
-			if os.path.exists(self.supplier_receipts_file):
-				with open(self.supplier_receipts_file, 'r', encoding='utf-8') as f:
-					return json.load(f)
+			if os.path.exists(path):
+				with open(path, 'r', encoding='utf-8') as f:
+					return json.load(f) or []
 			return []
-		except Exception as e:
-			print(f"שגיאה בטעינת קליטות ספק: {e}")
+		except Exception:
 			return []
 
-	def save_supplier_receipts(self) -> bool:
-		"""שמירת קליטות מספק"""
+	def _save_json_list(self, path: str, data: List[Dict]) -> bool:
 		try:
-			with open(self.supplier_receipts_file, 'w', encoding='utf-8') as f:
-				json.dump(self.supplier_receipts, f, indent=2, ensure_ascii=False)
+			with open(path, 'w', encoding='utf-8') as f:
+				json.dump(data, f, indent=2, ensure_ascii=False)
 			return True
 		except Exception as e:
-			print(f"שגיאה בשמירת קליטות ספק: {e}")
-			return False
+			print(f"שגיאה בשמירת קובץ {path}: {e}"); return False
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
-		"""הוספת קליטה / תעודת משלוח מספק.
-		:param supplier: שם ספק
-		:param date_str: תאריך (YYYY-MM-DD)
-		:param lines: רשימת שורות מוצרים: {product, size, fabric_type, fabric_color, print_name, quantity, note}
-		:param packages: רשימת חבילות / צורות אריזה (אופציונלי): {package_type, quantity}
-		:param receipt_kind: סוג הרשומה ('supplier_intake' / 'delivery_note')
+	def _migrate_legacy_supplier_receipts(self):
+		"""אם הקובץ הישן קיים ויש בו רשומות – מפצל אותן לשני הקבצים החדשים.
+		המיגרציה מתבצעת רק אם אחד מהקבצים החדשים ריק.
 		"""
 		try:
-			if not supplier:
-				raise ValueError("חסר שם ספק")
-			if not lines:
-				raise ValueError("אין שורות לקליטה")
-			new_id = max([r.get('id', 0) for r in self.supplier_receipts], default=0) + 1
-			total_quantity = sum(int(l.get('quantity', 0)) for l in lines)
-			receipt = {
+			if not os.path.exists(self.supplier_receipts_file):
+				return
+			legacy_list = self._load_json_list(self.supplier_receipts_file)
+			if not legacy_list:
+				return
+			# אם כבר קיימים נתונים בקבצים החדשים – נניח שכבר בוצעה מיגרציה
+			if self.supplier_intakes or self.delivery_notes:
+				return
+			for rec in legacy_list:
+				kind = rec.get('receipt_kind') or 'supplier_intake'
+				if kind == 'delivery_note':
+					self.delivery_notes.append(rec)
+				else:
+					self.supplier_intakes.append(rec)
+			# שמירה לקבצים החדשים
+			self._save_json_list(self.supplier_intakes_file, self.supplier_intakes)
+			self._save_json_list(self.delivery_notes_file, self.delivery_notes)
+			# אפשר לשמר גיבוי של הקובץ הישן בשם אחר (לא מוחקים כדי לאבד היסטוריה)
+		except Exception as e:
+			print(f"שגיאה במיגרציית קליטות ספק: {e}")
+
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
+		"""שכבת תאימות – מפנה לפונקציה המתאימה לפי receipt_kind."""
+		if receipt_kind == 'delivery_note':
+			return self.add_delivery_note(supplier, date_str, lines, packages)
+		return self.add_supplier_intake(supplier, date_str, lines, packages)
+
+	def _next_id(self, records: List[Dict]) -> int:
+		return max([r.get('id', 0) for r in records], default=0) + 1
+
+	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+		try:
+			if not supplier: raise ValueError("חסר שם ספק")
+			if not lines: raise ValueError("אין שורות לקליטה")
+			new_id = self._next_id(self.supplier_intakes)
+			total_quantity = sum(int(l.get('quantity',0)) for l in lines)
+			record = {
 				'id': new_id,
 				'supplier': supplier,
 				'date': date_str,
 				'lines': lines,
 				'total_quantity': total_quantity,
 				'packages': packages or [],
-				'receipt_kind': receipt_kind,
-				'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				'receipt_kind': 'supplier_intake',
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
-			self.supplier_receipts.append(receipt)
-			self.save_supplier_receipts()
+			self.supplier_intakes.append(record)
+			self._save_json_list(self.supplier_intakes_file, self.supplier_intakes)
+			self._rebuild_combined_receipts()
 			return new_id
 		except Exception as e:
-			raise Exception(f"שגיאה בהוספת קליטת ספק: {str(e)}")
+			raise Exception(f"שגיאה בהוספת קליטת ספק: {e}")
+
+	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+		try:
+			if not supplier: raise ValueError("חסר שם ספק")
+			if not lines: raise ValueError("אין שורות לקליטה")
+			new_id = self._next_id(self.delivery_notes)
+			total_quantity = sum(int(l.get('quantity',0)) for l in lines)
+			record = {
+				'id': new_id,
+				'supplier': supplier,
+				'date': date_str,
+				'lines': lines,
+				'total_quantity': total_quantity,
+				'packages': packages or [],
+				'receipt_kind': 'delivery_note',
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.delivery_notes.append(record)
+			self._save_json_list(self.delivery_notes_file, self.delivery_notes)
+			self._rebuild_combined_receipts()
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת תעודת משלוח: {e}")
+
+	def _rebuild_combined_receipts(self):
+		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
 
 	def get_delivery_notes(self) -> List[Dict]:
-		"""החזרת כל הרשומות שהן תעודות משלוח (receipt_kind == 'delivery_note')."""
-		return [r for r in self.supplier_receipts if r.get('receipt_kind') == 'delivery_note']
+		return list(self.delivery_notes)
 
 	def refresh_supplier_receipts(self):
-		self.supplier_receipts = self.load_supplier_receipts()
+		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
+		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
+		self._rebuild_combined_receipts()
     
 	def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str], source: str = None, layers: int = None) -> int:
 		"""הוספת קליטת ציור חוזר

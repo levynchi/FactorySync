@@ -6,13 +6,23 @@ from datetime import datetime
 class SupplierIntakeTabMixin:
     """Mixin לטאב קליטת ספק."""
     def _create_supplier_intake_tab(self):
-        # Frame + title
+        # Outer tab + title
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="קליטת סחורה מספק")
         tk.Label(tab, text="קליטת מוצרים מספק (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
 
+        # Inner notebook (entry + saved receipts)
+        inner_nb = ttk.Notebook(tab)
+        inner_nb.pack(fill='both', expand=True, padx=4, pady=4)
+        entry_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(entry_wrapper, text="קליטה")
+        inner_nb.add(list_wrapper, text="קליטות שמורות")
+
+        container = entry_wrapper
+
         # Receipt header form
-        form = ttk.LabelFrame(tab, text="פרטי קליטה", padding=10)
+        form = ttk.LabelFrame(container, text="פרטי קליטה", padding=10)
         form.pack(fill='x', padx=10, pady=6)
         tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
         self.supplier_name_var = tk.StringVar()
@@ -29,7 +39,7 @@ class SupplierIntakeTabMixin:
         tk.Entry(form, textvariable=self.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
         # Lines frame
-        lines_frame = ttk.LabelFrame(tab, text="שורות קליטה", padding=8)
+        lines_frame = ttk.LabelFrame(container, text="שורות קליטה", padding=8)
         lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
 
         # Entry bar
@@ -236,16 +246,17 @@ class SupplierIntakeTabMixin:
         vs.pack(side='right', fill='y', pady=4)
 
         # Save receipt button + summary
-        bottom_actions = tk.Frame(tab, bg='#f7f9fa')
+        bottom_actions = tk.Frame(container, bg='#f7f9fa')
         bottom_actions.pack(fill='x', padx=10, pady=6)
         tk.Button(bottom_actions, text="💾 שמור קליטה", command=self._save_supplier_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
         self.supplier_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
-        tk.Label(tab, textvariable=self.supplier_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(container, textvariable=self.supplier_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
         # Internal lines model
         self._supplier_lines = []
+
         # ===== Packaging section (mirrors Delivery Note) =====
-        pkg_frame = ttk.LabelFrame(tab, text="צורות אריזה", padding=8)
+        pkg_frame = ttk.LabelFrame(container, text="צורות אריזה", padding=8)
         pkg_frame.pack(fill='x', padx=10, pady=(4,4))
         self.sup_pkg_type_var = tk.StringVar(value='שקית קטנה')
         self.sup_pkg_qty_var = tk.StringVar()
@@ -265,6 +276,22 @@ class SupplierIntakeTabMixin:
         self.sup_packages_tree.grid(row=1,column=0,columnspan=7, sticky='ew', padx=2, pady=(6,2))
         # Internal packages model
         self._supplier_packages = []
+
+        # Saved supplier receipts list (second tab)
+        self.supplier_receipts_tree = ttk.Treeview(list_wrapper, columns=('id','date','supplier','total','packages'), show='headings')
+        for col, txt, w in (
+            ('id','ID',60), ('date','תאריך',110), ('supplier','ספק',180), ('total','סה"כ כמות',90), ('packages','אריזות',140)
+        ):
+            self.supplier_receipts_tree.heading(col, text=txt)
+            self.supplier_receipts_tree.column(col, width=w, anchor='center')
+        vs_sr = ttk.Scrollbar(list_wrapper, orient='vertical', command=self.supplier_receipts_tree.yview)
+        self.supplier_receipts_tree.configure(yscroll=vs_sr.set)
+        self.supplier_receipts_tree.grid(row=0,column=0,sticky='nsew', padx=6, pady=6)
+        vs_sr.grid(row=0,column=1,sticky='ns', pady=6)
+        list_wrapper.grid_columnconfigure(0, weight=1)
+        list_wrapper.grid_rowconfigure(0, weight=1)
+        tk.Button(list_wrapper, text="🔄 רענן", command=self._refresh_supplier_intake_list, bg='#3498db', fg='white').grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
+        self._refresh_supplier_intake_list()
 
     def _refresh_supplier_products_allowed(self, initial: bool = False):
         """רענון רשימת המוצרים האפשריים מתוך קטלוג המוצרים.
@@ -469,10 +496,19 @@ class SupplierIntakeTabMixin:
         except Exception:
             pass
         try:
-            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
+            # שימוש בשיטה החדשה לאחר פיצול הקבצים
+            if hasattr(self.data_processor, 'add_supplier_intake'):
+                new_id = self.data_processor.add_supplier_intake(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
+            else:
+                # תאימות לאחור
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages, receipt_kind='supplier_intake')
             messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
             self._clear_supplier_lines()
             self._clear_supplier_packages()
+            try:
+                self._refresh_supplier_intake_list()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -505,3 +541,18 @@ class SupplierIntakeTabMixin:
         self._supplier_packages = []
         for item in self.sup_packages_tree.get_children():
             self.sup_packages_tree.delete(item)
+    # ---- Saved supplier receipts list ----
+    def _refresh_supplier_intake_list(self):
+        try:
+            self.data_processor.refresh_supplier_receipts()
+            receipts = [r for r in self.data_processor.supplier_receipts if r.get('receipt_kind') == 'supplier_intake']
+        except Exception:
+            receipts = []
+        if hasattr(self, 'supplier_receipts_tree'):
+            for iid in self.supplier_receipts_tree.get_children():
+                self.supplier_receipts_tree.delete(iid)
+            for rec in receipts:
+                pkg_summary = ', '.join(f"{p.get('package_type')}:{p.get('quantity')}" for p in rec.get('packages', [])[:4])
+                if len(rec.get('packages', [])) > 4:
+                    pkg_summary += ' ...'
+                self.supplier_receipts_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))

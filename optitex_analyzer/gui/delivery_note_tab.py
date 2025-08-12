@@ -425,7 +425,11 @@ class DeliveryNoteTabMixin:
         except Exception:
             pass
         try:
-            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
+            # שימוש בשיטה החדשה לאחר פיצול הקבצים (עם נפילה אחורה)
+            if hasattr(self.data_processor, 'add_delivery_note'):
+                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages)
+            else:
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
             self._clear_packages()
