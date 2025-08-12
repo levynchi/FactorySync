@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
-from .converter_tab import ConverterTabMixin
+from .converter_tab import ConverterTabMixin  # still used indirectly for embedded converter inside drawings manager
 from .returned_drawing_tab import ReturnedDrawingTabMixin
 from .fabrics_inventory_tab import FabricsInventoryTabMixin
 from .supplier_intake_tab import SupplierIntakeTabMixin
@@ -89,7 +89,7 @@ class MainWindow(
         self.notebook.pack(fill="both", expand=True)
 
         # Create each tab from its mixin
-        self._create_converter_tab()
+    # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
         self._create_returned_drawing_tab()
         self._create_fabrics_inventory_tab()
         self._create_supplier_intake_tab()
@@ -132,7 +132,7 @@ class MainWindow(
         # טעינה אוטומטית של קובץ מוצרים
         if self.settings.get("app.auto_load_products", True):
             products_file = self.settings.get("app.products_file", "קובץ מוצרים.xlsx")
-            if os.path.exists(products_file):
+            if os.path.exists(products_file) and hasattr(self, 'products_label'):
                 self.products_file = os.path.abspath(products_file)
                 self.products_label.config(text=os.path.basename(products_file))
                 self._update_status(f"נטען קובץ מוצרים: {os.path.basename(products_file)}")
