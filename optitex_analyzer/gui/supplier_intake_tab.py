@@ -244,6 +244,27 @@ class SupplierIntakeTabMixin:
 
         # Internal lines model
         self._supplier_lines = []
+        # ===== Packaging section (mirrors Delivery Note) =====
+        pkg_frame = ttk.LabelFrame(tab, text="צורות אריזה", padding=8)
+        pkg_frame.pack(fill='x', padx=10, pady=(4,4))
+        self.sup_pkg_type_var = tk.StringVar(value='שקית קטנה')
+        self.sup_pkg_qty_var = tk.StringVar()
+        tk.Label(pkg_frame, text="צורת אריזה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
+        self.sup_pkg_type_combo = ttk.Combobox(pkg_frame, textvariable=self.sup_pkg_type_var, state='readonly', width=14, values=['שקית קטנה','שק','בד'])
+        self.sup_pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
+        tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
+        tk.Entry(pkg_frame, textvariable=self.sup_pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
+        tk.Button(pkg_frame, text="➕ הוסף", command=self._add_supplier_package_line, bg='#27ae60', fg='white').grid(row=0,column=4,padx=8)
+        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._delete_selected_supplier_package, bg='#e67e22', fg='white').grid(row=0,column=5,padx=4)
+        tk.Button(pkg_frame, text="❌ נקה", command=self._clear_supplier_packages, bg='#e74c3c', fg='white').grid(row=0,column=6,padx=4)
+        self.sup_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity'), show='headings', height=4)
+        self.sup_packages_tree.heading('type', text='צורת אריזה')
+        self.sup_packages_tree.heading('quantity', text='כמות')
+        self.sup_packages_tree.column('type', width=120, anchor='center')
+        self.sup_packages_tree.column('quantity', width=70, anchor='center')
+        self.sup_packages_tree.grid(row=1,column=0,columnspan=7, sticky='ew', padx=2, pady=(6,2))
+        # Internal packages model
+        self._supplier_packages = []
 
     def _refresh_supplier_products_allowed(self, initial: bool = False):
         """רענון רשימת המוצרים האפשריים מתוך קטלוג המוצרים.
@@ -437,8 +458,39 @@ class SupplierIntakeTabMixin:
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
         try:
-            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines)
+            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
             messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
             self._clear_supplier_lines()
+            self._clear_supplier_packages()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    # ===== Packaging methods (parallel to delivery note) =====
+    def _add_supplier_package_line(self):
+        pkg_type = (self.sup_pkg_type_var.get() or '').strip()
+        qty_raw = (self.sup_pkg_qty_var.get() or '').strip()
+        if not pkg_type or not qty_raw:
+            messagebox.showerror("שגיאה", "חובה לבחור צורת אריזה ולהזין כמות")
+            return
+        try:
+            qty = int(qty_raw); assert qty > 0
+        except Exception:
+            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+            return
+        record = {'package_type': pkg_type, 'quantity': qty}
+        self._supplier_packages.append(record)
+        self.sup_packages_tree.insert('', 'end', values=(pkg_type, qty))
+        self.sup_pkg_qty_var.set('')
+
+    def _delete_selected_supplier_package(self):
+        sel = self.sup_packages_tree.selection()
+        if not sel: return
+        all_items = self.sup_packages_tree.get_children(); indices = [all_items.index(i) for i in sel]
+        for item in sel: self.sup_packages_tree.delete(item)
+        for idx in sorted(indices, reverse=True):
+            if 0 <= idx < len(self._supplier_packages): del self._supplier_packages[idx]
+
+    def _clear_supplier_packages(self):
+        self._supplier_packages = []
+        for item in self.sup_packages_tree.get_children():
+            self.sup_packages_tree.delete(item)
