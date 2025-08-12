@@ -48,10 +48,13 @@ class DrawingsManagerTabMixin:
         for item in self.drawings_tree.get_children(): self.drawings_tree.delete(item)
         for record in self.data_processor.drawings_data:
             products_count = len(record.get('מוצרים', [])); total_quantity = record.get('סך כמויות', 0)
+            # הצגת תאריך ללא שעת יצירה (רק חלק התאריך)
+            created_raw = record.get('תאריך יצירה','')
+            created_date_only = created_raw.split()[0] if isinstance(created_raw, str) and created_raw else created_raw
             self.drawings_tree.insert('', 'end', values=(
                 record.get('id',''),
                 record.get('שם הקובץ',''),
-                record.get('תאריך יצירה',''),
+                created_date_only,
                 products_count,
                 f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
                 record.get('status','נשלח'),
@@ -159,17 +162,52 @@ class DrawingsManagerTabMixin:
             # גליון RTL
             try: ws.sheet_view.rightToLeft = True
             except Exception: pass
+            # הוספת שורת מידע מעל הטבלה: עמודה A (ימין RTL) = ID, B = סוג בד, C = תאריך (ללא שעה)
+            ws.insert_rows(1, amount=2)  # מזיז הכל למטה; headers יעברו לשורה 3
+            max_col = ws.max_column
+            raw_dt = record.get('תאריך יצירה','')
+            # שמירת תאריך בלבד ללא זמן; אם כולל זמן נחתוך ברווח הראשון
+            formatted_date = ''
+            if isinstance(raw_dt, str):
+                if ' ' in raw_dt:
+                    formatted_date = raw_dt.split()[0]
+                else:
+                    # אם כבר רק תאריך באורך 10 (YYYY-MM-DD) נשאיר
+                    formatted_date = raw_dt
+            ws.cell(row=1, column=1, value=f"ID: {record.get('id','')}")
+            ws.cell(row=1, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
+            ws.cell(row=1, column=3, value=f"תאריך יצירה: {formatted_date}")
+            meta_font = Font(bold=True, size=16)
+            for c in range(1, min(3, max_col)+1):
+                cell = ws.cell(row=1, column=c)
+                cell.font = meta_font
+                # יישור: ID לימין (A), סוג בד למרכז (B), תאריך לשמאל (C) תוך RTL
+                if c == 1:
+                    cell.alignment = Alignment(horizontal='right', vertical='center')
+                elif c == 2:
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                else:
+                    cell.alignment = Alignment(horizontal='left', vertical='center')
+            # שורה ריקה (2) לרווח
+            for c in range(1, max_col+1):
+                ws.cell(row=2, column=c).value = None
+            header_row_index = 3
             header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
             header_font = Font(bold=True, size=16)
             base_font = Font(size=16)
-            for cell in ws[1]:
+            for cell in ws[header_row_index]:
                 cell.font = header_font
                 cell.alignment = Alignment(horizontal='center', vertical='center')
                 cell.fill = header_fill
             # יישור וגבולות לכל התאים + חישוב רוחב עמודה (מרכז לכל התאים)
             thin = Side(border_style='thin', color='000000')
-            col_max = {col: len(str(ws.cell(row=1, column=col).value or '')) for col in range(1, ws.max_column+1)}
-            for r in range(2, ws.max_row+1):
+            # נכלול גם את שורת המטא-דאטה (row 1) בחישוב רוחב
+            col_max = {}
+            for col in range(1, ws.max_column+1):
+                header_len = len(str(ws.cell(row=header_row_index, column=col).value or ''))
+                meta_len = len(str(ws.cell(row=1, column=col).value or ''))
+                col_max[col] = max(header_len, meta_len)
+            for r in range(header_row_index+1, ws.max_row+1):
                 for c in range(1, ws.max_column+1):
                     cell = ws.cell(row=r, column=c)
                     cell.font = base_font
@@ -181,14 +219,16 @@ class DrawingsManagerTabMixin:
             # התאמת רוחב עמודות (המרה גסה: תווים * 1.2 + מרווח)
             for c in range(1, ws.max_column+1):
                 width = min(80, col_max[c]*1.2 + 2)
-                ws.column_dimensions[ws.cell(row=1, column=c).column_letter].width = width
+                ws.column_dimensions[ws.cell(row=header_row_index, column=c).column_letter].width = width
             # Optional metadata sheet
             meta = wb.create_sheet('פרטי ציור')
             try: meta.sheet_view.rightToLeft = True
             except Exception: pass
             meta.append(['שם קובץ', record.get('שם הקובץ','')])
             meta.append(['ID', record.get('id','')])
-            meta.append(['תאריך יצירה', record.get('תאריך יצירה','')])
+            # תאריך ביצירת גליון המטא - גם כאן רק תאריך
+            meta_date = raw_dt.split()[0] if isinstance(raw_dt, str) and raw_dt else raw_dt
+            meta.append(['תאריך יצירה', meta_date])
             meta.append(['סוג בד', record.get('סוג בד','')])
             meta.append(['סטטוס', record.get('status','')])
             for row in meta.iter_rows(min_row=1, max_row=5, min_col=1, max_col=2):
