@@ -153,11 +153,12 @@ class DataProcessor:
 			print(f"שגיאה בשמירת קליטות ספק: {e}")
 			return False
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict]) -> int:
-		"""הוספת קליטה מספק.
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+		"""הוספת קליטה / תעודת משלוח מספק.
 		:param supplier: שם ספק
 		:param date_str: תאריך (YYYY-MM-DD)
-		:param lines: רשימת שורות: {product, size, quantity, note}
+		:param lines: רשימת שורות מוצרים: {product, size, fabric_type, fabric_color, print_name, quantity, note}
+		:param packages: רשימת חבילות / צורות אריזה (אופציונלי): {package_type, quantity}
 		"""
 		try:
 			if not supplier:
@@ -172,6 +173,7 @@ class DataProcessor:
 				'date': date_str,
 				'lines': lines,
 				'total_quantity': total_quantity,
+				'packages': packages or [],
 				'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 			}
 			self.supplier_receipts.append(receipt)

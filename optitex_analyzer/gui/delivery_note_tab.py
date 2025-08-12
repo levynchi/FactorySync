@@ -28,8 +28,7 @@ class DeliveryNoteTabMixin:
 
         # Lines frame
         lines_frame = ttk.LabelFrame(tab, text="שורות תעודה", padding=8)
-        lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
-
+        lines_frame.pack(fill='both', expand=False, padx=10, pady=4)
         entry_bar = tk.Frame(lines_frame, bg='#f7f9fa')
         entry_bar.pack(fill='x', pady=(0,6))
 
@@ -217,6 +216,26 @@ class DeliveryNoteTabMixin:
         self.delivery_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
         vs.pack(side='right', fill='y')
 
+        # Packaging section
+        pkg_frame = ttk.LabelFrame(tab, text="צורות אריזה", padding=8)
+        pkg_frame.pack(fill='x', padx=10, pady=(4,4))
+        self.pkg_type_var = tk.StringVar(value='שקית קטנה')
+        self.pkg_qty_var = tk.StringVar()
+        tk.Label(pkg_frame, text="צורת אריזה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
+        self.pkg_type_combo = ttk.Combobox(pkg_frame, textvariable=self.pkg_type_var, state='readonly', width=14, values=['שקית קטנה','שק','בד'])
+        self.pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
+        tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
+        tk.Entry(pkg_frame, textvariable=self.pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
+        tk.Button(pkg_frame, text="➕ הוסף", command=self._add_package_line, bg='#27ae60', fg='white').grid(row=0,column=4,padx=8)
+        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=5,padx=4)
+        tk.Button(pkg_frame, text="❌ נקה", command=self._clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=6,padx=4)
+        self.packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity'), show='headings', height=4)
+        self.packages_tree.heading('type', text='צורת אריזה')
+        self.packages_tree.heading('quantity', text='כמות')
+        self.packages_tree.column('type', width=120, anchor='center')
+        self.packages_tree.column('quantity', width=70, anchor='center')
+        self.packages_tree.grid(row=1,column=0,columnspan=7, sticky='ew', padx=2, pady=(6,2))
+
         bottom_actions = tk.Frame(tab, bg='#f7f9fa')
         bottom_actions.pack(fill='x', padx=10, pady=6)
         tk.Button(bottom_actions, text="💾 שמור תעודה", command=self._save_delivery_note, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
@@ -224,6 +243,7 @@ class DeliveryNoteTabMixin:
         tk.Label(tab, textvariable=self.delivery_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
         self._delivery_lines = []
+        self._packages = []
 
     # ---- Helpers (products / variants) ----
     def _refresh_delivery_products_allowed(self, initial: bool = False):
@@ -365,8 +385,39 @@ class DeliveryNoteTabMixin:
         if not self._delivery_lines:
             messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
         try:
-            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines)
+            new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages)
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
+            self._clear_packages()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    # ---- Packages ops ----
+    def _add_package_line(self):
+        pkg_type = (self.pkg_type_var.get() or '').strip()
+        qty_raw = (self.pkg_qty_var.get() or '').strip()
+        if not pkg_type or not qty_raw:
+            messagebox.showerror("שגיאה", "חובה לבחור צורת אריזה ולהזין כמות")
+            return
+        try:
+            qty = int(qty_raw); assert qty > 0
+        except Exception:
+            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+            return
+        record = {'package_type': pkg_type, 'quantity': qty}
+        self._packages.append(record)
+        self.packages_tree.insert('', 'end', values=(pkg_type, qty))
+        self.pkg_qty_var.set('')
+
+    def _delete_selected_package(self):
+        sel = self.packages_tree.selection()
+        if not sel: return
+        all_items = self.packages_tree.get_children(); indices = [all_items.index(i) for i in sel]
+        for item in sel: self.packages_tree.delete(item)
+        for idx in sorted(indices, reverse=True):
+            if 0 <= idx < len(self._packages): del self._packages[idx]
+
+    def _clear_packages(self):
+        self._packages = []
+        for item in self.packages_tree.get_children():
+            self.packages_tree.delete(item)
