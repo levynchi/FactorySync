@@ -13,7 +13,14 @@ class ProductsCatalogTabMixin:
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
         # עדכון: שדה המידה תומך במספר וריאנטים בבת אחת מופרדים בפסיק / רווח (למשל: "0-3,3-6,6-12")
-        labels = [("שם מוצר", self.prod_name_var, 25), ("מידות (פסיק)", self.prod_size_var, 18), ("סוג בד", self.prod_fabric_type_var, 15), ("צבע בד", self.prod_fabric_color_var, 15), ("שם פרינט", self.prod_print_name_var, 15)]
+        # עדכון: כל אחד מהשדות (מידה / סוג בד / צבע בד / שם פרינט) תומך ברשימת ערכים מופרדים בפסיק / רווחים ליצירת וריאנטים מרובים.
+        labels = [
+            ("שם מוצר", self.prod_name_var, 25),
+            ("מידות (פסיק)", self.prod_size_var, 18),
+            ("סוגי בד (פסיק)", self.prod_fabric_type_var, 18),
+            ("צבעי בד (פסיק)", self.prod_fabric_color_var, 18),
+            ("שמות פרינט (פסיק)", self.prod_print_name_var, 18)
+        ]
         for i,(lbl,var,width) in enumerate(labels):
             tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0, column=i*2, sticky='w', padx=4, pady=4)
             tk.Entry(form, textvariable=var, width=width).grid(row=0, column=i*2+1, sticky='w', padx=2, pady=4)
@@ -47,28 +54,63 @@ class ProductsCatalogTabMixin:
             pass
 
     def _add_product_catalog_entry(self):
-        """הוספת מוצר לקטלוג. תומך בווריאנטים (מספר מידות בשדה אחד)."""
-        name = self.prod_name_var.get().strip(); sizes_raw = self.prod_size_var.get().strip(); ft = self.prod_fabric_type_var.get().strip(); fc = self.prod_fabric_color_var.get().strip(); pn = self.prod_print_name_var.get().strip()
+        """הוספת מוצר/ים לקטלוג.
+
+        תמיכה בוריאנטים מרובים בכל אחד מהשדות: מידה / סוג בד / צבע בד / שם פרינט.
+        כל שדה יכול להכיל ערכים מופרדים בפסיקים / רווחים / נקודה-פסיק.
+        נוצרת כל הצירוף (Cartesian product) של הערכים שסופקו בכל השדות (למעט שם המוצר).
+        מניעת כפילויות: אם רשומה באותו שם + מידה + סוג בד + צבע בד + שם פרינט כבר קיימת – נדלג.
+        """
+        name = self.prod_name_var.get().strip()
         if not name:
             messagebox.showerror("שגיאה", "חובה להזין שם מוצר")
             return
-        # פיצול וריאנטים: מפרידים בפסיק או רווחים
-        if sizes_raw:
-            size_tokens = [s.strip() for s in re.split(r'[;,\s]+', sizes_raw) if s.strip()]
-        else:
-            size_tokens = ['']  # אפשרות למוצר בלי מידה
-        if not size_tokens:
-            size_tokens = ['']
-        added_ids = []
+        sizes_raw = self.prod_size_var.get().strip()
+        ftypes_raw = self.prod_fabric_type_var.get().strip()
+        fcolors_raw = self.prod_fabric_color_var.get().strip()
+        prints_raw = self.prod_print_name_var.get().strip()
+
+        def _split(raw):
+            if not raw:
+                return ['']  # ערך יחיד ריק (כדי לא לאבד רשומה)
+            return [s.strip() for s in re.split(r'[;,.\s]+', raw) if s.strip()]
+
+        size_tokens = _split(sizes_raw)
+        ft_tokens = _split(ftypes_raw)
+        fc_tokens = _split(fcolors_raw)
+        pn_tokens = _split(prints_raw)
+
+        from itertools import product
+        combos = list(product(size_tokens, ft_tokens, fc_tokens, pn_tokens))
+        if not combos:
+            combos = [( '', '', '', '' )]
+
+        # סט לרשומות קיימות למניעת כפילות
+        existing = set()
         try:
-            for sz in size_tokens:
+            for rec in getattr(self.data_processor, 'products_catalog', []):
+                existing.add((rec.get('name','').strip(), rec.get('size','').strip(), rec.get('fabric_type','').strip(), rec.get('fabric_color','').strip(), rec.get('print_name','').strip()))
+        except Exception:
+            existing = set()
+
+        added = 0
+        try:
+            for sz, ft, fc, pn in combos:
+                key = (name, sz, ft, fc, pn)
+                if key in existing:
+                    continue
                 new_id = self.data_processor.add_product_catalog_entry(name, sz, ft, fc, pn)
-                added_ids.append((new_id, sz))
+                existing.add(key)
+                added += 1
                 self.products_tree.insert('', 'end', values=(new_id, name, sz, ft, fc, pn, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-            # ניקוי שדות – נשאיר שם מוצר אם המשתמש רוצה להמשיך להזין וריאנטים נוספים לאותו מוצר? לפי נוחות – נשאיר ריק.
             self.prod_name_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set('')
-            if len(added_ids) > 1:
-                messagebox.showinfo("הצלחה", f"נוספו {len(added_ids)} וריאנטים למוצר '{name}'")
+            if added > 1:
+                messagebox.showinfo("הצלחה", f"נוספו {added} וריאנטים למוצר '{name}'")
+            elif added == 1:
+                # שקט – הוספה יחידה
+                pass
+            else:
+                messagebox.showinfo("מידע", "לא נוספו רשומות (ייתכן שהכל כבר קיים)")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
