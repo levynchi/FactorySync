@@ -8,7 +8,7 @@ class SupplierIntakeTabMixin:
     def _create_supplier_intake_tab(self):
         # Frame + title
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="קליטת ספק")
+        self.notebook.add(tab, text="קליטת סחורה מספק")
         tk.Label(tab, text="קליטת מוצרים מספק (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
 
         # Receipt header form
@@ -16,7 +16,14 @@ class SupplierIntakeTabMixin:
         form.pack(fill='x', padx=10, pady=6)
         tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
         self.supplier_name_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.supplier_name_var, width=30).grid(row=0,column=1,sticky='w',padx=4,pady=4)
+        # Combobox עם שמות ספקים קיימים בלבד
+        self.supplier_name_combo = ttk.Combobox(form, textvariable=self.supplier_name_var, width=28, state='readonly')
+        try:
+            names = self._get_supplier_names() if hasattr(self, '_get_supplier_names') else []
+            self.supplier_name_combo['values'] = names
+        except Exception:
+            pass
+        self.supplier_name_combo.grid(row=0,column=1,sticky='w',padx=4,pady=4)
         tk.Label(form, text="תאריך:", font=('Arial',10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
         self.supplier_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         tk.Entry(form, textvariable=self.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
@@ -424,7 +431,10 @@ class SupplierIntakeTabMixin:
 
     def _save_supplier_receipt(self):
         supplier = self.supplier_name_var.get().strip(); date_str = self.supplier_date_var.get().strip()
-        if not supplier: messagebox.showerror("שגיאה", "חובה למלא שם ספק"); return
+        # אימות נגד רשימת הספקים
+        valid_names = set(self._get_supplier_names()) if hasattr(self,'_get_supplier_names') else set()
+        if not supplier or (valid_names and supplier not in valid_names):
+            messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
         try:
             new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines)

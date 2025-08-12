@@ -8,8 +8,10 @@ from .converter_tab import ConverterTabMixin
 from .returned_drawing_tab import ReturnedDrawingTabMixin
 from .fabrics_inventory_tab import FabricsInventoryTabMixin
 from .supplier_intake_tab import SupplierIntakeTabMixin
+from .delivery_note_tab import DeliveryNoteTabMixin
 from .products_catalog_tab import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
+from .suppliers_tab import SuppliersTabMixin
 
 
 class MainWindow(
@@ -17,8 +19,10 @@ class MainWindow(
     ReturnedDrawingTabMixin,
     FabricsInventoryTabMixin,
     SupplierIntakeTabMixin,
+    DeliveryNoteTabMixin,
     ProductsCatalogTabMixin,
     DrawingsManagerTabMixin,
+    SuppliersTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -87,8 +91,17 @@ class MainWindow(
         self._create_returned_drawing_tab()
         self._create_fabrics_inventory_tab()
         self._create_supplier_intake_tab()
+        # Delivery note tab (duplicate logic for separate process)
+        try:
+            self._create_delivery_note_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'תעודת משלוח' נכשלה: {e}")
+            except Exception:
+                pass
         self._create_products_catalog_tab()
         self._create_drawings_manager_tab()
+        self._create_suppliers_tab()
 
         # ----- Footer / Status -----
         self._create_status_bar()
@@ -116,6 +129,11 @@ class MainWindow(
                 self.products_file = os.path.abspath(products_file)
                 self.products_label.config(text=os.path.basename(products_file))
                 self._update_status(f"נטען קובץ מוצרים: {os.path.basename(products_file)}")
+        # רענון רשימת ספקים עבור הקומבו בטאבים (אם כבר נוצרו)
+        try:
+            self._refresh_all_supplier_name_combos()
+        except Exception:
+            pass
     
     # Utility Methods
 
@@ -151,3 +169,32 @@ class MainWindow(
     # clear handled in mixin
     
     # clear_all handled in mixin
+    # ---- Suppliers helpers shared for tabs ----
+    def _get_supplier_names(self):
+        try:
+            return sorted({ (rec.get('business_name') or rec.get('name') or '').strip() for rec in getattr(self.data_processor,'suppliers',[]) if (rec.get('business_name') or rec.get('name')) })
+        except Exception:
+            return []
+
+    def _refresh_all_supplier_name_combos(self):
+        names = self._get_supplier_names()
+        # קליטת סחורה
+        if hasattr(self, 'supplier_name_combo'):
+            try:
+                self.supplier_name_combo['values'] = names
+                if self.supplier_name_var.get() and self.supplier_name_var.get() not in names:
+                    self.supplier_name_var.set('')
+            except Exception:
+                pass
+        # תעודת משלוח
+        if hasattr(self, 'dn_supplier_name_combo'):
+            try:
+                self.dn_supplier_name_combo['values'] = names
+                if self.dn_supplier_name_var.get() and self.dn_supplier_name_var.get() not in names:
+                    self.dn_supplier_name_var.set('')
+            except Exception:
+                pass
+
+    def _notify_suppliers_changed(self):
+        """קריאה לאחר שינוי ברשימת הספקים לעדכון קומבואים."""
+        self._refresh_all_supplier_name_combos()

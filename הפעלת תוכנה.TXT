@@ -1,0 +1,3 @@
+cd "C:\Users\levyn\OneDrive\שולחן העבודה\optitex excell"
+if (Test-Path .venv\Scripts\Activate.ps1) { . .venv\Scripts\Activate.ps1 }
+python main.py

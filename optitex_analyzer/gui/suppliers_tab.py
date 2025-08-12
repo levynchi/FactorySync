@@ -87,6 +87,10 @@ class SuppliersTabMixin:
             )
             self.suppliers_tree.insert('', 'end', values=(new_id, business_name, self.sup_first_name_var.get(), self.sup_phone_var.get(), self.sup_address_var.get(), self.sup_business_var.get(), self.sup_notes_var.get(), ''))
             self.sup_business_name_var.set(''); self.sup_first_name_var.set(''); self.sup_phone_var.set(''); self.sup_address_var.set(''); self.sup_business_var.set(''); self.sup_notes_var.set('')
+            # עדכן קומבואים בטאבים אחרים
+            if hasattr(self, '_notify_suppliers_changed'):
+                try: self._notify_suppliers_changed()
+                except Exception: pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -105,3 +109,6 @@ class SuppliersTabMixin:
                 deleted_any = True
         if deleted_any:
             self._load_suppliers_into_tree()
+            if hasattr(self, '_notify_suppliers_changed'):
+                try: self._notify_suppliers_changed()
+                except Exception: pass
