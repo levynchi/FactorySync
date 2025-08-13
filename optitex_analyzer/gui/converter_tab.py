@@ -91,6 +91,15 @@ class ConverterTabMixin:
         tk.Button(row1, text="🔍 נתח קבצים", command=self._analyze_files, bg='#27ae60', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
         tk.Button(row1, text="💾 שמור כ-Excel", command=self._save_excel, bg='#e67e22', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
         tk.Button(row1, text="️ נקה הכל", command=self._clear_all, bg='#e74c3c', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="right", padx=5)
+        # Row 2: add to local drawings table (disabled until recipient selected)
+        row2 = tk.Frame(buttons_frame, bg='#f0f0f0'); row2.pack(fill='x', pady=(0,5))
+        self.add_to_local_btn = tk.Button(row2, text="➕ הוסף לטבלה מקומית", command=self._add_to_local_table, bg='#2980b9', fg='white', font=('Arial', 11, 'bold'), height=2, width=20, state='disabled')
+        self.add_to_local_btn.pack(side='left', padx=5)
+        # נסה לעדכן את מצב הכפתור לפי בחירת הנמען (אם כבר נטען קומבובוקס)
+        try:
+            self._update_add_local_button_state()
+        except Exception:
+            pass
 
     def _create_results_section(self):
         results_frame = ttk.LabelFrame(self.root, text="תוצאות וסטטוס", padding=10)
