@@ -27,9 +27,16 @@ class ProductsCatalogTabMixin:
         self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar()
         # עדכון: שדה המידה תומך במספר וריאנטים בבת אחת מופרדים בפסיק / רווח (למשל: "0-3,3-6,6-12")
         # עדכון: כל אחד מהשדות (מידה / סוג בד / צבע בד / שם פרינט) תומך ברשימת ערכים מופרדים בפסיק / רווחים ליצירת וריאנטים מרובים.
-        labels = [
-            ("שם מוצר", self.prod_name_var, 18),
-            ("קטגוריה", self.prod_category_var, 12),
+        # שדה שם מוצר
+        tk.Label(form, text="שם מוצר:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_name_var, width=18).grid(row=0, column=1, sticky='w', padx=2, pady=4)
+        # קומבובוקס קטגוריה (חובה לבחור מתוך המאגר)
+        tk.Label(form, text="קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
+        self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
+        self.category_combobox.grid(row=0, column=3, sticky='w', padx=2, pady=4)
+        # שדות נוספות (מידות, סוגי בד וכו')
+        other_fields = [
             ("מידות (פסיק)", self.prod_size_var, 14),
             ("סוגי בד (פסיק)", self.prod_fabric_type_var, 14),
             ("צבעי בד (פסיק)", self.prod_fabric_color_var, 14),
@@ -38,12 +45,15 @@ class ProductsCatalogTabMixin:
             ("גומי", self.prod_elastic_var, 6),
             ("סרט", self.prod_ribbon_var, 6)
         ]
-        for i,(lbl,var,width) in enumerate(labels):
-            tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0, column=i*2, sticky='w', padx=4, pady=4)
-            tk.Entry(form, textvariable=var, width=width).grid(row=0, column=i*2+1, sticky='w', padx=2, pady=4)
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=0, column=len(labels)*2, padx=8)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=0, column=len(labels)*2+1, padx=4)
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=0, column=len(labels)*2+2, padx=4)
+        start_col = 4
+        for i,(lbl,var,width) in enumerate(other_fields):
+            base = start_col + i*2
+            tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0, column=base, sticky='w', padx=4, pady=4)
+            tk.Entry(form, textvariable=var, width=width).grid(row=0, column=base+1, sticky='w', padx=2, pady=4)
+        last_col = start_col + len(other_fields)*2
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=0, column=last_col, padx=8)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=0, column=last_col+1, padx=4)
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=0, column=last_col+2, padx=4)
         # Treeview
         tree_frame = ttk.LabelFrame(products_tab, text="מוצרים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -137,6 +147,14 @@ class ProductsCatalogTabMixin:
             messagebox.showerror("שגיאה", "חובה להזין שם מוצר")
             return
         category_raw = self.prod_category_var.get().strip()
+        # ולידציית קטגוריה – חובה לבחור מתוך הרשימה
+        valid_categories = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
+        if not category_raw:
+            messagebox.showerror("שגיאה", "חובה לבחור קטגוריה (טאב קטגוריות)")
+            return
+        if category_raw not in valid_categories:
+            messagebox.showerror("שגיאה", "קטגוריה לא קיימת. הוסף בטאב 'קטגוריות' ובחר שוב")
+            return
         sizes_raw = self.prod_size_var.get().strip()
         ftypes_raw = self.prod_fabric_type_var.get().strip()
         fcolors_raw = self.prod_fabric_color_var.get().strip()
@@ -313,6 +331,7 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_category(name)
             self.categories_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.cat_name_var.set('')
+            self._refresh_categories_for_products()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -328,3 +347,12 @@ class ProductsCatalogTabMixin:
                     deleted = True
         if deleted:
             self._load_categories_into_tree()
+            self._refresh_categories_for_products()
+
+    # רענון קומבובוקס קטגוריות בטופס מוצרים
+    def _refresh_categories_for_products(self):
+        if hasattr(self, 'category_combobox'):
+            names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
+            self.category_combobox['values'] = names
+            if self.prod_category_var.get() not in names:
+                self.prod_category_var.set('')
