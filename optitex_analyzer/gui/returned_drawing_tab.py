@@ -28,7 +28,20 @@ class ReturnedDrawingTabMixin:
         # Row 0
         tk.Label(form, text="ציור ID:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0, column=0, pady=4, sticky='w')
         self.return_drawing_id_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.return_drawing_id_var, width=30).grid(row=0, column=1, pady=4, sticky='w')
+        # קומבובוקס לבחירת ID מתוך טבלת הציורים (ID – שם קובץ)
+        from tkinter import ttk as _ttk_internal  # שמירה אם ערך צבוע ע"י כלים
+        self.return_drawing_id_combo = ttk.Combobox(form, textvariable=self.return_drawing_id_var, width=32, state='readonly')
+        self.return_drawing_id_combo.grid(row=0, column=1, pady=4, sticky='w')
+        # רענון נתונים בזמן פתיחה / דרישה
+        def _on_combo_drop(*_a):
+            try: self._refresh_return_drawing_id_options()
+            except Exception: pass
+        try:
+            self.return_drawing_id_combo.bind('<Button-1>', lambda e: _on_combo_drop())
+            self.return_drawing_id_combo.bind('<FocusIn>', lambda e: _on_combo_drop())
+        except Exception: pass
+        # כפתור רענון קטן ליד
+        tk.Button(form, text="↺", width=3, command=lambda: self._refresh_return_drawing_id_options(), bg='#3498db', fg='white').grid(row=0, column=1, sticky='e', padx=(0,4))
         tk.Label(form, text="שם הספק:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0, column=2, pady=4, sticky='w')
         self.return_source_var = tk.StringVar()
         tk.Entry(form, textvariable=self.return_source_var, width=25).grid(row=0, column=3, pady=4, sticky='w')
@@ -95,6 +108,48 @@ class ReturnedDrawingTabMixin:
 
         self._scanned_barcodes = []
         self._populate_returned_drawings_table()
+        # לאתחל אפשרויות ID לאחר יצירת הקומפוננטה
+        try: self._refresh_return_drawing_id_options()
+        except Exception: pass
+
+    # רענון רשימת ה-ID-ים הזמינים לבחירה מהציורים
+    def _refresh_return_drawing_id_options(self):
+        try:
+            data = getattr(self.data_processor, 'drawings_data', []) or []
+            # הצגת פורמט: ID – שם קובץ (חתוך ל-40 תווים)
+            options = []
+            for rec in data:
+                rid = rec.get('id')
+                if rid is None: continue
+                name = (rec.get('שם הקובץ','') or '')
+                if len(name) > 40:
+                    name = name[:37] + '...'
+                options.append(f"{rid} - {name}")
+            # מיון לפי ID מספרי אם אפשר
+            def _id_key(txt):
+                try: return int(str(txt).split('-',1)[0].strip())
+                except Exception: return 0
+            options.sort(key=_id_key)
+            if hasattr(self, 'return_drawing_id_combo'):
+                cur = self.return_drawing_id_var.get()
+                self.return_drawing_id_combo['values'] = options
+                if cur not in options:
+                    # השארת ערך ריק עד בחירת המשתמש
+                    pass
+                # בעת בחירה – נעדכן שה-StringVar מכיל רק את ה-ID עצמו (לוגיקה פנימית)
+                def _on_selected(event=None):
+                    full = self.return_drawing_id_var.get()
+                    if ' - ' in full:
+                        self.return_drawing_id_var.set(full.split(' - ',1)[0].strip())
+                        # לשמור את הטקסט המלא בתצוגה:
+                        try:
+                            self.return_drawing_id_combo.set(full)
+                        except Exception: pass
+                try: self.return_drawing_id_combo.unbind('<<ComboboxSelected>>')
+                except Exception: pass
+                self.return_drawing_id_combo.bind('<<ComboboxSelected>>', _on_selected)
+        except Exception:
+            pass
 
     # Handlers & logic (copied from main file methods)
     def _handle_barcode_enter(self, event=None):
