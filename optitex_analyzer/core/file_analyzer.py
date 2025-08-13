@@ -4,6 +4,7 @@
 
 import pandas as pd
 import os
+import re
 from typing import Dict, List, Tuple, Optional
 
 class OptitexFileAnalyzer:
@@ -13,7 +14,10 @@ class OptitexFileAnalyzer:
         self.product_mapping = {}
         self.is_tubular = False
         self.results = []
-    
+        # Marker meta
+        self.marker_width = None
+        self.marker_length = None
+        
     def load_products_mapping(self, products_file: str) -> bool:
         """טעינת מיפוי מוצרים מקובץ Excel"""
         try:
@@ -34,6 +38,9 @@ class OptitexFileAnalyzer:
         try:
             # קריאת הקובץ
             df = pd.read_excel(rib_file, header=None)
+            # איפוס נתוני מרקר
+            self.marker_width = None
+            self.marker_length = None
             
             # בדיקת Tubular
             self.is_tubular = False
@@ -46,6 +53,66 @@ class OptitexFileAnalyzer:
             product_name = None
             
             for i, row in df.iterrows():
+                # ===== חילוץ Marker Width / Length משורה =====
+                # כדי למנוע NaN נשתמש ברג'קס לזיהוי מספרים גם אם יש טקסט (למשל "180 cm" או "Width: 180")
+                try:
+                    if (self.marker_width is None) or (self.marker_length is None):
+                        # המרה לרשימת תאים (שומרים את האובייקט המקורי לצורך מציאת המספר)
+                        row_cells = list(row)
+                        # ניצור רשימת מחרוזות נורמליזציה לחיפוש טקסטואלי
+                        normalized = [str(c).strip().lower() if (isinstance(c, str) or not pd.isna(c)) else '' for c in row_cells]
+
+                        def parse_numeric(val):
+                            if pd.isna(val):
+                                return None
+                            if isinstance(val, (int, float)):
+                                return float(val)
+                            s = str(val).strip()
+                            # החלפת פסיקים בנקודות (פורמט אירופאי)
+                            s = s.replace(',', '.')
+                            m = re.search(r'[-+]?\d+(?:\.\d+)?', s)
+                            if m:
+                                try:
+                                    return float(m.group())
+                                except:
+                                    return None
+                            return None
+
+                        def find_number_near(index: int) -> Optional[float]:
+                            # עמודה קודמת, הבאה, ראשונה, כל השורה
+                            candidate_indices = []
+                            if index > 0:
+                                candidate_indices.append(index - 1)
+                            if index + 1 < len(row_cells):
+                                candidate_indices.append(index + 1)
+                            candidate_indices.append(0)
+                            candidate_indices.extend(range(len(row_cells)))  # fallback חיפוש כללי
+                            seen = set()
+                            for ci in candidate_indices:
+                                if ci in seen:
+                                    continue
+                                seen.add(ci)
+                                val = parse_numeric(row_cells[ci])
+                                if val is not None:
+                                    return val
+                            return None
+
+                        for col_idx, text in enumerate(normalized):
+                            if (self.marker_width is not None) and (self.marker_length is not None):
+                                break
+                            if 'marker' in text and ('width' in text or 'wid' in text):
+                                if self.marker_width is None:
+                                    num = find_number_near(col_idx)
+                                    if num is not None:
+                                        self.marker_width = num
+                            elif 'marker' in text and ('length' in text or 'len' in text):
+                                if self.marker_length is None:
+                                    num = find_number_near(col_idx)
+                                    if num is not None:
+                                        self.marker_length = num
+                except Exception:
+                    # לא נכשיל את הניתוח בגלל שגיאת חילוץ מרקר
+                    pass
                 # חיפוש שם קובץ
                 if pd.notna(row.iloc[0]) and row.iloc[0] == 'Style File Name:':
                     if pd.notna(row.iloc[2]):
@@ -119,7 +186,9 @@ class OptitexFileAnalyzer:
             'unique_sizes': df['מידה'].nunique(),
             'total_quantity': df['כמות'].sum(),
             'is_tubular': self.is_tubular,
-            'products_list': df['שם המוצר'].unique().tolist()
+            'products_list': df['שם המוצר'].unique().tolist(),
+            'marker_width': self.marker_width,
+            'marker_length': self.marker_length
         }
     
     def sort_results(self) -> List[Dict]:

@@ -181,6 +181,16 @@ class ConverterTabMixin:
         file_name = os.path.basename(self.rib_file) if getattr(self,'rib_file','') else '—'
         tubular_txt = 'Tubular (חולק ב-2)' if summary.get('is_tubular') else 'רגיל'
         info = f"סוג בד: {fabric_type} | Layout: {tubular_txt} | קובץ: {file_name} | מוצרים: {summary.get('unique_products')} | מידות: {summary.get('unique_sizes')} | רשומות: {summary.get('total_records')} | סך כמות: {summary.get('total_quantity'): .1f}"
+        # הוספת Marker Width/Length אם קיימים
+        mw = summary.get('marker_width')
+        ml = summary.get('marker_length')
+        extra_marker = []
+        if mw is not None:
+            extra_marker.append(f"Marker Width: {mw:.2f}")
+        if ml is not None:
+            extra_marker.append(f"Marker Length: {ml:.2f}")
+        if extra_marker:
+            info += " | " + " | ".join(extra_marker)
         self.analysis_info_var.set(info)
         # Minimal log section
         self._log_message("=== סיכום ניתוח ===")
