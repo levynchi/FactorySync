@@ -16,9 +16,11 @@ class ProductsCatalogTabMixin:
         products_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         accessories_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         categories_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        attributes_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(products_tab, text="מוצרים")
         inner_nb.add(accessories_tab, text="אביזרי תפירה")
         inner_nb.add(categories_tab, text="קטגוריות")
+        inner_nb.add(attributes_tab, text="תכונות מוצר")
 
         # --- חלק מוצרים ---
         form = ttk.LabelFrame(products_tab, text="הוספת מוצר", padding=10)
@@ -119,6 +121,88 @@ class ProductsCatalogTabMixin:
         self.categories_tree.pack(side='left', fill='both', expand=True)
         cat_vs.pack(side='right', fill='y')
         self._load_categories_into_tree()
+
+        # --- תכונות מוצר (מידות, סוגי בד, צבעי בד, שמות פרינט) ---
+        self.attr_size_var = tk.StringVar(); self.attr_fabric_type_var = tk.StringVar(); self.attr_fabric_color_var = tk.StringVar(); self.attr_print_name_var = tk.StringVar()
+        attr_nb = ttk.Notebook(attributes_tab)
+        attr_nb.pack(fill='both', expand=True, padx=8, pady=6)
+
+        sizes_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        ftypes_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        fcolors_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        prints_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        attr_nb.add(sizes_tab, text='מידות')
+        attr_nb.add(ftypes_tab, text='סוגי בד')
+        attr_nb.add(fcolors_tab, text='צבעי בד')
+        attr_nb.add(prints_tab, text='שמות פרינט')
+
+        # Sizes
+        sz_form = ttk.LabelFrame(sizes_tab, text='הוספת מידה', padding=8)
+        sz_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(sz_form, text='מידה:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(sz_form, textvariable=self.attr_size_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(sz_form, text='➕ הוסף', command=self._add_product_size, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(sz_form, text='🗑️ מחק נבחר', command=self._delete_selected_product_size, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        sz_tree_frame = ttk.LabelFrame(sizes_tab, text='מידות', padding=4)
+        sz_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.sizes_tree = ttk.Treeview(sz_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','מידה',140),('created_at','נוצר',140)]:
+            self.sizes_tree.heading(c, text=t); self.sizes_tree.column(c, width=w, anchor='center')
+        sz_vs = ttk.Scrollbar(sz_tree_frame, orient='vertical', command=self.sizes_tree.yview)
+        self.sizes_tree.configure(yscroll=sz_vs.set)
+        self.sizes_tree.pack(side='left', fill='both', expand=True); sz_vs.pack(side='right', fill='y')
+        self._load_sizes_into_tree()
+
+        # Fabric Types
+        ft_form = ttk.LabelFrame(ftypes_tab, text='הוספת סוג בד', padding=8)
+        ft_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(ft_form, text='סוג בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(ft_form, textvariable=self.attr_fabric_type_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(ft_form, text='➕ הוסף', command=self._add_fabric_type_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(ft_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_type_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        ft_tree_frame = ttk.LabelFrame(ftypes_tab, text='סוגי בד', padding=4)
+        ft_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.fabric_types_tree = ttk.Treeview(ft_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','סוג בד',160),('created_at','נוצר',140)]:
+            self.fabric_types_tree.heading(c, text=t); self.fabric_types_tree.column(c, width=w, anchor='center')
+        ft_vs = ttk.Scrollbar(ft_tree_frame, orient='vertical', command=self.fabric_types_tree.yview)
+        self.fabric_types_tree.configure(yscroll=ft_vs.set)
+        self.fabric_types_tree.pack(side='left', fill='both', expand=True); ft_vs.pack(side='right', fill='y')
+        self._load_fabric_types_into_tree()
+
+        # Fabric Colors
+        fc_form = ttk.LabelFrame(fcolors_tab, text='הוספת צבע בד', padding=8)
+        fc_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(fc_form, text='צבע בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(fc_form, textvariable=self.attr_fabric_color_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(fc_form, text='➕ הוסף', command=self._add_fabric_color_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(fc_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_color_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        fc_tree_frame = ttk.LabelFrame(fcolors_tab, text='צבעי בד', padding=4)
+        fc_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.fabric_colors_tree = ttk.Treeview(fc_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','צבע בד',160),('created_at','נוצר',140)]:
+            self.fabric_colors_tree.heading(c, text=t); self.fabric_colors_tree.column(c, width=w, anchor='center')
+        fc_vs = ttk.Scrollbar(fc_tree_frame, orient='vertical', command=self.fabric_colors_tree.yview)
+        self.fabric_colors_tree.configure(yscroll=fc_vs.set)
+        self.fabric_colors_tree.pack(side='left', fill='both', expand=True); fc_vs.pack(side='right', fill='y')
+        self._load_fabric_colors_into_tree()
+
+        # Print Names
+        pn_form = ttk.LabelFrame(prints_tab, text='הוספת שם פרינט', padding=8)
+        pn_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(pn_form, text='שם פרינט:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(pn_form, textvariable=self.attr_print_name_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(pn_form, text='➕ הוסף', command=self._add_print_name_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(pn_form, text='🗑️ מחק נבחר', command=self._delete_selected_print_name_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        pn_tree_frame = ttk.LabelFrame(prints_tab, text='שמות פרינט', padding=4)
+        pn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.print_names_tree = ttk.Treeview(pn_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','שם פרינט',160),('created_at','נוצר',140)]:
+            self.print_names_tree.heading(c, text=t); self.print_names_tree.column(c, width=w, anchor='center')
+        pn_vs = ttk.Scrollbar(pn_tree_frame, orient='vertical', command=self.print_names_tree.yview)
+        self.print_names_tree.configure(yscroll=pn_vs.set)
+        self.print_names_tree.pack(side='left', fill='both', expand=True); pn_vs.pack(side='right', fill='y')
+        self._load_print_names_into_tree()
 
     # Loading
     def _load_products_catalog_into_tree(self):
@@ -356,3 +440,116 @@ class ProductsCatalogTabMixin:
             self.category_combobox['values'] = names
             if self.prod_category_var.get() not in names:
                 self.prod_category_var.set('')
+
+    # ===== תכונות מוצר - טעינה =====
+    def _load_sizes_into_tree(self):
+        if not hasattr(self, 'sizes_tree'): return
+        for item in self.sizes_tree.get_children(): self.sizes_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_sizes', []):
+            self.sizes_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
+    def _load_fabric_types_into_tree(self):
+        if not hasattr(self, 'fabric_types_tree'): return
+        for item in self.fabric_types_tree.get_children(): self.fabric_types_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_fabric_types', []):
+            self.fabric_types_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
+    def _load_fabric_colors_into_tree(self):
+        if not hasattr(self, 'fabric_colors_tree'): return
+        for item in self.fabric_colors_tree.get_children(): self.fabric_colors_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_fabric_colors', []):
+            self.fabric_colors_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
+    def _load_print_names_into_tree(self):
+        if not hasattr(self, 'print_names_tree'): return
+        for item in self.print_names_tree.get_children(): self.print_names_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_print_names', []):
+            self.print_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
+    # ===== תכונות מוצר - הוספה =====
+    def _add_product_size(self):
+        name = self.attr_size_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין מידה')
+            return
+        try:
+            new_id = self.data_processor.add_product_size(name)
+            self.sizes_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_size_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    def _add_fabric_type_item(self):
+        name = self.attr_fabric_type_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין סוג בד')
+            return
+        try:
+            new_id = self.data_processor.add_fabric_type_item(name)
+            self.fabric_types_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_fabric_type_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    def _add_fabric_color_item(self):
+        name = self.attr_fabric_color_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין צבע בד')
+            return
+        try:
+            new_id = self.data_processor.add_fabric_color_item(name)
+            self.fabric_colors_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_fabric_color_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    def _add_print_name_item(self):
+        name = self.attr_print_name_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין שם פרינט')
+            return
+        try:
+            new_id = self.data_processor.add_print_name_item(name)
+            self.print_names_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_print_name_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    # ===== תכונות מוצר - מחיקה =====
+    def _delete_selected_product_size(self):
+        if not hasattr(self, 'sizes_tree'): return
+        sel = self.sizes_tree.selection()
+        if not sel: return
+        deleted = False
+        for item in sel:
+            vals = self.sizes_tree.item(item, 'values')
+            if vals and self.data_processor.delete_product_size(int(vals[0])):
+                deleted = True
+        if deleted: self._load_sizes_into_tree()
+
+    def _delete_selected_fabric_type_item(self):
+        if not hasattr(self, 'fabric_types_tree'): return
+        sel = self.fabric_types_tree.selection(); deleted = False
+        for item in sel:
+            vals = self.fabric_types_tree.item(item, 'values')
+            if vals and self.data_processor.delete_fabric_type_item(int(vals[0])):
+                deleted = True
+        if deleted: self._load_fabric_types_into_tree()
+
+    def _delete_selected_fabric_color_item(self):
+        if not hasattr(self, 'fabric_colors_tree'): return
+        sel = self.fabric_colors_tree.selection(); deleted = False
+        for item in sel:
+            vals = self.fabric_colors_tree.item(item, 'values')
+            if vals and self.data_processor.delete_fabric_color_item(int(vals[0])):
+                deleted = True
+        if deleted: self._load_fabric_colors_into_tree()
+
+    def _delete_selected_print_name_item(self):
+        if not hasattr(self, 'print_names_tree'): return
+        sel = self.print_names_tree.selection(); deleted = False
+        for item in sel:
+            vals = self.print_names_tree.item(item, 'values')
+            if vals and self.data_processor.delete_print_name_item(int(vals[0])):
+                deleted = True
+        if deleted: self._load_print_names_into_tree()

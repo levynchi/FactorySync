@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -30,6 +30,11 @@ class DataProcessor:
 		self.sewing_accessories_file = sewing_accessories_file
 		self.categories_file = categories_file
 		self.suppliers_file = suppliers_file
+		# קבצי תכונות מוצר
+		self.product_sizes_file = product_sizes_file
+		self.fabric_types_file = fabric_types_file
+		self.fabric_colors_file = fabric_colors_file
+		self.print_names_file = print_names_file
 		# load base datasets
 		self.drawings_data = self.load_drawings_data()
 		self.returned_drawings_data = self.load_returned_drawings_data()
@@ -38,6 +43,11 @@ class DataProcessor:
 		self.products_catalog = self.load_products_catalog()
 		self.sewing_accessories = self.load_sewing_accessories()
 		self.categories = self.load_categories()
+		# טעינת תכונות מוצר (מידות, סוגי בד, צבעי בד, שמות פרינט)
+		self.product_sizes = self.load_product_sizes()
+		self.product_fabric_types = self.load_fabric_types()
+		self.product_fabric_colors = self.load_fabric_colors()
+		self.product_print_names = self.load_print_names()
 		self.suppliers = self.load_suppliers()
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
@@ -860,4 +870,96 @@ class DataProcessor:
 
 	def refresh_categories(self):
 		self.categories = self.load_categories()
+
+	# ===== Product Attribute Lists (sizes, fabric types, colors, print names) =====
+	def _load_simple_list(self, path: str) -> list[dict]:
+		try:
+			if os.path.exists(path):
+				with open(path, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					if isinstance(data, list):
+						return data
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת קובץ {path}: {e}"); return []
+
+	def _save_simple_list(self, path: str, data: list[dict]) -> bool:
+		try:
+			with open(path, 'w', encoding='utf-8') as f:
+				json.dump(data, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת קובץ {path}: {e}"); return False
+
+	def load_product_sizes(self):
+		return self._load_simple_list(self.product_sizes_file)
+
+	def load_fabric_types(self):
+		return self._load_simple_list(self.fabric_types_file)
+
+	def load_fabric_colors(self):
+		return self._load_simple_list(self.fabric_colors_file)
+
+	def load_print_names(self):
+		return self._load_simple_list(self.print_names_file)
+
+	def save_product_sizes(self):
+		return self._save_simple_list(self.product_sizes_file, self.product_sizes)
+
+	def save_fabric_types(self):
+		return self._save_simple_list(self.fabric_types_file, self.product_fabric_types)
+
+	def save_fabric_colors(self):
+		return self._save_simple_list(self.fabric_colors_file, self.product_fabric_colors)
+
+	def save_print_names(self):
+		return self._save_simple_list(self.print_names_file, self.product_print_names)
+
+	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str) -> int:
+		if not name:
+			raise Exception("חובה להזין שם")
+		for rec in data_list:
+			if rec.get('name','').strip() == name.strip():
+				raise Exception("פריט כבר קיים")
+		new_id = max([r.get('id',0) for r in data_list], default=0) + 1
+		rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+		data_list.append(rec)
+		save_func(); return new_id
+
+	def _delete_from_simple_list(self, data_list: list[dict], save_func, rec_id: int) -> bool:
+		before = len(data_list)
+		data_list[:] = [r for r in data_list if int(r.get('id',0)) != int(rec_id)]
+		if len(data_list) != before:
+			save_func(); return True
+		return False
+
+	def add_product_size(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_sizes, self.save_product_sizes, name)
+
+	def delete_product_size(self, rec_id: int) -> bool:
+		return self._delete_from_simple_list(self.product_sizes, self.save_product_sizes, rec_id)
+
+	def add_fabric_type_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name)
+
+	def delete_fabric_type_item(self, rec_id: int) -> bool:
+		return self._delete_from_simple_list(self.product_fabric_types, self.save_fabric_types, rec_id)
+
+	def add_fabric_color_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name)
+
+	def delete_fabric_color_item(self, rec_id: int) -> bool:
+		return self._delete_from_simple_list(self.product_fabric_colors, self.save_fabric_colors, rec_id)
+
+	def add_print_name_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name)
+
+	def delete_print_name_item(self, rec_id: int) -> bool:
+		return self._delete_from_simple_list(self.product_print_names, self.save_print_names, rec_id)
+
+	def refresh_product_attributes(self):
+		self.product_sizes = self.load_product_sizes()
+		self.product_fabric_types = self.load_fabric_types()
+		self.product_fabric_colors = self.load_fabric_colors()
+		self.product_print_names = self.load_print_names()
 
