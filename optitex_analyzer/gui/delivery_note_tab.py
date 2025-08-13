@@ -278,6 +278,11 @@ class DeliveryNoteTabMixin:
         list_wrapper.grid_rowconfigure(0, weight=1)
         refresh_btn = tk.Button(list_wrapper, text="🔄 רענן", command=self._refresh_delivery_notes_list, bg='#3498db', fg='white')
         refresh_btn.grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
+        # כפתור צפייה בתעודה
+        view_btn = tk.Button(list_wrapper, text="👁 צפה", command=self._open_selected_delivery_note_view, bg='#2c3e50', fg='white')
+        view_btn.grid(row=1,column=0,sticky='e', padx=60, pady=(0,6))
+        # פתיחת פירוט בדאבל-קליק על שורה
+        self.delivery_notes_tree.bind('<Double-1>', self._open_selected_delivery_note_view)
         self._refresh_delivery_notes_list()
 
     def _refresh_driver_names_for_delivery(self):
@@ -523,3 +528,74 @@ class DeliveryNoteTabMixin:
                 if len(rec.get('packages', [])) > 4:
                     pkg_summary += ' ...'
                 self.delivery_notes_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))
+
+    # ---- View single delivery note ----
+    def _open_selected_delivery_note_view(self, event=None):
+        try:
+            if not hasattr(self, 'delivery_notes_tree'): return
+            sel = self.delivery_notes_tree.selection()
+            if not sel: return
+            vals = self.delivery_notes_tree.item(sel[0], 'values')
+            if not vals: return
+            note_id = vals[0]
+            # איתור הרשומה המלאה
+            try:
+                self.data_processor.refresh_supplier_receipts()
+            except Exception:
+                pass
+            full_list = getattr(self.data_processor, 'delivery_notes', [])
+            rec = None
+            for r in full_list:
+                if str(r.get('id')) == str(note_id):
+                    rec = r; break
+            if not rec:
+                messagebox.showerror("שגיאה", "תעודה לא נמצאה")
+                return
+            win = tk.Toplevel(self.notebook)
+            win.title(f"תעודת משלוח #{rec.get('id')}")
+            win.geometry('760x520')
+            win.transient(self.notebook.winfo_toplevel())
+            header = tk.Frame(win, pady=6)
+            header.pack(fill='x')
+            def _lbl(text):
+                return tk.Label(header, text=text, font=('Arial',10,'bold'))
+            _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
+            _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
+            _lbl(f"ספק: {rec.get('supplier')}").grid(row=0,column=2,padx=6,sticky='w')
+            # תיקון מחרוזת f לא נכונה שגרמה להצגת הטקסט {rec.get('total_quantity')} במקום הערך
+            _lbl(f"סה\"כ כמות: {rec.get('total_quantity')}").grid(row=0,column=3,padx=6,sticky='w')
+            # קונטיינר לפאנלים
+            body = tk.PanedWindow(win, orient='vertical')
+            body.pack(fill='both', expand=True, padx=8, pady=4)
+            # שורות מוצרים
+            lines_frame = tk.LabelFrame(body, text='שורות מוצרים')
+            body.add(lines_frame, stretch='always')
+            lines_cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+            lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=8)
+            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
+            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'quantity':60,'note':160}
+            for c in lines_cols:
+                lines_tree.heading(c, text=headers_map[c])
+                lines_tree.column(c, width=widths_map[c], anchor='center')
+            for line in rec.get('lines', []) or []:
+                lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('print_name'), line.get('quantity'), line.get('note')))
+            lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
+            # חבילות הובלה
+            pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
+            body.add(pkg_frame, stretch='always')
+            pkg_cols = ('package_type','quantity','driver')
+            pkg_tree = ttk.Treeview(pkg_frame, columns=pkg_cols, show='headings', height=6)
+            pkg_headers = {'package_type':'פריט הובלה','quantity':'כמות','driver':'מוביל'}
+            pkg_widths = {'package_type':140,'quantity':70,'driver':120}
+            for c in pkg_cols:
+                pkg_tree.heading(c, text=pkg_headers[c])
+                pkg_tree.column(c, width=pkg_widths[c], anchor='center')
+            for p in rec.get('packages', []) or []:
+                pkg_tree.insert('', 'end', values=(p.get('package_type'), p.get('quantity'), p.get('driver')))
+            pkg_tree.pack(fill='both', expand=True, padx=4, pady=4)
+            tk.Button(win, text='סגור', command=win.destroy).pack(pady=4)
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", str(e))
+            except Exception:
+                pass
