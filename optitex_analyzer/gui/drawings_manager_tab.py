@@ -88,26 +88,32 @@ class DrawingsManagerTabMixin:
 
         form = tk.Frame(wrapper, bg='#ecf0f1'); form.pack(fill='x', pady=(0,6))
         tk.Label(form, text="file name:", bg='#ecf0f1').grid(row=0, column=0, sticky='w', padx=6, pady=4)
-        self.pm_file_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_file_name_var, width=32).grid(row=0, column=1, sticky='w', padx=4, pady=4)
-        tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=12, pady=4)
-        self.pm_product_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_product_name_var, width=32).grid(row=0, column=3, sticky='w', padx=4, pady=4)
-        tk.Button(form, text="➕ הוסף/עדכן", command=self._add_product_mapping_row, bg='#27ae60', fg='white').grid(row=0, column=4, padx=8)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_mapping, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
-        tk.Button(form, text="❌ נקה שדות", command=lambda: (self.pm_file_name_var.set(''), self.pm_product_name_var.set('')), bg='#e74c3c', fg='white').grid(row=0, column=6, padx=4)
+        self.pm_file_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_file_name_var, width=26).grid(row=0, column=1, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=10, pady=4)
+        self.pm_product_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_product_name_var, width=26).grid(row=0, column=3, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="unit quantity:", bg='#ecf0f1').grid(row=0, column=4, sticky='w', padx=10, pady=4)
+        self.pm_unit_qty_var = tk.StringVar(value='1')
+        self.pm_unit_qty_spin = tk.Spinbox(form, from_=1, to=999, textvariable=self.pm_unit_qty_var, width=5)
+        self.pm_unit_qty_spin.grid(row=0, column=5, sticky='w', padx=4, pady=4)
+        tk.Button(form, text="➕ הוסף/עדכן", command=self._add_product_mapping_row, bg='#27ae60', fg='white').grid(row=0, column=6, padx=8)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_mapping, bg='#e67e22', fg='white').grid(row=0, column=7, padx=4)
+        tk.Button(form, text="❌ נקה שדות", command=lambda: (self.pm_file_name_var.set(''), self.pm_product_name_var.set(''), self.pm_unit_qty_var.set('1')), bg='#e74c3c', fg='white').grid(row=0, column=8, padx=4)
 
-        cols = ('file_name','product_name')
+        cols = ('file_name','product_name','unit_qty')
         self.product_mapping_tree = ttk.Treeview(wrapper, columns=cols, show='headings', height=12)
         self.product_mapping_tree.heading('file_name', text='file name')
         self.product_mapping_tree.heading('product_name', text='product name')
-        self.product_mapping_tree.column('file_name', width=240, anchor='w')
-        self.product_mapping_tree.column('product_name', width=260, anchor='w')
+        self.product_mapping_tree.heading('unit_qty', text='unit quantity')
+        self.product_mapping_tree.column('file_name', width=210, anchor='w')
+        self.product_mapping_tree.column('product_name', width=220, anchor='w')
+        self.product_mapping_tree.column('unit_qty', width=110, anchor='center')
         vs = ttk.Scrollbar(wrapper, orient='vertical', command=self.product_mapping_tree.yview)
         self.product_mapping_tree.configure(yscroll=vs.set)
         self.product_mapping_tree.pack(side='left', fill='both', expand=True)
         vs.pack(side='right', fill='y')
         self.product_mapping_tree.bind('<<TreeviewSelect>>', self._on_product_mapping_select)
 
-        self._product_mapping_rows = []
+        self._product_mapping_rows = []  # each row includes optional 'unit quantity'
         self._load_product_mapping_initial()
 
     def _get_products_excel_path(self):
@@ -123,8 +129,14 @@ class DrawingsManagerTabMixin:
                 df = pd.read_excel(path)
                 for _, r in df.iterrows():
                     fn = str(r.get('file name') or '').strip(); pn = str(r.get('product name') or '').strip()
+                    uq_raw = r.get('unit quantity', 1)
+                    try:
+                        uq = int(uq_raw)
+                        if uq <= 0: uq = 1
+                    except Exception:
+                        uq = 1
                     if fn and pn:
-                        self._product_mapping_rows.append({'file name': fn, 'product name': pn})
+                        self._product_mapping_rows.append({'file name': fn, 'product name': pn, 'unit quantity': uq})
         except Exception:
             pass
         self._populate_product_mapping_tree()
@@ -133,22 +145,28 @@ class DrawingsManagerTabMixin:
         if not hasattr(self, 'product_mapping_tree'): return
         for iid in self.product_mapping_tree.get_children(): self.product_mapping_tree.delete(iid)
         for row in self._product_mapping_rows:
-            self.product_mapping_tree.insert('', 'end', values=(row['file name'], row['product name']))
+            self.product_mapping_tree.insert('', 'end', values=(row['file name'], row['product name'], row.get('unit quantity', 1)))
 
     def _refresh_product_mapping_table(self):
         self._load_product_mapping_initial()
 
     def _add_product_mapping_row(self):
-        fn = (self.pm_file_name_var.get() or '').strip(); pn = (self.pm_product_name_var.get() or '').strip()
+        fn = (self.pm_file_name_var.get() or '').strip(); pn = (self.pm_product_name_var.get() or '').strip(); uq_txt = (self.pm_unit_qty_var.get() or '').strip()
         if not fn or not pn:
-            messagebox.showerror("שגיאה", "יש למלא גם file name וגם product name"); return
+            messagebox.showerror("שגיאה", "יש למלא file name + product name"); return
+        try:
+            uq = int(uq_txt)
+            if uq <= 0: raise ValueError
+        except Exception:
+            messagebox.showerror("שגיאה", "unit quantity חייב להיות מספר >= 1")
+            return
         replaced = False
         for row in self._product_mapping_rows:
             if row['file name'].lower() == fn.lower():
-                row['file name'] = fn; row['product name'] = pn; replaced = True; break
+                row['file name'] = fn; row['product name'] = pn; row['unit quantity'] = uq; replaced = True; break
         if not replaced:
-            self._product_mapping_rows.append({'file name': fn, 'product name': pn})
-        self._populate_product_mapping_tree(); self.pm_file_name_var.set(''); self.pm_product_name_var.set('')
+            self._product_mapping_rows.append({'file name': fn, 'product name': pn, 'unit quantity': uq})
+        self._populate_product_mapping_tree(); self.pm_file_name_var.set(''); self.pm_product_name_var.set(''); self.pm_unit_qty_var.set('1')
 
     def _delete_selected_product_mapping(self):
         if not hasattr(self, 'product_mapping_tree'): return
@@ -166,6 +184,11 @@ class DrawingsManagerTabMixin:
         vals = self.product_mapping_tree.item(sel[0], 'values');
         if not vals: return
         self.pm_file_name_var.set(vals[0]); self.pm_product_name_var.set(vals[1])
+        if len(vals) > 2:
+            try:
+                self.pm_unit_qty_var.set(str(vals[2]))
+            except Exception:
+                self.pm_unit_qty_var.set('1')
 
     def _save_product_mapping(self):
         path = self._get_products_excel_path()
@@ -173,7 +196,16 @@ class DrawingsManagerTabMixin:
             import pandas as pd
             if not self._product_mapping_rows:
                 messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
-            df = pd.DataFrame(self._product_mapping_rows)[['file name','product name']]
+            normalized = []
+            for r in self._product_mapping_rows:
+                uq = r.get('unit quantity', 1)
+                try:
+                    uq = int(uq)
+                    if uq <= 0: uq = 1
+                except Exception:
+                    uq = 1
+                normalized.append({'file name': r.get('file name',''), 'product name': r.get('product name',''), 'unit quantity': uq})
+            df = pd.DataFrame(normalized)[['file name','product name','unit quantity']]
             df.to_excel(path, index=False)
             messagebox.showinfo("הצלחה", f"נשמר {path}")
             try:
