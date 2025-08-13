@@ -17,8 +17,10 @@ class DrawingsManagerTabMixin:
         table_page = tk.Frame(inner_nb, bg='#f7f9fa')
         converter_page = tk.Frame(inner_nb, bg='#f7f9fa')
         cut_drawings_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        product_map_page = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(table_page, text="טבלת ציורים")
         inner_nb.add(converter_page, text="ממיר קבצים")
+        inner_nb.add(product_map_page, text="מיפוי מוצרים")
         # Embed cut drawings (returned drawings) tab if builder exists
         try:
             if hasattr(self, '_build_returned_drawings_content'):
@@ -68,6 +70,119 @@ class DrawingsManagerTabMixin:
             pass
         self._populate_drawings_tree()
         self._update_drawings_stats()
+        # Build product mapping tab
+        try:
+            self._build_product_mapping_tab(product_map_page)
+        except Exception:
+            pass
+
+    # === Product Mapping Tab ===
+    def _build_product_mapping_tab(self, container: tk.Widget):
+        wrapper = tk.Frame(container, bg='#f7f9fa')
+        wrapper.pack(fill='both', expand=True, padx=10, pady=8)
+        tk.Label(wrapper, text="ניהול מיפוי מוצרים (קובץ מוצרים.xlsx)", font=('Arial',14,'bold'), bg='#f7f9fa').pack(anchor='e', pady=(0,8))
+
+        actions = tk.Frame(wrapper, bg='#f7f9fa'); actions.pack(fill='x', pady=(0,6))
+        tk.Button(actions, text="🔄 רענן", command=self._refresh_product_mapping_table, bg='#3498db', fg='white').pack(side='right', padx=4)
+        tk.Button(actions, text="💾 שמור לקובץ", command=self._save_product_mapping, bg='#2c3e50', fg='white').pack(side='right', padx=4)
+
+        form = tk.Frame(wrapper, bg='#ecf0f1'); form.pack(fill='x', pady=(0,6))
+        tk.Label(form, text="file name:", bg='#ecf0f1').grid(row=0, column=0, sticky='w', padx=6, pady=4)
+        self.pm_file_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_file_name_var, width=32).grid(row=0, column=1, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=12, pady=4)
+        self.pm_product_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_product_name_var, width=32).grid(row=0, column=3, sticky='w', padx=4, pady=4)
+        tk.Button(form, text="➕ הוסף/עדכן", command=self._add_product_mapping_row, bg='#27ae60', fg='white').grid(row=0, column=4, padx=8)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_mapping, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        tk.Button(form, text="❌ נקה שדות", command=lambda: (self.pm_file_name_var.set(''), self.pm_product_name_var.set('')), bg='#e74c3c', fg='white').grid(row=0, column=6, padx=4)
+
+        cols = ('file_name','product_name')
+        self.product_mapping_tree = ttk.Treeview(wrapper, columns=cols, show='headings', height=12)
+        self.product_mapping_tree.heading('file_name', text='file name')
+        self.product_mapping_tree.heading('product_name', text='product name')
+        self.product_mapping_tree.column('file_name', width=240, anchor='w')
+        self.product_mapping_tree.column('product_name', width=260, anchor='w')
+        vs = ttk.Scrollbar(wrapper, orient='vertical', command=self.product_mapping_tree.yview)
+        self.product_mapping_tree.configure(yscroll=vs.set)
+        self.product_mapping_tree.pack(side='left', fill='both', expand=True)
+        vs.pack(side='right', fill='y')
+        self.product_mapping_tree.bind('<<TreeviewSelect>>', self._on_product_mapping_select)
+
+        self._product_mapping_rows = []
+        self._load_product_mapping_initial()
+
+    def _get_products_excel_path(self):
+        import os
+        return os.path.join(os.getcwd(), 'קובץ מוצרים.xlsx')
+
+    def _load_product_mapping_initial(self):
+        self._product_mapping_rows = []
+        path = self._get_products_excel_path()
+        try:
+            import pandas as pd, os
+            if os.path.exists(path):
+                df = pd.read_excel(path)
+                for _, r in df.iterrows():
+                    fn = str(r.get('file name') or '').strip(); pn = str(r.get('product name') or '').strip()
+                    if fn and pn:
+                        self._product_mapping_rows.append({'file name': fn, 'product name': pn})
+        except Exception:
+            pass
+        self._populate_product_mapping_tree()
+
+    def _populate_product_mapping_tree(self):
+        if not hasattr(self, 'product_mapping_tree'): return
+        for iid in self.product_mapping_tree.get_children(): self.product_mapping_tree.delete(iid)
+        for row in self._product_mapping_rows:
+            self.product_mapping_tree.insert('', 'end', values=(row['file name'], row['product name']))
+
+    def _refresh_product_mapping_table(self):
+        self._load_product_mapping_initial()
+
+    def _add_product_mapping_row(self):
+        fn = (self.pm_file_name_var.get() or '').strip(); pn = (self.pm_product_name_var.get() or '').strip()
+        if not fn or not pn:
+            messagebox.showerror("שגיאה", "יש למלא גם file name וגם product name"); return
+        replaced = False
+        for row in self._product_mapping_rows:
+            if row['file name'].lower() == fn.lower():
+                row['file name'] = fn; row['product name'] = pn; replaced = True; break
+        if not replaced:
+            self._product_mapping_rows.append({'file name': fn, 'product name': pn})
+        self._populate_product_mapping_tree(); self.pm_file_name_var.set(''); self.pm_product_name_var.set('')
+
+    def _delete_selected_product_mapping(self):
+        if not hasattr(self, 'product_mapping_tree'): return
+        sel = self.product_mapping_tree.selection();
+        if not sel: return
+        values = self.product_mapping_tree.item(sel[0], 'values')
+        if not values: return
+        fn = values[0]
+        self._product_mapping_rows = [r for r in self._product_mapping_rows if r['file name'] != fn]
+        self._populate_product_mapping_tree()
+
+    def _on_product_mapping_select(self, event=None):
+        sel = self.product_mapping_tree.selection();
+        if not sel: return
+        vals = self.product_mapping_tree.item(sel[0], 'values');
+        if not vals: return
+        self.pm_file_name_var.set(vals[0]); self.pm_product_name_var.set(vals[1])
+
+    def _save_product_mapping(self):
+        path = self._get_products_excel_path()
+        try:
+            import pandas as pd
+            if not self._product_mapping_rows:
+                messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+            df = pd.DataFrame(self._product_mapping_rows)[['file name','product name']]
+            df.to_excel(path, index=False)
+            messagebox.showinfo("הצלחה", f"נשמר {path}")
+            try:
+                if hasattr(self, 'file_analyzer') and path:
+                    self.file_analyzer.load_products_mapping(path)
+            except Exception:
+                pass
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
 
     def _show_drawings_manager_tab(self):
         for i in range(len(self.notebook.tabs())):
