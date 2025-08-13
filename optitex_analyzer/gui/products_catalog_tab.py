@@ -7,8 +7,8 @@ class ProductsCatalogTabMixin:
     """Mixin לטאב ניהול קטלוג מוצרים (הוספה / מחיקה / ייצוא)."""
     def _create_products_catalog_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="קטלוג מוצרים")
-        tk.Label(tab, text="ניהול קטלוג מוצרים", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=4)
+        self.notebook.add(tab, text="קטלוג מוצרים ופריטים")
+        tk.Label(tab, text="ניהול קטלוג מוצרים ופריטים", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=4)
         # פנימי: Notebook מחולק למוצרים ואביזרי תפירה
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=6, pady=4)
