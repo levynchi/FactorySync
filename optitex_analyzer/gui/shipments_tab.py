@@ -3,7 +3,7 @@ from tkinter import ttk
 from datetime import datetime
 
 class ShipmentsTabMixin:
-    """Mixin לטאב 'משלוחים' המציג שורות אריזה מכל הקליטות והתעודות.
+    """Mixin לטאב 'הובלות' המציג שורות אריזה מכל הקליטות והתעודות.
 
     כל רשומת קליטה / תעודת משלוח יכולה להכיל רשימת packages (package_type, quantity).
     הטאב מציג פירוק שטוח של כל החבילות עם מקורן.
@@ -11,8 +11,8 @@ class ShipmentsTabMixin:
 
     def _create_shipments_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="משלוחים")
-        tk.Label(tab, text="משלוחים - סיכום הובלה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        self.notebook.add(tab, text="הובלות")
+        tk.Label(tab, text="הובלות - סיכום הובלה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
 
         # Toolbar
         toolbar = tk.Frame(tab, bg='#f7f9fa')
@@ -43,7 +43,7 @@ class ShipmentsTabMixin:
 
     # ---- Data build ----
     def _refresh_shipments_table(self):
-        """רענון טבלת המשלוחים ע"י איסוף כל ה-packages מכל הרשומות."""
+        """רענון טבלת ההובלות ע"י איסוף כל ה-packages מכל הרשומות."""
         try:
             # לוודא טעינה עדכנית מהדיסק
             if hasattr(self.data_processor, 'refresh_supplier_receipts'):
@@ -67,7 +67,7 @@ class ShipmentsTabMixin:
                     for pkg in rec.get('packages', []) or []:
                         rows.append({
                             'rec_id': rec_id,
-                            'kind': 'קליטה' if kind == 'supplier_intake' else 'משלוח' if kind == 'delivery_note' else kind,
+                            'kind': 'קליטה' if kind == 'supplier_intake' else 'הובלה' if kind == 'delivery_note' else kind,
                             'date': date_str,
                             'sort_dt': sort_dt,
                             'package_type': pkg.get('package_type',''),
@@ -88,7 +88,7 @@ class ShipmentsTabMixin:
 
     # ---- Hook from save actions ----
     def _notify_new_receipt_saved(self):
-        """קריאה מהטאבים של קליטה / תעודת משלוח לאחר שמירה כדי לרענן משלוחים."""
+        """קריאה מהטאבים של קליטה / תעודת משלוח לאחר שמירה כדי לרענן הובלות."""
         try:
             if hasattr(self, '_refresh_shipments_table'):
                 self._refresh_shipments_table()

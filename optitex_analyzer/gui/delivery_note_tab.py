@@ -442,7 +442,7 @@ class DeliveryNoteTabMixin:
                 self._refresh_delivery_notes_list()
             except Exception:
                 pass
-            # עדכון טאב משלוחים אם קיים
+            # עדכון טאב הובלות אם קיים
             try:
                 self._notify_new_receipt_saved()
             except Exception:
