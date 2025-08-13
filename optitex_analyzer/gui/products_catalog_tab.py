@@ -117,6 +117,18 @@ class ProductsCatalogTabMixin:
         except Exception:
             existing = set()
 
+        # אם המשתמש הזין וריאנט יחיד (צירוף יחיד) ונמצא שהוא כבר קיים – נחסום ונודיע במפורש
+        if len(combos) == 1:
+            only_sz, only_ft, only_fc, only_pn = combos[0]
+            single_key = (name, only_sz, only_ft, only_fc, only_pn)
+            if single_key in existing:
+                messagebox.showinfo(
+                    "כפילות",
+                    "המוצר עם הנתונים הללו כבר קיים במערכת:\n"
+                    f"שם: {name}\nמידה: {only_sz or '-'}\nסוג בד: {only_ft or '-'}\nצבע בד: {only_fc or '-'}\nשם פרינט: {only_pn or '-'}"
+                )
+                return
+
         added = 0
         try:
             for sz, ft, fc, pn in combos:
@@ -134,7 +146,8 @@ class ProductsCatalogTabMixin:
                 # שקט – הוספה יחידה
                 pass
             else:
-                messagebox.showinfo("מידע", "לא נוספו רשומות (ייתכן שהכל כבר קיים)")
+                # כל הצירופים הוזנו כבר בעבר
+                messagebox.showinfo("כפילות", "כל הצירופים שהוזנו כבר קיימים – לא נוספו מוצרים חדשים")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
