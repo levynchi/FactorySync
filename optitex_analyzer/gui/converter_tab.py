@@ -66,6 +66,24 @@ class ConverterTabMixin:
             width=20
         )
         self.fabric_type_combo.pack(side='left', padx=5)
+        # Supplier recipient selection (למי נשלח הציור)
+        supplier_frame = tk.Frame(options_frame); supplier_frame.pack(fill='x', pady=5)
+        tk.Label(supplier_frame, text="נמען (ספק):", font=('Arial',10,'bold'), width=15, anchor='w').pack(side='left')
+        self.recipient_supplier_var = tk.StringVar()
+        self.recipient_supplier_combo = ttk.Combobox(supplier_frame, textvariable=self.recipient_supplier_var, state='readonly', width=30)
+        self.recipient_supplier_combo.pack(side='left', padx=5)
+        # כפתור רענון שמות ספקים
+        tk.Button(supplier_frame, text="↺", width=3, command=self._refresh_converter_suppliers, bg='#3498db', fg='white').pack(side='left', padx=2)
+        try:
+            # אתחול ראשוני
+            self._refresh_converter_suppliers()
+        except Exception:
+            pass
+        # עדכון כפתור הוספה בעת בחירת נמען
+        try:
+            self.recipient_supplier_combo.bind('<<ComboboxSelected>>', lambda e: self._update_add_local_button_state())
+        except Exception:
+            pass
 
     def _create_action_buttons(self):
         buttons_frame = tk.Frame(self.root, bg='#f0f0f0'); buttons_frame.pack(fill="x", padx=20, pady=15)
@@ -73,9 +91,6 @@ class ConverterTabMixin:
         tk.Button(row1, text="🔍 נתח קבצים", command=self._analyze_files, bg='#27ae60', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
         tk.Button(row1, text="💾 שמור כ-Excel", command=self._save_excel, bg='#e67e22', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
         tk.Button(row1, text="️ נקה הכל", command=self._clear_all, bg='#e74c3c', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="right", padx=5)
-        row2 = tk.Frame(buttons_frame, bg='#f0f0f0'); row2.pack(fill="x", pady=5)
-        tk.Button(row2, text=" הוסף לטבלה מקומית", command=self._add_to_local_table, bg='#16a085', fg='white', font=('Arial', 11, 'bold'), height=2, width=18).pack(side="left", padx=5)
-        tk.Button(row2, text="📁 מנהל ציורים", command=self._show_drawings_manager_tab, bg='#2980b9', fg='white', font=('Arial', 11, 'bold'), height=2, width=18).pack(side="left", padx=5)
 
     def _create_results_section(self):
         results_frame = ttk.LabelFrame(self.root, text="תוצאות וסטטוס", padding=10)
@@ -221,13 +236,23 @@ class ConverterTabMixin:
             if not fabric_type or (hasattr(self, 'fabric_type_options') and fabric_type == self.fabric_type_options[0]):
                 messagebox.showwarning("אזהרה", "אנא בחר סוג בד לפני ההוספה לטבלה המקומית")
                 return
+            try:
+                recipient = self.recipient_supplier_var.get().strip()
+            except Exception:
+                recipient = ''
+            if not recipient:
+                messagebox.showwarning("אזהרה", "יש לבחור נמען (ספק) לפני ההוספה לטבלה המקומית")
+                return
             record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file, fabric_type=fabric_type)
+            # שמירת הנמען (אם יש יכולת ב- data_processor בעתיד; לעת עתה נשמור בלוג בלבד)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")
             self._log_message(f"ID רשומה חדשה: {record_id}")
             file_name = os.path.splitext(os.path.basename(self.rib_file))[0] if self.rib_file else 'לא ידוע'
             total_quantity = sum(r['כמות'] for r in self.current_results)
             self._log_message(f"שם הקובץ: {file_name}")
             self._log_message(f"סך כמויות: {total_quantity}")
+            if recipient:
+                self._log_message(f"נמען (ספק): {recipient}")
             self._update_status("נוסף לטבלה המקומית")
             # Refresh drawings manager tab if exists
             if hasattr(self, '_refresh_drawings_tree'):
@@ -240,6 +265,38 @@ class ConverterTabMixin:
             error_msg = str(e)
             self._log_message(f"❌ שגיאה בהוספה: {error_msg}")
             messagebox.showerror("שגיאה", error_msg)
+
+    def _refresh_converter_suppliers(self):
+        """רענון רשימת הספקים עבור קומבובוקס הנמען בממיר."""
+        try:
+            if not hasattr(self, 'recipient_supplier_combo'):
+                return
+            names = []
+            if hasattr(self, '_get_supplier_names'):
+                names = self._get_supplier_names()
+            self.recipient_supplier_combo['values'] = names
+            # אם הערך הנוכחי כבר לא קיים – ננקה
+            cur = self.recipient_supplier_var.get().strip()
+            if cur and cur not in names:
+                self.recipient_supplier_var.set('')
+            self._update_add_local_button_state()
+        except Exception:
+            pass
+
+    def _update_add_local_button_state(self):
+        try:
+            if not hasattr(self, 'add_to_local_btn'):
+                return
+            recipient = ''
+            try:
+                recipient = self.recipient_supplier_var.get().strip()
+            except Exception:
+                recipient = ''
+            desired = 'normal' if recipient else 'disabled'
+            if str(self.add_to_local_btn['state']) != desired:
+                self.add_to_local_btn.configure(state=desired)
+        except Exception:
+            pass
 
     # Clearing
     def _clear_results(self):
