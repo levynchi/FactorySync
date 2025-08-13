@@ -36,7 +36,7 @@ class ShipmentsTabMixin:
             'date': 'תאריך',
             'package_type': 'פריט הובלה',
             'quantity': 'כמות',
-            'driver': 'מי מוביל'
+            'driver': 'שם המוביל'
         }
         widths = {'id':110,'kind':90,'date':110,'package_type':140,'quantity':80,'driver':110}
         for c in columns:

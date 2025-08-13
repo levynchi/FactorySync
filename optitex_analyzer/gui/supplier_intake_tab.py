@@ -266,15 +266,21 @@ class SupplierIntakeTabMixin:
         self.sup_pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
         tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
         tk.Entry(pkg_frame, textvariable=self.sup_pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
-        tk.Label(pkg_frame, text="מי מוביל:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
-        tk.Entry(pkg_frame, textvariable=self.sup_pkg_driver_var, width=14).grid(row=0,column=5,sticky='w',padx=4,pady=2)
+        tk.Label(pkg_frame, text="שם המוביל:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
+        # Combobox למובילים
+        self.sup_pkg_driver_combo = ttk.Combobox(pkg_frame, textvariable=self.sup_pkg_driver_var, width=16, state='readonly')
+        self.sup_pkg_driver_combo.grid(row=0,column=5,sticky='w',padx=4,pady=2)
+        try:
+            self._refresh_driver_names_for_intake()
+        except Exception:
+            pass
         tk.Button(pkg_frame, text="➕ הוסף", command=self._add_supplier_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
         tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._delete_selected_supplier_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
         tk.Button(pkg_frame, text="❌ נקה", command=self._clear_supplier_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
         self.sup_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
         self.sup_packages_tree.heading('type', text='פריט הובלה')
         self.sup_packages_tree.heading('quantity', text='כמות')
-        self.sup_packages_tree.heading('driver', text='מי מוביל')
+        self.sup_packages_tree.heading('driver', text='שם המוביל')
         self.sup_packages_tree.column('type', width=120, anchor='center')
         self.sup_packages_tree.column('quantity', width=70, anchor='center')
         self.sup_packages_tree.column('driver', width=110, anchor='center')
@@ -297,6 +303,26 @@ class SupplierIntakeTabMixin:
         list_wrapper.grid_rowconfigure(0, weight=1)
         tk.Button(list_wrapper, text="🔄 רענן", command=self._refresh_supplier_intake_list, bg='#3498db', fg='white').grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
         self._refresh_supplier_intake_list()
+
+    def _refresh_driver_names_for_intake(self):
+        """טעינת שמות המובילים מקובץ drivers.json והחלתם בקומבובוקס."""
+        try:
+            import json, os
+            path = os.path.join(os.getcwd(), 'drivers.json')
+            names = []
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for d in data:
+                            name = (d.get('name') or '').strip()
+                            if name:
+                                names.append(name)
+            names = sorted({n for n in names})
+            if hasattr(self, 'sup_pkg_driver_combo'):
+                self.sup_pkg_driver_combo['values'] = names
+        except Exception:
+            pass
 
     def _refresh_supplier_products_allowed(self, initial: bool = False):
         """רענון רשימת המוצרים האפשריים מתוך קטלוג המוצרים.
