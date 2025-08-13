@@ -255,32 +255,37 @@ class SupplierIntakeTabMixin:
         # Internal lines model
         self._supplier_lines = []
 
-        # ===== Packaging section (mirrors Delivery Note) =====
-        pkg_frame = ttk.LabelFrame(container, text="צורות אריזה", padding=8)
+        # ===== Transportation section (replaces previous packaging concept) =====
+        pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
         pkg_frame.pack(fill='x', padx=10, pady=(4,4))
         self.sup_pkg_type_var = tk.StringVar(value='שקית קטנה')
         self.sup_pkg_qty_var = tk.StringVar()
-        tk.Label(pkg_frame, text="צורת אריזה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
+        self.sup_pkg_driver_var = tk.StringVar()
+        tk.Label(pkg_frame, text="פריט הובלה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
         self.sup_pkg_type_combo = ttk.Combobox(pkg_frame, textvariable=self.sup_pkg_type_var, state='readonly', width=14, values=['שקית קטנה','שק','בד'])
         self.sup_pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
         tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
         tk.Entry(pkg_frame, textvariable=self.sup_pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
-        tk.Button(pkg_frame, text="➕ הוסף", command=self._add_supplier_package_line, bg='#27ae60', fg='white').grid(row=0,column=4,padx=8)
-        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._delete_selected_supplier_package, bg='#e67e22', fg='white').grid(row=0,column=5,padx=4)
-        tk.Button(pkg_frame, text="❌ נקה", command=self._clear_supplier_packages, bg='#e74c3c', fg='white').grid(row=0,column=6,padx=4)
-        self.sup_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity'), show='headings', height=4)
-        self.sup_packages_tree.heading('type', text='צורת אריזה')
+        tk.Label(pkg_frame, text="מי מוביל:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
+        tk.Entry(pkg_frame, textvariable=self.sup_pkg_driver_var, width=14).grid(row=0,column=5,sticky='w',padx=4,pady=2)
+        tk.Button(pkg_frame, text="➕ הוסף", command=self._add_supplier_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
+        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._delete_selected_supplier_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
+        tk.Button(pkg_frame, text="❌ נקה", command=self._clear_supplier_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+        self.sup_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
+        self.sup_packages_tree.heading('type', text='פריט הובלה')
         self.sup_packages_tree.heading('quantity', text='כמות')
+        self.sup_packages_tree.heading('driver', text='מי מוביל')
         self.sup_packages_tree.column('type', width=120, anchor='center')
         self.sup_packages_tree.column('quantity', width=70, anchor='center')
-        self.sup_packages_tree.grid(row=1,column=0,columnspan=7, sticky='ew', padx=2, pady=(6,2))
+        self.sup_packages_tree.column('driver', width=110, anchor='center')
+        self.sup_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
         # Internal packages model
         self._supplier_packages = []
 
         # Saved supplier receipts list (second tab)
         self.supplier_receipts_tree = ttk.Treeview(list_wrapper, columns=('id','date','supplier','total','packages'), show='headings')
         for col, txt, w in (
-            ('id','ID',60), ('date','תאריך',110), ('supplier','ספק',180), ('total','סה"כ כמות',90), ('packages','אריזות',140)
+            ('id','ID',60), ('date','תאריך',110), ('supplier','ספק',180), ('total','סה"כ כמות',90), ('packages','הובלה',140)
         ):
             self.supplier_receipts_tree.heading(col, text=txt)
             self.supplier_receipts_tree.column(col, width=w, anchor='center')
@@ -484,12 +489,12 @@ class SupplierIntakeTabMixin:
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
-        # אם אין כלל צורות אריזה – בקשת אישור מהמשתמש לפני המשך שמירה
+    # אם אין כלל פריטי הובלה – בקשת אישור מהמשתמש לפני המשך שמירה
         try:
             if not self._supplier_packages:
                 proceed = messagebox.askyesno(
                     "אישור",
-                    "לא הוזנו צורות אריזה (שקיות / שקים / בדים).\nהאם לשמור את הקליטה ללא כמות שקים?"
+            "לא הוזנו פריטי הובלה (שקיות / שקים / בדים).\nהאם לשמור את הקליטה ללא פריטי הובלה?"
                 )
                 if not proceed:
                     return
@@ -522,16 +527,17 @@ class SupplierIntakeTabMixin:
         pkg_type = (self.sup_pkg_type_var.get() or '').strip()
         qty_raw = (self.sup_pkg_qty_var.get() or '').strip()
         if not pkg_type or not qty_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור צורת אריזה ולהזין כמות")
+            messagebox.showerror("שגיאה", "חובה לבחור פריט הובלה ולהזין כמות")
             return
         try:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
             return
-        record = {'package_type': pkg_type, 'quantity': qty}
+        driver = (getattr(self, 'sup_pkg_driver_var', tk.StringVar()).get() or '').strip()
+        record = {'package_type': pkg_type, 'quantity': qty, 'driver': driver}
         self._supplier_packages.append(record)
-        self.sup_packages_tree.insert('', 'end', values=(pkg_type, qty))
+        self.sup_packages_tree.insert('', 'end', values=(pkg_type, qty, driver))
         self.sup_pkg_qty_var.set('')
 
     def _delete_selected_supplier_package(self):

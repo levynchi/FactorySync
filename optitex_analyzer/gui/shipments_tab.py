@@ -12,7 +12,7 @@ class ShipmentsTabMixin:
     def _create_shipments_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="משלוחים")
-        tk.Label(tab, text="משלוחים - סיכום צורות אריזה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        tk.Label(tab, text="משלוחים - סיכום הובלה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
 
         # Toolbar
         toolbar = tk.Frame(tab, bg='#f7f9fa')
@@ -20,16 +20,17 @@ class ShipmentsTabMixin:
         tk.Button(toolbar, text="🔄 רענן", command=self._refresh_shipments_table, bg='#3498db', fg='white').pack(side='right', padx=4)
 
         # Treeview
-        columns = ('id','kind','date','package_type','quantity')
+        columns = ('id','kind','date','package_type','quantity','driver')
         self.shipments_tree = ttk.Treeview(tab, columns=columns, show='headings', height=18)
         headers = {
             'id': 'מספר תעודה',
             'kind': 'סוג',
             'date': 'תאריך',
-            'package_type': 'צורת אריזה',
-            'quantity': 'כמות'
+            'package_type': 'פריט הובלה',
+            'quantity': 'כמות',
+            'driver': 'מי מוביל'
         }
-        widths = {'id':110,'kind':90,'date':110,'package_type':140,'quantity':80}
+        widths = {'id':110,'kind':90,'date':110,'package_type':140,'quantity':80,'driver':110}
         for c in columns:
             self.shipments_tree.heading(c, text=headers[c])
             self.shipments_tree.column(c, width=widths[c], anchor='center')
@@ -70,7 +71,8 @@ class ShipmentsTabMixin:
                             'date': date_str,
                             'sort_dt': sort_dt,
                             'package_type': pkg.get('package_type',''),
-                            'quantity': pkg.get('quantity','')
+                            'quantity': pkg.get('quantity',''),
+                            'driver': pkg.get('driver','')
                         })
             collect(supplier_intakes)
             collect(delivery_notes)
@@ -82,7 +84,7 @@ class ShipmentsTabMixin:
             for iid in self.shipments_tree.get_children():
                 self.shipments_tree.delete(iid)
             for r in rows:
-                self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity']))
+                self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity'], r.get('driver','')))
 
     # ---- Hook from save actions ----
     def _notify_new_receipt_saved(self):

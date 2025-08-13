@@ -295,5 +295,275 @@
     "fabric_color": "לבן",
     "print_name": "חלק",
     "created_at": "2025-08-12 11:31:43"
+  },
+  {
+    "id": 34,
+    "name": "בגד גוף ש.ק",
+    "size": "0-3",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 35,
+    "name": "בגד גוף ש.ק",
+    "size": "3-6",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 36,
+    "name": "בגד גוף ש.ק",
+    "size": "6-12",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 37,
+    "name": "בגד גוף ש.ק",
+    "size": "12-18",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 38,
+    "name": "בגד גוף ש.ק",
+    "size": "18-24",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 39,
+    "name": "בגד גוף ש.ק",
+    "size": "24-30",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:04:31"
+  },
+  {
+    "id": 40,
+    "name": "רגליות",
+    "size": "0-3",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 41,
+    "name": "רגליות",
+    "size": "0-3",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 42,
+    "name": "רגליות",
+    "size": "0-3",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 43,
+    "name": "רגליות",
+    "size": "0-3",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 44,
+    "name": "רגליות",
+    "size": "3-6",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 45,
+    "name": "רגליות",
+    "size": "3-6",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 46,
+    "name": "רגליות",
+    "size": "3-6",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 47,
+    "name": "רגליות",
+    "size": "3-6",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 48,
+    "name": "רגליות",
+    "size": "6-12",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 49,
+    "name": "רגליות",
+    "size": "6-12",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 50,
+    "name": "רגליות",
+    "size": "6-12",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 51,
+    "name": "רגליות",
+    "size": "6-12",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 52,
+    "name": "רגליות",
+    "size": "12-18",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 53,
+    "name": "רגליות",
+    "size": "12-18",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 54,
+    "name": "רגליות",
+    "size": "12-18",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 55,
+    "name": "רגליות",
+    "size": "12-18",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 56,
+    "name": "רגליות",
+    "size": "18-24",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 57,
+    "name": "רגליות",
+    "size": "18-24",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 58,
+    "name": "רגליות",
+    "size": "18-24",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 59,
+    "name": "רגליות",
+    "size": "18-24",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 60,
+    "name": "רגליות",
+    "size": "24-30",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 61,
+    "name": "רגליות",
+    "size": "24-30",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 62,
+    "name": "רגליות",
+    "size": "24-30",
+    "fabric_type": "טריקו",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
+  },
+  {
+    "id": 63,
+    "name": "רגליות",
+    "size": "24-30",
+    "fabric_type": "טריקו",
+    "fabric_color": "מודפס",
+    "print_name": "חלק",
+    "created_at": "2025-08-13 07:07:32"
   }
 ]

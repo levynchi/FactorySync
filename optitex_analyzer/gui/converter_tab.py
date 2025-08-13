@@ -7,18 +7,26 @@ class ConverterTabMixin:
     """Mixin המממש את טאב הממיר וכל הפונקציונליות התומכת בו."""
     # ===== Converter Tab =====
     def _create_converter_tab(self):
+        """יצירת הטאב הראשי (קיים היסטורית)."""
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="ממיר קבצים")
+        self._build_converter_tab_content(tab)
+
+    def _build_converter_tab_content(self, container: tk.Widget):
+        """בניית תוכן הממיר בתוך קונטיינר (לשימוש גם כמיני-טאב בתוך מנהל ציורים)."""
         for builder in (
             self._create_files_section,
             self._create_options_section,
             self._create_action_buttons,
             self._create_results_section
         ):
-            orig = self.root
-            self.root = tab
-            builder()
-            self.root = orig
+            orig_root = getattr(self, 'root', None)
+            try:
+                self.root = container
+                builder()
+            finally:
+                if orig_root is not None:
+                    self.root = orig_root
 
     # Sub-sections
     def _create_files_section(self):
