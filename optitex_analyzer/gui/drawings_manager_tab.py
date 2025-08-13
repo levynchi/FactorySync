@@ -22,7 +22,7 @@ class DrawingsManagerTabMixin:
         # Embed cut drawings (returned drawings) tab if builder exists
         try:
             if hasattr(self, '_build_returned_drawings_content'):
-                inner_nb.add(cut_drawings_page, text="ציורים שנחתכו")
+                inner_nb.add(cut_drawings_page, text="קליטת ציורים שנחתכו")
                 self._build_returned_drawings_content(cut_drawings_page)
         except Exception:
             pass
