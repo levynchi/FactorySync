@@ -8,5 +8,15 @@
     "business_number": "562137265",
     "notes": "",
     "created_at": "2025-08-12 11:50:15"
+  },
+  {
+    "id": 2,
+    "business_name": "אריה",
+    "first_name": "משה",
+    "phone": "",
+    "address": "",
+    "business_number": "",
+    "notes": "",
+    "created_at": "2025-08-13 16:39:22"
   }
 ]

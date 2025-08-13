@@ -38,12 +38,6 @@ class ConverterTabMixin:
         self.rib_label = tk.Label(rib_frame, text="לא נבחר קובץ", bg="white", relief="sunken", width=60, anchor="w", padx=5)
         self.rib_label.pack(side="left", padx=10)
         tk.Button(rib_frame, text="📁 בחר קובץ", command=self._select_rib_file, bg='#3498db', fg='white', font=('Arial', 9, 'bold'), width=12).pack(side="right")
-        # Products file
-        products_frame = tk.Frame(files_frame); products_frame.pack(fill="x", pady=8)
-        tk.Label(products_frame, text="קובץ מוצרים:", font=('Arial', 10, 'bold'), width=15, anchor="w").pack(side="left")
-        self.products_label = tk.Label(products_frame, text="לא נבחר קובץ", bg="white", relief="sunken", width=60, anchor="w", padx=5)
-        self.products_label.pack(side="left", padx=10)
-        tk.Button(products_frame, text="📁 בחר קובץ", command=self._select_products_file, bg='#3498db', fg='white', font=('Arial', 9, 'bold'), width=12).pack(side="right")
 
     def _create_options_section(self):
         options_frame = ttk.LabelFrame(self.root, text="אפשרויות", padding=15)
@@ -135,17 +129,10 @@ class ConverterTabMixin:
             self.rib_label.config(text=os.path.basename(file_path))
             self._update_status(f"נבחר קובץ אופטיטקס: {os.path.basename(file_path)}")
 
-    def _select_products_file(self):
-        file_path = filedialog.askopenfilename(title="בחר קובץ רשימת מוצרים", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
-        if file_path:
-            self.products_file = file_path
-            self.products_label.config(text=os.path.basename(file_path))
-            self._update_status(f"נבחר קובץ מוצרים: {os.path.basename(file_path)}")
-
     # Analysis
     def _analyze_files(self):
-        if not self.rib_file or not self.products_file:
-            messagebox.showerror("שגיאה", "אנא בחר את שני הקבצים")
+        if not self.rib_file:
+            messagebox.showerror("שגיאה", "יש לבחור קובץ אופטיטקס")
             return
         self._clear_results()
         self._update_status("מנתח קבצים...")
@@ -154,9 +141,17 @@ class ConverterTabMixin:
     def _analyze_files_thread(self):
         try:
             self._log_message("=== התחלת ניתוח ===")
-            self._log_message("טוען מיפוי מוצרים...")
-            if not self.file_analyzer.load_products_mapping(self.products_file):
-                raise Exception("שגיאה בטעינת קובץ מוצרים")
+            # יצירת מיפוי מהמילון הפנימי של הטאב 'מיפוי מוצרים'
+            self._log_message("טוען מיפוי מוצרים מהטאב...")
+            mapping_rows = getattr(self, '_product_mapping_rows', [])
+            internal_map = {}
+            for r in mapping_rows:
+                fn = r.get('file name'); pn = r.get('product name')
+                if fn and pn:
+                    internal_map[fn] = pn
+            self.file_analyzer.product_mapping = internal_map
+            if not internal_map:
+                self._log_message("⚠️ אין נתוני מיפוי (הטאב ריק)")
             products_count = len(self.file_analyzer.product_mapping)
             self._log_message(f"✅ נטען מיפוי עבור {products_count} מוצרים")
             self._log_message("מנתח קובץ אופטיטקס...")
@@ -322,16 +317,7 @@ class ConverterTabMixin:
         self.rib_file = ""; self.current_results = []
         self.rib_label.config(text="לא נבחר קובץ")
         self._clear_results()
-        if self.settings.get("app.auto_load_products", True):
-            products_file = self.settings.get("app.products_file", "קובץ מוצרים.xlsx")
-            if os.path.exists(products_file):
-                self.products_file = os.path.abspath(products_file)
-                self.products_label.config(text=os.path.basename(products_file))
-                self._update_status(f"נטען קובץ מוצרים: {os.path.basename(products_file)}")
-            else:
-                self.products_file = ""; self.products_label.config(text="לא נבחר קובץ"); self._update_status("מוכן לעבודה")
-        else:
-            self._update_status("מוכן לעבודה")
+        self._update_status("מוכן לעבודה")
         # Reset fabric type selection if exists
         if hasattr(self, 'fabric_type_var') and hasattr(self, 'fabric_type_options'):
             self.fabric_type_var.set(self.fabric_type_options[0])
