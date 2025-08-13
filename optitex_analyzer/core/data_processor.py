@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -27,6 +27,8 @@ class DataProcessor:
 		self.supplier_intakes_file = supplier_intakes_file
 		self.delivery_notes_file = delivery_notes_file
 		self.products_catalog_file = products_catalog_file
+		self.sewing_accessories_file = sewing_accessories_file
+		self.categories_file = categories_file
 		self.suppliers_file = suppliers_file
 		# load base datasets
 		self.drawings_data = self.load_drawings_data()
@@ -34,6 +36,8 @@ class DataProcessor:
 		self.fabrics_inventory = self.load_fabrics_inventory()
 		self.fabrics_import_logs = self.load_fabrics_import_logs()
 		self.products_catalog = self.load_products_catalog()
+		self.sewing_accessories = self.load_sewing_accessories()
+		self.categories = self.load_categories()
 		self.suppliers = self.load_suppliers()
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
@@ -692,11 +696,32 @@ class DataProcessor:
 			print(f"שגיאה בשמירת קטלוג מוצרים: {e}")
 			return False
 
-	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str) -> int:
-		"""הוספת מוצר לקטלוג. מחזיר ID חדש."""
+	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0) -> int:
+		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
+
+		:param name: שם מוצר (חובה)
+		:param size: מידה
+		:param fabric_type: סוג בד
+		:param fabric_color: צבע בד
+		:param print_name: שם פרינט
+		:param category: קטגוריה (אופציונלי)
+		:param ticks_qty: כמות טיקטקים (אופציונלי, מספר שלם)
+		:param elastic_qty: כמות גומי (אופציונלי, מספר שלם)
+		:param ribbon_qty: כמות סרט (אופציונלי, מספר שלם)
+		"""
 		try:
 			if not name:
 				raise ValueError("חובה להזין שם מוצר")
+			def _to_int(val):
+				try:
+					if val in (None, ''): return 0
+					return int(str(val).strip())
+				except Exception:
+					return 0
+			ticks_i = _to_int(ticks_qty)
+			elastic_i = _to_int(elastic_qty)
+			ribbon_i = _to_int(ribbon_qty)
 			new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
 			record = {
 				'id': new_id,
@@ -705,6 +730,10 @@ class DataProcessor:
 				'fabric_type': fabric_type.strip(),
 				'fabric_color': fabric_color.strip(),
 				'print_name': print_name.strip(),
+				'category': (category or '').strip(),
+				'ticks_qty': ticks_i,
+				'elastic_qty': elastic_i,
+				'ribbon_qty': ribbon_i,
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.products_catalog.append(record)
@@ -735,4 +764,100 @@ class DataProcessor:
 			return True
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא קטלוג מוצרים: {str(e)}")
+
+	# ===== Sewing Accessories =====
+	def load_sewing_accessories(self) -> List[Dict]:
+		"""טעינת רשימת אביזרי תפירה."""
+		try:
+			if os.path.exists(self.sewing_accessories_file):
+				with open(self.sewing_accessories_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					if isinstance(data, list):
+						return data
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת אביזרי תפירה: {e}"); return []
+
+	def save_sewing_accessories(self) -> bool:
+		try:
+			with open(self.sewing_accessories_file, 'w', encoding='utf-8') as f:
+				json.dump(self.sewing_accessories, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת אביזרי תפירה: {e}"); return False
+
+	def add_sewing_accessory(self, name: str, unit: str) -> int:
+		"""הוספת אביזר תפירה (שם + יחידת מדידה)."""
+		try:
+			if not name:
+				raise ValueError("חובה להזין שם אביזר")
+			# מניעת כפילות שם + יחידה
+			for rec in self.sewing_accessories:
+				if rec.get('name','').strip() == name.strip() and rec.get('unit','').strip() == (unit or '').strip():
+					raise ValueError("האביזר כבר קיים")
+			new_id = max([r.get('id',0) for r in self.sewing_accessories], default=0) + 1
+			rec = {
+				'id': new_id,
+				'name': name.strip(),
+				'unit': (unit or '').strip(),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.sewing_accessories.append(rec)
+			self.save_sewing_accessories(); return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת אביזר: {str(e)}")
+
+	def delete_sewing_accessory(self, acc_id: int) -> bool:
+		before = len(self.sewing_accessories)
+		self.sewing_accessories = [r for r in self.sewing_accessories if int(r.get('id',0)) != int(acc_id)]
+		if len(self.sewing_accessories) != before:
+			self.save_sewing_accessories(); return True
+		return False
+
+	def refresh_sewing_accessories(self):
+		self.sewing_accessories = self.load_sewing_accessories()
+
+	# ===== Categories Management =====
+	def load_categories(self) -> List[Dict]:
+		try:
+			if os.path.exists(self.categories_file):
+				with open(self.categories_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					if isinstance(data, list):
+						return data
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת קטגוריות: {e}"); return []
+
+	def save_categories(self) -> bool:
+		try:
+			with open(self.categories_file, 'w', encoding='utf-8') as f:
+				json.dump(self.categories, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת קטגוריות: {e}"); return False
+
+	def add_category(self, name: str) -> int:
+		try:
+			if not name:
+				raise ValueError("חובה להזין שם קטגוריה")
+			for c in self.categories:
+				if c.get('name','').strip() == name.strip():
+					raise ValueError("קטגוריה קיימת")
+			new_id = max([c.get('id',0) for c in self.categories], default=0) + 1
+			rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+			self.categories.append(rec)
+			self.save_categories(); return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת קטגוריה: {str(e)}")
+
+	def delete_category(self, cat_id: int) -> bool:
+		before = len(self.categories)
+		self.categories = [c for c in self.categories if int(c.get('id',0)) != int(cat_id)]
+		if len(self.categories) != before:
+			self.save_categories(); return True
+		return False
+
+	def refresh_categories(self):
+		self.categories = self.load_categories()
 
