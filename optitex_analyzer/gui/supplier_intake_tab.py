@@ -4,12 +4,12 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 
 class SupplierIntakeTabMixin:
-    """Mixin לטאב קליטת ספק."""
+    """Mixin לטאב תעודת קליטה."""
     def _create_supplier_intake_tab(self):
         # Outer tab + title
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="קליטת סחורה מספק")
-        tk.Label(tab, text="קליטת מוצרים מספק (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        self.notebook.add(tab, text="תעודת קליטה")
+        tk.Label(tab, text="תעודת קליטה (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
 
         # Inner notebook (entry + saved receipts)
         inner_nb = ttk.Notebook(tab)
@@ -490,7 +490,7 @@ class SupplierIntakeTabMixin:
         self._update_supplier_summary()
 
     def _delete_supplier_selected(self):
-        sel = self.supplier_tree.selection();
+        sel = self.supplier_tree.selection()
         if not sel: return
         all_items = self.supplier_tree.get_children(); indices = [all_items.index(i) for i in sel]
         for item in sel: self.supplier_tree.delete(item)
@@ -515,12 +515,12 @@ class SupplierIntakeTabMixin:
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
-    # אם אין כלל פריטי הובלה – בקשת אישור מהמשתמש לפני המשך שמירה
+        # אם אין כלל פריטי הובלה – בקשת אישור מהמשתמש לפני המשך שמירה
         try:
             if not self._supplier_packages:
                 proceed = messagebox.askyesno(
                     "אישור",
-            "לא הוזנו פריטי הובלה (שקיות / שקים / בדים).\nהאם לשמור את הקליטה ללא פריטי הובלה?"
+                    "לא הוזנו פריטי הובלה (שקיות / שקים / בדים).\nהאם לשמור את הקליטה ללא פריטי הובלה?"
                 )
                 if not proceed:
                     return
@@ -528,6 +528,25 @@ class SupplierIntakeTabMixin:
             pass
         try:
             # שימוש בשיטה החדשה לאחר פיצול הקבצים
+            if hasattr(self.data_processor, 'add_supplier_intake'):
+                new_id = self.data_processor.add_supplier_intake(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
+            else:
+                # תאימות לאחור
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages, receipt_kind='supplier_intake')
+            messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
+            self._clear_supplier_lines()
+            self._clear_supplier_packages()
+            try:
+                self._refresh_supplier_intake_list()
+            except Exception:
+                pass
+            # עדכון טאב הובלות אם קיים
+            try:
+                self._notify_new_receipt_saved()
+            except Exception:
+                pass
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
             if hasattr(self.data_processor, 'add_supplier_intake'):
                 new_id = self.data_processor.add_supplier_intake(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
             else:
