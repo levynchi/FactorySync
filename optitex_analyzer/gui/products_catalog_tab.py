@@ -37,22 +37,52 @@ class ProductsCatalogTabMixin:
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
         self.category_combobox.grid(row=0, column=3, sticky='w', padx=2, pady=4)
-        # שדות נוספות (מידות, סוגי בד וכו')
-        other_fields = [
-            ("מידות (פסיק)", self.prod_size_var, 14),
-            ("סוגי בד (פסיק)", self.prod_fabric_type_var, 14),
-            ("צבעי בד (פסיק)", self.prod_fabric_color_var, 14),
-            ("שמות פרינט (פסיק)", self.prod_print_name_var, 14),
-            ("טיקטקים", self.prod_ticks_var, 6),
-            ("גומי", self.prod_elastic_var, 6),
-            ("סרט", self.prod_ribbon_var, 6)
-        ]
-        start_col = 4
-        for i,(lbl,var,width) in enumerate(other_fields):
-            base = start_col + i*2
-            tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0, column=base, sticky='w', padx=4, pady=4)
-            tk.Entry(form, textvariable=var, width=width).grid(row=0, column=base+1, sticky='w', padx=2, pady=4)
-        last_col = start_col + len(other_fields)*2
+        # שדות תכונות מוצר נבחרות (בחירה מרשימות הטאב "תכונות מוצר")
+        # נשמור רשימות בחירה כדי לאפשר וריאנטים מרובים.
+        self.selected_sizes = []
+        self.selected_fabric_types = []
+        self.selected_fabric_colors = []
+        self.selected_print_names = []
+
+        # תצוגה של הערכים שנבחרו (נקשר ל-StringVar הקיים)
+        # מידות
+        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=0, column=4, sticky='w', padx=4, pady=4)
+        self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=10, justify='right')
+        self.size_picker.grid(row=0, column=5, sticky='w', padx=2, pady=4)
+        self.size_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('size'))
+        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=0, column=6, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=0, column=7, padx=2)
+        # סוגי בד
+        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=0, column=8, sticky='w', padx=4, pady=4)
+        self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=10, justify='right')
+        self.ftype_picker.grid(row=0, column=9, sticky='w', padx=2, pady=4)
+        self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
+        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=0, column=10, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=0, column=11, padx=2)
+        # צבעי בד
+        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=0, column=12, sticky='w', padx=4, pady=4)
+        self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=10, justify='right')
+        self.fcolor_picker.grid(row=0, column=13, sticky='w', padx=2, pady=4)
+        self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
+        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=0, column=14, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=0, column=15, padx=2)
+        # שמות פרינט
+        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=0, column=16, sticky='w', padx=4, pady=4)
+        self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=10, justify='right')
+        self.pname_picker.grid(row=0, column=17, sticky='w', padx=2, pady=4)
+        self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
+        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=0, column=18, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=0, column=19, padx=2)
+
+        # שדות כמויות אביזרים (עדיין הזנה ידנית)
+        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=0, column=20, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ticks_var, width=6).grid(row=0, column=21, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=0, column=22, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_elastic_var, width=6).grid(row=0, column=23, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=0, column=24, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ribbon_var, width=6).grid(row=0, column=25, sticky='w', padx=2, pady=4)
+
+        last_col = 26
         tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=0, column=last_col, padx=8)
         tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=0, column=last_col+1, padx=4)
         tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=0, column=last_col+2, padx=4)
@@ -440,6 +470,43 @@ class ProductsCatalogTabMixin:
             self.category_combobox['values'] = names
             if self.prod_category_var.get() not in names:
                 self.prod_category_var.set('')
+        self._refresh_attribute_pickers()
+
+    # ===== תכונות מוצר - עזר לבחירה מרובה =====
+    def _on_attr_select(self, kind: str):
+        picker_map = {
+            'size': (self.size_picker, self.selected_sizes, self.prod_size_var),
+            'fabric_type': (self.ftype_picker, self.selected_fabric_types, self.prod_fabric_type_var),
+            'fabric_color': (self.fcolor_picker, self.selected_fabric_colors, self.prod_fabric_color_var),
+            'print_name': (self.pname_picker, self.selected_print_names, self.prod_print_name_var)
+        }
+        picker, lst, var = picker_map.get(kind)
+        val = picker.get().strip()
+        if val and val not in lst:
+            lst.append(val)
+            var.set(','.join(lst))
+        picker.set('')  # איפוס בחירה כדי לאפשר בחירה חוזרת
+
+    def _clear_attr(self, kind: str):
+        if kind == 'size':
+            self.selected_sizes.clear(); self.prod_size_var.set('')
+        elif kind == 'fabric_type':
+            self.selected_fabric_types.clear(); self.prod_fabric_type_var.set('')
+        elif kind == 'fabric_color':
+            self.selected_fabric_colors.clear(); self.prod_fabric_color_var.set('')
+        elif kind == 'print_name':
+            self.selected_print_names.clear(); self.prod_print_name_var.set('')
+
+    def _refresh_attribute_pickers(self):
+        # רענון הערכים בקומבובוקסים לאחר הוספה / מחיקה בטאב תכונות מוצר
+        if hasattr(self, 'size_picker'):
+            self.size_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_sizes',[])]
+        if hasattr(self, 'ftype_picker'):
+            self.ftype_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])]
+        if hasattr(self, 'fcolor_picker'):
+            self.fcolor_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])]
+        if hasattr(self, 'pname_picker'):
+            self.pname_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_print_names',[])]
 
     # ===== תכונות מוצר - טעינה =====
     def _load_sizes_into_tree(self):
