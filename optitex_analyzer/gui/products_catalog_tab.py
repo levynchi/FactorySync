@@ -345,7 +345,18 @@ class ProductsCatalogTabMixin:
                 existing.add(key)
                 added += 1
                 self.products_tree.insert('', 'end', values=(new_id, name, category_raw, sz, ft, fc, pn, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            # איפוס שדות טופס
             self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
+            # חשוב: ניקוי רשימות הבחירה המרובות – אחרת הערכים הקודמים נשארים בזיכרון ומונעים בחירה חוזרת
+            self.selected_sizes.clear()
+            self.selected_fabric_types.clear()
+            self.selected_fabric_colors.clear()
+            self.selected_print_names.clear()
+            # איפוס קומבובוקסים במידה ונשאר ערך מוצג
+            if hasattr(self, 'size_picker'): self.size_picker.set('')
+            if hasattr(self, 'ftype_picker'): self.ftype_picker.set('')
+            if hasattr(self, 'fcolor_picker'): self.fcolor_picker.set('')
+            if hasattr(self, 'pname_picker'): self.pname_picker.set('')
             if added > 1:
                 messagebox.showinfo("הצלחה", f"נוספו {added} וריאנטים למוצר '{name}'")
             elif added == 1:
@@ -542,6 +553,8 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_product_size(name)
             self.sizes_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.attr_size_var.set('')
+            # רענון קומבובוקסים בטופס המוצר מיד לאחר הוספה
+            self._refresh_attribute_pickers()
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
@@ -554,6 +567,7 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_fabric_type_item(name)
             self.fabric_types_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.attr_fabric_type_var.set('')
+            self._refresh_attribute_pickers()
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
@@ -566,6 +580,7 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_fabric_color_item(name)
             self.fabric_colors_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.attr_fabric_color_var.set('')
+            self._refresh_attribute_pickers()
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
@@ -578,6 +593,7 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_print_name_item(name)
             self.print_names_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.attr_print_name_var.set('')
+            self._refresh_attribute_pickers()
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
@@ -591,7 +607,9 @@ class ProductsCatalogTabMixin:
             vals = self.sizes_tree.item(item, 'values')
             if vals and self.data_processor.delete_product_size(int(vals[0])):
                 deleted = True
-        if deleted: self._load_sizes_into_tree()
+        if deleted:
+            self._load_sizes_into_tree()
+            self._refresh_attribute_pickers()
 
     def _delete_selected_fabric_type_item(self):
         if not hasattr(self, 'fabric_types_tree'): return
@@ -600,7 +618,9 @@ class ProductsCatalogTabMixin:
             vals = self.fabric_types_tree.item(item, 'values')
             if vals and self.data_processor.delete_fabric_type_item(int(vals[0])):
                 deleted = True
-        if deleted: self._load_fabric_types_into_tree()
+        if deleted:
+            self._load_fabric_types_into_tree()
+            self._refresh_attribute_pickers()
 
     def _delete_selected_fabric_color_item(self):
         if not hasattr(self, 'fabric_colors_tree'): return
@@ -609,7 +629,9 @@ class ProductsCatalogTabMixin:
             vals = self.fabric_colors_tree.item(item, 'values')
             if vals and self.data_processor.delete_fabric_color_item(int(vals[0])):
                 deleted = True
-        if deleted: self._load_fabric_colors_into_tree()
+        if deleted:
+            self._load_fabric_colors_into_tree()
+            self._refresh_attribute_pickers()
 
     def _delete_selected_print_name_item(self):
         if not hasattr(self, 'print_names_tree'): return
@@ -618,4 +640,6 @@ class ProductsCatalogTabMixin:
             vals = self.print_names_tree.item(item, 'values')
             if vals and self.data_processor.delete_print_name_item(int(vals[0])):
                 deleted = True
-        if deleted: self._load_print_names_into_tree()
+        if deleted:
+            self._load_print_names_into_tree()
+            self._refresh_attribute_pickers()
