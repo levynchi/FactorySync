@@ -3,11 +3,11 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 
 class ReturnedDrawingTabMixin:
-    """Mixin עבור טאב 'קליטת ציורים שנחתכו' (לשעבר קליטת ציור חוזר)."""
+    """Mixin עבור טאב 'קליטת ציור שנחתך' (לשעבר קליטת ציור חוזר)."""
     def _create_returned_drawing_tab(self):
         """Create standalone top-level 'cut drawings' tab (legacy)."""
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="קליטת ציורים שנחתכו")
+        self.notebook.add(tab, text="קליטת ציור שנחתך")
         self._build_returned_drawings_content(tab)
 
     # ===== Embedded builder =====
