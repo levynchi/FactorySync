@@ -66,26 +66,25 @@ class ProductsCatalogTabMixin:
         self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
         tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=0, column=14, sticky='w', padx=2, pady=4)
         tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=0, column=15, padx=2)
-        # שמות פרינט
-        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=0, column=16, sticky='w', padx=4, pady=4)
+        # שדות בשורה שנייה: שמות פרינט + כמויות אביזרים + כפתורים
+        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=10, justify='right')
-        self.pname_picker.grid(row=0, column=17, sticky='w', padx=2, pady=4)
+        self.pname_picker.grid(row=1, column=1, sticky='w', padx=2, pady=4)
         self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
-        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=0, column=18, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=0, column=19, padx=2)
+        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=1, column=2, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=1, column=3, padx=2, pady=4)
+        # כמויות אביזרים
+        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=1, column=4, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ticks_var, width=8).grid(row=1, column=5, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_elastic_var, width=8).grid(row=1, column=7, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=1, column=8, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ribbon_var, width=8).grid(row=1, column=9, sticky='w', padx=2, pady=4)
 
-        # שדות כמויות אביזרים (עדיין הזנה ידנית)
-        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=0, column=20, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ticks_var, width=6).grid(row=0, column=21, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=0, column=22, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_elastic_var, width=6).grid(row=0, column=23, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=0, column=24, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ribbon_var, width=6).grid(row=0, column=25, sticky='w', padx=2, pady=4)
-
-        last_col = 26
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=0, column=last_col, padx=8)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=0, column=last_col+1, padx=4)
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=0, column=last_col+2, padx=4)
+        # כפתורי פעולה – סוף השורה השנייה
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=1, column=10, padx=12, pady=4)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=1, column=11, padx=4, pady=4)
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=1, column=12, padx=4, pady=4)
         # Treeview
         tree_frame = ttk.LabelFrame(products_tab, text="מוצרים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
