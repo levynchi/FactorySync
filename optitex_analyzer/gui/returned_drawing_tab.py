@@ -214,14 +214,21 @@ class ReturnedDrawingTabMixin:
         if not self._scanned_barcodes: messagebox.showerror("שגיאה", "אין ברקודים לשמירה"); return
         try:
             new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=(supplier_auto or None), layers=layers_val)
+            # עדכון סטטוס הציור בלשונית 'מנהל ציורים' ל"נחתך" (פירוק בטוח של ה-ID גם אם מוצג כ"ID - שם")
+            did = None
             try:
-                did = int(drawing_id)
-            except ValueError:
+                raw = drawing_id
+                if isinstance(raw, str) and ' - ' in raw:
+                    raw = raw.split(' - ', 1)[0].strip()
+                did = int(str(raw).strip())
+            except Exception:
                 did = None
             if did is not None and hasattr(self.data_processor, 'update_drawing_status'):
                 if self.data_processor.update_drawing_status(did, "נחתך"):
-                    try: self._refresh_drawings_tree()
-                    except Exception: pass
+                    try:
+                        self._refresh_drawings_tree()
+                    except Exception:
+                        pass
             updated = 0; unique_codes = set(self._scanned_barcodes)
             for code in unique_codes:
                 if self.data_processor.update_fabric_status(code, "נגזר"): updated += 1
