@@ -394,6 +394,30 @@ class DataProcessor:
 			print(f"שגיאה בעדכון סטטוס ציור: {e}")
 			return False
 
+	def update_drawing_layers(self, drawing_id: int, layers: int) -> bool:
+		"""עדכון ערך 'שכבות' לציור. מחזיר True אם בוצע שינוי ונשמר."""
+		try:
+			if layers is None:
+				return False
+			changed = False
+			for rec in self.drawings_data:
+				if rec.get('id') == drawing_id:
+					prev = rec.get('שכבות')
+					try:
+						prev_i = int(prev) if prev is not None else None
+					except Exception:
+						prev_i = None
+					if prev_i != int(layers):
+						rec['שכבות'] = int(layers)
+						changed = True
+					break
+			if changed:
+				self.save_drawings_data()
+			return changed
+		except Exception as e:
+			print(f"שגיאה בעדכון שכבות לציור: {e}")
+			return False
+
 	# ===== Fabrics Inventory =====
 	def load_fabrics_inventory(self) -> List[Dict]:
 		"""טעינת מלאי בדים"""

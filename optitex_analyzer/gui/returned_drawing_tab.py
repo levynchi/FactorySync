@@ -193,20 +193,22 @@ class ReturnedDrawingTabMixin:
             messagebox.showerror("שגיאה", "אין ברקודים לשמירה"); return
         try:
             # עדכון סטטוס הציור בלשונית 'מנהל ציורים' ל"נחתך" (פירוק בטוח של ה-ID גם אם מוצג כ"ID - שם")
-            did = None
+            raw = drawing_id
+            if isinstance(raw, str) and ' - ' in raw:
+                raw = raw.split(' - ', 1)[0].strip()
+            did = int(str(raw).strip())
+            if hasattr(self.data_processor, 'update_drawing_status'):
+                self.data_processor.update_drawing_status(did, "נחתך")
+            # שמירת שכבות לציור כדי לאפשר חישוב "מה נגזר אצל הספק" במאזן
             try:
-                raw = drawing_id
-                if isinstance(raw, str) and ' - ' in raw:
-                    raw = raw.split(' - ', 1)[0].strip()
-                did = int(str(raw).strip())
+                if hasattr(self.data_processor, 'update_drawing_layers'):
+                    self.data_processor.update_drawing_layers(did, layers_val)
             except Exception:
-                did = None
-            if did is not None and hasattr(self.data_processor, 'update_drawing_status'):
-                if self.data_processor.update_drawing_status(did, "נחתך"):
-                    try:
-                        self._refresh_drawings_tree()
-                    except Exception:
-                        pass
+                pass
+            try:
+                self._refresh_drawings_tree()
+            except Exception:
+                pass
             updated = 0; unique_codes = set(self._scanned_barcodes)
             for code in unique_codes:
                 if self.data_processor.update_fabric_status(code, "נגזר"): updated += 1
@@ -215,6 +217,12 @@ class ReturnedDrawingTabMixin:
                 except Exception: pass
             messagebox.showinfo("הצלחה", f"עודכנו {updated} גלילים ל'נגזר' והסטטוס עודכן ל'נחתך'")
             self._clear_all_barcodes()
+            # רענון טאב מאזן מוצרים (אם קיים) כדי להציג את החישוב החדש
+            try:
+                if hasattr(self, '_refresh_balance_views'):
+                    self._refresh_balance_views()
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 

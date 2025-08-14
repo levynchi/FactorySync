@@ -189,7 +189,12 @@ class MainWindow(
     # ---- Suppliers helpers shared for tabs ----
     def _get_supplier_names(self):
         try:
-            return sorted({ (rec.get('business_name') or rec.get('name') or '').strip() for rec in getattr(self.data_processor,'suppliers',[]) if (rec.get('business_name') or rec.get('name')) })
+            names = sorted({ (rec.get('business_name') or rec.get('name') or '').strip() for rec in getattr(self.data_processor,'suppliers',[]) if (rec.get('business_name') or rec.get('name')) })
+            # Fallback: derive from drawings_data recipients ('נמען') if no explicit suppliers
+            if not names:
+                drawings = getattr(self.data_processor, 'drawings_data', []) or []
+                names = sorted({ (r.get('נמען') or '').strip() for r in drawings if r.get('נמען') })
+            return names
         except Exception:
             return []
 
