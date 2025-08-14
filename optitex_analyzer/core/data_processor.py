@@ -336,7 +336,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא ל-Excel: {str(e)}")
     
-	def add_to_local_table(self, results: List[Dict], file_name: str = "", fabric_type: str = "") -> int:
+	def add_to_local_table(self, results: List[Dict], file_name: str = "", fabric_type: str = "", recipient_supplier: str = "") -> int:
 		"""הוספה לטבלה המקומית"""
 		try:
 			# יצירת ID חדש
@@ -354,6 +354,12 @@ class DataProcessor:
 			}
 			if fabric_type:
 				record['סוג בד'] = fabric_type
+			# שמירת יעד/ספק אליו נשלח הציור (אם נבחר בממיר)
+			recipient_supplier = (recipient_supplier or '').strip()
+			if recipient_supplier:
+				record['נמען'] = recipient_supplier
+				# עמודה לוגית לנוחות סינון עתידי
+				record['נשלח לספק'] = True
             
 			# קיבוץ לפי מוצרים
 			df = pd.DataFrame(results)

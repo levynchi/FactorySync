@@ -40,10 +40,10 @@ class DrawingsManagerTabMixin:
 
         table_frame = tk.Frame(table_page, bg='#ffffff')
         table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        cols = ("id","file_name","created_at","products","total_quantity","status","excel")
+        cols = ("id","file_name","created_at","products","total_quantity","sent_to_supplier","status","excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","status":"סטטוס","excel":"Excel"}
-        widths = {"id":70,"file_name":260,"created_at":140,"products":80,"total_quantity":90,"status":90,"excel":60}
+        headers = {"id":"ID","file_name":"שם הקובץ","created_at":"תאריך יצירה","products":"מוצרים","total_quantity":"סך כמויות","sent_to_supplier":"נשלח לספק","status":"סטטוס","excel":"Excel"}
+        widths = {"id":70,"file_name":260,"created_at":140,"products":80,"total_quantity":90,"sent_to_supplier":100,"status":90,"excel":60}
         for c in cols:
             self.drawings_tree.heading(c, text=headers[c])
             self.drawings_tree.column(c, width=widths[c], anchor='center')
@@ -227,12 +227,20 @@ class DrawingsManagerTabMixin:
             # הצגת תאריך ללא שעת יצירה (רק חלק התאריך)
             created_raw = record.get('תאריך יצירה','')
             created_date_only = created_raw.split()[0] if isinstance(created_raw, str) and created_raw else created_raw
+            sent_flag = record.get('נשלח לספק')
+            # אם יש שם ספק – נציג אותו; אחרת נשמור לוגיקה קיימת (כן/לא/ריק)
+            supplier_name = (record.get('נמען') or '').strip()
+            if supplier_name:
+                sent_display = supplier_name
+            else:
+                sent_display = 'כן' if sent_flag is True else ('לא' if sent_flag is False else '')
             self.drawings_tree.insert('', 'end', values=(
                 record.get('id',''),
                 record.get('שם הקובץ',''),
                 created_date_only,
                 products_count,
                 f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
+                sent_display,
                 record.get('status','נשלח'),
                 "📄"  # excel icon
             ))
@@ -278,10 +286,15 @@ class DrawingsManagerTabMixin:
         try: rec_id = int(vals[0])
         except Exception: return
         if hasattr(self.data_processor, 'update_drawing_status') and self.data_processor.update_drawing_status(rec_id, new_status):
-            # status column is index 5 in the defined columns order
+            # עדכון עמודת הסטטוס לפי שם העמודה כדי לא להיות תלוי אינדקסים
             new_vals = list(vals)
-            if len(new_vals) >= 6:
-                new_vals[5] = new_status
+            cols = list(self.drawings_tree['columns'])
+            try:
+                status_idx = cols.index('status')
+                if 0 <= status_idx < len(new_vals):
+                    new_vals[status_idx] = new_status
+            except Exception:
+                pass
             self.drawings_tree.item(sel[0], values=new_vals)
 
     # === Click handling for per-row Excel export column ===
@@ -518,6 +531,8 @@ class DrawingsManagerTabMixin:
         )
         if 'סוג בד' in record:
             base_txt += f"\nסוג בד: {record.get('סוג בד')}"
+        if 'נמען' in record:
+            base_txt += f"\nנמען (ספק): {record.get('נמען')}"
         status_val = record.get('status','')
         base_txt += f"\nסטטוס: {status_val}"
         tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)

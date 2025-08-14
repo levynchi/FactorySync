@@ -247,7 +247,7 @@ class ConverterTabMixin:
             if not recipient:
                 messagebox.showwarning("אזהרה", "יש לבחור נמען (ספק) לפני ההוספה לטבלה המקומית")
                 return
-            record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file, fabric_type=fabric_type)
+            record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file, fabric_type=fabric_type, recipient_supplier=recipient)
             # שמירת הנמען (אם יש יכולת ב- data_processor בעתיד; לעת עתה נשמור בלוג בלבד)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")
             self._log_message(f"ID רשומה חדשה: {record_id}")
