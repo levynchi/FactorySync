@@ -11,14 +11,13 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", returned_drawings_file: str = "returned_drawings.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
 		עדיין נשמרת תאימות לאחור: אם הקובץ הישן קיים – מתבצעת העברה חד‑פעמית.
 		"""
 		self.drawings_file = drawings_file
-		self.returned_drawings_file = returned_drawings_file
 		self.fabrics_inventory_file = fabrics_inventory_file
 		self.fabrics_imports_file = fabrics_imports_file
 		# legacy combined file (לצורך מיגרציה בלבד)
@@ -37,7 +36,6 @@ class DataProcessor:
 		self.print_names_file = print_names_file
 		# load base datasets
 		self.drawings_data = self.load_drawings_data()
-		self.returned_drawings_data = self.load_returned_drawings_data()
 		self.fabrics_inventory = self.load_fabrics_inventory()
 		self.fabrics_import_logs = self.load_fabrics_import_logs()
 		self.products_catalog = self.load_products_catalog()
@@ -133,27 +131,7 @@ class DataProcessor:
 			print(f"שגיאה בשמירת נתוני ציורים: {e}")
 			return False
     
-	# ===== Returned Drawings Handling =====
-	def load_returned_drawings_data(self) -> List[Dict]:
-		"""טעינת נתוני ציורים שחזרו מייצור"""
-		try:
-			if os.path.exists(self.returned_drawings_file):
-				with open(self.returned_drawings_file, 'r', encoding='utf-8') as f:
-					return json.load(f)
-			return []
-		except Exception as e:
-			print(f"שגיאה בטעינת ציורים חוזרים: {e}")
-			return []
-    
-	def save_returned_drawings_data(self) -> bool:
-		"""שמירת נתוני ציורים שחזרו"""
-		try:
-			with open(self.returned_drawings_file, 'w', encoding='utf-8') as f:
-				json.dump(self.returned_drawings_data, f, indent=2, ensure_ascii=False)
-			return True
-		except Exception as e:
-			print(f"שגיאה בשמירת ציורים חוזרים: {e}")
-			return False
+	# (הוסר) טיפול ב"ציורים חוזרים" – המערכת לא שומרת יותר רשומות כאלה נפרדות.
 
 	# ===== Supplier Receipts (Manual Products Intake) =====
 	def _load_json_list(self, path: str) -> List[Dict]:
@@ -265,58 +243,7 @@ class DataProcessor:
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
 		self._rebuild_combined_receipts()
     
-	def add_returned_drawing(self, drawing_id: str, date_str: str, barcodes: List[str], source: str = None, layers: int = None) -> int:
-		"""הוספת קליטת ציור חוזר
-		:param drawing_id: מזהה הציור (טקסט / מספר)
-		:param date_str: תאריך הקליטה (YYYY-MM-DD)
-		:param barcodes: רשימת ברקודים שנקלטו
-		:return: ID פנימי של הרשומה החדשה
-		"""
-		try:
-			if not barcodes:
-				raise ValueError("לא נקלטו ברקודים")
-			# יצירת מזהה חדש
-			new_id = max([r.get('id', 0) for r in self.returned_drawings_data], default=0) + 1
-			record = {
-				'id': new_id,
-				'drawing_id': drawing_id,
-				'date': date_str,
-				'barcodes': barcodes,
-				'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-			}
-			if source:
-				record['source'] = source
-			if layers is not None:
-				record['layers'] = layers
-			self.returned_drawings_data.append(record)
-			self.save_returned_drawings_data()
-			return new_id
-		except Exception as e:
-			raise Exception(f"שגיאה בהוספת ציור חוזר: {str(e)}")
-    
-	def get_returned_drawings_summary(self) -> Dict[str, Any]:
-		"""סיכום מהיר של הקליטות"""
-		total = len(self.returned_drawings_data)
-		total_barcodes = sum(len(r.get('barcodes', [])) for r in self.returned_drawings_data)
-		return {
-			'total_records': total,
-			'total_barcodes': total_barcodes
-		}
-    
-	def refresh_returned_drawings(self):
-		"""רענון נתוני ציורים חוזרים"""
-		self.returned_drawings_data = self.load_returned_drawings_data()
-
-	def delete_returned_drawing(self, record_id: int) -> bool:
-		"""מחיקת רשומת ציור חוזר לפי ID.
-		:return: True אם נמחקה רשומה.
-		"""
-		before = len(self.returned_drawings_data)
-		self.returned_drawings_data = [r for r in self.returned_drawings_data if int(r.get('id', 0)) != int(record_id)]
-		if len(self.returned_drawings_data) != before:
-			self.save_returned_drawings_data()
-			return True
-		return False
+	# (הוסר) פעולות על ציורים חוזרים – get/refresh/add/delete
     
 	def results_to_dataframe(self, results: List[Dict]) -> pd.DataFrame:
 		"""המרת תוצאות ל-DataFrame"""

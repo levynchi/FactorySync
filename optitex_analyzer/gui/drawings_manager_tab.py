@@ -551,9 +551,7 @@ class DrawingsManagerTabMixin:
         st = scrolledtext.ScrolledText(top, height=20, font=('Courier New',10), wrap='word')
         st.pack(fill='both', expand=True, padx=12, pady=4)
         st.tag_configure('rtl', justify='right')
-        layers_used = None
-        if status_val == 'נחתך':
-            layers_used = self._get_layers_for_drawing(record.get('id'))
+        layers_used = None  # (הוסר חישוב שכבות מתוך "ציורים חוזרים")
         overall_expected = 0
         for product in record.get('מוצרים', []):
             st.insert(tk.END, RLM + f"\n📦 {product.get('שם המוצר','')}\n", 'rtl')
@@ -586,21 +584,6 @@ class DrawingsManagerTabMixin:
         st.config(state='disabled')
         tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial',11,'bold'), width=12).pack(pady=10)
 
-    def _get_layers_for_drawing(self, drawing_id):
-        try:
-            did_str = str(drawing_id)
-            candidates = [r for r in getattr(self.data_processor, 'returned_drawings_data', []) if str(r.get('drawing_id')) == did_str and r.get('layers')]
-            if not candidates: return None
-            from datetime import datetime as _dt
-            def _dtparse(rec):
-                ts = rec.get('created_at') or rec.get('date')
-                try: return _dt.strptime(ts, "%Y-%m-%d %H:%M:%S")
-                except Exception: return _dt.min
-            candidates.sort(key=_dtparse, reverse=True)
-            layers_val = candidates[0].get('layers')
-            try: return int(layers_val)
-            except Exception: return None
-        except Exception: return None
 
     def _delete_selected_drawing_tab(self):
         sel = self.drawings_tree.selection();
