@@ -301,6 +301,12 @@ class SupplierIntakeTabMixin:
         vs_sr.grid(row=0,column=1,sticky='ns', pady=6)
         list_wrapper.grid_columnconfigure(0, weight=1)
         list_wrapper.grid_rowconfigure(0, weight=1)
+        # פתיחת פרטי תעודה בלחיצה כפולה/Enter
+        try:
+            self.supplier_receipts_tree.bind('<Double-1>', lambda e: self._open_supplier_receipt_details())
+            self.supplier_receipts_tree.bind('<Return>', lambda e: self._open_supplier_receipt_details())
+        except Exception:
+            pass
         tk.Button(list_wrapper, text="🔄 רענן", command=self._refresh_supplier_intake_list, bg='#3498db', fg='white').grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
         self._refresh_supplier_intake_list()
 
@@ -612,3 +618,90 @@ class SupplierIntakeTabMixin:
                 if len(rec.get('packages', [])) > 4:
                     pkg_summary += ' ...'
                 self.supplier_receipts_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))
+
+    def _open_supplier_receipt_details(self):
+        """פתיחת חלון פרטים עבור תעודת קליטה נבחרת מתוך 'קליטות שמורות'."""
+        try:
+            sel = self.supplier_receipts_tree.selection()
+            if not sel:
+                return
+            values = self.supplier_receipts_tree.item(sel[0], 'values') or []
+            if not values:
+                return
+            rec_id = int(values[0])
+        except Exception:
+            return
+        # מציאת הרשומה
+        try:
+            self.data_processor.refresh_supplier_receipts()
+        except Exception:
+            pass
+        rec = None
+        try:
+            for r in getattr(self.data_processor, 'supplier_receipts', []) or []:
+                if r.get('receipt_kind') == 'supplier_intake' and int(r.get('id', -1)) == rec_id:
+                    rec = r; break
+        except Exception:
+            rec = None
+        if not rec:
+            try:
+                messagebox.showwarning("שגיאה", "הרשומה לא נמצאה")
+            except Exception:
+                pass
+            return
+        # חלון פרטים
+        win = tk.Toplevel(self.root)
+        win.title(f"תעודת קליטה #{rec_id}")
+        win.transient(self.root)
+        try:
+            win.grab_set()
+        except Exception:
+            pass
+        header = tk.Frame(win, bg='#f7f9fa')
+        header.pack(fill='x', padx=10, pady=8)
+        tk.Label(header, text=f"ספק: {rec.get('supplier','')}", bg='#f7f9fa', font=('Arial',11,'bold')).pack(side='right', padx=8)
+        tk.Label(header, text=f"תאריך: {rec.get('date','')}", bg='#f7f9fa').pack(side='right', padx=8)
+        tk.Label(header, text=f"ID: {rec.get('id','')}", bg='#f7f9fa').pack(side='right', padx=8)
+        tk.Label(header, text=f"סה\"כ כמות: {rec.get('total_quantity',0)}", bg='#f7f9fa').pack(side='right', padx=8)
+
+        body = tk.Frame(win, bg='#f7f9fa')
+        body.pack(fill='both', expand=True, padx=10, pady=(0,10))
+
+        # שורות מוצר
+        lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
+        lines_frame.pack(fill='both', expand=True, pady=6)
+        cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+        tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
+        headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
+        widths = {'product':180,'size':80,'fabric_type':100,'fabric_color':90,'print_name':110,'quantity':70,'note':220}
+        for c in cols:
+            tree.heading(c, text=headers[c])
+            tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(lines_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscroll=vs.set)
+        tree.pack(side='left', fill='both', expand=True, padx=(6,0), pady=6)
+        vs.pack(side='left', fill='y', pady=6)
+        for ln in rec.get('lines', []) or []:
+            tree.insert('', 'end', values=(
+                ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''),
+                ln.get('print_name',''), ln.get('quantity',''), ln.get('note','')
+            ))
+
+        # פריטי הובלה
+        pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg='#f7f9fa')
+        pk_frame.pack(fill='x', pady=6)
+        pk_cols = ('type','quantity','driver')
+        pk_tree = ttk.Treeview(pk_frame, columns=pk_cols, show='headings', height=4)
+        pk_tree.heading('type', text='פריט הובלה')
+        pk_tree.heading('quantity', text='כמות')
+        pk_tree.heading('driver', text='שם המוביל')
+        pk_tree.column('type', width=120, anchor='center')
+        pk_tree.column('quantity', width=70, anchor='center')
+        pk_tree.column('driver', width=110, anchor='center')
+        pk_tree.pack(fill='x', padx=6, pady=6)
+        for p in rec.get('packages', []) or []:
+            pk_tree.insert('', 'end', values=(p.get('package_type',''), p.get('quantity',''), p.get('driver','')))
+
+        btns = tk.Frame(win, bg='#f7f9fa')
+        btns.pack(fill='x', padx=10, pady=(0,10))
+        tk.Button(btns, text='סגור', command=win.destroy).pack(side='left')
