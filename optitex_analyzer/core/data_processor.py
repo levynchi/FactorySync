@@ -387,7 +387,8 @@ class DataProcessor:
 	def delete_drawing(self, drawing_id: int) -> bool:
 		"""מחיקת ציור לפי ID"""
 		try:
-			self.drawings_data = [r for r in self.drawings_data if r.get('id') != drawing_id]
+			# השוואה עמידה לסוגים (int/str)
+			self.drawings_data = [r for r in self.drawings_data if str(r.get('id')) != str(drawing_id)]
 			return self.save_drawings_data()
 		except Exception as e:
 			print(f"שגיאה במחיקת ציור: {e}")
