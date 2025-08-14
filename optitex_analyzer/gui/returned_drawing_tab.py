@@ -42,9 +42,10 @@ class ReturnedDrawingTabMixin:
         except Exception: pass
         # כפתור רענון קטן ליד
         tk.Button(form, text="↺", width=3, command=lambda: self._refresh_return_drawing_id_options(), bg='#3498db', fg='white').grid(row=0, column=1, sticky='e', padx=(0,4))
-        tk.Label(form, text="שם הספק:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0, column=2, pady=4, sticky='w')
-        self.return_source_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.return_source_var, width=25).grid(row=0, column=3, pady=4, sticky='w')
+        tk.Label(form, text="ספק (מוצג אוטומטית):", font=('Arial',10,'bold'), width=18, anchor='w').grid(row=0, column=2, pady=4, sticky='w')
+        # תצוגה בלבד של שם הספק לפי הציור הנבחר (אין שדה הזנה)
+        self.return_supplier_display_var = tk.StringVar(value="")
+        tk.Label(form, textvariable=self.return_supplier_display_var, width=25, anchor='w').grid(row=0, column=3, pady=4, sticky='w')
 
         # Row 1
         tk.Label(form, text="תאריך:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1, column=0, pady=4, sticky='w')
@@ -145,9 +146,19 @@ class ReturnedDrawingTabMixin:
                         try:
                             self.return_drawing_id_combo.set(full)
                         except Exception: pass
+                    # עדכון הצגת הספק האוטומטית
+                    try:
+                        self._update_return_supplier_display()
+                    except Exception:
+                        pass
                 try: self.return_drawing_id_combo.unbind('<<ComboboxSelected>>')
                 except Exception: pass
                 self.return_drawing_id_combo.bind('<<ComboboxSelected>>', _on_selected)
+            # עדכון ראשוני של הספק אם כבר נבחר ID
+            try:
+                self._update_return_supplier_display()
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -192,17 +203,17 @@ class ReturnedDrawingTabMixin:
 
     def _save_returned_drawing(self):
         drawing_id = self.return_drawing_id_var.get().strip(); date_str = self.return_date_var.get().strip()
-        source = getattr(self, 'return_source_var', tk.StringVar()).get().strip() if hasattr(self, 'return_source_var') else ''
+        # שם הספק נקבע אוטומטית לפי הציור שנבחר (אם קיים במאגר הציורים)
+        supplier_auto = self._get_supplier_for_drawing_id(drawing_id)
         layers_raw = getattr(self, 'return_layers_var', tk.StringVar()).get().strip() if hasattr(self, 'return_layers_var') else ''
         try: layers_val = int(layers_raw) if layers_raw else None
         except ValueError: layers_val = None
         if not drawing_id: messagebox.showerror("שגיאה", "אנא הכנס ציור ID"); return
-        if not source: messagebox.showerror("שגיאה", "חובה למלא 'שם ספק'"); return
         if layers_val is None: messagebox.showerror("שגיאה", "חובה למלא 'שכבות' (מספר שלם)"); return
         if layers_val <= 0: messagebox.showerror("שגיאה", "ערך 'שכבות' חייב להיות גדול מ-0"); return
         if not self._scanned_barcodes: messagebox.showerror("שגיאה", "אין ברקודים לשמירה"); return
         try:
-            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=source or None, layers=layers_val)
+            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=(supplier_auto or None), layers=layers_val)
             try:
                 did = int(drawing_id)
             except ValueError:
@@ -221,6 +232,33 @@ class ReturnedDrawingTabMixin:
             self._clear_all_barcodes(); self._populate_returned_drawings_table()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    def _get_supplier_for_drawing_id(self, drawing_id: str) -> str:
+        """מחזיר את שם הספק ('נמען') עבור ציור לפי ID אם קיים, אחרת מחרוזת ריקה."""
+        try:
+            did = str(drawing_id).strip()
+            for rec in getattr(self.data_processor, 'drawings_data', []) or []:
+                if str(rec.get('id')) == did:
+                    name = (rec.get('נמען') or '').strip()
+                    return name
+        except Exception:
+            pass
+        return ""
+
+    def _update_return_supplier_display(self):
+        """עדכון תצוגת שם הספק בשדה הקריאה בלבד לפי ה-ID הנבחר."""
+        try:
+            sel = self.return_drawing_id_var.get()
+            # אם המשתנה מכיל כבר את ה-ID בלבד – נשתמש בו; אחרת נחלץ מהטקסט המוצג
+            if ' - ' in sel:
+                did = sel.split(' - ', 1)[0].strip()
+            else:
+                did = sel.strip()
+            supplier = self._get_supplier_for_drawing_id(did) if did else ""
+            if hasattr(self, 'return_supplier_display_var'):
+                self.return_supplier_display_var.set(supplier)
+        except Exception:
+            pass
 
     def _populate_returned_drawings_table(self):
         for item in self.returned_drawings_tree.get_children(): self.returned_drawings_tree.delete(item)
