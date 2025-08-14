@@ -27,22 +27,9 @@ class ProductsBalanceTabMixin:
         self.balance_supplier_combo.pack(side='right')
         tk.Button(toolbar, text='🔄 רענן', command=self._refresh_products_balance_table, bg='#3498db', fg='white').pack(side='right', padx=6)
 
-        # חיפוש ומסננים
-        tk.Label(toolbar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(14,4))
-        self.balance_search_var = tk.StringVar()
-        search_entry = tk.Entry(toolbar, textvariable=self.balance_search_var, width=20)
-        search_entry.pack(side='right', padx=(0,6))
-        try:
-            search_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
-        except Exception:
-            pass
+        # מסנן רק-חוסר נשאר בסרגל העליון
         self.balance_only_pending_var = tk.BooleanVar(value=False)
         tk.Checkbutton(toolbar, text='רק חוסר', variable=self.balance_only_pending_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='right', padx=(10,0))
-
-        # מצב פירוט לפי מידות (כפתור טוגול)
-        self._balance_detail_by_size = False
-        self._balance_toggle_btn = tk.Button(toolbar, text='פירוט לפי מידות', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
-        self._balance_toggle_btn.pack(side='left', padx=6)
 
         # פנימי: נוטבוק לעתיד (כרגע עמוד אחד – מאזן מוצרים)
         inner_nb = ttk.Notebook(tab)
@@ -51,6 +38,22 @@ class ProductsBalanceTabMixin:
         balance_page = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(balance_page, text='מאזן מוצרים')
         tk.Label(balance_page, text='מאזן מוצרים לפי ספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+
+        # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
+        inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
+        inner_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(inner_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.balance_search_var = tk.StringVar()
+        search_entry = tk.Entry(inner_bar, textvariable=self.balance_search_var, width=24)
+        search_entry.pack(side='right', padx=(0,6))
+        try:
+            search_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+        except Exception:
+            pass
+        # מצב פירוט לפי מידות (כפתור טוגול)
+        self._balance_detail_by_size = False
+        self._balance_toggle_btn = tk.Button(inner_bar, text='פירוט לפי מידות', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
+        self._balance_toggle_btn.pack(side='left')
 
         columns = ('product','shipped','received','diff','status')
         self.products_balance_tree = ttk.Treeview(balance_page, columns=columns, show='headings', height=18)
