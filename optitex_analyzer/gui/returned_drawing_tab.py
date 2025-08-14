@@ -182,18 +182,22 @@ class ReturnedDrawingTabMixin:
         self.return_summary_var.set(f"{len(self._scanned_barcodes)} ברקודים נסרקו")
 
     def _save_returned_drawing(self):
-        drawing_id = self.return_drawing_id_var.get().strip(); date_str = self.return_date_var.get().strip()
-        # שם הספק נקבע אוטומטית לפי הציור שנבחר (אם קיים במאגר הציורים)
-        supplier_auto = self._get_supplier_for_drawing_id(drawing_id)
+        drawing_id = self.return_drawing_id_var.get().strip()
+        # שכבות עבור חישובים עתידיים (לא נשמר כרשומה)
         layers_raw = getattr(self, 'return_layers_var', tk.StringVar()).get().strip() if hasattr(self, 'return_layers_var') else ''
-        try: layers_val = int(layers_raw) if layers_raw else None
-        except ValueError: layers_val = None
-        if not drawing_id: messagebox.showerror("שגיאה", "אנא הכנס ציור ID"); return
-        if layers_val is None: messagebox.showerror("שגיאה", "חובה למלא 'שכבות' (מספר שלם)"); return
-        if layers_val <= 0: messagebox.showerror("שגיאה", "ערך 'שכבות' חייב להיות גדול מ-0"); return
-        if not self._scanned_barcodes: messagebox.showerror("שגיאה", "אין ברקודים לשמירה"); return
         try:
-            new_id = self.data_processor.add_returned_drawing(drawing_id, date_str, self._scanned_barcodes, source=(supplier_auto or None), layers=layers_val)
+            layers_val = int(layers_raw) if layers_raw else None
+        except ValueError:
+            layers_val = None
+        if not drawing_id:
+            messagebox.showerror("שגיאה", "אנא הכנס ציור ID"); return
+        if layers_val is None:
+            messagebox.showerror("שגיאה", "חובה למלא 'שכבות' (מספר שלם)"); return
+        if layers_val <= 0:
+            messagebox.showerror("שגיאה", "ערך 'שכבות' חייב להיות גדול מ-0"); return
+        if not self._scanned_barcodes:
+            messagebox.showerror("שגיאה", "אין ברקודים לשמירה"); return
+        try:
             # עדכון סטטוס הציור בלשונית 'מנהל ציורים' ל"נחתך" (פירוק בטוח של ה-ID גם אם מוצג כ"ID - שם")
             did = None
             try:
@@ -215,7 +219,7 @@ class ReturnedDrawingTabMixin:
             if hasattr(self, 'fabrics_tree'):
                 try: self._refresh_fabrics_table()
                 except Exception: pass
-            messagebox.showinfo("הצלחה", f"הקליטה נשמרה! ID: {new_id}\nעודכנו {updated} גלילים ל'נגזר'")
+            messagebox.showinfo("הצלחה", f"עודכנו {updated} גלילים ל'נגזר' והסטטוס עודכן ל'נחתך'")
             self._clear_all_barcodes()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
