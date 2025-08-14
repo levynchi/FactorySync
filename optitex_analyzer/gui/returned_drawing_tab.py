@@ -12,17 +12,11 @@ class ReturnedDrawingTabMixin:
 
     # ===== Embedded builder =====
     def _build_returned_drawings_content(self, container: tk.Widget):
-        """Build the returned / cut drawings UI inside an arbitrary container (for embedding)."""
-        tk.Label(container, text="קליטת ציור שנחתך / חזר מגזירה", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        """Build the returned / cut drawings UI directly in the container (no inner tabs)."""
+        tk.Label(container, text="קליטת ציור שנחתך / חזר מגזירה", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(8,4))
 
-        # Notebook inside container (scan + list)
-        inner_nb = ttk.Notebook(container)
-        inner_nb.pack(fill='both', expand=True, padx=8, pady=5)
-
-        # --- Scan sub-tab ---
-        scan_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        inner_nb.add(scan_tab, text="סריקת ציור")
-        form = ttk.LabelFrame(scan_tab, text="פרטי ציור שנחתך", padding=12)
+        # --- Scan content directly ---
+        form = ttk.LabelFrame(container, text="פרטי ציור שנחתך", padding=12)
         form.pack(fill='x', padx=8, pady=6)
 
         # Row 0
@@ -57,7 +51,7 @@ class ReturnedDrawingTabMixin:
 
         tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=2, column=0, columnspan=4, pady=(6,2), sticky='w')
 
-        scan_frame = ttk.LabelFrame(scan_tab, text="ברקודים שנסרקו (בד שנחתך)", padding=8)
+        scan_frame = ttk.LabelFrame(container, text="ברקודים שנסרקו (בד שנחתך)", padding=8)
         scan_frame.pack(fill='both', expand=True, padx=8, pady=4)
 
         self.barcode_var = tk.StringVar()
@@ -84,7 +78,7 @@ class ReturnedDrawingTabMixin:
         tk.Button(btns, text="💾 שמור ציור שנחתך", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
 
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
-        tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(container, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
         self._scanned_barcodes = []
         # לאתחל אפשרויות ID לאחר יצירת הקומפוננטה
