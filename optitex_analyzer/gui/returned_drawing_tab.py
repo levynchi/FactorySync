@@ -86,32 +86,12 @@ class ReturnedDrawingTabMixin:
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
         tk.Label(scan_tab, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
-        # --- List sub-tab ---
-        list_tab = tk.Frame(inner_nb, bg='#ffffff')
-        inner_nb.add(list_tab, text="רשימת ציורים שנחתכו")
-        lf = tk.Frame(list_tab, bg='#ffffff')
-        lf.pack(fill='both', expand=True, padx=6, pady=6)
-        rcols = ('id','drawing_id','date','barcodes_count','delete')
-        self.returned_drawings_tree = ttk.Treeview(lf, columns=rcols, show='headings')
-        h = {'id':'ID','drawing_id':'ציור','date':'תאריך','barcodes_count':'# ברקודים','delete':'מחיקה'}
-        w = {'id':60,'drawing_id':140,'date':110,'barcodes_count':90,'delete':70}
-        for c in rcols:
-            self.returned_drawings_tree.heading(c, text=h[c])
-            self.returned_drawings_tree.column(c, width=w[c], anchor='center')
-        lsv = ttk.Scrollbar(lf, orient='vertical', command=self.returned_drawings_tree.yview)
-        self.returned_drawings_tree.configure(yscroll=lsv.set)
-        self.returned_drawings_tree.grid(row=0, column=0, sticky='nsew')
-        lsv.grid(row=0, column=1, sticky='ns')
-        lf.grid_columnconfigure(0, weight=1)
-        lf.grid_rowconfigure(0, weight=1)
-        self.returned_drawings_tree.bind('<Double-1>', self._on_returned_drawing_double_click)
-        self.returned_drawings_tree.bind('<Button-1>', self._on_returned_drawings_click)
-
         self._scanned_barcodes = []
-        self._populate_returned_drawings_table()
         # לאתחל אפשרויות ID לאחר יצירת הקומפוננטה
-        try: self._refresh_return_drawing_id_options()
-        except Exception: pass
+        try:
+            self._refresh_return_drawing_id_options()
+        except Exception:
+            pass
 
     # רענון רשימת ה-ID-ים הזמינים לבחירה מהציורים
     def _refresh_return_drawing_id_options(self):
@@ -236,7 +216,7 @@ class ReturnedDrawingTabMixin:
                 try: self._refresh_fabrics_table()
                 except Exception: pass
             messagebox.showinfo("הצלחה", f"הקליטה נשמרה! ID: {new_id}\nעודכנו {updated} גלילים ל'נגזר'")
-            self._clear_all_barcodes(); self._populate_returned_drawings_table()
+            self._clear_all_barcodes()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -267,37 +247,4 @@ class ReturnedDrawingTabMixin:
         except Exception:
             pass
 
-    def _populate_returned_drawings_table(self):
-        for item in self.returned_drawings_tree.get_children(): self.returned_drawings_tree.delete(item)
-        for rec in self.data_processor.returned_drawings_data:
-            self.returned_drawings_tree.insert('', 'end', values=(rec.get('id',''), rec.get('drawing_id',''), rec.get('date',''), len(rec.get('barcodes', [])), '🗑'))
-
-    def _on_returned_drawing_double_click(self, event):
-        item_id = self.returned_drawings_tree.focus();
-        if not item_id: return
-        vals = self.returned_drawings_tree.item(item_id, 'values');
-        if not vals: return
-        rec_id = vals[0]; record = None
-        for r in self.data_processor.returned_drawings_data:
-            if str(r.get('id')) == str(rec_id): record = r; break
-        if not record: return
-        barcodes = record.get('barcodes', [])
-        if not barcodes:
-            messagebox.showinfo("ברקודים", "אין ברקודים לרשומה זו"); return
-        top = tk.Toplevel(self.root); top.title(f"ברקודים - ציור {record.get('drawing_id','')}"); top.geometry('400x400')
-        lb = tk.Listbox(top, font=('Consolas', 11)); lb.pack(fill='both', expand=True, padx=8, pady=8)
-        for c in barcodes: lb.insert(tk.END, c)
-        tk.Label(top, text=f"סה""כ {len(barcodes)} ברקודים", anchor='w').pack(fill='x')
-
-    def _on_returned_drawings_click(self, event):
-        region = self.returned_drawings_tree.identify('region', event.x, event.y)
-        if region != 'cell': return
-        col = self.returned_drawings_tree.identify_column(event.x)
-        if col != '#5': return
-        item_id = self.returned_drawings_tree.identify_row(event.y)
-        if not item_id: return
-        vals = self.returned_drawings_tree.item(item_id, 'values')
-        if not vals: return
-        rec_id = vals[0]
-        if not messagebox.askyesno("אישור", "למחוק קליטה זו? הפעולה לא ניתנת לשחזור"): return
-        if self.data_processor.delete_returned_drawing(rec_id): self._populate_returned_drawings_table()
+    # הוסר: טאב 'רשימת ציורים שנחתכו' והפונקציות הקשורות אליו
