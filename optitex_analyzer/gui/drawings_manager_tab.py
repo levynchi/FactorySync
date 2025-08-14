@@ -167,6 +167,11 @@ class DrawingsManagerTabMixin:
         if not replaced:
             self._product_mapping_rows.append({'file name': fn, 'product name': pn, 'unit quantity': uq})
         self._populate_product_mapping_tree(); self.pm_file_name_var.set(''); self.pm_product_name_var.set(''); self.pm_unit_qty_var.set('1')
+        # Auto-save silently so changes persist across restarts
+        try:
+            self._save_product_mapping(False)
+        except Exception:
+            pass
 
     def _delete_selected_product_mapping(self):
         if not hasattr(self, 'product_mapping_tree'): return
@@ -177,6 +182,11 @@ class DrawingsManagerTabMixin:
         fn = values[0]
         self._product_mapping_rows = [r for r in self._product_mapping_rows if r['file name'] != fn]
         self._populate_product_mapping_tree()
+        # Auto-save silently after delete
+        try:
+            self._save_product_mapping(False)
+        except Exception:
+            pass
 
     def _on_product_mapping_select(self, event=None):
         sel = self.product_mapping_tree.selection();
@@ -190,7 +200,7 @@ class DrawingsManagerTabMixin:
             except Exception:
                 self.pm_unit_qty_var.set('1')
 
-    def _save_product_mapping(self):
+    def _save_product_mapping(self, show_message: bool = True):
         path = self._get_products_excel_path()
         try:
             import pandas as pd
@@ -207,7 +217,8 @@ class DrawingsManagerTabMixin:
                 normalized.append({'file name': r.get('file name',''), 'product name': r.get('product name',''), 'unit quantity': uq})
             df = pd.DataFrame(normalized)[['file name','product name','unit quantity']]
             df.to_excel(path, index=False)
-            messagebox.showinfo("הצלחה", f"נשמר {path}")
+            if show_message:
+                messagebox.showinfo("הצלחה", f"נשמר {path}")
             try:
                 if hasattr(self, 'file_analyzer') and path:
                     self.file_analyzer.load_products_mapping(path)
