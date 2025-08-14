@@ -27,6 +27,23 @@ class ProductsBalanceTabMixin:
         self.balance_supplier_combo.pack(side='right')
         tk.Button(toolbar, text='🔄 רענן', command=self._refresh_products_balance_table, bg='#3498db', fg='white').pack(side='right', padx=6)
 
+        # חיפוש ומסננים
+        tk.Label(toolbar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(14,4))
+        self.balance_search_var = tk.StringVar()
+        search_entry = tk.Entry(toolbar, textvariable=self.balance_search_var, width=20)
+        search_entry.pack(side='right', padx=(0,6))
+        try:
+            search_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+        except Exception:
+            pass
+        self.balance_only_pending_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(toolbar, text='רק חוסר', variable=self.balance_only_pending_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='right', padx=(10,0))
+
+        # מצב פירוט לפי מידות (כפתור טוגול)
+        self._balance_detail_by_size = False
+        self._balance_toggle_btn = tk.Button(toolbar, text='פירוט לפי מידות', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
+        self._balance_toggle_btn.pack(side='left', padx=6)
+
         # פנימי: נוטבוק לעתיד (כרגע עמוד אחד – מאזן מוצרים)
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=8, pady=8)
@@ -77,7 +94,8 @@ class ProductsBalanceTabMixin:
                 self.data_processor.refresh_supplier_receipts()
         except Exception:
             pass
-        # איסוף כמויות לפי מוצר
+        # איסוף כמויות לפי מוצר או לפי (מוצר, מידה)
+        by_size = getattr(self, '_balance_detail_by_size', False)
         shipped = {}
         received = {}
         try:
@@ -87,10 +105,12 @@ class ProductsBalanceTabMixin:
                     continue
                 for ln in rec.get('lines', []) or []:
                     name = (ln.get('product') or '').strip()
+                    size = (ln.get('size') or '').strip()
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    shipped[name] = shipped.get(name, 0) + qty
+                    key = (name, size if by_size else '') if by_size else name
+                    shipped[key] = shipped.get(key, 0) + qty
         except Exception:
             pass
         try:
@@ -100,17 +120,45 @@ class ProductsBalanceTabMixin:
                     continue
                 for ln in rec.get('lines', []) or []:
                     name = (ln.get('product') or '').strip()
+                    size = (ln.get('size') or '').strip()
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    received[name] = received.get(name, 0) + qty
+                    key = (name, size if by_size else '') if by_size else name
+                    received[key] = received.get(key, 0) + qty
         except Exception:
             pass
-        # בניית שורות מאוחדות
-        products = sorted(set(list(shipped.keys()) + list(received.keys())))
-        for p in products:
-            s = shipped.get(p, 0)
-            r = received.get(p, 0)
+        # בניית שורות מאוחדות + החלת מסננים
+        keys = sorted(set(list(shipped.keys()) + list(received.keys())))
+        search_txt = (getattr(self, 'balance_search_var', tk.StringVar()).get() or '').strip().lower()
+        only_pending = bool(getattr(self, 'balance_only_pending_var', tk.BooleanVar()).get())
+        for key in keys:
+            if by_size:
+                prod, size = key if isinstance(key, tuple) else (str(key), '')
+                label = f"{prod} – {size or 'ללא מידה'}"
+            else:
+                label = key if isinstance(key, str) else key[0]
+            s = shipped.get(key, 0)
+            r = received.get(key, 0)
             diff = s - r
+            # סינון טקסטואלי
+            if search_txt:
+                if search_txt not in (label or '').lower():
+                    continue
+            # סינון רק חוסר
+            if only_pending and diff <= 0:
+                continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
-            self.products_balance_tree.insert('', 'end', values=(p, s, r, max(diff, 0), status))
+            self.products_balance_tree.insert('', 'end', values=(label, s, r, max(diff, 0), status))
+
+    def _toggle_balance_detail_mode(self):
+        """טוגול תצוגה בין מאוחד לפי מוצר לבין פירוט לפי מידות."""
+        self._balance_detail_by_size = not getattr(self, '_balance_detail_by_size', False)
+        try:
+            if self._balance_detail_by_size:
+                self._balance_toggle_btn.config(text='תצוגת מוצר בלבד')
+            else:
+                self._balance_toggle_btn.config(text='פירוט לפי מידות')
+        except Exception:
+            pass
+        self._refresh_products_balance_table()
