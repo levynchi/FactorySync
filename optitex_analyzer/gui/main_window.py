@@ -13,6 +13,7 @@ from .products_catalog_tab import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
 from .suppliers_tab import SuppliersTabMixin
 from .shipments_tab import ShipmentsTabMixin
+from .products_balance_tab import ProductsBalanceTabMixin
 
 
 class MainWindow(
@@ -25,6 +26,7 @@ class MainWindow(
     DrawingsManagerTabMixin,
     SuppliersTabMixin,
     ShipmentsTabMixin,
+    ProductsBalanceTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -109,6 +111,14 @@ class MainWindow(
             self._create_shipments_tab()
         except Exception:
             pass
+        # Products balance tab
+        try:
+            self._create_products_balance_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'מאזן מוצרים ופריטים' נכשלה: {e}")
+            except Exception:
+                pass
 
         # ----- Footer / Status -----
         self._create_status_bar()
@@ -199,6 +209,14 @@ class MainWindow(
                 self.dn_supplier_name_combo['values'] = names
                 if self.dn_supplier_name_var.get() and self.dn_supplier_name_var.get() not in names:
                     self.dn_supplier_name_var.set('')
+            except Exception:
+                pass
+        # מאזן מוצרים
+        if hasattr(self, 'balance_supplier_combo'):
+            try:
+                self.balance_supplier_combo['values'] = names
+                if self.balance_supplier_var.get() and self.balance_supplier_var.get() not in names:
+                    self.balance_supplier_var.set('')
             except Exception:
                 pass
 
