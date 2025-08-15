@@ -166,12 +166,8 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_size_var, width=10, state='readonly')
     ctx.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_type_var, width=12, state='readonly')
     ctx.sup_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_color_var, width=10, state='readonly')
-    # Fabric category combobox (values from data_processor.product_fabric_categories)
-    try:
-        _fabric_cat_names = [r.get('name') for r in getattr(ctx.data_processor, 'product_fabric_categories', [])]
-    except Exception:
-        _fabric_cat_names = []
-    ctx.sup_fabric_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_category_var, width=12, state='readonly', values=_fabric_cat_names)
+    # Fabric category is auto-filled from products_catalog; show as read-only entry
+    ctx.sup_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.sup_fabric_category_var, width=14, state='readonly')
     ctx.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_print_name_var, width=12, state='readonly')
 
     widgets = [
@@ -179,7 +175,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.sup_size_combo,
         ctx.sup_fabric_type_combo,
     ctx.sup_fabric_color_combo,
-    ctx.sup_fabric_category_combo,
+    ctx.sup_fabric_category_entry,
         ctx.sup_print_name_combo,
         tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
@@ -195,7 +191,10 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx._update_supplier_print_name_options()
         except Exception:
             pass
-    try: ctx.sup_product_var.trace_add('write', _on_product_change)
+    try:
+        ctx.sup_product_var.trace_add('write', _on_product_change)
+        # also recompute fabric category when product changes
+        ctx.sup_product_var.trace_add('write', lambda *_: getattr(ctx, '_update_supplier_fabric_category_auto', lambda: None)())
     except Exception: pass
 
     try:
@@ -203,8 +202,20 @@ def build_entry_tab(ctx, container: tk.Frame):
             try: ctx._update_supplier_fabric_color_options()
             except Exception: pass
         ctx.sup_fabric_type_var.trace_add('write', _on_fabric_type_change)
+        ctx.sup_fabric_type_var.trace_add('write', lambda *_: getattr(ctx, '_update_supplier_fabric_category_auto', lambda: None)())
     except Exception:
         pass
+
+    # Also update fabric category on size/color/print changes
+    try:
+        ctx.sup_size_var.trace_add('write', lambda *_: getattr(ctx, '_update_supplier_fabric_category_auto', lambda: None)())
+    except Exception: pass
+    try:
+        ctx.sup_fabric_color_var.trace_add('write', lambda *_: getattr(ctx, '_update_supplier_fabric_category_auto', lambda: None)())
+    except Exception: pass
+    try:
+        ctx.sup_print_name_var.trace_add('write', lambda *_: getattr(ctx, '_update_supplier_fabric_category_auto', lambda: None)())
+    except Exception: pass
 
     # Disable combos until product chosen
     for combo in (ctx.sup_size_combo, ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):

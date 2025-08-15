@@ -310,6 +310,36 @@ class SupplierIntakeMethodsMixin:
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
+    def _update_supplier_fabric_category_auto(self):
+        """מילוי אוטומטי של קטגורית הבד לפי התאמת וריאנט בקטלוג המוצרים."""
+        try:
+            product = (self.sup_product_var.get() or '').strip()
+            if not product:
+                self.sup_fabric_category_var.set(''); return
+            size = (self.sup_size_var.get() or '').strip()
+            ft = (self.sup_fabric_type_var.get() or '').strip()
+            col = (self.sup_fabric_color_var.get() or '').strip()
+            pn = (self.sup_print_name_var.get() or '').strip()
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            best = None; best_score = -1
+            for rec in catalog:
+                if (rec.get('name') or '').strip() != product:
+                    continue
+                score = 0
+                if size and (rec.get('size') or '').strip() == size: score += 1
+                if ft and (rec.get('fabric_type') or '').strip() == ft: score += 1
+                if col and (rec.get('fabric_color') or '').strip() == col: score += 1
+                if pn and (rec.get('print_name') or '').strip() == pn: score += 1
+                if score > best_score:
+                    best_score = score; best = rec
+            if best and best.get('fabric_category'):
+                self.sup_fabric_category_var.set((best.get('fabric_category') or '').strip())
+            else:
+                self.sup_fabric_category_var.set('')
+        except Exception:
+            try: self.sup_fabric_category_var.set('')
+            except Exception: pass
+
     def _add_supplier_package_line(self):
         pkg_type = (self.sup_pkg_type_var.get() or '').strip()
         qty_raw = (self.sup_pkg_qty_var.get() or '').strip()
