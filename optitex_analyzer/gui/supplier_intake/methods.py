@@ -351,7 +351,11 @@ class SupplierIntakeMethodsMixin:
                 pkg_summary = ', '.join(f"{p.get('package_type')}:{p.get('quantity')}" for p in rec.get('packages', [])[:4])
                 if len(rec.get('packages', [])) > 4:
                     pkg_summary += ' ...'
-                self.supplier_receipts_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))
+                # Add delete icon cell at the end
+                self.supplier_receipts_tree.insert(
+                    '', 'end',
+                    values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary, '🗑')
+                )
 
     def _open_supplier_receipt_details(self):
         """פתיחת חלון פרטים עבור תעודת קליטה נבחרת מתוך 'קליטות שמורות'."""

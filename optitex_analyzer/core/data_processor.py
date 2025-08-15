@@ -237,6 +237,19 @@ class DataProcessor:
 	def _rebuild_combined_receipts(self):
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
 
+	def delete_supplier_intake(self, receipt_id: int) -> bool:
+		"""מוחק קליטת ספק (supplier_intake) לפי ID. מחזיר True אם נמחקה רשומה."""
+		before = len(self.supplier_intakes)
+		try:
+			self.supplier_intakes = [r for r in self.supplier_intakes if int(r.get('id', -1)) != int(receipt_id)]
+		except Exception:
+			self.supplier_intakes = [r for r in self.supplier_intakes if (r.get('id') != receipt_id)]
+		if len(self.supplier_intakes) != before:
+			self._save_json_list(self.supplier_intakes_file, self.supplier_intakes)
+			self._rebuild_combined_receipts()
+			return True
+		return False
+
 	def get_delivery_notes(self) -> List[Dict]:
 		return list(self.delivery_notes)
 
