@@ -243,7 +243,8 @@ class ProductsBalanceTabMixin:
     def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
         """החזרת (סוג בד, צבע בד, שם פרינט) מתוך קטלוג המוצרים עבור מוצר (ולפי מידה אם נדרש).
 
-        אם נמצאו כמה ערכים שונים – מחזיר ריק לשדה הרלוונטי.
+        אם יש כמה ערכים שונים בקטלוג – נבחר את הערך הנפוץ ביותר (majority) כדי להציג ערך עקבי.
+        אם אין נתונים – יוחזרו מחרוזות ריקות.
         """
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
@@ -257,12 +258,21 @@ class ProductsBalanceTabMixin:
                 items = [r for r in catalog if _norm(r.get('name')) == _norm(product_name)]
             if not items:
                 return ('', '', '')
-            types = { _norm(r.get('fabric_type')) for r in items if _norm(r.get('fabric_type')) }
-            colors = { _norm(r.get('fabric_color')) for r in items if _norm(r.get('fabric_color')) }
-            prints = { _norm(r.get('print_name')) for r in items if _norm(r.get('print_name')) }
-            f_type = next(iter(types)) if len(types) == 1 else ''
-            f_color = next(iter(colors)) if len(colors) == 1 else ''
-            p_print = next(iter(prints)) if len(prints) == 1 else ''
+            def _majority(values: list[str]) -> str:
+                counts = {}
+                for v in values:
+                    v2 = _norm(v)
+                    if not v2:
+                        continue
+                    counts[v2] = counts.get(v2, 0) + 1
+                if not counts:
+                    return ''
+                # בחר את הערך עם המספר הגבוה ביותר; אם תיקו – הראשון בסדר הופעה טבעי
+                return sorted(counts.items(), key=lambda x: (-x[1], x[0]))[0][0]
+
+            f_type = _majority([r.get('fabric_type','') for r in items])
+            f_color = _majority([r.get('fabric_color','') for r in items])
+            p_print = _majority([r.get('print_name','') for r in items])
             return (f_type, f_color, p_print)
         except Exception:
             return ('', '', '')
