@@ -250,6 +250,19 @@ class DataProcessor:
 			return True
 		return False
 
+	def delete_delivery_note(self, note_id: int) -> bool:
+		"""מוחק תעודת משלוח (delivery_note) לפי ID. מחזיר True אם נמחקה רשומה."""
+		before = len(self.delivery_notes)
+		try:
+			self.delivery_notes = [r for r in self.delivery_notes if int(r.get('id', -1)) != int(note_id)]
+		except Exception:
+			self.delivery_notes = [r for r in self.delivery_notes if (r.get('id') != note_id)]
+		if len(self.delivery_notes) != before:
+			self._save_json_list(self.delivery_notes_file, self.delivery_notes)
+			self._rebuild_combined_receipts()
+			return True
+		return False
+
 	def get_delivery_notes(self) -> List[Dict]:
 		return list(self.delivery_notes)
 

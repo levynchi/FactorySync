@@ -245,7 +245,8 @@ class DeliveryNoteMethodsMixin:
                 pkg_summary = ', '.join(f"{p.get('package_type')}:{p.get('quantity')}" for p in rec.get('packages', [])[:4])
                 if len(rec.get('packages', [])) > 4:
                     pkg_summary += ' ...'
-                self.delivery_notes_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary))
+                # add delete icon in the last column to match ('id','date','supplier','total','packages','delete')
+                self.delivery_notes_tree.insert('', 'end', values=(rec.get('id'), rec.get('date'), rec.get('supplier'), rec.get('total_quantity'), pkg_summary, '🗑'))
 
     # ---- View single delivery note ----
     def _open_selected_delivery_note_view(self, event=None):
