@@ -160,20 +160,16 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
-    # Fabric category combobox values from data_processor.product_fabric_categories
-    try:
-        fabric_cat_names = [r.get('name') for r in getattr(ctx.data_processor, 'product_fabric_categories', [])]
-    except Exception:
-        fabric_cat_names = []
-    ctx.dn_fabric_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_category_var, width=12, state='readonly', values=fabric_cat_names)
+    # Fabric category is auto-filled from products_catalog match; show as read-only entry (not user-selectable)
+    ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
     widgets = [
         ctx.dn_product_combo,
         ctx.dn_size_combo,
-        ctx.dn_fabric_type_combo,
-        ctx.dn_fabric_color_combo,
-        ctx.dn_fabric_category_combo,
+    ctx.dn_fabric_type_combo,
+    ctx.dn_fabric_color_combo,
+    ctx.dn_fabric_category_entry,
         dn_print_entry,
         tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
@@ -186,6 +182,9 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx._update_delivery_size_options()
             ctx._update_delivery_fabric_type_options()
             ctx._update_delivery_fabric_color_options()
+            # also recompute fabric category when product changes
+            if hasattr(ctx, '_update_delivery_fabric_category_auto'):
+                ctx._update_delivery_fabric_category_auto()
         except Exception:
             pass
     try:
@@ -197,9 +196,25 @@ def build_entry_tab(ctx, container: tk.Frame):
         def _on_fabric_type_change(*_a):
             try:
                 ctx._update_delivery_fabric_color_options()
+                if hasattr(ctx, '_update_delivery_fabric_category_auto'):
+                    ctx._update_delivery_fabric_category_auto()
             except Exception:
                 pass
         ctx.dn_fabric_type_var.trace_add('write', _on_fabric_type_change)
+    except Exception:
+        pass
+
+    # When size / color / print name change, try to auto-fill fabric category
+    try:
+        ctx.dn_size_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
+    except Exception:
+        pass
+    try:
+        ctx.dn_fabric_color_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
+    except Exception:
+        pass
+    try:
+        ctx.dn_print_name_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
     except Exception:
         pass
 

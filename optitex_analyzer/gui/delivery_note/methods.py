@@ -121,6 +121,42 @@ class DeliveryNoteMethodsMixin:
                     except Exception: pass
             except Exception: pass
 
+    def _update_delivery_fabric_category_auto(self):
+        """Auto-fill fabric category based on a matching product variant from products_catalog.
+        Match keys: name, size, fabric_type, fabric_color, print_name (when available)."""
+        try:
+            product = (self.dn_product_var.get() or '').strip()
+            if not product:
+                self.dn_fabric_category_var.set(''); return
+            size = (self.dn_size_var.get() or '').strip()
+            ft = (self.dn_fabric_type_var.get() or '').strip()
+            col = (self.dn_fabric_color_var.get() or '').strip()
+            pn = (self.dn_print_name_var.get() or '').strip()
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            best = None
+            best_score = -1
+            for rec in catalog:
+                if (rec.get('name') or '').strip() != product:
+                    continue
+                score = 0
+                # optional exact matches add score
+                if size and (rec.get('size') or '').strip() == size: score += 1
+                if ft and (rec.get('fabric_type') or '').strip() == ft: score += 1
+                if col and (rec.get('fabric_color') or '').strip() == col: score += 1
+                if pn and (rec.get('print_name') or '').strip() == pn: score += 1
+                if score > best_score:
+                    best_score = score; best = rec
+            if best and best.get('fabric_category'):
+                self.dn_fabric_category_var.set((best.get('fabric_category') or '').strip())
+            else:
+                # fallback: blank
+                self.dn_fabric_category_var.set('')
+        except Exception:
+            try:
+                self.dn_fabric_category_var.set('')
+            except Exception:
+                pass
+
     # ---- Lines ops ----
     def _add_delivery_line(self):
         product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()
