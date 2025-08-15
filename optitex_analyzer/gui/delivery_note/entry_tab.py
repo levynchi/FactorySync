@@ -39,6 +39,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_type_var = tk.StringVar()
     ctx.dn_fabric_color_var = tk.StringVar(value='לבן')
     ctx.dn_print_name_var = tk.StringVar(value='חלק')
+    ctx.dn_fabric_category_var = tk.StringVar()
 
     # Product list
     ctx._delivery_products_allowed = []
@@ -152,13 +153,19 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","שם פרינט","כמות","הערה"]
+    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"]
     for i,lbl in enumerate(lbls):
         tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
+    # Fabric category combobox values from data_processor.product_fabric_categories
+    try:
+        fabric_cat_names = [r.get('name') for r in getattr(ctx.data_processor, 'product_fabric_categories', [])]
+    except Exception:
+        fabric_cat_names = []
+    ctx.dn_fabric_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_category_var, width=12, state='readonly', values=fabric_cat_names)
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
     widgets = [
@@ -166,6 +173,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.dn_size_combo,
         ctx.dn_fabric_type_combo,
         ctx.dn_fabric_color_combo,
+        ctx.dn_fabric_category_combo,
         dn_print_entry,
         tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
@@ -199,14 +207,15 @@ def build_entry_tab(ctx, container: tk.Frame):
         try: combo.state(['disabled'])
         except Exception: pass
 
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=14,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=15,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=16,padx=4)
+    # After adding a new field, shift action buttons to the right to avoid overlap
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=16,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=17,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=18,padx=4)
 
-    cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'print_name':110,'quantity':70,'note':220}
+    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
     for c in cols:
         ctx.delivery_tree.heading(c, text=headers[c])
         ctx.delivery_tree.column(c, width=widths[c], anchor='center')

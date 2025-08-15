@@ -125,6 +125,8 @@ class DeliveryNoteMethodsMixin:
     def _add_delivery_line(self):
         product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()
         fabric_type = self.dn_fabric_type_var.get().strip(); fabric_color = self.dn_fabric_color_var.get().strip(); print_name = self.dn_print_name_var.get().strip() or 'חלק'
+        fabric_category = getattr(self, 'dn_fabric_category_var', None)
+        fabric_category = fabric_category.get().strip() if fabric_category else ''
         if not product or not qty_raw:
             messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות"); return
         if self._delivery_products_allowed and product not in self._delivery_products_allowed:
@@ -133,9 +135,10 @@ class DeliveryNoteMethodsMixin:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'print_name': print_name, 'quantity': qty, 'note': note}
+        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'quantity': qty, 'note': note}
         self._delivery_lines.append(line)
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,print_name,qty,note))
+        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
+        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,qty,note))
         self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
         try: self.dn_product_combo['values'] = self._delivery_products_allowed_full
         except Exception: pass
@@ -289,15 +292,15 @@ class DeliveryNoteMethodsMixin:
             # שורות מוצרים
             lines_frame = tk.LabelFrame(body, text='שורות מוצרים')
             body.add(lines_frame, stretch='always')
-            lines_cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+            lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
             lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=8)
-            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
-            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'quantity':60,'note':160}
+            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
+            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'quantity':60,'note':160}
             for c in lines_cols:
                 lines_tree.heading(c, text=headers_map[c])
                 lines_tree.column(c, width=widths_map[c], anchor='center')
             for line in rec.get('lines', []) or []:
-                lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('print_name'), line.get('quantity'), line.get('note')))
+                lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')))
             lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
             # חבילות הובלה
             pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
