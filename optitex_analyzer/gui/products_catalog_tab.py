@@ -88,10 +88,10 @@ class ProductsCatalogTabMixin:
         # Treeview
         tree_frame = ttk.LabelFrame(products_tab, text="מוצרים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
-        cols = ('id','name','category','size','fabric_type','fabric_color','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        cols = ('id','name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
-        headers = {'id':'ID','name':'שם מוצר','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
-        widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
+        headers = {'id':'ID','name':'שם מוצר','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגוריית בד','print_name':'שם פרינט','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
+        widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
         for c in cols:
             self.products_tree.heading(c, text=headers[c])
             self.products_tree.column(c, width=widths[c], anchor='center')
@@ -259,9 +259,11 @@ class ProductsCatalogTabMixin:
         for item in self.products_tree.get_children(): self.products_tree.delete(item)
         try:
             for rec in getattr(self.data_processor, 'products_catalog', []):
+                # קטגוריית בד: אם חסרה – נציג "בלי קטגוריה"
+                fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
                 self.products_tree.insert('', 'end', values=(
                     rec.get('id'), rec.get('name'), rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
-                    rec.get('fabric_color'), rec.get('print_name'), rec.get('ticks_qty'), rec.get('elastic_qty'),
+                    rec.get('fabric_color'), fabric_category_value, rec.get('print_name'), rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
         except Exception:
@@ -364,7 +366,9 @@ class ProductsCatalogTabMixin:
                 new_id = self.data_processor.add_product_catalog_entry(name, sz, ft, fc, pn, category_raw, ticks_raw, elastic_raw, ribbon_raw)
                 existing.add(key)
                 added += 1
-                self.products_tree.insert('', 'end', values=(new_id, name, category_raw, sz, ft, fc, pn, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                # קטגוריית בד להצגה: אם לא קיימת – נציג "בלי קטגוריה"
+                fabric_category_value = 'בלי קטגוריה'
+                self.products_tree.insert('', 'end', values=(new_id, name, category_raw, sz, ft, fc, fabric_category_value, pn, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             # איפוס שדות טופס
             self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
             # חשוב: ניקוי רשימות הבחירה המרובות – אחרת הערכים הקודמים נשארים בזיכרון ומונעים בחירה חוזרת
