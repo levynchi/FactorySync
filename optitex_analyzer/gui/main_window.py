@@ -9,7 +9,7 @@ from .returned_drawing_tab import ReturnedDrawingTabMixin
 from .fabrics_inventory_tab import FabricsInventoryTabMixin
 from .supplier_intake import SupplierIntakeTabMixin
 from .delivery_note import DeliveryNoteTabMixin
-from .products_catalog_tab import ProductsCatalogTabMixin
+from .products_catalog import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
 from .suppliers_tab import SuppliersTabMixin
 from .shipments_tab import ShipmentsTabMixin
