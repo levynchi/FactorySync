@@ -1,4 +1,3 @@
-from .entry.entry_tab import *  # compatibility shim
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime

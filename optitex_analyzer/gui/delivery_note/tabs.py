@@ -25,9 +25,9 @@ class DeliveryNoteTabMixin(DeliveryNoteMethodsMixin):
 
     # Subtab builders imported from separate modules at bottom to avoid circular imports
     def _build_delivery_entry_tab(self, container: tk.Frame):
-        from .entry.entry_tab import build_entry_tab
+        from .entry_tab import build_entry_tab
         build_entry_tab(self, container)
 
     def _build_delivery_list_tab(self, container: tk.Frame):
-        from .list.list_tab import build_list_tab
+        from .list_tab import build_list_tab
         build_list_tab(self, container)
