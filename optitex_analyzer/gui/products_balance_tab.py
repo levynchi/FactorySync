@@ -80,6 +80,9 @@ class ProductsBalanceTabMixin:
         self._balance_detail_by_size = False
         self._balance_toggle_btn = tk.Button(inner_bar, text='פירוט לפי מידות', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
         self._balance_toggle_btn.pack(side='left')
+        # הוספת אפשרות לכלול "מה נגזר אצל הספק" לתוך העמודה "נשלח"
+        self.include_cuts_in_shipped_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
 
         columns = ('product','shipped','received','diff','status')
         self.products_balance_tree = ttk.Treeview(balance_page, columns=columns, show='headings', height=18)
@@ -136,6 +139,7 @@ class ProductsBalanceTabMixin:
             pass
         # איסוף כמויות לפי מוצר או לפי (מוצר, מידה)
         by_size = getattr(self, '_balance_detail_by_size', False)
+        include_cuts = bool(getattr(self, 'include_cuts_in_shipped_var', tk.BooleanVar(value=False)).get())
         shipped = {}
         received = {}
         try:
@@ -168,6 +172,42 @@ class ProductsBalanceTabMixin:
                     received[key] = received.get(key, 0) + qty
         except Exception:
             pass
+
+        # במידת הצורך, הוספת "מה נגזר אצל הספק" לעמודת "נשלח"
+        if include_cuts:
+            try:
+                if hasattr(self.data_processor, 'refresh_drawings_data'):
+                    self.data_processor.refresh_drawings_data()
+            except Exception:
+                pass
+            try:
+                cut_totals = {}
+                for rec in getattr(self.data_processor, 'drawings_data', []) or []:
+                    if rec.get('status') != 'נחתך':
+                        continue
+                    if (rec.get('נמען') or '').strip() != supplier:
+                        continue
+                    layers = rec.get('שכבות')
+                    try:
+                        layers = int(layers)
+                    except Exception:
+                        layers = None
+                    if not layers or layers <= 0:
+                        continue
+                    for prod in rec.get('מוצרים', []) or []:
+                        pname = (prod.get('שם המוצר') or '').strip()
+                        for sz in prod.get('מידות', []) or []:
+                            size = (sz.get('מידה') or '').strip()
+                            qty = int(sz.get('כמות', 0) or 0)
+                            if not pname or qty <= 0:
+                                continue
+                            key = (pname, size if by_size else '') if by_size else pname
+                            cut_totals[key] = cut_totals.get(key, 0) + qty * layers
+                # מיזוג לספירת הנשלח
+                for key, add_qty in cut_totals.items():
+                    shipped[key] = shipped.get(key, 0) + add_qty
+            except Exception:
+                pass
         # בניית שורות מאוחדות + החלת מסננים
         keys = sorted(set(list(shipped.keys()) + list(received.keys())))
         search_txt = (getattr(self, 'balance_search_var', tk.StringVar()).get() or '').strip().lower()
