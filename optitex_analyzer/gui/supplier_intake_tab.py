@@ -178,18 +178,23 @@ class SupplierIntakeTabMixin:
         for i,lbl in enumerate(lbls):
             tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
-        # Size / Fabric Type / Fabric Color comboboxes (readonly, dynamic) + print name free text
+        # Size / Fabric Type / Fabric Color comboboxes (readonly, dynamic) + print name (dependent on product)
         self.sup_size_combo = ttk.Combobox(entry_bar, textvariable=self.sup_size_var, width=10, state='readonly')
         self.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=self.sup_fabric_type_var, width=12, state='readonly')
         self.sup_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=self.sup_fabric_color_var, width=10, state='readonly')
-        print_name_entry = tk.Entry(entry_bar, textvariable=self.sup_print_name_var, width=12)  # נשאר חופשי כרגע
+        # שם פרינט ייגזר מהקטלוג עבור המוצר שנבחר; אם אין וריאנטים במוצר – נ fallback לרשימת print_names.json
+        self.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=self.sup_print_name_var, width=12, state='readonly')
+        try:
+            self._update_supplier_print_name_options()
+        except Exception:
+            pass
 
         widgets = [
             self.sup_product_combo,
             self.sup_size_combo,
             self.sup_fabric_type_combo,
             self.sup_fabric_color_combo,
-            print_name_entry,
+            self.sup_print_name_combo,
             tk.Entry(entry_bar, textvariable=self.sup_qty_var, width=7),
             tk.Entry(entry_bar, textvariable=self.sup_note_var, width=18)
         ]
@@ -202,6 +207,7 @@ class SupplierIntakeTabMixin:
                 self._update_supplier_size_options()
                 self._update_supplier_fabric_type_options()
                 self._update_supplier_fabric_color_options()
+                self._update_supplier_print_name_options()
             except Exception:
                 pass
         try:
@@ -221,11 +227,17 @@ class SupplierIntakeTabMixin:
             pass
 
         # Initialize combo disabled until product chosen
-        for combo in (self.sup_size_combo, self.sup_fabric_type_combo, self.sup_fabric_color_combo):
+        for combo in (self.sup_size_combo, self.sup_fabric_type_combo, self.sup_fabric_color_combo, self.sup_print_name_combo):
             try:
                 combo.state(['disabled'])
             except Exception:
                 pass
+
+        # ודא ערכי ברירת מחדל לשם פרינט בהתאם למוצר (ובהיעדרו – fallback לרשימה הכללית)
+        try:
+            self._update_supplier_print_name_options()
+        except Exception:
+            pass
 
         # Row buttons
         tk.Button(entry_bar, text="➕ הוסף", command=self._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=14,padx=6)
@@ -465,6 +477,110 @@ class SupplierIntakeTabMixin:
                     self.sup_fabric_color_combo.set('')
                     try:
                         self.sup_fabric_color_combo.state(['disabled'])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+    def _update_supplier_print_name_options(self):
+        """עדכון רשימת שמות פרינט בהתאם למוצר שנבחר.
+
+        לוגיקה:
+        - אם נבחר מוצר: לאסוף את כל print_name מהרשומות ב- products_catalog עבור המוצר הזה.
+          אם אין שמות פרינט במוצר, נ fallback לרשימה הכללית מ- print_names.json.
+        - אם לא נבחר מוצר: להשבית ולנקות כמו בשדות מידה/סוג בד.
+        - ברירת מחדל: 'חלק' אם קיימת ברשימה; אחרת לשמור ערך קיים אם תקף או לבחור הראשון.
+        """
+        product = (self.sup_product_var.get() or '').strip()
+        names = []
+        if product:
+            try:
+                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                for rec in catalog:
+                    if (rec.get('name') or '').strip() == product:
+                        pn = (rec.get('print_name') or '').strip()
+                        if pn:
+                            names.append(pn)
+                names = sorted({n for n in names})
+                if not names:
+                    # fallback לרשימה הכללית
+                    try:
+                        names = [r.get('name') for r in getattr(self.data_processor, 'product_print_names', []) if r.get('name')]
+                    except Exception:
+                        names = []
+            except Exception:
+                names = []
+        # עדכון קומבובוקס
+        if hasattr(self, 'sup_print_name_combo'):
+            try:
+                if product:
+                    self.sup_print_name_combo['values'] = names
+                    if names:
+                        try:
+                            self.sup_print_name_combo.state(['!disabled','readonly'])
+                        except Exception:
+                            pass
+                        current = (self.sup_print_name_var.get() or '').strip()
+                        if 'חלק' in names:
+                            if current not in names:
+                                self.sup_print_name_var.set('חלק')
+                        else:
+                            if current not in names:
+                                self.sup_print_name_var.set(names[0])
+                    else:
+                        # אין רשימה – ננקה ונשבית
+                        self.sup_print_name_var.set('')
+                        self.sup_print_name_combo.set('')
+                        try:
+                            self.sup_print_name_combo.state(['disabled'])
+                        except Exception:
+                            pass
+                else:
+                    # אין מוצר – כמו שדות אחרים, להשבית
+                    self.sup_print_name_var.set('')
+                    self.sup_print_name_combo.set('')
+                    self.sup_print_name_combo['values'] = []
+                    try:
+                        self.sup_print_name_combo.state(['disabled'])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+    def _refresh_supplier_print_name_options(self):
+        """טעינת רשימת שמות הפרינט מקובץ print_names.json דרך ה-DataProcessor.
+
+        אם הרשימה ריקה – נשבית את הקומבובוקס וננקה.
+        אם הרשימה קיימת – נאפשר בחירה, ונקבע ברירת מחדל 'חלק' אם קיימת,
+        אחרת נשמור את הערך הקיים אם הוא קיים ברשימה, ואם לא – נבחר את הראשון.
+        """
+        try:
+            names = [r.get('name') for r in getattr(self.data_processor, 'product_print_names', []) if r.get('name')]
+        except Exception:
+            names = []
+        if hasattr(self, 'sup_print_name_combo'):
+            try:
+                self.sup_print_name_combo['values'] = names
+                if names:
+                    # enable combobox
+                    try:
+                        self.sup_print_name_combo.state(['!disabled','readonly'])
+                    except Exception:
+                        pass
+                    current = (self.sup_print_name_var.get() or '').strip()
+                    if 'חלק' in names:
+                        # העדף 'חלק' כברירת מחדל אם אין ערך תקף
+                        if current not in names:
+                            self.sup_print_name_var.set('חלק')
+                    else:
+                        if current not in names:
+                            self.sup_print_name_var.set(names[0])
+                else:
+                    # disable if empty
+                    self.sup_print_name_var.set('')
+                    self.sup_print_name_combo.set('')
+                    try:
+                        self.sup_print_name_combo.state(['disabled'])
                     except Exception:
                         pass
             except Exception:
