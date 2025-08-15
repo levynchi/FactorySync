@@ -8,7 +8,7 @@ from .converter_tab import ConverterTabMixin  # still used indirectly for embedd
 from .returned_drawing_tab import ReturnedDrawingTabMixin
 from .fabrics_inventory_tab import FabricsInventoryTabMixin
 from .supplier_intake_tab import SupplierIntakeTabMixin
-from .delivery_note_tab import DeliveryNoteTabMixin
+from .delivery_note import DeliveryNoteTabMixin
 from .products_catalog_tab import ProductsCatalogTabMixin
 from .drawings_manager_tab import DrawingsManagerTabMixin
 from .suppliers_tab import SuppliersTabMixin
