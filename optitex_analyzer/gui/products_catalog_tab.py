@@ -160,10 +160,12 @@ class ProductsCatalogTabMixin:
         ftypes_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         fcolors_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         prints_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        fcats_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         attr_nb.add(sizes_tab, text='מידות')
         attr_nb.add(ftypes_tab, text='סוגי בד')
         attr_nb.add(fcolors_tab, text='צבעי בד')
         attr_nb.add(prints_tab, text='שמות פרינט')
+        attr_nb.add(fcats_tab, text='קטגוריות בדים')
 
         # Sizes
         sz_form = ttk.LabelFrame(sizes_tab, text='הוספת מידה', padding=8)
@@ -232,6 +234,24 @@ class ProductsCatalogTabMixin:
         self.print_names_tree.configure(yscroll=pn_vs.set)
         self.print_names_tree.pack(side='left', fill='both', expand=True); pn_vs.pack(side='right', fill='y')
         self._load_print_names_into_tree()
+
+        # Fabric Categories (new)
+        self.attr_fabric_category_var = tk.StringVar()
+        fcg_form = ttk.LabelFrame(fcats_tab, text='הוספת קטגוריית בד', padding=8)
+        fcg_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(fcg_form, text='קטגוריית בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(fcg_form, textvariable=self.attr_fabric_category_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(fcg_form, text='➕ הוסף', command=self._add_fabric_category_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(fcg_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_category_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        fcg_tree_frame = ttk.LabelFrame(fcats_tab, text='קטגוריות בדים', padding=4)
+        fcg_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.fabric_categories_tree = ttk.Treeview(fcg_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','קטגוריה',160),('created_at','נוצר',140)]:
+            self.fabric_categories_tree.heading(c, text=t); self.fabric_categories_tree.column(c, width=w, anchor='center')
+        fcg_vs = ttk.Scrollbar(fcg_tree_frame, orient='vertical', command=self.fabric_categories_tree.yview)
+        self.fabric_categories_tree.configure(yscroll=fcg_vs.set)
+        self.fabric_categories_tree.pack(side='left', fill='both', expand=True); fcg_vs.pack(side='right', fill='y')
+        self._load_fabric_categories_into_tree()
 
     # Loading
     def _load_products_catalog_into_tree(self):
@@ -543,6 +563,12 @@ class ProductsCatalogTabMixin:
         for rec in getattr(self.data_processor, 'product_print_names', []):
             self.print_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
 
+    def _load_fabric_categories_into_tree(self):
+        if not hasattr(self, 'fabric_categories_tree'): return
+        for item in self.fabric_categories_tree.get_children(): self.fabric_categories_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_fabric_categories', []):
+            self.fabric_categories_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
     # ===== תכונות מוצר - הוספה =====
     def _add_product_size(self):
         name = self.attr_size_var.get().strip()
@@ -597,6 +623,18 @@ class ProductsCatalogTabMixin:
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
+    def _add_fabric_category_item(self):
+        name = self.attr_fabric_category_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין קטגוריית בד')
+            return
+        try:
+            new_id = self.data_processor.add_fabric_category_item(name)
+            self.fabric_categories_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_fabric_category_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
     # ===== תכונות מוצר - מחיקה =====
     def _delete_selected_product_size(self):
         if not hasattr(self, 'sizes_tree'): return
@@ -643,3 +681,13 @@ class ProductsCatalogTabMixin:
         if deleted:
             self._load_print_names_into_tree()
             self._refresh_attribute_pickers()
+
+    def _delete_selected_fabric_category_item(self):
+        if not hasattr(self, 'fabric_categories_tree'): return
+        sel = self.fabric_categories_tree.selection(); deleted = False
+        for item in sel:
+            vals = self.fabric_categories_tree.item(item, 'values')
+            if vals and self.data_processor.delete_fabric_category_item(int(vals[0])):
+                deleted = True
+        if deleted:
+            self._load_fabric_categories_into_tree()
