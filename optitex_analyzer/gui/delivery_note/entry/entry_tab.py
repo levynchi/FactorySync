@@ -1,4 +1,3 @@
-from .entry.entry_tab import *  # compatibility shim
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -199,55 +198,3 @@ def build_entry_tab(ctx, container: tk.Frame):
     for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo):
         try: combo.state(['disabled'])
         except Exception: pass
-
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=14,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=15,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=16,padx=4)
-
-    cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
-    ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'print_name':110,'quantity':70,'note':220}
-    for c in cols:
-        ctx.delivery_tree.heading(c, text=headers[c])
-        ctx.delivery_tree.column(c, width=widths[c], anchor='center')
-    vs = ttk.Scrollbar(lines_frame, orient='vertical', command=ctx.delivery_tree.yview)
-    ctx.delivery_tree.configure(yscroll=vs.set)
-    ctx.delivery_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
-    vs.pack(side='right', fill='y')
-
-    # Transportation section
-    pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
-    pkg_frame.pack(fill='x', padx=10, pady=(4,4))
-    ctx.pkg_type_var = tk.StringVar(value='שקית קטנה')
-    ctx.pkg_qty_var = tk.StringVar()
-    ctx.pkg_driver_var = tk.StringVar()
-    tk.Label(pkg_frame, text="פריט הובלה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
-    ctx.pkg_type_combo = ttk.Combobox(pkg_frame, textvariable=ctx.pkg_type_var, state='readonly', width=14, values=['שקית קטנה','שק','בד'])
-    ctx.pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
-    tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
-    tk.Entry(pkg_frame, textvariable=ctx.pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
-    tk.Label(pkg_frame, text="שם המוביל:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
-    ctx.pkg_driver_combo = ttk.Combobox(pkg_frame, textvariable=ctx.pkg_driver_var, width=16, state='readonly')
-    ctx.pkg_driver_combo.grid(row=0,column=5,sticky='w',padx=4,pady=2)
-    try:
-        ctx._refresh_driver_names_for_delivery()
-    except Exception:
-        pass
-    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-    tk.Button(pkg_frame, text="❌ נקה", command=ctx._clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
-    ctx.packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
-    ctx.packages_tree.heading('type', text='פריט הובלה')
-    ctx.packages_tree.heading('quantity', text='כמות')
-    ctx.packages_tree.heading('driver', text='שם המוביל')
-    ctx.packages_tree.column('type', width=120, anchor='center')
-    ctx.packages_tree.column('quantity', width=70, anchor='center')
-    ctx.packages_tree.column('driver', width=110, anchor='center')
-    ctx.packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
-
-    bottom_actions = tk.Frame(container, bg='#f7f9fa')
-    bottom_actions.pack(fill='x', padx=10, pady=6)
-    tk.Button(bottom_actions, text="💾 שמור תעודה", command=ctx._save_delivery_note, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
-    ctx.delivery_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
-    tk.Label(container, textvariable=ctx.delivery_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
