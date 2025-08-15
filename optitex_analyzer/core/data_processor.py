@@ -667,7 +667,7 @@ class DataProcessor:
 			return False
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
-								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0) -> int:
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '') -> int:
 		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
 
 		:param name: שם מוצר (חובה)
@@ -701,6 +701,7 @@ class DataProcessor:
 				'fabric_color': fabric_color.strip(),
 				'print_name': print_name.strip(),
 				'category': (category or '').strip(),
+				'fabric_category': (fabric_category or '').strip(),
 				'ticks_qty': ticks_i,
 				'elastic_qty': elastic_i,
 				'ribbon_qty': ribbon_i,

@@ -27,6 +27,7 @@ class ProductsCatalogTabMixin:
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
         self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar()
+        self.prod_fabric_category_var = tk.StringVar()
         # עדכון: שדה המידה תומך במספר וריאנטים בבת אחת מופרדים בפסיק / רווח (למשל: "0-3,3-6,6-12")
         # עדכון: כל אחד מהשדות (מידה / סוג בד / צבע בד / שם פרינט) תומך ברשימת ערכים מופרדים בפסיק / רווחים ליצירת וריאנטים מרובים.
         # שדה שם מוצר
@@ -37,6 +38,11 @@ class ProductsCatalogTabMixin:
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
         self.category_combobox.grid(row=0, column=3, sticky='w', padx=2, pady=4)
+        # קומבובוקס קטגוריית בד (מהטאב תכונות מוצר > קטגוריות בדים)
+        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=0, column=4, sticky='w', padx=4, pady=4)
+        fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
+        self.fabric_category_combobox = ttk.Combobox(form, textvariable=self.prod_fabric_category_var, values=fabric_cat_names, state='readonly', width=12, justify='right')
+        self.fabric_category_combobox.grid(row=0, column=5, sticky='w', padx=2, pady=4)
         # שדות תכונות מוצר נבחרות (בחירה מרשימות הטאב "תכונות מוצר")
         # נשמור רשימות בחירה כדי לאפשר וריאנטים מרובים.
         self.selected_sizes = []
@@ -46,26 +52,26 @@ class ProductsCatalogTabMixin:
 
         # תצוגה של הערכים שנבחרו (נקשר ל-StringVar הקיים)
         # מידות
-        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=0, column=4, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=0, column=6, sticky='w', padx=4, pady=4)
         self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=10, justify='right')
-        self.size_picker.grid(row=0, column=5, sticky='w', padx=2, pady=4)
+        self.size_picker.grid(row=0, column=7, sticky='w', padx=2, pady=4)
         self.size_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('size'))
-        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=0, column=6, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=0, column=7, padx=2)
+        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=0, column=8, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=0, column=9, padx=2)
         # סוגי בד
-        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=0, column=8, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=0, column=10, sticky='w', padx=4, pady=4)
         self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=10, justify='right')
-        self.ftype_picker.grid(row=0, column=9, sticky='w', padx=2, pady=4)
+        self.ftype_picker.grid(row=0, column=11, sticky='w', padx=2, pady=4)
         self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
-        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=0, column=10, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=0, column=11, padx=2)
+        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=0, column=12, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=0, column=13, padx=2)
         # צבעי בד
-        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=0, column=12, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=0, column=14, sticky='w', padx=4, pady=4)
         self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=10, justify='right')
-        self.fcolor_picker.grid(row=0, column=13, sticky='w', padx=2, pady=4)
+        self.fcolor_picker.grid(row=0, column=15, sticky='w', padx=2, pady=4)
         self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
-        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=0, column=14, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=0, column=15, padx=2)
+        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=0, column=16, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=0, column=17, padx=2)
         # שדות בשורה שנייה: שמות פרינט + כמויות אביזרים + כפתורים
         tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=10, justify='right')
@@ -294,6 +300,7 @@ class ProductsCatalogTabMixin:
         ftypes_raw = self.prod_fabric_type_var.get().strip()
         fcolors_raw = self.prod_fabric_color_var.get().strip()
         prints_raw = self.prod_print_name_var.get().strip()
+        fabric_category_raw = self.prod_fabric_category_var.get().strip()
         ticks_raw = self.prod_ticks_var.get().strip()
         elastic_raw = self.prod_elastic_var.get().strip()
         ribbon_raw = self.prod_ribbon_var.get().strip()
@@ -363,14 +370,20 @@ class ProductsCatalogTabMixin:
                 key = (name, sz, ft, fc, pn)
                 if key in existing:
                     continue
-                new_id = self.data_processor.add_product_catalog_entry(name, sz, ft, fc, pn, category_raw, ticks_raw, elastic_raw, ribbon_raw)
+                new_id = self.data_processor.add_product_catalog_entry(
+                    name, sz, ft, fc, pn, category_raw, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw
+                )
                 existing.add(key)
                 added += 1
-                # קטגוריית בד להצגה: אם לא קיימת – נציג "בלי קטגוריה"
-                fabric_category_value = 'בלי קטגוריה'
-                self.products_tree.insert('', 'end', values=(new_id, name, category_raw, sz, ft, fc, fabric_category_value, pn, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                # קטגוריית בד להצגה: נציג את הבחירה, ואם ריק – "בלי קטגוריה"
+                fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
+                self.products_tree.insert('', 'end', values=(
+                    new_id, name, category_raw, sz, ft, fc, fabric_category_value, pn,
+                    ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ))
             # איפוס שדות טופס
-            self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
+            self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_fabric_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
             # חשוב: ניקוי רשימות הבחירה המרובות – אחרת הערכים הקודמים נשארים בזיכרון ומונעים בחירה חוזרת
             self.selected_sizes.clear()
             self.selected_fabric_types.clear()
@@ -381,6 +394,7 @@ class ProductsCatalogTabMixin:
             if hasattr(self, 'ftype_picker'): self.ftype_picker.set('')
             if hasattr(self, 'fcolor_picker'): self.fcolor_picker.set('')
             if hasattr(self, 'pname_picker'): self.pname_picker.set('')
+            if hasattr(self, 'fabric_category_combobox'): self.fabric_category_combobox.set('')
             if added > 1:
                 messagebox.showinfo("הצלחה", f"נוספו {added} וריאנטים למוצר '{name}'")
             elif added == 1:
@@ -541,6 +555,12 @@ class ProductsCatalogTabMixin:
             self.fcolor_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])]
         if hasattr(self, 'pname_picker'):
             self.pname_picker['values'] = [r.get('name') for r in getattr(self.data_processor,'product_print_names',[])]
+        # רענון קומבובוקס קטגוריית בד בטופס מוצרים
+        if hasattr(self, 'fabric_category_combobox'):
+            names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
+            self.fabric_category_combobox['values'] = names
+            if self.prod_fabric_category_var.get() not in names:
+                self.prod_fabric_category_var.set('')
 
     # ===== תכונות מוצר - טעינה =====
     def _load_sizes_into_tree(self):
@@ -636,6 +656,8 @@ class ProductsCatalogTabMixin:
             new_id = self.data_processor.add_fabric_category_item(name)
             self.fabric_categories_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.attr_fabric_category_var.set('')
+            # רענון קומבובוקס קטגוריית בד בטופס מוצרים
+            self._refresh_attribute_pickers()
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
@@ -695,3 +717,4 @@ class ProductsCatalogTabMixin:
                 deleted = True
         if deleted:
             self._load_fabric_categories_into_tree()
+            self._refresh_attribute_pickers()
