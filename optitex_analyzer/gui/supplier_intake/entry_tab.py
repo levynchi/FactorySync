@@ -44,6 +44,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_fabric_type_var = tk.StringVar()
     ctx.sup_fabric_color_var = tk.StringVar(value='לבן')
     ctx.sup_print_name_var = tk.StringVar(value='חלק')
+    ctx.sup_fabric_category_var = tk.StringVar()
 
     # Product list
     ctx._supplier_products_allowed = []
@@ -157,21 +158,28 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Labels row
-    for i,lbl in enumerate(["מוצר","מידה","סוג בד","צבע בד","שם פרינט","כמות","הערה"]):
+    # Labels row (added 'קטגורית בד')
+    for i,lbl in enumerate(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"]):
         tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
     # Variant controls
     ctx.sup_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_size_var, width=10, state='readonly')
     ctx.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_type_var, width=12, state='readonly')
     ctx.sup_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_color_var, width=10, state='readonly')
+    # Fabric category combobox (values from data_processor.product_fabric_categories)
+    try:
+        _fabric_cat_names = [r.get('name') for r in getattr(ctx.data_processor, 'product_fabric_categories', [])]
+    except Exception:
+        _fabric_cat_names = []
+    ctx.sup_fabric_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_category_var, width=12, state='readonly', values=_fabric_cat_names)
     ctx.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_print_name_var, width=12, state='readonly')
 
     widgets = [
         ctx.sup_product_combo,
         ctx.sup_size_combo,
         ctx.sup_fabric_type_combo,
-        ctx.sup_fabric_color_combo,
+    ctx.sup_fabric_color_combo,
+    ctx.sup_fabric_category_combo,
         ctx.sup_print_name_combo,
         tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
@@ -204,15 +212,16 @@ def build_entry_tab(ctx, container: tk.Frame):
         except Exception: pass
 
     # Buttons
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=14,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=15,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=16,padx=4)
+    # Shift action buttons after adding a new field
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=16,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=17,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=18,padx=4)
 
     # Lines tree
-    cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
     ctx.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'print_name':110,'quantity':70,'note':220}
+    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
     for c in cols:
         ctx.supplier_tree.heading(c, text=headers[c])
         ctx.supplier_tree.column(c, width=widths[c], anchor='center')

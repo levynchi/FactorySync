@@ -234,6 +234,8 @@ class SupplierIntakeMethodsMixin:
     def _add_supplier_line(self):
         product = self.sup_product_var.get().strip(); size = self.sup_size_var.get().strip(); qty_raw = self.sup_qty_var.get().strip(); note = self.sup_note_var.get().strip()
         fabric_type = self.sup_fabric_type_var.get().strip(); fabric_color = self.sup_fabric_color_var.get().strip(); print_name = self.sup_print_name_var.get().strip() or 'חלק'
+        fabric_category = getattr(self, 'sup_fabric_category_var', None)
+        fabric_category = fabric_category.get().strip() if fabric_category else ''
         if not product or not qty_raw:
             messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות")
             return
@@ -243,9 +245,9 @@ class SupplierIntakeMethodsMixin:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'print_name': print_name, 'quantity': qty, 'note': note}
+        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'quantity': qty, 'note': note}
         self._supplier_lines.append(line)
-        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,print_name,qty,note))
+        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,qty,note))
         self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
         if hasattr(self, 'sup_product_combo'):
             try:
@@ -405,10 +407,10 @@ class SupplierIntakeMethodsMixin:
 
         lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
         lines_frame.pack(fill='both', expand=True, pady=6)
-        cols = ('product','size','fabric_type','fabric_color','print_name','quantity','note')
+        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
         tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
-        headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-        widths = {'product':180,'size':80,'fabric_type':100,'fabric_color':90,'print_name':110,'quantity':70,'note':220}
+        headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
+        widths = {'product':180,'size':80,'fabric_type':100,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
         for c in cols:
             tree.heading(c, text=headers[c])
             tree.column(c, width=widths[c], anchor='center')
@@ -418,7 +420,7 @@ class SupplierIntakeMethodsMixin:
         vs.pack(side='left', fill='y', pady=6)
         for ln in rec.get('lines', []) or []:
             tree.insert('', 'end', values=(
-                ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''),
+                ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''), ln.get('fabric_category',''),
                 ln.get('print_name',''), ln.get('quantity',''), ln.get('note','')
             ))
 
