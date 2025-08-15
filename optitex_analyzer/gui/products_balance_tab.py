@@ -84,16 +84,19 @@ class ProductsBalanceTabMixin:
         self.include_cuts_in_shipped_var = tk.BooleanVar(value=False)
         tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
 
-        columns = ('product','shipped','received','diff','status')
+        columns = ('product','fabric_type','fabric_color','print_name','shipped','received','diff','status')
         self.products_balance_tree = ttk.Treeview(balance_page, columns=columns, show='headings', height=18)
         headers = {
             'product': 'מוצר',
+            'fabric_type': 'סוג בד',
+            'fabric_color': 'צבע בד',
+            'print_name': 'שם פרינט',
             'shipped': 'נשלח',
             'received': 'נתקבל',
             'diff': 'הפרש (נותר לקבל)',
             'status': 'סטטוס'
         }
-        widths = {'product':260, 'shipped':90, 'received':90, 'diff':130, 'status':140}
+        widths = {'product':220, 'fabric_type':120, 'fabric_color':120, 'print_name':120, 'shipped':90, 'received':90, 'diff':130, 'status':140}
         for c in columns:
             self.products_balance_tree.heading(c, text=headers[c])
             self.products_balance_tree.column(c, width=widths[c], anchor='center')
@@ -216,8 +219,12 @@ class ProductsBalanceTabMixin:
             if by_size:
                 prod, size = key if isinstance(key, tuple) else (str(key), '')
                 label = f"{prod} – {size or 'ללא מידה'}"
+                p_name = prod
+                p_size = size
             else:
                 label = key if isinstance(key, str) else key[0]
+                p_name = label
+                p_size = ''
             s = shipped.get(key, 0)
             r = received.get(key, 0)
             diff = s - r
@@ -229,7 +236,36 @@ class ProductsBalanceTabMixin:
             if only_pending and diff <= 0:
                 continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
-            self.products_balance_tree.insert('', 'end', values=(label, s, r, max(diff, 0), status))
+            # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג
+            f_type, f_color, p_print = self._get_product_attrs(p_name, p_size, by_size)
+            self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, p_print, s, r, max(diff, 0), status))
+
+    def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
+        """החזרת (סוג בד, צבע בד, שם פרינט) מתוך קטלוג המוצרים עבור מוצר (ולפי מידה אם נדרש).
+
+        אם נמצאו כמה ערכים שונים – מחזיר ריק לשדה הרלוונטי.
+        """
+        try:
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            if not product_name:
+                return ('', '', '')
+            def _norm(s):
+                return (s or '').strip()
+            if by_size and size:
+                items = [r for r in catalog if _norm(r.get('name')) == _norm(product_name) and _norm(r.get('size')) == _norm(size)]
+            else:
+                items = [r for r in catalog if _norm(r.get('name')) == _norm(product_name)]
+            if not items:
+                return ('', '', '')
+            types = { _norm(r.get('fabric_type')) for r in items if _norm(r.get('fabric_type')) }
+            colors = { _norm(r.get('fabric_color')) for r in items if _norm(r.get('fabric_color')) }
+            prints = { _norm(r.get('print_name')) for r in items if _norm(r.get('print_name')) }
+            f_type = next(iter(types)) if len(types) == 1 else ''
+            f_color = next(iter(colors)) if len(colors) == 1 else ''
+            p_print = next(iter(prints)) if len(prints) == 1 else ''
+            return (f_type, f_color, p_print)
+        except Exception:
+            return ('', '', '')
 
     def _toggle_balance_detail_mode(self):
         """טוגול תצוגה בין מאוחד לפי מוצר לבין פירוט לפי מידות."""
