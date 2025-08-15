@@ -758,6 +758,129 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא קטלוג מוצרים: {str(e)}")
 
+	def import_products_catalog_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		"""יבוא קטלוג מוצרים מ‑Excel בפורמט זהה לייצוא.
+
+		:param file_path: נתיב לקובץ xlsx
+		:param mode: 'append' להוספה לקיים (עם מניעת כפילויות), או 'overwrite' לדריסה מלאה
+		:return: dict עם מונים: {'imported': N, 'skipped_duplicates': M, 'overwritten': bool}
+		"""
+		try:
+			if not os.path.exists(file_path):
+				raise Exception("קובץ לא נמצא")
+			df = pd.read_excel(file_path)
+			# נוודא קיום עמודות נדרשות
+			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'}
+			cols = {str(c).strip() for c in df.columns}
+			missing = required - cols
+			if missing:
+				raise Exception(f"עמודות חסרות בקובץ: {', '.join(missing)}")
+
+			# יצירת סט כפילויות קיים ע"פ מפתחות לוגיים (שם+מידה+סוג בד+צבע בד+שם פרינט)
+			existing_keys = set()
+			for rec in self.products_catalog:
+				existing_keys.add((
+					(rec.get('name') or '').strip(),
+					(rec.get('size') or '').strip(),
+					(rec.get('fabric_type') or '').strip(),
+					(rec.get('fabric_color') or '').strip(),
+					(rec.get('print_name') or '').strip()
+				))
+
+			def _to_int(x):
+				try:
+					if x in (None, ''):
+						return 0
+					return int(x)
+				except Exception:
+					return 0
+
+			imported = 0
+			skipped = 0
+			if mode == 'overwrite':
+				self.products_catalog = []
+				existing_keys.clear()
+				next_id = 1
+				for _, row in df.iterrows():
+					name = str(row.get('name') or '').strip()
+					size = str(row.get('size') or '').strip()
+					ft = str(row.get('fabric_type') or '').strip()
+					fc = str(row.get('fabric_color') or '').strip()
+					pn = str(row.get('print_name') or '').strip()
+					cat = str(row.get('category') or '').strip()
+					fcat = (str(row.get('fabric_category') or '').strip())
+					# ננרמל 'בלי קטגוריה' לריק	
+					if fcat == 'בלי קטגוריה':
+						fcat = ''
+					ticks = _to_int(row.get('ticks_qty'))
+					elastic = _to_int(row.get('elastic_qty'))
+					ribbon = _to_int(row.get('ribbon_qty'))
+					created = row.get('created_at')
+					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+					key = (name, size, ft, fc, pn)
+					if key in existing_keys:
+						skipped += 1; continue
+					rec = {
+						'id': next_id,
+						'name': name,
+						'size': size,
+						'fabric_type': ft,
+						'fabric_color': fc,
+						'print_name': pn,
+						'category': cat,
+						'fabric_category': fcat,
+						'ticks_qty': ticks,
+						'elastic_qty': elastic,
+						'ribbon_qty': ribbon,
+						'created_at': created_str
+					}
+					self.products_catalog.append(rec)
+					existing_keys.add(key)
+					next_id += 1; imported += 1
+			else:
+				# append
+				next_id = max([p.get('id',0) for p in self.products_catalog], default=0) + 1
+				for _, row in df.iterrows():
+					name = str(row.get('name') or '').strip()
+					size = str(row.get('size') or '').strip()
+					ft = str(row.get('fabric_type') or '').strip()
+					fc = str(row.get('fabric_color') or '').strip()
+					pn = str(row.get('print_name') or '').strip()
+					cat = str(row.get('category') or '').strip()
+					fcat = (str(row.get('fabric_category') or '').strip())
+					if fcat == 'בלי קטגוריה':
+						fcat = ''
+					ticks = _to_int(row.get('ticks_qty'))
+					elastic = _to_int(row.get('elastic_qty'))
+					ribbon = _to_int(row.get('ribbon_qty'))
+					created = row.get('created_at')
+					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+					key = (name, size, ft, fc, pn)
+					if key in existing_keys:
+						skipped += 1; continue
+					rec = {
+						'id': next_id,
+						'name': name,
+						'size': size,
+						'fabric_type': ft,
+						'fabric_color': fc,
+						'print_name': pn,
+						'category': cat,
+						'fabric_category': fcat,
+						'ticks_qty': ticks,
+						'elastic_qty': elastic,
+						'ribbon_qty': ribbon,
+						'created_at': created_str
+					}
+					self.products_catalog.append(rec)
+					existing_keys.add(key)
+					next_id += 1; imported += 1
+
+			self.save_products_catalog()
+			return {'imported': imported, 'skipped_duplicates': skipped, 'overwritten': mode == 'overwrite'}
+		except Exception as e:
+			raise Exception(f"שגיאה בייבוא קטלוג מוצרים: {str(e)}")
+
 	# ===== Sewing Accessories =====
 	def load_sewing_accessories(self) -> List[Dict]:
 		"""טעינת רשימת אביזרי תפירה."""

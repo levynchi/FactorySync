@@ -91,13 +91,14 @@ class ProductsCatalogTabMixin:
         tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=1, column=10, padx=12, pady=4)
         tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=1, column=11, padx=4, pady=4)
         tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=1, column=12, padx=4, pady=4)
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=1, column=13, padx=4, pady=4)
         # Treeview
         tree_frame = ttk.LabelFrame(products_tab, text="מוצרים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
-        cols = ('id','name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        cols = ('id','name','category','size','fabric_type','fabric_color','print_name','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
         headers = {'id':'ID','name':'שם מוצר','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגוריית בד','print_name':'שם פרינט','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
-        widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
+        widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'fabric_category':120,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
         for c in cols:
             self.products_tree.heading(c, text=headers[c])
             self.products_tree.column(c, width=widths[c], anchor='center')
@@ -269,7 +270,7 @@ class ProductsCatalogTabMixin:
                 fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
                 self.products_tree.insert('', 'end', values=(
                     rec.get('id'), rec.get('name'), rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
-                    rec.get('fabric_color'), fabric_category_value, rec.get('print_name'), rec.get('ticks_qty'), rec.get('elastic_qty'),
+                    rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
         except Exception:
@@ -378,7 +379,7 @@ class ProductsCatalogTabMixin:
                 # קטגוריית בד להצגה: נציג את הבחירה, ואם ריק – "בלי קטגוריה"
                 fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
                 self.products_tree.insert('', 'end', values=(
-                    new_id, name, category_raw, sz, ft, fc, fabric_category_value, pn,
+                    new_id, name, category_raw, sz, ft, fc, pn, fabric_category_value,
                     ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
@@ -433,6 +434,53 @@ class ProductsCatalogTabMixin:
             messagebox.showinfo("הצלחה", "הקטלוג יוצא בהצלחה")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    def _import_products_catalog_dialog(self):
+        # חלון יבוא: בחירת קובץ + אפשרות דריסה
+        top = tk.Toplevel(self.notebook)
+        top.title("יבוא קטלוג מוצרים מ-Excel")
+        top.grab_set()
+        top.resizable(False, False)
+        frm = ttk.Frame(top, padding=10)
+        frm.pack(fill='both', expand=True)
+
+        path_var = tk.StringVar()
+        overwrite_var = tk.BooleanVar(value=False)
+
+        ttk.Label(frm, text="בחר קובץ Excel בפורמט הייצוא:").grid(row=0, column=0, columnspan=3, sticky='w', pady=(0,6))
+        ttk.Entry(frm, textvariable=path_var, width=50).grid(row=1, column=0, columnspan=2, sticky='we', padx=(0,6))
+        def _browse():
+            p = filedialog.askopenfilename(title="בחר קובץ קטלוג", filetypes=[('Excel','*.xlsx')])
+            if p:
+                path_var.set(p)
+        ttk.Button(frm, text="עיון...", command=_browse).grid(row=1, column=2, sticky='w')
+
+        ttk.Checkbutton(frm, text="דרוס את הטבלה (במקום להוסיף)", variable=overwrite_var).grid(row=2, column=0, columnspan=3, sticky='w', pady=8)
+
+        btns = ttk.Frame(frm)
+        btns.grid(row=3, column=0, columnspan=3, sticky='e')
+        def _do_import():
+            path = path_var.get().strip()
+            if not path:
+                messagebox.showerror("שגיאה", "בחר קובץ לייבוא")
+                return
+            mode = 'overwrite' if overwrite_var.get() else 'append'
+            try:
+                res = self.data_processor.import_products_catalog_from_excel(path, mode=mode)
+                self._load_products_catalog_into_tree()
+                msg = f"יובאו {res.get('imported',0)} רשומות."
+                skipped = res.get('skipped_duplicates',0)
+                if skipped:
+                    msg += f"\nדולגו {skipped} כפילויות."
+                if res.get('overwritten'):
+                    msg += "\nבוצעה דריסה מלאה של הטבלה."
+                messagebox.showinfo("הצלחה", msg)
+                top.destroy()
+            except Exception as e:
+                messagebox.showerror("שגיאה", str(e))
+
+        ttk.Button(btns, text="ייבוא", command=_do_import).pack(side='right', padx=4)
+        ttk.Button(btns, text="ביטול", command=top.destroy).pack(side='right', padx=4)
 
     # ===== אביזרי תפירה =====
     def _load_accessories_into_tree(self):
