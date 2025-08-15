@@ -730,7 +730,29 @@ class DataProcessor:
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			df = pd.DataFrame(self.products_catalog)
+			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category'
+			columns = [
+				'id','name','category','size','fabric_type','fabric_color','fabric_category',
+				'print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'
+			]
+			rows = []
+			for rec in self.products_catalog:
+				rows.append({
+					'id': rec.get('id'),
+					'name': rec.get('name',''),
+					'category': rec.get('category',''),
+					'size': rec.get('size',''),
+					'fabric_type': rec.get('fabric_type',''),
+					'fabric_color': rec.get('fabric_color',''),
+					# ברירת מחדל: "בלי קטגוריה" אם חסר
+					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
+					'print_name': rec.get('print_name',''),
+					'ticks_qty': rec.get('ticks_qty', 0),
+					'elastic_qty': rec.get('elastic_qty', 0),
+					'ribbon_qty': rec.get('ribbon_qty', 0),
+					'created_at': rec.get('created_at','')
+				})
+			df = pd.DataFrame(rows, columns=columns)
 			df.to_excel(file_path, index=False)
 			return True
 		except Exception as e:
