@@ -84,19 +84,20 @@ class ProductsBalanceTabMixin:
         self.include_cuts_in_shipped_var = tk.BooleanVar(value=False)
         tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
 
-        columns = ('product','fabric_type','fabric_color','print_name','shipped','received','diff','status')
+        columns = ('product','fabric_type','fabric_color','fabric_category','print_name','shipped','received','diff','status')
         self.products_balance_tree = ttk.Treeview(balance_page, columns=columns, show='headings', height=18)
         headers = {
             'product': 'מוצר',
             'fabric_type': 'סוג בד',
             'fabric_color': 'צבע בד',
+            'fabric_category': 'קטגורית בד',
             'print_name': 'שם פרינט',
             'shipped': 'נשלח',
             'received': 'נתקבל',
             'diff': 'הפרש (נותר לקבל)',
             'status': 'סטטוס'
         }
-        widths = {'product':220, 'fabric_type':120, 'fabric_color':120, 'print_name':120, 'shipped':90, 'received':90, 'diff':130, 'status':140}
+        widths = {'product':220, 'fabric_type':120, 'fabric_color':120, 'fabric_category':120, 'print_name':120, 'shipped':90, 'received':90, 'diff':130, 'status':140}
         for c in columns:
             self.products_balance_tree.heading(c, text=headers[c])
             self.products_balance_tree.column(c, width=widths[c], anchor='center')
@@ -237,11 +238,11 @@ class ProductsBalanceTabMixin:
                 continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
             # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג
-            f_type, f_color, p_print = self._get_product_attrs(p_name, p_size, by_size)
-            self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, p_print, s, r, max(diff, 0), status))
+            f_type, f_color, p_print, f_cat = self._get_product_attrs(p_name, p_size, by_size)
+            self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, f_cat, p_print, s, r, max(diff, 0), status))
 
     def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
-        """החזרת (סוג בד, צבע בד, שם פרינט) מתוך קטלוג המוצרים עבור מוצר (ולפי מידה אם נדרש).
+        """החזרת (סוג בד, צבע בד, שם פרינט, קטגורית בד) מתוך קטלוג המוצרים עבור מוצר (ולפי מידה אם נדרש).
 
         אם יש כמה ערכים שונים בקטלוג – נבחר את הערך הנפוץ ביותר (majority) כדי להציג ערך עקבי.
         אם אין נתונים – יוחזרו מחרוזות ריקות.
@@ -249,7 +250,7 @@ class ProductsBalanceTabMixin:
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
             if not product_name:
-                return ('', '', '')
+                return ('', '', '', '')
             def _norm(s):
                 return (s or '').strip()
             if by_size and size:
@@ -257,7 +258,7 @@ class ProductsBalanceTabMixin:
             else:
                 items = [r for r in catalog if _norm(r.get('name')) == _norm(product_name)]
             if not items:
-                return ('', '', '')
+                return ('', '', '', '')
             def _majority(values: list[str]) -> str:
                 counts = {}
                 for v in values:
@@ -273,9 +274,10 @@ class ProductsBalanceTabMixin:
             f_type = _majority([r.get('fabric_type','') for r in items])
             f_color = _majority([r.get('fabric_color','') for r in items])
             p_print = _majority([r.get('print_name','') for r in items])
-            return (f_type, f_color, p_print)
+            f_cat = _majority([r.get('fabric_category','') for r in items])
+            return (f_type, f_color, p_print, f_cat)
         except Exception:
-            return ('', '', '')
+            return ('', '', '', '')
 
     def _toggle_balance_detail_mode(self):
         """טוגול תצוגה בין מאוחד לפי מוצר לבין פירוט לפי מידות."""
