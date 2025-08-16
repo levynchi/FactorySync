@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import os
 from datetime import datetime
 
 class DeliveryNoteMethodsMixin:
@@ -368,7 +369,91 @@ class DeliveryNoteMethodsMixin:
             for p in rec.get('packages', []) or []:
                 pkg_tree.insert('', 'end', values=(p.get('package_type'), p.get('quantity'), p.get('driver')))
             pkg_tree.pack(fill='both', expand=True, padx=4, pady=4)
-            tk.Button(win, text='סגור', command=win.destroy).pack(pady=4)
+            # Actions: Open in Excel + Close
+            btns = tk.Frame(win)
+            btns.pack(fill='x', pady=6, padx=4)
+
+            def _export_dn_to_excel_and_open():
+                try:
+                    # Lazy import to avoid hard dependency during normal UI flow
+                    from openpyxl import Workbook
+                except Exception as e:
+                    try:
+                        messagebox.showerror("שגיאה", f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
+                    except Exception:
+                        pass
+                    return
+                try:
+                    # Prepare workbook
+                    wb = Workbook(); ws = wb.active; ws.title = "תעודת משלוח"
+                    # Header
+                    ws.append(["מסמך", f"תעודת משלוח #{rec.get('id')}"])
+                    ws.append(["תאריך", rec.get('date')])
+                    ws.append(["ספק", rec.get('supplier')])
+                    ws.append(["סה\"כ כמות", rec.get('total_quantity')])
+                    ws.append([])
+                    # Lines table
+                    ws.append(["שורות מוצרים"])
+                    ws.append(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"])
+                    for line in rec.get('lines', []) or []:
+                        ws.append([
+                            line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'),
+                            line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')
+                        ])
+                    ws.append([])
+                    # Packages table
+                    ws.append(["חבילות / הובלה"])
+                    ws.append(["פריט הובלה","כמות","מוביל"])
+                    for p in rec.get('packages', []) or []:
+                        ws.append([p.get('package_type'), p.get('quantity'), p.get('driver')])
+                    # Autosize simple columns
+                    try:
+                        for col in ws.columns:
+                            max_len = 0; col_letter = col[0].column_letter
+                            for cell in col:
+                                try:
+                                    val = str(cell.value) if cell.value is not None else ""
+                                    if len(val) > max_len: max_len = len(val)
+                                except Exception:
+                                    pass
+                            ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
+                    except Exception:
+                        pass
+                    # Save to exports folder
+                    base_dir = os.path.join(os.getcwd(), 'exports', 'delivery_notes')
+                    try:
+                        os.makedirs(base_dir, exist_ok=True)
+                    except Exception:
+                        pass
+                    safe_id = rec.get('id')
+                    safe_date = (rec.get('date') or '').replace('/', '-').replace(':', '-')
+                    fname = f"delivery_note_{safe_id}_{safe_date}.xlsx" if safe_id is not None else f"delivery_note_{safe_date}.xlsx"
+                    out_path = os.path.join(base_dir, fname)
+                    try:
+                        wb.save(out_path)
+                    except Exception as e:
+                        try:
+                            messagebox.showerror("שגיאה", f"שמירת קובץ נכשלה:\n{e}")
+                        except Exception:
+                            pass
+                        return
+                    # Open in Excel (Windows association)
+                    try:
+                        os.startfile(out_path)  # type: ignore[attr-defined]
+                    except Exception as e:
+                        try:
+                            messagebox.showinfo("נשמר", f"הקובץ נשמר ב:\n{out_path}\n(לא הצלחתי לפתוח אוטומטית)")
+                        except Exception:
+                            pass
+
+                except Exception as e:
+                    try:
+                        messagebox.showerror("שגיאה", str(e))
+                    except Exception:
+                        pass
+
+            tk.Button(btns, text='🖨 פתח באקסל', command=_export_dn_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
+            tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", str(e))

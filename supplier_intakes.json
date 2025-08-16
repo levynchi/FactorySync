@@ -1,34 +1,5 @@
 [
   {
-    "id": 1,
-    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
-    "date": "2025-08-16",
-    "lines": [
-      {
-        "product": "בגד גוף גופייה",
-        "size": "0-3",
-        "fabric_type": "טריקו",
-        "fabric_color": "לבן",
-        "fabric_category": "טריקו לבן",
-        "print_name": "חלק",
-        "returned_from_drawing": "לא",
-        "drawing_id": "",
-        "quantity": 190,
-        "note": ""
-      }
-    ],
-    "total_quantity": 190,
-    "packages": [
-      {
-        "package_type": "שק",
-        "quantity": 1,
-        "driver": "מוחמד"
-      }
-    ],
-    "receipt_kind": "supplier_intake",
-    "created_at": "2025-08-16 10:48:50"
-  },
-  {
     "id": 2,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "date": "2025-08-16",
@@ -66,24 +37,24 @@
         "product": "בגד גוף גופייה",
         "size": "0-3",
         "fabric_type": "טריקו",
-        "fabric_color": "כחול",
-        "fabric_category": "טריקו מודפס",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
         "print_name": "חלק",
-        "returned_from_drawing": "לא",
-        "drawing_id": "",
-        "quantity": 50,
+        "returned_from_drawing": "כן",
+        "drawing_id": "1",
+        "quantity": 100,
         "note": ""
       }
     ],
-    "total_quantity": 50,
+    "total_quantity": 100,
     "packages": [
       {
-        "package_type": "שק",
+        "package_type": "שקית קטנה",
         "quantity": 1,
         "driver": "מוחמד"
       }
     ],
     "receipt_kind": "supplier_intake",
-    "created_at": "2025-08-16 12:30:46"
+    "created_at": "2025-08-16 16:03:18"
   }
 ]

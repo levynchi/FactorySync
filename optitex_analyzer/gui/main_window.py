@@ -14,6 +14,7 @@ from .drawings_manager_tab import DrawingsManagerTabMixin
 from .suppliers_tab import SuppliersTabMixin
 from .shipments_tab import ShipmentsTabMixin
 from .products_balance_tab import ProductsBalanceTabMixin
+from .business_details_tab import BusinessDetailsTabMixin
 
 
 class MainWindow(
@@ -27,6 +28,7 @@ class MainWindow(
     SuppliersTabMixin,
     ShipmentsTabMixin,
     ProductsBalanceTabMixin,
+    BusinessDetailsTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -93,6 +95,11 @@ class MainWindow(
         # Create each tab from its mixin
     # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
     # Returned (cut) drawings now embedded inside 'מנהל ציורים' tab
+        # Business details tab
+        try:
+            self._create_business_details_tab()
+        except Exception:
+            pass
         self._create_fabrics_inventory_tab()
         self._create_supplier_intake_tab()
         # Delivery note tab (duplicate logic for separate process)

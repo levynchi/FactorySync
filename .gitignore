@@ -45,6 +45,9 @@ config.json
 drawings_data.json
 *.log
 
+# Generated exports (Excel, etc.)
+exports/
+
 # Test files
 test_*.py
 debug_*.py
