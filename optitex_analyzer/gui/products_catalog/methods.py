@@ -13,8 +13,10 @@ class ProductsCatalogMethodsMixin:
         self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar()
         self.prod_fabric_category_var = tk.StringVar()
 
-        tk.Label(form, text="שם מוצר:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_name_var, width=18).grid(row=0, column=1, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="שם הדגם:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        model_names = [r.get('name') for r in getattr(self.data_processor, 'product_model_names', [])]
+        self.model_name_combobox = ttk.Combobox(form, textvariable=self.prod_name_var, values=model_names, state='readonly', width=16, justify='right')
+        self.model_name_combobox.grid(row=0, column=1, sticky='w', padx=2, pady=4)
         tk.Label(form, text="קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
@@ -74,7 +76,7 @@ class ProductsCatalogMethodsMixin:
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         cols = ('id','name','category','size','fabric_type','fabric_color','print_name','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
-        headers = {'id':'ID','name':'שם מוצר','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','fabric_category':'קטגוריית בד','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
+        headers = {'id':'ID','name':'שם הדגם','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','fabric_category':'קטגוריית בד','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
         widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'fabric_category':120,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
         for c in cols:
             self.products_tree.heading(c, text=headers[c])
@@ -483,6 +485,7 @@ class ProductsCatalogMethodsMixin:
             if hasattr(self, 'fcolor_picker'): self.fcolor_picker.set('')
             if hasattr(self, 'pname_picker'): self.pname_picker.set('')
             if hasattr(self, 'fabric_category_combobox'): self.fabric_category_combobox.set('')
+            if hasattr(self, 'model_name_combobox'): self.model_name_combobox.set('')
             if added > 1:
                 messagebox.showinfo("הצלחה", f"נוספו {added} וריאנטים למוצר '{name}'")
         except Exception as e:
@@ -593,6 +596,11 @@ class ProductsCatalogMethodsMixin:
             self.fabric_category_combobox['values'] = names
             if self.prod_fabric_category_var.get() not in names:
                 self.prod_fabric_category_var.set('')
+        if hasattr(self, 'model_name_combobox'):
+            model_names = [r.get('name') for r in getattr(self.data_processor, 'product_model_names', [])]
+            self.model_name_combobox['values'] = model_names
+            if self.prod_name_var.get() not in model_names:
+                self.prod_name_var.set('')
 
     def _refresh_categories_for_products(self):
         if hasattr(self, 'category_combobox'):
