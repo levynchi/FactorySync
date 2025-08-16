@@ -156,6 +156,223 @@ class ProductsBalanceTabMixin:
         self.products_balance_tree.configure(yscroll=self._balance_tree_scrollbar.set)
         self.products_balance_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
         self._balance_tree_scrollbar.pack(side='left', fill='y', pady=6)
+        # דאבל-קליק על שורה לפתיחת פירוט תנועות
+        try:
+            self.products_balance_tree.bind('<Double-1>', self._on_balance_row_double_click)
+        except Exception:
+            pass
+
+    def _on_balance_row_double_click(self, event=None):
+        try:
+            sel = self.products_balance_tree.selection()
+            if not sel:
+                return
+            item_id = sel[0]
+            values = self.products_balance_tree.item(item_id, 'values') or []
+            self._open_balance_row_details(values)
+        except Exception:
+            pass
+
+    def _open_balance_row_details(self, row_values):
+        """פותח חלון פירוט תנועות עבור שורת מאזן נבחרת."""
+        try:
+            supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+            if not supplier:
+                return
+            by_size = getattr(self, '_balance_detail_by_size', False)
+            include_cuts = bool(getattr(self, 'include_cuts_in_shipped_var', tk.BooleanVar(value=False)).get())
+            # חילוץ ערכים לפי עמודות פעילות
+            cols = tuple(self.products_balance_tree['columns']) if hasattr(self, 'products_balance_tree') else ()
+            def _get(idx, default=''):
+                try:
+                    return (row_values[idx] if idx < len(row_values) else default) or default
+                except Exception:
+                    return default
+            if by_size and cols[:2] == ('product','size'):
+                p_name = _get(0, '')
+                p_size = _get(1, '')
+                if p_size == '-':
+                    p_size = ''
+                p_cat = _get(2, '')
+            else:
+                p_name = _get(0, '')
+                p_size = ''
+                p_cat = _get(1, '')
+
+            # בניית רשימת תנועות
+            movements = []
+            def add_move(date, doc_type, doc_no, name, size, cat, qty, direction):
+                movements.append({
+                    'date': (date or ''),
+                    'doc_type': (doc_type or ''),
+                    'doc_no': (doc_no or ''),
+                    'product': (name or ''),
+                    'size': (size or ''),
+                    'category': (cat or ''),
+                    'qty': int(qty or 0),
+                    'direction': (direction or ''),
+                })
+
+            def norm(s):
+                return (s or '').strip()
+
+            # לוודא נתונים עדכניים
+            try:
+                if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                    self.data_processor.refresh_supplier_receipts()
+            except Exception:
+                pass
+
+            # תעודות משלוח (נשלח)
+            try:
+                for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in (rec.get('lines', []) or []):
+                        name = norm(ln.get('product'))
+                        size = norm(ln.get('size'))
+                        qty = int(ln.get('quantity', 0) or 0)
+                        if not name or qty <= 0:
+                            continue
+                        cat_line = norm(ln.get('fabric_category'))
+                        if not cat_line:
+                            try:
+                                cat_line = self._get_product_attrs(name, size, by_size)[3]
+                            except Exception:
+                                cat_line = ''
+                        # התאמה למפתח הנוכחי
+                        if norm(name) != norm(p_name):
+                            continue
+                        if by_size and norm(size) != norm(p_size):
+                            continue
+                        if norm(cat_line) != norm(p_cat):
+                            continue
+                        add_move(rec_date, 'תעודת משלוח', rec_no, name, size if by_size else '', cat_line, qty, 'נשלח')
+            except Exception:
+                pass
+
+            # תעודות קליטה (נתקבל)
+            try:
+                for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in (rec.get('lines', []) or []):
+                        name = norm(ln.get('product'))
+                        size = norm(ln.get('size'))
+                        qty = int(ln.get('quantity', 0) or 0)
+                        if not name or qty <= 0:
+                            continue
+                        cat_line = norm(ln.get('fabric_category'))
+                        if not cat_line:
+                            try:
+                                cat_line = self._get_product_attrs(name, size, by_size)[3]
+                            except Exception:
+                                cat_line = ''
+                        if norm(name) != norm(p_name):
+                            continue
+                        if by_size and norm(size) != norm(p_size):
+                            continue
+                        if norm(cat_line) != norm(p_cat):
+                            continue
+                        add_move(rec_date, 'תעודת קליטה', rec_no, name, size if by_size else '', cat_line, qty, 'נתקבל')
+            except Exception:
+                pass
+
+            # נגזרות (אופציונלי)
+            if include_cuts:
+                try:
+                    if hasattr(self.data_processor, 'refresh_drawings_data'):
+                        self.data_processor.refresh_drawings_data()
+                except Exception:
+                    pass
+                try:
+                    for rec in getattr(self.data_processor, 'drawings_data', []) or []:
+                        if rec.get('status') != 'נחתך':
+                            continue
+                        if norm(rec.get('נמען')) != norm(supplier):
+                            continue
+                        layers = rec.get('שכבות')
+                        try:
+                            layers = int(layers)
+                        except Exception:
+                            layers = None
+                        if not layers or layers <= 0:
+                            continue
+                        rec_date = rec.get('תאריך') or rec.get('date') or ''
+                        rec_no = rec.get('מס׳') or rec.get('id') or ''
+                        for prod in rec.get('מוצרים', []) or []:
+                            name = norm(prod.get('שם המוצר'))
+                            for sz in prod.get('מידות', []) or []:
+                                size = norm(sz.get('מידה'))
+                                qty = int(sz.get('כמות', 0) or 0)
+                                if not name or qty <= 0:
+                                    continue
+                                cat_line = 'טריקו לבן'
+                                if norm(name) != norm(p_name):
+                                    continue
+                                if by_size and norm(size) != norm(p_size):
+                                    continue
+                                if norm(cat_line) != norm(p_cat):
+                                    continue
+                                add_move(rec_date, 'ציור – נגזר', rec_no, name, size if by_size else '', cat_line, qty * layers, 'נגזר')
+                except Exception:
+                    pass
+
+            # יצירת חלון פירוט
+            win = tk.Toplevel(self._balance_page_frame)
+            win.title(f"פירוט תנועות – {p_name}{(' – ' + p_size) if by_size and p_size else ''} | קטגוריה: {p_cat}")
+            win.geometry('920x520')
+            cols = ('date','doc_type','doc_no','product','size','category','direction','qty')
+            headers = {
+                'date': 'תאריך',
+                'doc_type': 'סוג מסמך',
+                'doc_no': 'מס׳',
+                'product': 'מוצר',
+                'size': 'מידה',
+                'category': 'קטגורית בד',
+                'direction': 'תנועה',
+                'qty': 'כמות'
+            }
+            widths = {'date':120,'doc_type':140,'doc_no':100,'product':220,'size':80,'category':140,'direction':90,'qty':80}
+            tree = ttk.Treeview(win, columns=cols, show='headings', height=18)
+            for c in cols:
+                tree.heading(c, text=headers[c])
+                tree.column(c, width=widths[c], anchor='center')
+            vs = ttk.Scrollbar(win, orient='vertical', command=tree.yview)
+            tree.configure(yscroll=vs.set)
+            tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=10)
+            vs.pack(side='left', fill='y', pady=10)
+
+            # מיון לפי תאריך אם אפשר
+            def parse_dt(s):
+                s = (s or '').strip()
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                    try:
+                        return datetime.strptime(s, fmt)
+                    except Exception:
+                        pass
+                return None
+            movements_sorted = sorted(movements, key=lambda m: (parse_dt(m['date']) or datetime.min, m['doc_type'], m['doc_no']))
+            for m in movements_sorted:
+                tree.insert('', 'end', values=(m['date'], m['doc_type'], m['doc_no'], m['product'], m['size'] if by_size else '', m['category'], m['direction'], m['qty']))
+
+            # סיכומים
+            try:
+                shipped_sum = sum(m['qty'] for m in movements if m['direction'] == 'נשלח')
+                received_sum = sum(m['qty'] for m in movements if m['direction'] == 'נתקבל')
+                cut_sum = sum(m['qty'] for m in movements if m['direction'] == 'נגזר')
+                diff = shipped_sum + cut_sum - received_sum
+                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | נגזר: {cut_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
+                summary.pack(fill='x', padx=10, pady=(0,10))
+            except Exception:
+                pass
+        except Exception:
+            # בליעה שקטה כדי לא להפיל את ה-UI
+            pass
 
     def _refresh_products_balance_table(self):
         supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
