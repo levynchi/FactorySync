@@ -377,6 +377,11 @@ class DeliveryNoteMethodsMixin:
                 try:
                     # Lazy import to avoid hard dependency during normal UI flow
                     from openpyxl import Workbook
+                    from openpyxl.styles import Border, Side, Alignment, Font
+                    try:
+                        from openpyxl.worksheet.page import PageMargins  # type: ignore
+                    except Exception:
+                        PageMargins = None  # type: ignore
                 except Exception as e:
                     try:
                         messagebox.showerror("שגיאה", f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
@@ -386,26 +391,72 @@ class DeliveryNoteMethodsMixin:
                 try:
                     # Prepare workbook
                     wb = Workbook(); ws = wb.active; ws.title = "תעודת משלוח"
+                    # Page setup: A4 portrait, fit to width
+                    try:
+                        ws.page_setup.orientation = 'portrait'
+                    except Exception:
+                        pass
+                    try:
+                        # A4 paper size code is 9 in Excel
+                        ws.page_setup.paperSize = 9
+                    except Exception:
+                        pass
+                    try:
+                        ws.page_setup.fitToWidth = 1
+                        ws.page_setup.fitToHeight = 0
+                    except Exception:
+                        pass
+                    try:
+                        if PageMargins:
+                            ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+                    except Exception:
+                        pass
                     # Header
                     ws.append(["מסמך", f"תעודת משלוח #{rec.get('id')}"])
                     ws.append(["תאריך", rec.get('date')])
                     ws.append(["ספק", rec.get('supplier')])
                     ws.append(["סה\"כ כמות", rec.get('total_quantity')])
                     ws.append([])
-                    # Lines table
+                    # Lines table (A4-ready): Model | Description (size+fabric type+print) | Quantity
                     ws.append(["שורות מוצרים"])
-                    ws.append(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"])
-                    for line in rec.get('lines', []) or []:
-                        ws.append([
-                            line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'),
-                            line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')
-                        ])
-                    ws.append([])
-                    # Packages table
-                    ws.append(["חבילות / הובלה"])
-                    ws.append(["פריט הובלה","כמות","מוביל"])
-                    for p in rec.get('packages', []) or []:
-                        ws.append([p.get('package_type'), p.get('quantity'), p.get('driver')])
+                    header_row = ["שם הדגם", "תיאור", "כמות"]
+                    ws.append(header_row)
+                    start_data_row = ws.max_row + 1
+                    for line in (rec.get('lines', []) or []):
+                        model = line.get('product')
+                        size = (line.get('size') or '')
+                        fabric_type = (line.get('fabric_type') or '')
+                        print_name = (line.get('print_name') or '')
+                        # Compose description: size + fabric_type + print_name (skip empties)
+                        parts = [p for p in [size, fabric_type, print_name] if p]
+                        desc = " | ".join(parts)
+                        qty = line.get('quantity')
+                        ws.append([model, desc, qty])
+                    end_data_row = ws.max_row
+                    # Style: black grid on lines area
+                    try:
+                        thin = Side(style='thin', color='000000')
+                        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                        # Bold header row
+                        for cell in ws[ws.cell(row=start_data_row-1, column=1).row]:
+                            if cell.row == start_data_row-1:
+                                try:
+                                    cell.font = Font(bold=True)
+                                except Exception:
+                                    pass
+                        for row in ws.iter_rows(min_row=start_data_row-1, max_row=end_data_row, min_col=1, max_col=3):
+                            for cell in row:
+                                try:
+                                    cell.border = border
+                                except Exception:
+                                    pass
+                            # Align quantity center/right
+                            try:
+                                row[2].alignment = Alignment(horizontal='center')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
                     # Autosize simple columns
                     try:
                         for col in ws.columns:
