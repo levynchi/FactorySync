@@ -302,6 +302,22 @@ class SupplierIntakeMethodsMixin:
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+        # שחזור רשימת פריטי הובלה מהטבלה אם הרשימה בזיכרון ריקה
+        try:
+            if (not self._supplier_packages) and hasattr(self, 'sup_packages_tree'):
+                items = self.sup_packages_tree.get_children()
+                rebuilt = []
+                for it in items:
+                    vals = self.sup_packages_tree.item(it, 'values') or ()
+                    if vals:
+                        try:
+                            rebuilt.append({'package_type': vals[0], 'quantity': int(vals[1]), 'driver': vals[2] if len(vals) > 2 else ''})
+                        except Exception:
+                            rebuilt.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
+                if rebuilt:
+                    self._supplier_packages = rebuilt
+        except Exception:
+            pass
         try:
             if not self._supplier_packages:
                 proceed = messagebox.askyesno(

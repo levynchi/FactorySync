@@ -27,6 +27,7 @@ class ShipmentsTabMixin:
         toolbar = tk.Frame(shipments_page, bg='#f7f9fa')
         toolbar.pack(fill='x', padx=8, pady=(0,4))
         tk.Button(toolbar, text="🔄 רענן", command=self._refresh_shipments_table, bg='#3498db', fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='🗑 מחק שורה נבחרת', command=self._delete_selected_shipment_row, bg='#c0392b', fg='white').pack(side='right', padx=4)
 
         columns = ('id','kind','date','package_type','quantity','driver')
         self.shipments_tree = ttk.Treeview(shipments_page, columns=columns, show='headings', height=17)
@@ -148,11 +149,24 @@ class ShipmentsTabMixin:
                 self.data_processor.refresh_supplier_receipts()
             supplier_intakes = getattr(self.data_processor, 'supplier_intakes', [])
             delivery_notes = getattr(self.data_processor, 'delivery_notes', [])
+            # קריאה לקובץ מורשת ישן במידת הצורך (תאימות לאחור)
+            legacy = []
+            try:
+                legacy_path = getattr(self.data_processor, 'supplier_receipts_file', None)
+                if legacy_path and os.path.exists(legacy_path):
+                    # נשתמש בפונקציה הפנימית אם קיימת
+                    if hasattr(self.data_processor, '_load_json_list'):
+                        legacy = self.data_processor._load_json_list(legacy_path) or []
+                    else:
+                        with open(legacy_path, 'r', encoding='utf-8') as f:
+                            import json as _json
+                            legacy = _json.load(f) or []
+            except Exception:
+                legacy = []
             rows = []
-            def collect(source_list):
+            def collect(source_list, receipt_kind):
                 for rec in source_list:
                     rec_id = rec.get('id')
-                    kind = rec.get('receipt_kind') or ''
                     date_str = rec.get('date') or ''
                     # validate / normalize date for sorting
                     try:
@@ -162,27 +176,144 @@ class ShipmentsTabMixin:
                             sort_dt = datetime.strptime(date_str[:10], '%Y-%m-%d')
                         except Exception:
                             sort_dt = datetime.min
-                    for pkg in rec.get('packages', []) or []:
+                    for idx, pkg in enumerate(rec.get('packages', []) or []):
                         rows.append({
                             'rec_id': rec_id,
-                            'kind': 'קליטה' if kind == 'supplier_intake' else 'הובלה' if kind == 'delivery_note' else kind,
+                            'receipt_kind': receipt_kind,
+                            'kind': 'קליטה' if receipt_kind == 'supplier_intake' else 'הובלה' if receipt_kind == 'delivery_note' else receipt_kind,
                             'date': date_str,
                             'sort_dt': sort_dt,
+                            'pkg_index': idx,
                             'package_type': pkg.get('package_type',''),
                             'quantity': pkg.get('quantity',''),
                             'driver': pkg.get('driver','')
                         })
-            collect(supplier_intakes)
-            collect(delivery_notes)
+            collect(supplier_intakes, 'supplier_intake')
+            collect(delivery_notes, 'delivery_note')
+            # הוספת נתוני מורשת שאינם קיימים כבר ברשימות החדשות
+            try:
+                existing_keys = {( 'supplier_intake', r.get('id') ) for r in supplier_intakes}
+                existing_keys |= {( 'delivery_note', r.get('id') ) for r in delivery_notes}
+                for rec in legacy or []:
+                    rk = rec.get('receipt_kind') or 'supplier_intake'
+                    key = (rk, rec.get('id'))
+                    if key in existing_keys:
+                        continue
+                    collect([rec], rk)
+            except Exception:
+                pass
             # מיון תאריך יורד ואז מספר תעודה יורד
             rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=True)
         except Exception:
             rows = []
         if hasattr(self, 'shipments_tree'):
+            # איפוס מפת-מטא של שורות
+            self._shipments_row_meta = {}
             for iid in self.shipments_tree.get_children():
                 self.shipments_tree.delete(iid)
             for r in rows:
-                self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity'], r.get('driver','')))
+                iid = self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity'], r.get('driver','')))
+                # שמירת מטא כדי לאפשר מחיקה מדויקת של פריט הובלה
+                self._shipments_row_meta[iid] = {
+                    'rec_id': r['rec_id'],
+                    'receipt_kind': r.get('receipt_kind'),
+                    'pkg_index': r.get('pkg_index'),
+                    'package_type': r.get('package_type'),
+                    'quantity': r.get('quantity'),
+                    'driver': r.get('driver')
+                }
+
+    def _delete_selected_shipment_row(self):
+        """מחק את שורת ההובלה המסומנת מהמקור (קליטה/תעודת משלוח) ושמור."""
+        if not hasattr(self, 'shipments_tree'):
+            return
+        sel = self.shipments_tree.selection()
+        if not sel:
+            messagebox.showinfo('אין בחירה', 'נא לבחור שורת הובלה למחיקה')
+            return
+        iid = sel[0]
+        # נסה לקבל מטא; אם חסר ננסה לשחזר מהערכים
+        meta = getattr(self, '_shipments_row_meta', {}).get(iid) if hasattr(self, '_shipments_row_meta') else None
+        values = self.shipments_tree.item(iid, 'values') or ()
+        # ערכי תצוגה
+        try:
+            rec_id_val = values[0]
+            kind_display = values[1]
+            date_str = values[2]
+            package_type = values[3]
+            quantity_display = values[4]
+            driver_display = values[5] if len(values) > 5 else ''
+        except Exception:
+            messagebox.showerror('שגיאה', 'אין נתונים תקפים בשורה שנבחרה')
+            return
+        # קביעת receipt_kind
+        receipt_kind = (meta or {}).get('receipt_kind')
+        if not receipt_kind:
+            receipt_kind = 'supplier_intake' if kind_display == 'קליטה' else 'delivery_note' if kind_display == 'הובלה' else ''
+        if receipt_kind not in ('supplier_intake', 'delivery_note'):
+            messagebox.showerror('שגיאה', 'לא ניתן לזהות את סוג הרשומה של שורת ההובלה')
+            return
+        # המרה ל-int בטוח ל-id והכמות
+        try:
+            rec_id = int(rec_id_val)
+        except Exception:
+            # נסה להתייחס כמחרוזת להשוואה
+            rec_id = rec_id_val
+        try:
+            qty_val = int(quantity_display)
+        except Exception:
+            try:
+                qty_val = int(str(quantity_display).strip())
+            except Exception:
+                qty_val = None
+        # מציאת הרשומה במקור
+        records = getattr(self.data_processor, 'supplier_intakes' if receipt_kind == 'supplier_intake' else 'delivery_notes', [])
+        target_idx = None
+        target_rec = None
+        for i, r in enumerate(records):
+            if str(r.get('id')) == str(rec_id):
+                target_idx = i
+                target_rec = r
+                break
+        if target_rec is None:
+            messagebox.showerror('שגיאה', f"לא נמצאה רשומת מקור ID {rec_id}")
+            return
+        # מציאת אינדקס הפריט למחיקה
+        pkg_index = (meta or {}).get('pkg_index')
+        packages = (target_rec.get('packages') or [])
+        if pkg_index is None or not (0 <= int(pkg_index) < len(packages)):
+            # נסה לאתר לפי התאמת שדות
+            pkg_index = None
+            for idx, pkg in enumerate(packages):
+                try:
+                    if (str(pkg.get('package_type','')) == str(package_type) and
+                        (int(pkg.get('quantity',0)) == qty_val if qty_val is not None else True) and
+                        str(pkg.get('driver','')) == str(driver_display)):
+                        pkg_index = idx
+                        break
+                except Exception:
+                    continue
+        if pkg_index is None:
+            messagebox.showerror('שגיאה', 'לא נמצא פריט הובלה מתאים למחיקה')
+            return
+        # אישור משתמש
+        if not messagebox.askyesno('אישור מחיקה', f"למחוק את פריט ההובלה '{package_type}' (כמות {quantity_display}) מתעודה {rec_id}?"):
+            return
+        # מחיקה ושמירה
+        try:
+            del packages[int(pkg_index)]
+            target_rec['packages'] = packages
+            # שמירה לקובץ המתאים
+            if receipt_kind == 'supplier_intake':
+                save_ok = self.data_processor._save_json_list(self.data_processor.supplier_intakes_file, records)
+            else:
+                save_ok = self.data_processor._save_json_list(self.data_processor.delivery_notes_file, records)
+            if save_ok and hasattr(self.data_processor, '_rebuild_combined_receipts'):
+                self.data_processor._rebuild_combined_receipts()
+            # ריענון טבלה
+            self._refresh_shipments_table()
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'כשל במחיקת פריט הובלה: {e}')
 
     # ---- Hook from save actions ----
     def _notify_new_receipt_saved(self):

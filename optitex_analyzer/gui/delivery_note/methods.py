@@ -205,6 +205,23 @@ class DeliveryNoteMethodsMixin:
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._delivery_lines:
             messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+        # אם רשימת ה-packages בזיכרון ריקה אך יש שורות בטבלה, נשחזר מהרשימה המוצגת
+        try:
+            if (not self._packages) and hasattr(self, 'packages_tree'):
+                items = self.packages_tree.get_children()
+                rebuilt = []
+                for it in items:
+                    vals = self.packages_tree.item(it, 'values') or ()
+                    if vals:
+                        try:
+                            rebuilt.append({'package_type': vals[0], 'quantity': int(vals[1]), 'driver': vals[2] if len(vals) > 2 else ''})
+                        except Exception:
+                            # אם הכמות אינה מספר – נשמור כמחרוזת כדי לא לאבד נתון
+                            rebuilt.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
+                if rebuilt:
+                    self._packages = rebuilt
+        except Exception:
+            pass
         # Confirm saving without any packages defined (parallel to supplier intake tab)
         try:
             if not self._packages:

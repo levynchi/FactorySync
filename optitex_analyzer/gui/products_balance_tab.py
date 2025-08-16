@@ -157,7 +157,14 @@ class ProductsBalanceTabMixin:
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    key = (name, size if by_size else '') if by_size else name
+                    # קביעת קטגורית בד לשיוך: לפי השורה, ואם חסר – לפי majority בקטלוג
+                    f_cat_line = (ln.get('fabric_category') or '').strip()
+                    if not f_cat_line:
+                        try:
+                            f_cat_line = self._get_product_attrs(name, size, by_size)[3]
+                        except Exception:
+                            f_cat_line = ''
+                    key = (name, size if by_size else '', f_cat_line) if by_size else (name, '', f_cat_line)
                     shipped[key] = shipped.get(key, 0) + qty
         except Exception:
             pass
@@ -172,7 +179,13 @@ class ProductsBalanceTabMixin:
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    key = (name, size if by_size else '') if by_size else name
+                    f_cat_line = (ln.get('fabric_category') or '').strip()
+                    if not f_cat_line:
+                        try:
+                            f_cat_line = self._get_product_attrs(name, size, by_size)[3]
+                        except Exception:
+                            f_cat_line = ''
+                    key = (name, size if by_size else '', f_cat_line) if by_size else (name, '', f_cat_line)
                     received[key] = received.get(key, 0) + qty
         except Exception:
             pass
@@ -205,8 +218,9 @@ class ProductsBalanceTabMixin:
                             qty = int(sz.get('כמות', 0) or 0)
                             if not pname or qty <= 0:
                                 continue
-                            key = (pname, size if by_size else '') if by_size else pname
-                            cut_totals[key] = cut_totals.get(key, 0) + qty * layers
+                            # שיוך נגזרות לקטגוריה קבועה 'טריקו לבן' כפי שסוכם
+                            cut_key = (pname, size if by_size else '', 'טריקו לבן') if by_size else (pname, '', 'טריקו לבן')
+                            cut_totals[cut_key] = cut_totals.get(cut_key, 0) + qty * layers
                 # מיזוג לספירת הנשלח
                 for key, add_qty in cut_totals.items():
                     shipped[key] = shipped.get(key, 0) + add_qty
@@ -217,15 +231,21 @@ class ProductsBalanceTabMixin:
         search_txt = (getattr(self, 'balance_search_var', tk.StringVar()).get() or '').strip().lower()
         only_pending = bool(getattr(self, 'balance_only_pending_var', tk.BooleanVar()).get())
         for key in keys:
-            if by_size:
-                prod, size = key if isinstance(key, tuple) else (str(key), '')
-                label = f"{prod} – {size or 'ללא מידה'}"
-                p_name = prod
-                p_size = size
+            # key הוא טופל: (שם מוצר, מידה או '', קטגורית בד)
+            if isinstance(key, tuple):
+                if by_size:
+                    p_name, p_size, p_cat = key
+                    label = f"{p_name} – {p_size or 'ללא מידה'}"
+                else:
+                    p_name, _, p_cat = key
+                    p_size = ''
+                    label = p_name
             else:
-                label = key if isinstance(key, str) else key[0]
-                p_name = label
+                # תאימות לאחור – לא צפוי לאחר שינוי זה
+                p_name = str(key)
                 p_size = ''
+                p_cat = ''
+                label = p_name
             s = shipped.get(key, 0)
             r = received.get(key, 0)
             diff = s - r
@@ -237,13 +257,40 @@ class ProductsBalanceTabMixin:
             if only_pending and diff <= 0:
                 continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
-            # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג
-            f_type, f_color, p_print, f_cat = self._get_product_attrs(p_name, p_size, by_size)
-            # אם המשתמש ביקש להוסיף נגזר ל"נשלח" ויש נגזר עבור המוצר הזה – נשתמש בקטגוריית בד קבועה "טריקו לבן"
-            if include_cuts:
-                key_for_cut = (p_name, p_size) if by_size else p_name
-                if cut_totals.get(key_for_cut, 0) > 0:
-                    f_cat = 'טריקו לבן'
+            # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג – מסונן לפי קטגורית בד של המפתח
+            try:
+                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                def _norm(s):
+                    return (s or '').strip()
+                if by_size and p_size:
+                    items = [r for r in catalog if _norm(r.get('name')) == _norm(p_name) and _norm(r.get('size')) == _norm(p_size) and _norm(r.get('fabric_category')) == _norm(p_cat)]
+                else:
+                    items = [r for r in catalog if _norm(r.get('name')) == _norm(p_name) and _norm(r.get('fabric_category')) == _norm(p_cat)]
+                def _majority(values: list[str]) -> str:
+                    counts = {}
+                    for v in values:
+                        v2 = _norm(v)
+                        if not v2:
+                            continue
+                        counts[v2] = counts.get(v2, 0) + 1
+                    if not counts:
+                        return ''
+                    return sorted(counts.items(), key=lambda x: (-x[1], x[0]))[0][0]
+                if items:
+                    f_type = _majority([r.get('fabric_type','') for r in items])
+                    f_color = _majority([r.get('fabric_color','') for r in items])
+                    p_print = _majority([r.get('print_name','') for r in items])
+                else:
+                    # אין פריטים בקטלוג עבור הקטגוריה המסוימת – נשאיר מאפיינים ריקים כדי לא לזהם בצבע/סוג מקטגוריות אחרות
+                    f_type = ''
+                    f_color = ''
+                    p_print = ''
+                f_cat = p_cat
+            except Exception:
+                f_type, f_color, p_print, f_cat = self._get_product_attrs(p_name, p_size, by_size)
+                # העדף את קטגורית המפתח אם קיימת
+                if p_cat:
+                    f_cat = p_cat
             self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, f_cat, p_print, s, r, max(diff, 0), status))
 
     def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
