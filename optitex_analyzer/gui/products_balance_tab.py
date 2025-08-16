@@ -80,13 +80,13 @@ class ProductsBalanceTabMixin:
         tk.Checkbutton(cb_bar, text='רק חוסר', variable=self.cut_balance_only_pending_var, bg='#f7f9fa', command=self._refresh_cut_balance_table).pack(side='left', padx=(8,0))
         tk.Button(cb_bar, text='🔄 רענן', command=self._refresh_cut_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
         # טבלה
-        cb_cols = ('product','size','fabric_category','shipped','received','diff','status')
+        cb_cols = ('product','size','fabric_category','drawing_no','shipped','received','diff','status')
         self.cut_balance_tree = ttk.Treeview(cut_balance_page, columns=cb_cols, show='headings', height=18)
         cb_headers = {
-            'product':'מוצר','size':'מידה','fabric_category':'קטגורית בד',
+            'product':'מוצר','size':'מידה','fabric_category':'קטגורית בד','drawing_no':'מספר ציור',
             'shipped':'נשלח (נגזר×שכבות)','received':'נתקבל (חזר מציור)','diff':'הפרש (נותר לקבל)','status':'סטטוס'
         }
-        cb_widths = {'product':260,'size':90,'fabric_category':160,'shipped':120,'received':120,'diff':150,'status':160}
+        cb_widths = {'product':240,'size':90,'fabric_category':150,'drawing_no':120,'shipped':120,'received':120,'diff':140,'status':150}
         for c in cb_cols:
             self.cut_balance_tree.heading(c, text=cb_headers[c])
             self.cut_balance_tree.column(c, width=cb_widths[c], anchor='center')
@@ -751,6 +751,7 @@ class ProductsBalanceTabMixin:
             pass
         # נשלח: מסך ציורים שנחתכו × שכבות
         shipped = {}
+        shipped_drawings = {}
         try:
             for rec in getattr(self.data_processor, 'drawings_data', []) or []:
                 if rec.get('status') != 'נחתך':
@@ -766,6 +767,8 @@ class ProductsBalanceTabMixin:
                     continue
                 # קביעת קטגורית בד מהציור (סוג בד) או ברירת מחדל
                 fabric_category = (rec.get('סוג בד') or 'טריקו לבן').strip()
+                rec_no = rec.get('מס׳') or rec.get('id') or rec.get('number') or ''
+                rec_no = str(rec_no)
                 for prod in rec.get('מוצרים', []) or []:
                     pname = (prod.get('שם המוצר') or '').strip()
                     for sz in prod.get('מידות', []) or []:
@@ -775,6 +778,13 @@ class ProductsBalanceTabMixin:
                             continue
                         key = (pname, size, fabric_category)
                         shipped[key] = shipped.get(key, 0) + qty * layers
+                        # שמירת מספרי ציור עבור המפתח
+                        lst = shipped_drawings.get(key)
+                        if lst is None:
+                            lst = []
+                            shipped_drawings[key] = lst
+                        if rec_no and rec_no not in lst:
+                            lst.append(rec_no)
         except Exception:
             pass
         # נתקבל: מכל קליטות עם returned_from_drawing == 'כן'
@@ -811,11 +821,12 @@ class ProductsBalanceTabMixin:
             s = shipped.get(key, 0)
             r = received.get(key, 0)
             diff = s - r
+            draw_str = ', '.join(shipped_drawings.get(key, []))
             if search_txt:
-                hay = f"{pname} {size} {fcat}".lower()
+                hay = f"{pname} {size} {fcat} {draw_str}".lower()
                 if search_txt not in hay:
                     continue
             if only_pending and diff <= 0:
                 continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
-            self.cut_balance_tree.insert('', 'end', values=(pname, size or '-', fcat, s, r, max(diff,0), status))
+            self.cut_balance_tree.insert('', 'end', values=(pname, size or '-', fcat, draw_str, s, r, max(diff,0), status))
