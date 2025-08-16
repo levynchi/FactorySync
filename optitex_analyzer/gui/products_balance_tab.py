@@ -76,35 +76,19 @@ class ProductsBalanceTabMixin:
             search_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
         except Exception:
             pass
-        # מצב פירוט לפי מידות (כפתור טוגול)
-        self._balance_detail_by_size = False
-        self._balance_toggle_btn = tk.Button(inner_bar, text='פירוט לפי מידות', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
+        # מצב פירוט לפי מידות (כפתור טוגול) – ברירת מחדל: פירוט מידות פעיל
+        self._balance_detail_by_size = True
+        self._balance_toggle_btn = tk.Button(inner_bar, text='תצוגת מוצר בלבד', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
         self._balance_toggle_btn.pack(side='left')
         # הוספת אפשרות לכלול "מה נגזר אצל הספק" לתוך העמודה "נשלח"
         self.include_cuts_in_shipped_var = tk.BooleanVar(value=False)
         tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
 
-        columns = ('product','fabric_type','fabric_color','fabric_category','print_name','shipped','received','diff','status')
-        self.products_balance_tree = ttk.Treeview(balance_page, columns=columns, show='headings', height=18)
-        headers = {
-            'product': 'מוצר',
-            'fabric_type': 'סוג בד',
-            'fabric_color': 'צבע בד',
-            'fabric_category': 'קטגורית בד',
-            'print_name': 'שם פרינט',
-            'shipped': 'נשלח',
-            'received': 'נתקבל',
-            'diff': 'הפרש (נותר לקבל)',
-            'status': 'סטטוס'
-        }
-        widths = {'product':220, 'fabric_type':120, 'fabric_color':120, 'fabric_category':120, 'print_name':120, 'shipped':90, 'received':90, 'diff':130, 'status':140}
-        for c in columns:
-            self.products_balance_tree.heading(c, text=headers[c])
-            self.products_balance_tree.column(c, width=widths[c], anchor='center')
-        vs = ttk.Scrollbar(balance_page, orient='vertical', command=self.products_balance_tree.yview)
-        self.products_balance_tree.configure(yscroll=vs.set)
-        self.products_balance_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
-        vs.pack(side='left', fill='y', pady=6)
+        # בניית טבלת המאזן עם עמודות דינמיות בהתאם למצב פירוט מידות
+        self._balance_page_frame = balance_page
+        self._balance_tree_scrollbar = None
+        self.products_balance_tree = None
+        self._build_products_balance_tree(self._balance_detail_by_size)
 
         # ריענון אוטומטי בעת שינוי ספק
         try:
@@ -126,6 +110,53 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
+    def _build_products_balance_tree(self, by_size: bool):
+        """יוצר/מחדש את עמודות הטבלה לפי מצב פירוט מידות."""
+        # אם קיים עץ קודם – הורסים אותו ואת הסקרולבר
+        try:
+            if self.products_balance_tree is not None:
+                self.products_balance_tree.destroy()
+        except Exception:
+            pass
+        try:
+            if self._balance_tree_scrollbar is not None:
+                self._balance_tree_scrollbar.destroy()
+        except Exception:
+            pass
+
+        if by_size:
+            columns = ('product','size','fabric_category','shipped','received','diff','status')
+            headers = {
+                'product': 'מוצר',
+                'size': 'מידה',
+                'fabric_category': 'קטגורית בד',
+                'shipped': 'נשלח',
+                'received': 'נתקבל',
+                'diff': 'הפרש (נותר לקבל)',
+                'status': 'סטטוס'
+            }
+            widths = {'product':240, 'size':90, 'fabric_category':140, 'shipped':90, 'received':90, 'diff':140, 'status':140}
+        else:
+            columns = ('product','fabric_category','shipped','received','diff','status')
+            headers = {
+                'product': 'מוצר',
+                'fabric_category': 'קטגורית בד',
+                'shipped': 'נשלח',
+                'received': 'נתקבל',
+                'diff': 'הפרש (נותר לקבל)',
+                'status': 'סטטוס'
+            }
+            widths = {'product':260, 'fabric_category':160, 'shipped':90, 'received':90, 'diff':150, 'status':150}
+
+        self.products_balance_tree = ttk.Treeview(self._balance_page_frame, columns=columns, show='headings', height=18)
+        for c in columns:
+            self.products_balance_tree.heading(c, text=headers[c])
+            self.products_balance_tree.column(c, width=widths[c], anchor='center')
+        self._balance_tree_scrollbar = ttk.Scrollbar(self._balance_page_frame, orient='vertical', command=self.products_balance_tree.yview)
+        self.products_balance_tree.configure(yscroll=self._balance_tree_scrollbar.set)
+        self.products_balance_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
+        self._balance_tree_scrollbar.pack(side='left', fill='y', pady=6)
+
     def _refresh_products_balance_table(self):
         supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
         # ניקוי טבלה
@@ -143,6 +174,19 @@ class ProductsBalanceTabMixin:
             pass
         # איסוף כמויות לפי מוצר או לפי (מוצר, מידה)
         by_size = getattr(self, '_balance_detail_by_size', False)
+        # ודא שהעמודות תואמות למצב הנוכחי
+        try:
+            # מזהה האם העמודות כבר במצב הנכון – אם לא, נבנה מחדש
+            current_cols = tuple(self.products_balance_tree['columns']) if hasattr(self, 'products_balance_tree') and self.products_balance_tree else ()
+            expected_cols = ('product','size','fabric_category','shipped','received','diff','status') if by_size else ('product','fabric_category','shipped','received','diff','status')
+            if current_cols != expected_cols:
+                self._build_products_balance_tree(by_size)
+        except Exception:
+            # במקרה של שגיאה – ננסה לבנות מחדש
+            try:
+                self._build_products_balance_tree(by_size)
+            except Exception:
+                pass
         include_cuts = bool(getattr(self, 'include_cuts_in_shipped_var', tk.BooleanVar(value=False)).get())
         shipped = {}
         received = {}
@@ -235,63 +279,32 @@ class ProductsBalanceTabMixin:
             if isinstance(key, tuple):
                 if by_size:
                     p_name, p_size, p_cat = key
-                    label = f"{p_name} – {p_size or 'ללא מידה'}"
                 else:
                     p_name, _, p_cat = key
                     p_size = ''
-                    label = p_name
             else:
                 # תאימות לאחור – לא צפוי לאחר שינוי זה
                 p_name = str(key)
                 p_size = ''
                 p_cat = ''
-                label = p_name
             s = shipped.get(key, 0)
             r = received.get(key, 0)
             diff = s - r
             # סינון טקסטואלי
             if search_txt:
-                if search_txt not in (label or '').lower():
+                hay = f"{p_name} {p_size} {p_cat}".lower()
+                if search_txt not in hay:
                     continue
             # סינון רק חוסר
             if only_pending and diff <= 0:
                 continue
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
-            # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג – מסונן לפי קטגורית בד של המפתח
-            try:
-                catalog = getattr(self.data_processor, 'products_catalog', []) or []
-                def _norm(s):
-                    return (s or '').strip()
-                if by_size and p_size:
-                    items = [r for r in catalog if _norm(r.get('name')) == _norm(p_name) and _norm(r.get('size')) == _norm(p_size) and _norm(r.get('fabric_category')) == _norm(p_cat)]
-                else:
-                    items = [r for r in catalog if _norm(r.get('name')) == _norm(p_name) and _norm(r.get('fabric_category')) == _norm(p_cat)]
-                def _majority(values: list[str]) -> str:
-                    counts = {}
-                    for v in values:
-                        v2 = _norm(v)
-                        if not v2:
-                            continue
-                        counts[v2] = counts.get(v2, 0) + 1
-                    if not counts:
-                        return ''
-                    return sorted(counts.items(), key=lambda x: (-x[1], x[0]))[0][0]
-                if items:
-                    f_type = _majority([r.get('fabric_type','') for r in items])
-                    f_color = _majority([r.get('fabric_color','') for r in items])
-                    p_print = _majority([r.get('print_name','') for r in items])
-                else:
-                    # אין פריטים בקטלוג עבור הקטגוריה המסוימת – נשאיר מאפיינים ריקים כדי לא לזהם בצבע/סוג מקטגוריות אחרות
-                    f_type = ''
-                    f_color = ''
-                    p_print = ''
-                f_cat = p_cat
-            except Exception:
-                f_type, f_color, p_print, f_cat = self._get_product_attrs(p_name, p_size, by_size)
-                # העדף את קטגורית המפתח אם קיימת
-                if p_cat:
-                    f_cat = p_cat
-            self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, f_cat, p_print, s, r, max(diff, 0), status))
+            # מציגים עמודות מצומצמות: מוצר (+מידה אם פעיל), קטגורית בד, נשלח/נתקבל/הפרש/סטטוס
+            f_cat = p_cat
+            if by_size:
+                self.products_balance_tree.insert('', 'end', values=(p_name, p_size or '-', f_cat, s, r, max(diff, 0), status))
+            else:
+                self.products_balance_tree.insert('', 'end', values=(p_name, f_cat, s, r, max(diff, 0), status))
 
     def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
         """החזרת (סוג בד, צבע בד, שם פרינט, קטגורית בד) מתוך קטלוג המוצרים עבור מוצר (ולפי מידה אם נדרש).
@@ -339,6 +352,11 @@ class ProductsBalanceTabMixin:
                 self._balance_toggle_btn.config(text='תצוגת מוצר בלבד')
             else:
                 self._balance_toggle_btn.config(text='פירוט לפי מידות')
+        except Exception:
+            pass
+        # עדכון עמודות בהתאם למצב
+        try:
+            self._build_products_balance_tree(self._balance_detail_by_size)
         except Exception:
             pass
         self._refresh_products_balance_table()
