@@ -70,5 +70,13 @@ def _on_click_delete(ctx, event):
             ok = False
         if ok:
             tree.delete(row_id)
+            # רענון טאב הובלות כדי להסיר חבילות מאותה תעודה שנמחקה
+            try:
+                if hasattr(ctx, '_notify_new_receipt_saved'):
+                    ctx._notify_new_receipt_saved()
+                elif hasattr(ctx, '_refresh_shipments_table'):
+                    ctx._refresh_shipments_table()
+            except Exception:
+                pass
     except Exception:
         pass
