@@ -178,6 +178,7 @@ class ProductsBalanceTabMixin:
             pass
 
         # במידת הצורך, הוספת "מה נגזר אצל הספק" לעמודת "נשלח"
+        cut_totals = {}
         if include_cuts:
             try:
                 if hasattr(self.data_processor, 'refresh_drawings_data'):
@@ -185,7 +186,6 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
             try:
-                cut_totals = {}
                 for rec in getattr(self.data_processor, 'drawings_data', []) or []:
                     if rec.get('status') != 'נחתך':
                         continue
@@ -239,6 +239,11 @@ class ProductsBalanceTabMixin:
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
             # איסוף מאפייני מוצר (סוג/צבע/פרינט) מהקטלוג
             f_type, f_color, p_print, f_cat = self._get_product_attrs(p_name, p_size, by_size)
+            # אם המשתמש ביקש להוסיף נגזר ל"נשלח" ויש נגזר עבור המוצר הזה – נשתמש בקטגוריית בד קבועה "טריקו לבן"
+            if include_cuts:
+                key_for_cut = (p_name, p_size) if by_size else p_name
+                if cut_totals.get(key_for_cut, 0) > 0:
+                    f_cat = 'טריקו לבן'
             self.products_balance_tree.insert('', 'end', values=(label, f_type, f_color, f_cat, p_print, s, r, max(diff, 0), status))
 
     def _get_product_attrs(self, product_name: str, size: str = '', by_size: bool = False):
