@@ -172,9 +172,16 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Fabric category is auto-filled from products_catalog; show as read-only entry
     ctx.sup_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.sup_fabric_category_var, width=14, state='readonly')
     ctx.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_print_name_var, width=12, state='readonly')
-    # Returned from drawing selector and Drawing ID (enabled only when returned = 'כן')
+    # Returned from drawing selector and Drawing ID selection (from drawings_data.json)
     ctx.sup_returned_from_drawing_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_returned_from_drawing_var, width=10, state='readonly', values=['לא','כן'])
-    ctx.sup_drawing_id_entry = tk.Entry(entry_bar, textvariable=ctx.sup_drawing_id_var, width=10, state='disabled')
+    ctx.sup_drawing_id_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_drawing_id_var, width=10, state='disabled')
+    # Populate drawing IDs from data_processor
+    try:
+        drawings = getattr(ctx.data_processor, 'drawings_data', []) or []
+        drawing_ids = [str(d.get('id')) for d in drawings if d.get('id') is not None]
+        ctx.sup_drawing_id_combo['values'] = drawing_ids
+    except Exception:
+        pass
 
     widgets = [
         ctx.sup_product_combo,
@@ -182,9 +189,9 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.sup_fabric_type_combo,
     ctx.sup_fabric_color_combo,
     ctx.sup_fabric_category_entry,
-        ctx.sup_print_name_combo,
-        ctx.sup_returned_from_drawing_combo,
-        ctx.sup_drawing_id_entry,
+    ctx.sup_print_name_combo,
+    ctx.sup_returned_from_drawing_combo,
+    ctx.sup_drawing_id_combo,
         tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
     ]
@@ -195,10 +202,17 @@ def build_entry_tab(ctx, container: tk.Frame):
     def _toggle_drawing_id(*_a):
         try:
             if ctx.sup_returned_from_drawing_var.get() == 'כן':
-                ctx.sup_drawing_id_entry.config(state='normal')
+                # refresh values in case drawings list changed
+                try:
+                    drawings = getattr(ctx.data_processor, 'drawings_data', []) or []
+                    drawing_ids = [str(d.get('id')) for d in drawings if d.get('id') is not None]
+                    ctx.sup_drawing_id_combo['values'] = drawing_ids
+                except Exception:
+                    pass
+                ctx.sup_drawing_id_combo.config(state='readonly')
             else:
                 ctx.sup_drawing_id_var.set('')
-                ctx.sup_drawing_id_entry.config(state='disabled')
+                ctx.sup_drawing_id_combo.config(state='disabled')
         except Exception:
             pass
     try:
@@ -247,15 +261,20 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     # Buttons
     # Shift action buttons after adding a new field
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=20,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=21,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=22,padx=4)
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=22,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=23,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=24,padx=4)
 
     # Lines tree
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','returned_from_drawing','drawing_id','quantity','note')
     ctx.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
+    headers = {
+        'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
+        'fabric_category':'קטגורית בד','print_name':'שם פרינט',
+        'returned_from_drawing':'חזר מציור','drawing_id':"מס' ציור",
+        'quantity':'כמות','note':'הערה'
+    }
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
     for c in cols:
         ctx.supplier_tree.heading(c, text=headers[c])
         ctx.supplier_tree.column(c, width=widths[c], anchor='center')
