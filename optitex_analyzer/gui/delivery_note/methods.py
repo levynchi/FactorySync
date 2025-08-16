@@ -416,14 +416,86 @@ class DeliveryNoteMethodsMixin:
                             ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
                     except Exception:
                         pass
-                    # Header
+                    # Business header (from settings): Business Name + VAT/Type line
+                    try:
+                        s = getattr(self, 'settings', None)
+                        def _sget(k, default=""):
+                            try:
+                                return (s.get(k, default) if s else default) or ""
+                            except Exception:
+                                return ""
+                        biz_name = _sget('business.name')
+                        biz_type = _sget('business.type')
+                        biz_vat  = _sget('business.vat_id')
+                    except Exception:
+                        biz_name = biz_type = biz_vat = ""
+                    # Insert styled business header if available
+                    try:
+                        last_col = 4  # we use 4 columns in the table below
+                        if biz_name:
+                            ws.append([biz_name])
+                            r = ws.max_row
+                            try:
+                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                            except Exception:
+                                pass
+                            try:
+                                ws.cell(row=r, column=1).font = Font(size=16, bold=True)
+                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                        if (biz_type or biz_vat):
+                            line = f"{(biz_type or '').strip()} {(biz_vat or '').strip()}".strip()
+                            ws.append([line])
+                            r = ws.max_row
+                            try:
+                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                            except Exception:
+                                pass
+                            try:
+                                ws.cell(row=r, column=1).font = Font(size=12)
+                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                        if biz_name or biz_vat or biz_type:
+                            ws.append([])  # spacing
+                    except Exception:
+                        pass
+
+                    # Document info header (keys and values)
+                    doc_info_start = ws.max_row + 1
                     ws.append(["מסמך", f"תעודת משלוח #{rec.get('id')}"])
                     ws.append(["תאריך", rec.get('date')])
                     ws.append(["ספק", rec.get('supplier')])
                     ws.append(["סה\"כ כמות", rec.get('total_quantity')])
+                    doc_info_end = ws.max_row
+                    try:
+                        # Style: right-align, bold keys, slightly larger font
+                        for row in ws.iter_rows(min_row=doc_info_start, max_row=doc_info_end, min_col=1, max_col=2):
+                            try:
+                                row[0].font = Font(bold=True, size=12)
+                                row[0].alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                            try:
+                                row[1].font = Font(size=12)
+                                row[1].alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
                     ws.append([])
                     # Lines table (A4-ready): Model | Size | Description (fabric type + print) | Quantity
                     ws.append(["שורות מוצרים"])
+                    try:
+                        # Merge and style the section title
+                        r = ws.max_row
+                        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
+                        tcell = ws.cell(row=r, column=1)
+                        tcell.font = Font(bold=True, size=12)
+                        tcell.alignment = Alignment(horizontal='right')
+                    except Exception:
+                        pass
                     header_row = ["שם הדגם", "מידה", "תיאור", "כמות"]
                     ws.append(header_row)
                     start_data_row = ws.max_row + 1
@@ -439,7 +511,7 @@ class DeliveryNoteMethodsMixin:
                         qty = line.get('quantity')
                         ws.append([model, size, desc, qty])
                     end_data_row = ws.max_row
-                    # Style: black grid on lines area
+                    # Style: black grid on lines area + fonts and alignments
                     try:
                         thin = Side(style='thin', color='000000')
                         border = Border(left=thin, right=thin, top=thin, bottom=thin)
@@ -447,13 +519,19 @@ class DeliveryNoteMethodsMixin:
                         for cell in ws[ws.cell(row=start_data_row-1, column=1).row]:
                             if cell.row == start_data_row-1:
                                 try:
-                                    cell.font = Font(bold=True)
+                                    cell.font = Font(bold=True, size=12)
                                 except Exception:
                                     pass
                         for row in ws.iter_rows(min_row=start_data_row-1, max_row=end_data_row, min_col=1, max_col=4):
                             for cell in row:
                                 try:
                                     cell.border = border
+                                except Exception:
+                                    pass
+                                try:
+                                    # Data font size a bit larger for readability
+                                    if cell.row >= start_data_row:
+                                        cell.font = Font(size=11)
                                 except Exception:
                                     pass
                             # Align quantity center/right
