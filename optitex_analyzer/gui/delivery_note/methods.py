@@ -391,6 +391,11 @@ class DeliveryNoteMethodsMixin:
                 try:
                     # Prepare workbook
                     wb = Workbook(); ws = wb.active; ws.title = "תעודת משלוח"
+                    # Right-to-Left sheet for Hebrew
+                    try:
+                        ws.sheet_view.rightToLeft = True
+                    except Exception:
+                        pass
                     # Page setup: A4 portrait, fit to width
                     try:
                         ws.page_setup.orientation = 'portrait'
@@ -417,21 +422,22 @@ class DeliveryNoteMethodsMixin:
                     ws.append(["ספק", rec.get('supplier')])
                     ws.append(["סה\"כ כמות", rec.get('total_quantity')])
                     ws.append([])
-                    # Lines table (A4-ready): Model | Description (size+fabric type+print) | Quantity
+                    # Lines table (A4-ready): Model | Size | Description (fabric type + print) | Quantity
                     ws.append(["שורות מוצרים"])
-                    header_row = ["שם הדגם", "תיאור", "כמות"]
+                    header_row = ["שם הדגם", "מידה", "תיאור", "כמות"]
                     ws.append(header_row)
                     start_data_row = ws.max_row + 1
                     for line in (rec.get('lines', []) or []):
                         model = line.get('product')
                         size = (line.get('size') or '')
                         fabric_type = (line.get('fabric_type') or '')
+                        color = (line.get('fabric_color') or '')
                         print_name = (line.get('print_name') or '')
-                        # Compose description: size + fabric_type + print_name (skip empties)
-                        parts = [p for p in [size, fabric_type, print_name] if p]
+                        # Compose description: fabric_type + color + print_name (skip empties)
+                        parts = [p for p in [fabric_type, color, print_name] if p]
                         desc = " | ".join(parts)
                         qty = line.get('quantity')
-                        ws.append([model, desc, qty])
+                        ws.append([model, size, desc, qty])
                     end_data_row = ws.max_row
                     # Style: black grid on lines area
                     try:
@@ -444,7 +450,7 @@ class DeliveryNoteMethodsMixin:
                                     cell.font = Font(bold=True)
                                 except Exception:
                                     pass
-                        for row in ws.iter_rows(min_row=start_data_row-1, max_row=end_data_row, min_col=1, max_col=3):
+                        for row in ws.iter_rows(min_row=start_data_row-1, max_row=end_data_row, min_col=1, max_col=4):
                             for cell in row:
                                 try:
                                     cell.border = border
@@ -452,7 +458,14 @@ class DeliveryNoteMethodsMixin:
                                     pass
                             # Align quantity center/right
                             try:
-                                row[2].alignment = Alignment(horizontal='center')
+                                row[3].alignment = Alignment(horizontal='center')
+                            except Exception:
+                                pass
+                            # Align Hebrew text to the right for Model/Size/Description
+                            try:
+                                row[0].alignment = Alignment(horizontal='right')
+                                row[1].alignment = Alignment(horizontal='right')
+                                row[2].alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
                     except Exception:
@@ -482,6 +495,19 @@ class DeliveryNoteMethodsMixin:
                     out_path = os.path.join(base_dir, fname)
                     try:
                         wb.save(out_path)
+                    except PermissionError as e:
+                        # Fallback: add timestamp suffix if file is locked/open
+                        try:
+                            ts = datetime.now().strftime('%H%M%S')
+                            alt_path = out_path.replace('.xlsx', f'_{ts}.xlsx')
+                            wb.save(alt_path)
+                            out_path = alt_path
+                        except Exception:
+                            try:
+                                messagebox.showerror("שגיאה", f"שמירת קובץ נכשלה (קובץ פתוח?):\n{e}")
+                            except Exception:
+                                pass
+                            return
                     except Exception as e:
                         try:
                             messagebox.showerror("שגיאה", f"שמירת קובץ נכשלה:\n{e}")
