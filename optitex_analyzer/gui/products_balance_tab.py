@@ -201,7 +201,7 @@ class ProductsBalanceTabMixin:
 
             # בניית רשימת תנועות
             movements = []
-            def add_move(date, doc_type, doc_no, name, size, cat, qty, direction):
+            def add_move(date, doc_type, doc_no, name, size, cat, qty, direction, fabric_color='', print_name=''):
                 movements.append({
                     'date': (date or ''),
                     'doc_type': (doc_type or ''),
@@ -211,6 +211,8 @@ class ProductsBalanceTabMixin:
                     'category': (cat or ''),
                     'qty': int(qty or 0),
                     'direction': (direction or ''),
+                    'fabric_color': (fabric_color or ''),
+                    'print_name': (print_name or ''),
                 })
 
             def norm(s):
@@ -242,6 +244,16 @@ class ProductsBalanceTabMixin:
                                 cat_line = self._get_product_attrs(name, size, by_size)[3]
                             except Exception:
                                 cat_line = ''
+                        # מאפייני מוצר לפי השורה ואם חסר – מהקטלוג
+                        f_color = norm(ln.get('fabric_color'))
+                        p_print = norm(ln.get('print_name'))
+                        if not f_color or not p_print:
+                            try:
+                                _, f_color2, p_print2, _ = self._get_product_attrs(name, size, by_size)
+                                f_color = f_color or f_color2
+                                p_print = p_print or p_print2
+                            except Exception:
+                                pass
                         # התאמה למפתח הנוכחי
                         if norm(name) != norm(p_name):
                             continue
@@ -249,7 +261,7 @@ class ProductsBalanceTabMixin:
                             continue
                         if norm(cat_line) != norm(p_cat):
                             continue
-                        add_move(rec_date, 'תעודת משלוח', rec_no, name, size if by_size else '', cat_line, qty, 'נשלח')
+                        add_move(rec_date, 'תעודת משלוח', rec_no, name, size if by_size else '', cat_line, qty, 'נשלח', f_color, p_print)
             except Exception:
                 pass
 
@@ -272,13 +284,23 @@ class ProductsBalanceTabMixin:
                                 cat_line = self._get_product_attrs(name, size, by_size)[3]
                             except Exception:
                                 cat_line = ''
+                        # מאפייני מוצר לפי השורה ואם חסר – מהקטלוג
+                        f_color = norm(ln.get('fabric_color'))
+                        p_print = norm(ln.get('print_name'))
+                        if not f_color or not p_print:
+                            try:
+                                _, f_color2, p_print2, _ = self._get_product_attrs(name, size, by_size)
+                                f_color = f_color or f_color2
+                                p_print = p_print or p_print2
+                            except Exception:
+                                pass
                         if norm(name) != norm(p_name):
                             continue
                         if by_size and norm(size) != norm(p_size):
                             continue
                         if norm(cat_line) != norm(p_cat):
                             continue
-                        add_move(rec_date, 'תעודת קליטה', rec_no, name, size if by_size else '', cat_line, qty, 'נתקבל')
+                        add_move(rec_date, 'תעודת קליטה', rec_no, name, size if by_size else '', cat_line, qty, 'נתקבל', f_color, p_print)
             except Exception:
                 pass
 
@@ -325,8 +347,8 @@ class ProductsBalanceTabMixin:
             # יצירת חלון פירוט
             win = tk.Toplevel(self._balance_page_frame)
             win.title(f"פירוט תנועות – {p_name}{(' – ' + p_size) if by_size and p_size else ''} | קטגוריה: {p_cat}")
-            win.geometry('920x520')
-            cols = ('date','doc_type','doc_no','product','size','category','direction','qty')
+            win.geometry('1100x560')
+            cols = ('date','doc_type','doc_no','product','size','category','fabric_color','print_name','direction','qty')
             headers = {
                 'date': 'תאריך',
                 'doc_type': 'סוג מסמך',
@@ -334,10 +356,23 @@ class ProductsBalanceTabMixin:
                 'product': 'מוצר',
                 'size': 'מידה',
                 'category': 'קטגורית בד',
+                'fabric_color': 'צבע בד',
+                'print_name': 'שם פרינט',
                 'direction': 'תנועה',
                 'qty': 'כמות'
             }
-            widths = {'date':120,'doc_type':140,'doc_no':100,'product':220,'size':80,'category':140,'direction':90,'qty':80}
+            widths = {
+                'date':120,
+                'doc_type':140,
+                'doc_no':100,
+                'product':200,
+                'size':80,
+                'category':140,
+                'fabric_color':120,
+                'print_name':140,
+                'direction':90,
+                'qty':80
+            }
             tree = ttk.Treeview(win, columns=cols, show='headings', height=18)
             for c in cols:
                 tree.heading(c, text=headers[c])
@@ -358,7 +393,22 @@ class ProductsBalanceTabMixin:
                 return None
             movements_sorted = sorted(movements, key=lambda m: (parse_dt(m['date']) or datetime.min, m['doc_type'], m['doc_no']))
             for m in movements_sorted:
-                tree.insert('', 'end', values=(m['date'], m['doc_type'], m['doc_no'], m['product'], m['size'] if by_size else '', m['category'], m['direction'], m['qty']))
+                tree.insert(
+                    '',
+                    'end',
+                    values=(
+                        m['date'],
+                        m['doc_type'],
+                        m['doc_no'],
+                        m['product'],
+                        m['size'] if by_size else '',
+                        m['category'],
+                        m.get('fabric_color',''),
+                        m.get('print_name',''),
+                        m['direction'],
+                        m['qty']
+                    )
+                )
 
             # סיכומים
             try:
