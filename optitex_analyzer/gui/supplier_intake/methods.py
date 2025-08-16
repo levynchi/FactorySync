@@ -245,10 +245,31 @@ class SupplierIntakeMethodsMixin:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'quantity': qty, 'note': note}
+        returned_from_drawing = (getattr(self, 'sup_returned_from_drawing_var', tk.StringVar(value='לא')).get() or 'לא').strip()
+        drawing_id = (getattr(self, 'sup_drawing_id_var', tk.StringVar()).get() or '').strip()
+        # if not returned, ignore drawing_id
+        if returned_from_drawing != 'כן':
+            drawing_id = ''
+        line = {
+            'product': product,
+            'size': size,
+            'fabric_type': fabric_type,
+            'fabric_color': fabric_color,
+            'fabric_category': fabric_category,
+            'print_name': print_name,
+            'returned_from_drawing': returned_from_drawing,
+            'drawing_id': drawing_id,
+            'quantity': qty,
+            'note': note
+        }
         self._supplier_lines.append(line)
-        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,qty,note))
+        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,returned_from_drawing,drawing_id,qty,note))
         self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
+        try:
+            self.sup_returned_from_drawing_var.set('לא')
+            self.sup_drawing_id_var.set('')
+        except Exception:
+            pass
         if hasattr(self, 'sup_product_combo'):
             try:
                 self.sup_product_combo['values'] = self._supplier_products_allowed_full
@@ -437,10 +458,18 @@ class SupplierIntakeMethodsMixin:
 
         lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
         lines_frame.pack(fill='both', expand=True, pady=6)
-        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
+        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','returned_from_drawing','drawing_id','quantity','note')
         tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
-        headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-        widths = {'product':180,'size':80,'fabric_type':100,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
+        headers = {
+            'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
+            'fabric_category':'קטגורית בד','print_name':'שם פרינט',
+            'returned_from_drawing':'חזר מציור','drawing_id':'"מס\' ציור"','quantity':'כמות','note':'הערה'
+        }
+        widths = {
+            'product':180,'size':80,'fabric_type':100,'fabric_color':90,
+            'fabric_category':120,'print_name':110,
+            'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220
+        }
         for c in cols:
             tree.heading(c, text=headers[c])
             tree.column(c, width=widths[c], anchor='center')
@@ -451,7 +480,7 @@ class SupplierIntakeMethodsMixin:
         for ln in rec.get('lines', []) or []:
             tree.insert('', 'end', values=(
                 ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''), ln.get('fabric_category',''),
-                ln.get('print_name',''), ln.get('quantity',''), ln.get('note','')
+                ln.get('print_name',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('note','')
             ))
 
         pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg='#f7f9fa')

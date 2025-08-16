@@ -45,6 +45,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_fabric_color_var = tk.StringVar(value='לבן')
     ctx.sup_print_name_var = tk.StringVar(value='חלק')
     ctx.sup_fabric_category_var = tk.StringVar()
+    # Returned from drawing + Drawing ID
+    ctx.sup_returned_from_drawing_var = tk.StringVar(value='לא')
+    ctx.sup_drawing_id_var = tk.StringVar()
 
     # Product list
     ctx._supplier_products_allowed = []
@@ -158,8 +161,8 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Labels row (added 'קטגורית בד')
-    for i,lbl in enumerate(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"]):
+    # Labels row (added 'קטגורית בד' + 'חזר מציור' + 'מס' ציור')
+    for i,lbl in enumerate(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","חזר מציור","מס' ציור","כמות","הערה"]):
         tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
     # Variant controls
@@ -169,6 +172,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Fabric category is auto-filled from products_catalog; show as read-only entry
     ctx.sup_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.sup_fabric_category_var, width=14, state='readonly')
     ctx.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_print_name_var, width=12, state='readonly')
+    # Returned from drawing selector and Drawing ID (enabled only when returned = 'כן')
+    ctx.sup_returned_from_drawing_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_returned_from_drawing_var, width=10, state='readonly', values=['לא','כן'])
+    ctx.sup_drawing_id_entry = tk.Entry(entry_bar, textvariable=ctx.sup_drawing_id_var, width=10, state='disabled')
 
     widgets = [
         ctx.sup_product_combo,
@@ -177,11 +183,28 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_fabric_color_combo,
     ctx.sup_fabric_category_entry,
         ctx.sup_print_name_combo,
+        ctx.sup_returned_from_drawing_combo,
+        ctx.sup_drawing_id_entry,
         tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
     ]
     for i,w in enumerate(widgets):
         w.grid(row=1,column=i*2,sticky='w',padx=2)
+
+    # Enable/disable drawing ID entry by toggle
+    def _toggle_drawing_id(*_a):
+        try:
+            if ctx.sup_returned_from_drawing_var.get() == 'כן':
+                ctx.sup_drawing_id_entry.config(state='normal')
+            else:
+                ctx.sup_drawing_id_var.set('')
+                ctx.sup_drawing_id_entry.config(state='disabled')
+        except Exception:
+            pass
+    try:
+        ctx.sup_returned_from_drawing_var.trace_add('write', _toggle_drawing_id)
+    except Exception:
+        pass
 
     def _on_product_change(*_a):
         try:
@@ -224,9 +247,9 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     # Buttons
     # Shift action buttons after adding a new field
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=16,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=17,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=18,padx=4)
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=20,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=21,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=22,padx=4)
 
     # Lines tree
     cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
