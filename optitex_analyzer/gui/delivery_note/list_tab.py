@@ -78,5 +78,13 @@ def _on_click_delete(ctx, event):
                     ctx._refresh_shipments_table()
             except Exception:
                 pass
+            # הודעה למשתמש על מחיקת ההובלות המשויכות
+            try:
+                messagebox.showinfo(
+                    "נמחק",
+                    f"תעודת משלוח {note_id} נמחקה.\nפריטי ההובלה (חבילות) מתעודה זו הוסרו מסיכום הובלות."
+                )
+            except Exception:
+                pass
     except Exception:
         pass

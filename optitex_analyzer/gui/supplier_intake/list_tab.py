@@ -89,5 +89,14 @@ def _on_click_list(ctx, event):
                     ctx._refresh_shipments_table()
             except Exception:
                 pass
+            # Notify user that related shipments were removed
+            try:
+                import tkinter.messagebox as mbox
+                mbox.showinfo(
+                    "נמחק",
+                    f"תעודת קליטה {rec_id} נמחקה.\nפריטי ההובלה (חבילות) מקליטה זו הוסרו מסיכום הובלות."
+                )
+            except Exception:
+                pass
     except Exception:
         pass
