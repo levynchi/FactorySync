@@ -65,6 +65,36 @@ class ProductsBalanceTabMixin:
         self.supplier_cut_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
         vs2.pack(side='left', fill='y', pady=6)
 
+        # עמוד חדש: מאזן סחורות שנחתכו אצל הספק
+        cut_balance_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(cut_balance_page, text='מאזן סחורות שנחתכו אצל הספק')
+        tk.Label(cut_balance_page, text='מאזן סחורות שנחתכו אצל הספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        cb_bar = tk.Frame(cut_balance_page, bg='#f7f9fa'); cb_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(cb_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_balance_search_var = tk.StringVar(); cb_search = tk.Entry(cb_bar, textvariable=self.cut_balance_search_var, width=24); cb_search.pack(side='right', padx=(0,6))
+        try:
+            cb_search.bind('<KeyRelease>', lambda e: self._refresh_cut_balance_table())
+        except Exception:
+            pass
+        self.cut_balance_only_pending_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(cb_bar, text='רק חוסר', variable=self.cut_balance_only_pending_var, bg='#f7f9fa', command=self._refresh_cut_balance_table).pack(side='left', padx=(8,0))
+        tk.Button(cb_bar, text='🔄 רענן', command=self._refresh_cut_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        # טבלה
+        cb_cols = ('product','size','fabric_category','shipped','received','diff','status')
+        self.cut_balance_tree = ttk.Treeview(cut_balance_page, columns=cb_cols, show='headings', height=18)
+        cb_headers = {
+            'product':'מוצר','size':'מידה','fabric_category':'קטגורית בד',
+            'shipped':'נשלח (נגזר×שכבות)','received':'נתקבל (חזר מציור)','diff':'הפרש (נותר לקבל)','status':'סטטוס'
+        }
+        cb_widths = {'product':260,'size':90,'fabric_category':160,'shipped':120,'received':120,'diff':150,'status':160}
+        for c in cb_cols:
+            self.cut_balance_tree.heading(c, text=cb_headers[c])
+            self.cut_balance_tree.column(c, width=cb_widths[c], anchor='center')
+        vs3 = ttk.Scrollbar(cut_balance_page, orient='vertical', command=self.cut_balance_tree.yview)
+        self.cut_balance_tree.configure(yscroll=vs3.set)
+        self.cut_balance_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
+        vs3.pack(side='left', fill='y', pady=6)
+
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
         inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
         inner_bar.pack(fill='x', padx=10, pady=(0,6))
@@ -107,6 +137,10 @@ class ProductsBalanceTabMixin:
             pass
         try:
             self._refresh_supplier_cut_table()
+        except Exception:
+            pass
+        try:
+            self._refresh_cut_balance_table()
         except Exception:
             pass
 
@@ -694,3 +728,94 @@ class ProductsBalanceTabMixin:
             if not label_ok:
                 continue
             self.supplier_cut_tree.insert('', 'end', values=(pname, size or '-', fabric or '-', qty))
+
+    # === מאזן סחורות שנחתכו אצל הספק ===
+    def _refresh_cut_balance_table(self):
+        supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+        # ניקוי
+        if hasattr(self, 'cut_balance_tree'):
+            for iid in self.cut_balance_tree.get_children():
+                self.cut_balance_tree.delete(iid)
+        if not supplier:
+            return
+        # לוודא נתונים עדכניים
+        try:
+            if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                self.data_processor.refresh_supplier_receipts()
+        except Exception:
+            pass
+        try:
+            if hasattr(self.data_processor, 'refresh_drawings_data'):
+                self.data_processor.refresh_drawings_data()
+        except Exception:
+            pass
+        # נשלח: מסך ציורים שנחתכו × שכבות
+        shipped = {}
+        try:
+            for rec in getattr(self.data_processor, 'drawings_data', []) or []:
+                if rec.get('status') != 'נחתך':
+                    continue
+                if (rec.get('נמען') or '').strip() != supplier:
+                    continue
+                layers = rec.get('שכבות')
+                try:
+                    layers = int(layers)
+                except Exception:
+                    layers = None
+                if not layers or layers <= 0:
+                    continue
+                # קביעת קטגורית בד מהציור (סוג בד) או ברירת מחדל
+                fabric_category = (rec.get('סוג בד') or 'טריקו לבן').strip()
+                for prod in rec.get('מוצרים', []) or []:
+                    pname = (prod.get('שם המוצר') or '').strip()
+                    for sz in prod.get('מידות', []) or []:
+                        size = (sz.get('מידה') or '').strip()
+                        qty = int(sz.get('כמות', 0) or 0)
+                        if not pname or qty <= 0:
+                            continue
+                        key = (pname, size, fabric_category)
+                        shipped[key] = shipped.get(key, 0) + qty * layers
+        except Exception:
+            pass
+        # נתקבל: מכל קליטות עם returned_from_drawing == 'כן'
+        received = {}
+        try:
+            for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+                if (rec.get('supplier') or '').strip() != supplier:
+                    continue
+                for ln in rec.get('lines', []) or []:
+                    if (ln.get('returned_from_drawing') or '').strip() != 'כן':
+                        continue
+                    pname = (ln.get('product') or '').strip()
+                    size = (ln.get('size') or '').strip()
+                    qty = int(ln.get('quantity', 0) or 0)
+                    if not pname or qty <= 0:
+                        continue
+                    fcat = (ln.get('fabric_category') or '').strip()
+                    # אם חסר קטגוריה בשורה, ננסה להשלים מהקטלוג לשמירה על עקביות
+                    if not fcat:
+                        try:
+                            fcat = self._get_product_attrs(pname, size, True)[3]
+                        except Exception:
+                            fcat = ''
+                    key = (pname, size, fcat)
+                    received[key] = received.get(key, 0) + qty
+        except Exception:
+            pass
+        # איחוד, סינון, והצגה
+        keys = sorted(set(list(shipped.keys()) + list(received.keys())))
+        search_txt = (getattr(self, 'cut_balance_search_var', tk.StringVar()).get() or '').strip().lower()
+        only_pending = bool(getattr(self, 'cut_balance_only_pending_var', tk.BooleanVar()).get())
+        for key in keys:
+            pname, size, fcat = key
+            s = shipped.get(key, 0)
+            r = received.get(key, 0)
+            diff = s - r
+            if search_txt:
+                hay = f"{pname} {size} {fcat}".lower()
+                if search_txt not in hay:
+                    continue
+            if only_pending and diff <= 0:
+                continue
+            status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
+            self.cut_balance_tree.insert('', 'end', values=(pname, size or '-', fcat, s, r, max(diff,0), status))
