@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -35,6 +35,8 @@ class DataProcessor:
 		self.fabric_colors_file = fabric_colors_file
 		self.print_names_file = print_names_file
 		self.fabric_categories_file = fabric_categories_file
+		# קובץ 'שם הדגם'
+		self.model_names_file = model_names_file
 		# load base datasets
 		self.drawings_data = self.load_drawings_data()
 		self.fabrics_inventory = self.load_fabrics_inventory()
@@ -48,6 +50,7 @@ class DataProcessor:
 		self.product_fabric_colors = self.load_fabric_colors()
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
+		self.product_model_names = self.load_model_names()
 		self.suppliers = self.load_suppliers()
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
@@ -1038,6 +1041,9 @@ class DataProcessor:
 	def load_fabric_categories(self):
 		return self._load_simple_list(self.fabric_categories_file)
 
+	def load_model_names(self):
+		return self._load_simple_list(self.model_names_file)
+
 	def save_product_sizes(self):
 		return self._save_simple_list(self.product_sizes_file, self.product_sizes)
 
@@ -1052,6 +1058,9 @@ class DataProcessor:
 
 	def save_fabric_categories(self):
 		return self._save_simple_list(self.fabric_categories_file, self.product_fabric_categories)
+
+	def save_model_names(self):
+		return self._save_simple_list(self.model_names_file, self.product_model_names)
 
 	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str) -> int:
 		if not name:
@@ -1101,10 +1110,17 @@ class DataProcessor:
 	def delete_fabric_category_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_categories, self.save_fabric_categories, rec_id)
 
+	def add_model_name_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name)
+
+	def delete_model_name_item(self, rec_id: int) -> bool:
+		return self._delete_from_simple_list(self.product_model_names, self.save_model_names, rec_id)
+
 	def refresh_product_attributes(self):
 		self.product_sizes = self.load_product_sizes()
 		self.product_fabric_types = self.load_fabric_types()
 		self.product_fabric_colors = self.load_fabric_colors()
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
+		self.product_model_names = self.load_model_names()
 

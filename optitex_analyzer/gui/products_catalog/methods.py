@@ -147,14 +147,16 @@ class ProductsCatalogMethodsMixin:
         fcolors_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         prints_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         fcats_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        modelnames_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         attr_nb.add(sizes_tab, text='מידות')
         attr_nb.add(ftypes_tab, text='סוגי בד')
         attr_nb.add(fcolors_tab, text='צבעי בד')
         attr_nb.add(prints_tab, text='שמות פרינט')
         attr_nb.add(fcats_tab, text='קטגוריות בדים')
+        attr_nb.add(modelnames_tab, text='שם הדגם')
 
         # bind vars
-        self.attr_size_var = tk.StringVar(); self.attr_fabric_type_var = tk.StringVar(); self.attr_fabric_color_var = tk.StringVar(); self.attr_print_name_var = tk.StringVar(); self.attr_fabric_category_var = tk.StringVar()
+        self.attr_size_var = tk.StringVar(); self.attr_fabric_type_var = tk.StringVar(); self.attr_fabric_color_var = tk.StringVar(); self.attr_print_name_var = tk.StringVar(); self.attr_fabric_category_var = tk.StringVar(); self.attr_model_name_var = tk.StringVar()
 
         # Sizes
         sz_form = ttk.LabelFrame(sizes_tab, text='הוספת מידה', padding=8)
@@ -240,6 +242,23 @@ class ProductsCatalogMethodsMixin:
         self.fabric_categories_tree.configure(yscroll=fcg_vs.set)
         self.fabric_categories_tree.pack(side='left', fill='both', expand=True); fcg_vs.pack(side='right', fill='y')
         self._load_fabric_categories_into_tree()
+
+        # Model Names (שם הדגם)
+        mn_form = ttk.LabelFrame(modelnames_tab, text='הוסף שם דגם', padding=8)
+        mn_form.pack(fill='x', padx=8, pady=6)
+        tk.Label(mn_form, text='שם דגם:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Entry(mn_form, textvariable=self.attr_model_name_var, width=18).grid(row=0, column=1, padx=4, pady=4)
+        tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        mn_tree_frame = ttk.LabelFrame(modelnames_tab, text='שמות דגם', padding=4)
+        mn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
+        self.model_names_tree = ttk.Treeview(mn_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','שם דגם',160),('created_at','נוצר',140)]:
+            self.model_names_tree.heading(c, text=t); self.model_names_tree.column(c, width=w, anchor='center')
+        mn_vs = ttk.Scrollbar(mn_tree_frame, orient='vertical', command=self.model_names_tree.yview)
+        self.model_names_tree.configure(yscroll=mn_vs.set)
+        self.model_names_tree.pack(side='left', fill='both', expand=True); mn_vs.pack(side='right', fill='y')
+        self._load_model_names_into_tree()
 
     # ===== LOADERS =====
     def _load_products_catalog_into_tree(self):
@@ -360,6 +379,12 @@ class ProductsCatalogMethodsMixin:
         for item in self.fabric_categories_tree.get_children(): self.fabric_categories_tree.delete(item)
         for rec in getattr(self.data_processor, 'product_fabric_categories', []):
             self.fabric_categories_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+
+    def _load_model_names_into_tree(self):
+        if not hasattr(self, 'model_names_tree'): return
+        for item in self.model_names_tree.get_children(): self.model_names_tree.delete(item)
+        for rec in getattr(self.data_processor, 'product_model_names', []):
+            self.model_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
 
     # ===== ADD =====
     def _add_product_catalog_entry(self):
@@ -638,6 +663,18 @@ class ProductsCatalogMethodsMixin:
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 
+    def _add_model_name_item(self):
+        name = self.attr_model_name_var.get().strip()
+        if not name:
+            messagebox.showerror('שגיאה', 'חובה להזין שם דגם')
+            return
+        try:
+            new_id = self.data_processor.add_model_name_item(name)
+            self.model_names_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            self.attr_model_name_var.set('')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
     def _delete_selected_product_size(self):
         if not hasattr(self, 'sizes_tree'): return
         sel = self.sizes_tree.selection(); deleted = False
@@ -687,3 +724,13 @@ class ProductsCatalogMethodsMixin:
                 deleted = True
         if deleted:
             self._load_fabric_categories_into_tree(); self._refresh_attribute_pickers()
+
+    def _delete_selected_model_name_item(self):
+        if not hasattr(self, 'model_names_tree'): return
+        sel = self.model_names_tree.selection(); deleted = False
+        for item in sel:
+            vals = self.model_names_tree.item(item, 'values')
+            if vals and self.data_processor.delete_model_name_item(int(vals[0])):
+                deleted = True
+        if deleted:
+            self._load_model_names_into_tree()
