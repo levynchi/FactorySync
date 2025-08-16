@@ -81,5 +81,13 @@ def _on_click_list(ctx, event):
         if ctx.data_processor.delete_supplier_intake(rec_id):
             # Remove from UI
             tree.delete(row_id)
+            # Refresh shipments tab to remove packages from this intake
+            try:
+                if hasattr(ctx, '_notify_new_receipt_saved'):
+                    ctx._notify_new_receipt_saved()
+                elif hasattr(ctx, '_refresh_shipments_table'):
+                    ctx._refresh_shipments_table()
+            except Exception:
+                pass
     except Exception:
         pass
