@@ -172,10 +172,13 @@ class DeliveryNoteMethodsMixin:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'quantity': qty, 'note': note}
+        category = getattr(self, 'dn_category_var', None)
+        category = category.get().strip() if category else ''
+        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
         self._delivery_lines.append(line)
         # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,qty,note))
+        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
+        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
         self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
         try: self.dn_product_combo['values'] = self._delivery_products_allowed_full
         except Exception: pass

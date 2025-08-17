@@ -153,7 +153,7 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","כמות","הערה"]
+    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","כמות","הערה"]
     for i,lbl in enumerate(lbls):
         tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
@@ -164,13 +164,34 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
+    # New: General Category (from categories.json)
+    ctx.dn_category_var = tk.StringVar()
+    ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
+    try:
+        import os, json
+        path = os.path.join(os.getcwd(), 'categories.json')
+        cats = []
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                for item in data:
+                    name = (item.get('name') or '').strip()
+                    if name:
+                        cats.append(name)
+        cats = sorted({c for c in cats})
+        ctx.dn_category_combo['values'] = cats
+    except Exception:
+        pass
+
     widgets = [
         ctx.dn_product_combo,
         ctx.dn_size_combo,
-    ctx.dn_fabric_type_combo,
-    ctx.dn_fabric_color_combo,
-    ctx.dn_fabric_category_entry,
+        ctx.dn_fabric_type_combo,
+        ctx.dn_fabric_color_combo,
+        ctx.dn_fabric_category_entry,
         dn_print_entry,
+        ctx.dn_category_combo,
         tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
     ]
@@ -223,14 +244,15 @@ def build_entry_tab(ctx, container: tk.Frame):
         except Exception: pass
 
     # After adding a new field, shift action buttons to the right to avoid overlap
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=16,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=17,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=18,padx=4)
+    _btn_base_col = len(widgets) * 2
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=_btn_base_col,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
 
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'quantity':70,'note':220}
+    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה','quantity':'כמות','note':'הערה'}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'quantity':70,'note':220}
     for c in cols:
         ctx.delivery_tree.heading(c, text=headers[c])
         ctx.delivery_tree.column(c, width=widths[c], anchor='center')
