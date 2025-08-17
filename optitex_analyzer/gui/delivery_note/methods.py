@@ -465,9 +465,42 @@ class DeliveryNoteMethodsMixin:
                     # Document info header (keys and values)
                     doc_info_start = ws.max_row + 1
                     ws.append(["מסמך", f"תעודת משלוח #{rec.get('id')}"])
-                    ws.append(["תאריך", rec.get('date')])
+                    # תאריך בפורמט D/M/Y
+                    try:
+                        raw_date = (rec.get('date') or '').strip()
+                        def _parse_dt(s: str):
+                            for fmt in ("%Y-%m-%d","%d/%m/%Y","%d-%m-%Y","%Y/%m/%d","%m/%d/%Y","%d.%m.%Y"):
+                                try:
+                                    # Return date object to avoid time component in Excel
+                                    return datetime.strptime(s, fmt).date()
+                                except Exception:
+                                    pass
+                            return None
+                        d_obj = _parse_dt(raw_date)
+                        if d_obj is not None:
+                            ws.append(["תאריך", d_obj])
+                            try:
+                                # Apply Excel date number format on the just-added cell
+                                r = ws.max_row
+                                dc = ws.cell(row=r, column=2)
+                                dc.number_format = 'd/m/yyyy'
+                                dc.alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                        else:
+                            # fallback quick reformat (YYYY-MM-DD -> D/M/Y)
+                            parts = raw_date.replace('.', '-').replace('/', '-').split('-')
+                            if len(parts) == 3 and len(parts[0]) == 4:
+                                try:
+                                    y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+                                    ws.append(["תאריך", f"{d}/{m}/{y}"])
+                                except Exception:
+                                    ws.append(["תאריך", raw_date])
+                            else:
+                                ws.append(["תאריך", raw_date])
+                    except Exception:
+                        ws.append(["תאריך", rec.get('date')])
                     ws.append(["ספק", rec.get('supplier')])
-                    ws.append(["סה\"כ כמות", rec.get('total_quantity')])
                     doc_info_end = ws.max_row
                     try:
                         # Style: right-align, bold keys, slightly larger font
@@ -482,6 +515,12 @@ class DeliveryNoteMethodsMixin:
                                 row[1].alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
+                        # אם הוזנה ישירות כתאריך - מספר פורמט ד/מ/שנה (אימות נוסף)
+                        try:
+                            dcell = ws.cell(row=doc_info_start+1, column=2)
+                            dcell.number_format = 'd/m/yyyy'
+                        except Exception:
+                            pass
                     except Exception:
                         pass
                     ws.append([])
@@ -510,6 +549,23 @@ class DeliveryNoteMethodsMixin:
                         desc = " | ".join(parts)
                         qty = line.get('quantity')
                         ws.append([model, size, desc, qty])
+                    # שורת סה"כ כמות מתחת לטבלה (תגית בעמודה C והמספר בעמודה D)
+                    try:
+                        try:
+                            total_qty = sum(int((l or {}).get('quantity', 0) or 0) for l in (rec.get('lines', []) or []))
+                        except Exception:
+                            total_qty = (rec.get('total_quantity') or 0)
+                        # A, B empty; C label; D numeric total
+                        ws.append([None, None, "סה\"כ כמות", total_qty])
+                        r_tot = ws.max_row
+                        try:
+                            ws.cell(row=r_tot, column=3).font = Font(bold=True, size=12)
+                            ws.cell(row=r_tot, column=3).alignment = Alignment(horizontal='right')
+                            ws.cell(row=r_tot, column=4).alignment = Alignment(horizontal='center')
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
                     end_data_row = ws.max_row
                     # Style: black grid on lines area + fonts and alignments
                     try:
