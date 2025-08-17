@@ -117,18 +117,18 @@ class ProductsCatalogMethodsMixin:
     # ===== categories builders =====
     def _build_categories_section(self, parent):
         self.cat_name_var = tk.StringVar()
-        cat_form = ttk.LabelFrame(parent, text="הוספת קטגוריה", padding=10)
+        cat_form = ttk.LabelFrame(parent, text="הוספת תת קטגוריה", padding=10)
         cat_form.pack(fill='x', padx=10, pady=6)
-        tk.Label(cat_form, text="שם קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
+        tk.Label(cat_form, text="שם תת קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
         tk.Entry(cat_form, textvariable=self.cat_name_var, width=22).grid(row=0, column=1, padx=4, pady=4)
         tk.Button(cat_form, text="➕ הוסף", command=self._add_category, bg='#27ae60', fg='white').grid(row=0, column=2, padx=8)
         tk.Button(cat_form, text="🗑️ מחק נבחר", command=self._delete_selected_category, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
 
-        cat_tree_frame = ttk.LabelFrame(parent, text="קטגוריות", padding=6)
+        cat_tree_frame = ttk.LabelFrame(parent, text="תת קטגוריות", padding=6)
         cat_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         cat_cols = ('id','name','created_at')
         self.categories_tree = ttk.Treeview(cat_tree_frame, columns=cat_cols, show='headings', height=10)
-        cat_headers = {'id':'ID','name':'שם','created_at':'נוצר'}
+        cat_headers = {'id':'ID','name':'שם תת קטגוריה','created_at':'נוצר'}
         cat_widths = {'id':60,'name':180,'created_at':140}
         for c in cat_cols:
             self.categories_tree.heading(c, text=cat_headers[c])
@@ -397,10 +397,10 @@ class ProductsCatalogMethodsMixin:
         category_raw = self.prod_category_var.get().strip()
         valid_categories = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         if not category_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור קטגוריה (טאב קטגוריות)")
+            messagebox.showerror("שגיאה", "חובה לבחור תת קטגוריה (טאב תת קטגוריות)")
             return
         if category_raw not in valid_categories:
-            messagebox.showerror("שגיאה", "קטגוריה לא קיימת. הוסף בטאב 'קטגוריות' ובחר שוב")
+            messagebox.showerror("שגיאה", "תת קטגוריה לא קיימת. הוסף בטאב 'תת קטגוריות' ובחר שוב")
             return
         sizes_raw = self.prod_size_var.get().strip()
         ftypes_raw = self.prod_fabric_type_var.get().strip()

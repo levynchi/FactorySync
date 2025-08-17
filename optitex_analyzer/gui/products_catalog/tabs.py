@@ -20,7 +20,7 @@ class ProductsCatalogTabMixin(ProductsCatalogMethodsMixin):
         attributes_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(products_tab, text="מוצרים")
         inner_nb.add(accessories_tab, text="אביזרי תפירה")
-        inner_nb.add(categories_tab, text="קטגוריות")
+        inner_nb.add(categories_tab, text="תת קטגוריות")
         inner_nb.add(attributes_tab, text="תכונות מוצר")
 
         # Build each sub-section
