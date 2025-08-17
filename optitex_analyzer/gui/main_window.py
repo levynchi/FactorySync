@@ -80,6 +80,12 @@ class MainWindow(
         except Exception:
             pass
 
+        # Global context menus (right-click) for text fields
+        try:
+            self._setup_right_click_text_menus()
+        except Exception:
+            pass
+
         # ----- State -----
         self.rib_file = ""
         self.products_file = self.settings.get("app.products_file", "")
@@ -130,6 +136,50 @@ class MainWindow(
         # ----- Footer / Status -----
         self._create_status_bar()
         self._load_initial_settings()
+
+    def _setup_right_click_text_menus(self):
+        """הפעלת תפריט קליק ימני גלובלי לכל שדות הטקסט (Entry/Text) עם 'הדבק'.
+
+        כולל גם פעולות שימושיות נוספות: גזור/העתק/בחר הכל. עובד על Windows.
+        """
+        import tkinter as tk
+        self._rc_menu = tk.Menu(self.root, tearoff=0)
+        # Use closures to send events to the currently targeted widget
+        def do(event_name: str):
+            try:
+                if hasattr(self, '_rc_target') and self._rc_target:
+                    self._rc_target.event_generate(event_name)
+            except Exception:
+                pass
+        self._rc_menu.add_command(label="גזור", command=lambda: do("<<Cut>>"))
+        self._rc_menu.add_command(label="העתק", command=lambda: do("<<Copy>>"))
+        self._rc_menu.add_command(label="הדבק", command=lambda: do("<<Paste>>"))
+        self._rc_menu.add_separator()
+        self._rc_menu.add_command(label="בחר הכל", command=lambda: do("<<SelectAll>>"))
+
+        def show_menu(event):
+            try:
+                self._rc_target = event.widget
+                self._rc_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                try:
+                    self._rc_menu.grab_release()
+                except Exception:
+                    pass
+
+        # Bind to classic Tk widgets and ttk counterparts
+        try:
+            self.root.bind_class("Entry", "<Button-3>", show_menu)
+        except Exception:
+            pass
+        try:
+            self.root.bind_class("TEntry", "<Button-3>", show_menu)
+        except Exception:
+            pass
+        try:
+            self.root.bind_class("Text", "<Button-3>", show_menu)
+        except Exception:
+            pass
     
     def _create_status_bar(self):
         """יצירת שורת הסטטוס"""

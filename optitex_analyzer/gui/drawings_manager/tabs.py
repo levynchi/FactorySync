@@ -12,6 +12,28 @@ class DrawingsManagerTabMixin:
     moved here to organize the feature under its own package.
     """
 
+    # === Helpers: context menu for text inputs ===
+    def _attach_paste_menu(self, widget: tk.Widget):
+        """Attach a simple right-click menu with a Paste action to a text-capable widget (e.g., Entry).
+
+        Windows users expect right-click paste. This binds Button-3 to show a menu with 'הדבק'.
+        """
+        def _show_menu(event, w=widget):
+            try:
+                menu = tk.Menu(w, tearoff=0)
+                menu.add_command(label="הדבק", command=lambda: w.event_generate("<<Paste>>"))
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                try:
+                    menu.grab_release()
+                except Exception:
+                    pass
+            return "break"
+        try:
+            widget.bind("<Button-3>", _show_menu)
+        except Exception:
+            pass
+
     def _create_drawings_manager_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
         self.notebook.add(tab, text="מנהל ציורים")
@@ -94,9 +116,15 @@ class DrawingsManagerTabMixin:
 
         form = tk.Frame(wrapper, bg='#ecf0f1'); form.pack(fill='x', pady=(0, 6))
         tk.Label(form, text="file name:", bg='#ecf0f1').grid(row=0, column=0, sticky='w', padx=6, pady=4)
-        self.pm_file_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_file_name_var, width=26).grid(row=0, column=1, sticky='w', padx=4, pady=4)
+        self.pm_file_name_var = tk.StringVar()
+        file_name_entry = tk.Entry(form, textvariable=self.pm_file_name_var, width=26)
+        file_name_entry.grid(row=0, column=1, sticky='w', padx=4, pady=4)
+        self._attach_paste_menu(file_name_entry)
         tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=10, pady=4)
-        self.pm_product_name_var = tk.StringVar(); tk.Entry(form, textvariable=self.pm_product_name_var, width=26).grid(row=0, column=3, sticky='w', padx=4, pady=4)
+        self.pm_product_name_var = tk.StringVar()
+        product_name_entry = tk.Entry(form, textvariable=self.pm_product_name_var, width=26)
+        product_name_entry.grid(row=0, column=3, sticky='w', padx=4, pady=4)
+        self._attach_paste_menu(product_name_entry)
         tk.Label(form, text="unit quantity:", bg='#ecf0f1').grid(row=0, column=4, sticky='w', padx=10, pady=4)
         self.pm_unit_qty_var = tk.StringVar(value='1')
         self.pm_unit_qty_spin = tk.Spinbox(form, from_=1, to=999, textvariable=self.pm_unit_qty_var, width=5)
