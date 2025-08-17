@@ -122,9 +122,19 @@ class DrawingsManagerTabMixin:
         self._attach_paste_menu(file_name_entry)
         tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=10, pady=4)
         self.pm_product_name_var = tk.StringVar()
-        product_name_entry = tk.Entry(form, textvariable=self.pm_product_name_var, width=26)
-        product_name_entry.grid(row=0, column=3, sticky='w', padx=4, pady=4)
-        self._attach_paste_menu(product_name_entry)
+        # Load model names list and create a combobox for selection
+        try:
+            self._load_model_names_options()
+        except Exception:
+            self._model_names_list = []
+        self.pm_product_name_combo = ttk.Combobox(
+            form,
+            textvariable=self.pm_product_name_var,
+            width=24,
+            values=getattr(self, '_model_names_list', []),
+            state='normal'  # allow typing if list is empty or custom value needed
+        )
+        self.pm_product_name_combo.grid(row=0, column=3, sticky='w', padx=4, pady=4)
         tk.Label(form, text="unit quantity:", bg='#ecf0f1').grid(row=0, column=4, sticky='w', padx=10, pady=4)
         self.pm_unit_qty_var = tk.StringVar(value='1')
         self.pm_unit_qty_spin = tk.Spinbox(form, from_=1, to=999, textvariable=self.pm_unit_qty_var, width=5)
@@ -149,6 +159,40 @@ class DrawingsManagerTabMixin:
 
         self._product_mapping_rows = []  # each row includes optional 'unit quantity'
         self._load_product_mapping_initial()
+
+    # === Model names support ===
+    def _get_model_names_path(self):
+        import os
+        return os.path.join(os.getcwd(), 'model_names.json')
+
+    def _load_model_names_options(self):
+        """Load model names (product names) from model_names.json and update combobox if exists."""
+        import os, json
+        path = self._get_model_names_path()
+        names = []
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                # Expecting list of { id, name, created_at }
+                for item in data or []:
+                    name = (item.get('name') or '').strip()
+                    if name:
+                        names.append(name)
+        except Exception:
+            names = []
+        # unique + sort by name
+        try:
+            names = sorted({n for n in names})
+        except Exception:
+            names = names
+        self._model_names_list = names
+        # Update combobox values if created
+        if hasattr(self, 'pm_product_name_combo'):
+            try:
+                self.pm_product_name_combo['values'] = self._model_names_list
+            except Exception:
+                pass
 
     def _get_products_excel_path(self):
         import os
@@ -182,6 +226,11 @@ class DrawingsManagerTabMixin:
             self.product_mapping_tree.insert('', 'end', values=(row['file name'], row['product name'], row.get('unit quantity', 1)))
 
     def _refresh_product_mapping_table(self):
+        # Refresh available model names and table content
+        try:
+            self._load_model_names_options()
+        except Exception:
+            pass
         self._load_product_mapping_initial()
 
     def _add_product_mapping_row(self):
@@ -228,6 +277,12 @@ class DrawingsManagerTabMixin:
         vals = self.product_mapping_tree.item(sel[0], 'values');
         if not vals: return
         self.pm_file_name_var.set(vals[0]); self.pm_product_name_var.set(vals[1])
+        # ensure combobox shows the selected value
+        try:
+            if hasattr(self, 'pm_product_name_combo'):
+                self.pm_product_name_combo.set(vals[1])
+        except Exception:
+            pass
         if len(vals) > 2:
             try:
                 self.pm_unit_qty_var.set(str(vals[2]))
