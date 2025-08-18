@@ -213,7 +213,7 @@ def build_entry_tab(ctx, container: tk.Frame):
                     pass
             try:
                 ctx.dn_fabric_category_var.set('')
-                dn_print_entry.delete(0, tk.END)
+                ctx.dn_print_combo.set('')
             except Exception:
                 pass
             _update_unit_from_accessory()
@@ -249,7 +249,24 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog match; show as read-only entry (not user-selectable)
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
-    dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
+    # Print name as a read-only Combobox sourced from print_names.json
+    ctx.dn_print_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_print_name_var, width=12, state='readonly')
+    try:
+        import os, json
+        ppath = os.path.join(os.getcwd(), 'print_names.json')
+        names = []
+        if os.path.exists(ppath):
+            with open(ppath, 'r', encoding='utf-8') as f:
+                pdata = json.load(f)
+            if isinstance(pdata, list):
+                for it in pdata:
+                    nm = (it.get('name') or '').strip()
+                    if nm:
+                        names.append(nm)
+        if names:
+            ctx.dn_print_combo['values'] = sorted(set(names))
+    except Exception:
+        pass
 
     # New: Subcategory (from categories.json)
     ctx.dn_category_var = tk.StringVar()
@@ -284,7 +301,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.dn_fabric_type_combo,
         ctx.dn_fabric_color_combo,
         ctx.dn_fabric_category_entry,
-        dn_print_entry,
+    ctx.dn_print_combo,
         ctx.dn_category_combo,
         dn_unit_entry,
         ctx._dn_qty_entry,
@@ -303,8 +320,9 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.grid(row=1, column=(i+1)*2, sticky='w', padx=2)
         except Exception:
             pass
-        # Hide irrelevant fields in accessories mode (indices 1..6)
-        if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
+        mode = ctx.dn_main_category_var.get()
+        # Hide irrelevant fields in accessories mode (indices 1..6). In products mode hide Unit (index 7)
+        if mode == 'אביזרי תפירה':
             for idx in (1,2,3,4,5,6):
                 try:
                     ctx._dn_labels[idx].grid_remove()
@@ -314,6 +332,16 @@ def build_entry_tab(ctx, container: tk.Frame):
                     ctx._dn_widgets[idx].grid_remove()
                 except Exception:
                     pass
+        else:
+            # Products mode: hide Unit field
+            try:
+                ctx._dn_labels[7].grid_remove()
+            except Exception:
+                pass
+            try:
+                ctx._dn_widgets[7].grid_remove()
+            except Exception:
+                pass
 
     def _on_product_change(*_a):
         try:
