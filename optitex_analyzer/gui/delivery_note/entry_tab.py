@@ -104,7 +104,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         if event and event.keysym in ('Escape',):
             _hide_popup(); return
         text = ctx.dn_product_var.get().strip()
-        base = ctx._delivery_products_allowed_full
+        base = ctx._accessories_names if ctx.dn_main_category_var.get() == 'אביזרי תפירה' else ctx._delivery_products_allowed_full
         if not text:
             matches = base[:50]
         else:
@@ -150,6 +150,14 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_product_combo.bind('<FocusOut>', lambda e: ctx.root.after(150, _hide_popup))
 
     def _product_chosen(event=None):
+        # If accessories mode, update unit and focus qty
+        try:
+            if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
+                _update_unit_from_accessory()
+                if hasattr(ctx, '_dn_qty_entry'):
+                    ctx._dn_qty_entry.focus_set(); return
+        except Exception:
+            pass
         try:
             widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
         except Exception:
@@ -224,14 +232,17 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx.dn_unit_var.set('')
 
     try:
-        ctx.dn_main_category_var.trace_add('write', _on_main_category_change)
+        ctx.dn_main_category_var.trace_add('write', lambda *_: (_on_main_category_change(), _apply_mode_visibility()))
     except Exception:
         pass
 
     lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","תת קטגוריה","יחידה","כמות","הערה"]
+    ctx._dn_labels = []
     for i,lbl in enumerate(lbls):
         # shift by +1 column group to make space for main category controls at col 0/1
-        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=(i+1)*2,sticky='w',padx=2)
+        _lab = tk.Label(entry_bar, text=lbl, bg='#f7f9fa')
+        _lab.grid(row=0,column=(i+1)*2,sticky='w',padx=2)
+        ctx._dn_labels.append(_lab)
 
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
@@ -263,6 +274,10 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Create unit entry (read-only)
     dn_unit_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_unit_var, width=10, state='readonly')
 
+    # Keep references for qty and note entries so we can focus/hide them
+    ctx._dn_qty_entry = tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7)
+    ctx._dn_note_entry = tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
+
     widgets = [
         ctx.dn_product_combo,
         ctx.dn_size_combo,
@@ -272,11 +287,33 @@ def build_entry_tab(ctx, container: tk.Frame):
         dn_print_entry,
         ctx.dn_category_combo,
         dn_unit_entry,
-        tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
-        tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
+        ctx._dn_qty_entry,
+        ctx._dn_note_entry
     ]
-    for i,w in enumerate(widgets):
+    ctx._dn_widgets = widgets
+    for i,w in enumerate(ctx._dn_widgets):
         w.grid(row=1,column=(i+1)*2,sticky='w',padx=2)
+
+    def _apply_mode_visibility():
+        # Show all by default
+        try:
+            for i, lab in enumerate(ctx._dn_labels):
+                lab.grid(row=0, column=(i+1)*2, sticky='w', padx=2)
+            for i, w in enumerate(ctx._dn_widgets):
+                w.grid(row=1, column=(i+1)*2, sticky='w', padx=2)
+        except Exception:
+            pass
+        # Hide irrelevant fields in accessories mode (indices 1..6)
+        if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
+            for idx in (1,2,3,4,5,6):
+                try:
+                    ctx._dn_labels[idx].grid_remove()
+                except Exception:
+                    pass
+                try:
+                    ctx._dn_widgets[idx].grid_remove()
+                except Exception:
+                    pass
 
     def _on_product_change(*_a):
         try:
@@ -322,6 +359,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo):
         try: combo.state(['disabled'])
         except Exception: pass
+
+    # Apply initial visibility based on default mode
+    _apply_mode_visibility()
 
     # After adding a new field, shift action buttons to the right to avoid overlap
     _btn_base_col = (len(widgets) + 1) * 2
