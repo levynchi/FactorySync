@@ -24,22 +24,45 @@ class ProductsCatalogMethodsMixin:
         # shift existing rows by +1 to make space for main category row
         tk.Label(form, text="שם הדגם:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         model_names = [r.get('name') for r in getattr(self.data_processor, 'product_model_names', [])]
-        self.model_name_combobox = ttk.Combobox(form, textvariable=self.prod_name_var, values=model_names, state='readonly', width=16, justify='right')
+        self.model_name_combobox = ttk.Combobox(
+            form,
+            textvariable=self.prod_name_var,
+            values=model_names,
+            state='readonly',
+            width=16,
+            justify='right'
+        )
         self.model_name_combobox.grid(row=1, column=1, sticky='w', padx=2, pady=4)
         # map widgets for field visibility: model_name
         self._products_field_widgets['model_name'] = []
         self._products_field_widgets['model_name'].append(self.model_name_combobox)
 
-        tk.Label(form, text="קטגוריה:", font=('Arial',10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
+        # sub category (תת קטגוריה)
+        tk.Label(form, text="תת קטגוריה:", font=('Arial',10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
-        self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
+        self.category_combobox = ttk.Combobox(
+            form,
+            textvariable=self.prod_category_var,
+            values=cat_names,
+            state='readonly',
+            width=12,
+            justify='right'
+        )
         self.category_combobox.grid(row=1, column=3, sticky='w', padx=2, pady=4)
         # sub_category mapping (label+combo will be toggled together)
         # We'll collect after creating label widgets too using winfo_children search if needed
 
+        # fabric category
         tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=1, column=4, sticky='w', padx=4, pady=4)
         fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
-        self.fabric_category_combobox = ttk.Combobox(form, textvariable=self.prod_fabric_category_var, values=fabric_cat_names, state='readonly', width=12, justify='right')
+        self.fabric_category_combobox = ttk.Combobox(
+            form,
+            textvariable=self.prod_fabric_category_var,
+            values=fabric_cat_names,
+            state='readonly',
+            width=12,
+            justify='right'
+        )
         self.fabric_category_combobox.grid(row=1, column=5, sticky='w', padx=2, pady=4)
 
         # multiselect helpers state
@@ -100,10 +123,39 @@ class ProductsCatalogMethodsMixin:
 
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
-        cols = ('id','name','category','size','fabric_type','fabric_color','print_name','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        # Add main_category column for display
+        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
-        headers = {'id':'ID','name':'שם הדגם','category':'קטגוריה','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','print_name':'שם פרינט','fabric_category':'קטגוריית בד','ticks_qty':'טיקטקים','elastic_qty':'גומי','ribbon_qty':'סרט','created_at':'נוצר'}
-        widths = {'id':40,'name':140,'category':90,'size':70,'fabric_type':110,'fabric_color':110,'print_name':110,'fabric_category':120,'ticks_qty':70,'elastic_qty':60,'ribbon_qty':60,'created_at':140}
+        headers = {
+            'id':'ID',
+            'name':'שם הדגם',
+            'main_category':'קטגוריה ראשית',
+            'category':'תת קטגוריה',
+            'size':'מידה',
+            'fabric_type':'סוג בד',
+            'fabric_color':'צבע בד',
+            'print_name':'שם פרינט',
+            'fabric_category':'קטגוריית בד',
+            'ticks_qty':'טיקטקים',
+            'elastic_qty':'גומי',
+            'ribbon_qty':'סרט',
+            'created_at':'נוצר'
+        }
+        widths = {
+            'id':40,
+            'name':140,
+            'main_category':110,
+            'category':100,
+            'size':70,
+            'fabric_type':110,
+            'fabric_color':110,
+            'print_name':110,
+            'fabric_category':120,
+            'ticks_qty':70,
+            'elastic_qty':60,
+            'ribbon_qty':60,
+            'created_at':140
+        }
         for c in cols:
             self.products_tree.heading(c, text=headers[c])
             self.products_tree.column(c, width=widths[c], anchor='center')
@@ -140,7 +192,7 @@ class ProductsCatalogMethodsMixin:
 
         # Map labels explicitly
         lbl_model = _try_find_label("שם הדגם:")
-        lbl_subcat = _try_find_label("קטגוריה:")
+        lbl_subcat = _try_find_label("תת קטגוריה:")
         lbl_fabric_cat = _try_find_label("קטגוריית בד:")
         lbl_sizes = _try_find_label("מידות:")
         lbl_ftype = _try_find_label("סוגי בד:")
@@ -153,16 +205,13 @@ class ProductsCatalogMethodsMixin:
         self._products_field_widgets['model_name'] = [x for x in [lbl_model, self.model_name_combobox] if x]
         self._products_field_widgets['sub_category'] = [x for x in [lbl_subcat, self.category_combobox] if x]
         self._products_field_widgets['fabric_category'] = [x for x in [lbl_fabric_cat, self.fabric_category_combobox] if x]
+
         # sizes group includes picker, readonly entry, clear button
         sizes_widgets = [lbl_sizes, self.size_picker]
-        # find the readonly entry and clear button by variable/command we already have references for
-        # readonly entry is not saved; but we can search by associated StringVar
         for w in form.grid_slaves():
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
-                # there are multiple readonly entries; match the variable name
                 if str(w.cget('textvariable')) == str(self.prod_size_var):
                     sizes_widgets.append(w)
-        # add clear button (direct reference)
         btn_clear_size = getattr(self, 'btn_clear_size', None)
         if btn_clear_size:
             sizes_widgets.append(btn_clear_size)
@@ -174,7 +223,6 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_fabric_type_var):
                     ftype_widgets.append(w)
-        # add clear button (direct reference)
         btn_clear_ftype = getattr(self, 'btn_clear_ftype', None)
         if btn_clear_ftype:
             ftype_widgets.append(btn_clear_ftype)
@@ -186,7 +234,6 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_fabric_color_var):
                     fcolor_widgets.append(w)
-        # add clear button (direct reference)
         btn_clear_fcolor = getattr(self, 'btn_clear_fcolor', None)
         if btn_clear_fcolor:
             fcolor_widgets.append(btn_clear_fcolor)
@@ -198,7 +245,6 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_print_name_var):
                     pname_widgets.append(w)
-        # add clear button (direct reference)
         btn_clear_pname = getattr(self, 'btn_clear_pname', None)
         if btn_clear_pname:
             pname_widgets.append(btn_clear_pname)
@@ -208,7 +254,6 @@ class ProductsCatalogMethodsMixin:
         ticks_widgets = [x for x in [lbl_ticks] if x]
         elastic_widgets = [x for x in [lbl_elastic] if x]
         ribbon_widgets = [x for x in [lbl_ribbon] if x]
-        # entries created above (not readonly) can be matched by textvariable name
         for w in form.grid_slaves():
             if isinstance(w, tk.Entry) and w.cget('state') != 'readonly' and w.cget('textvariable'):
                 tv = str(w.cget('textvariable'))
@@ -537,8 +582,9 @@ class ProductsCatalogMethodsMixin:
         try:
             for rec in getattr(self.data_processor, 'products_catalog', []):
                 fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
+                main_category_value = rec.get('main_category') or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
-                    rec.get('id'), rec.get('name'), rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
+                    rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
                     rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
@@ -812,8 +858,9 @@ class ProductsCatalogMethodsMixin:
                 existing.add(key)
                 added += 1
                 fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
+                main_category_value = self.prod_main_category_var.get().strip() or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
-                    new_id, name, category_raw, sz, ft, fc, pn, fabric_category_value,
+                    new_id, name, main_category_value, category_raw, sz, ft, fc, pn, fabric_category_value,
                     ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
