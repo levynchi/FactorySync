@@ -40,11 +40,17 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_color_var = tk.StringVar(value='לבן')
     ctx.dn_print_name_var = tk.StringVar(value='חלק')
     ctx.dn_fabric_category_var = tk.StringVar()
-
-    # Product list
+    # Main category (Products / Accessories)
+    ctx.dn_main_category_var = tk.StringVar(value='מוצרים')
     ctx._delivery_products_allowed = []
     ctx._refresh_delivery_products_allowed(initial=True)
     ctx._delivery_products_allowed_full = list(ctx._delivery_products_allowed)
+    # Main category chooser controls
+    tk.Label(entry_bar, text='קטגוריה ראשית', bg='#f7f9fa').grid(row=0, column=0, sticky='w', padx=2)
+    ctx.dn_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_main_category_var, width=12, state='readonly', values=['מוצרים','אביזרי תפירה'])
+    ctx.dn_main_category_combo.grid(row=1, column=0, sticky='w', padx=2)
+
+    # Product/Accessory name field
     ctx.dn_product_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_product_var, width=16, state='normal')
     ctx.dn_product_combo['values'] = ctx._delivery_products_allowed_full
 
@@ -153,9 +159,79 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","כמות","הערה"]
+    # Accessories catalog and unit handling
+    ctx.dn_unit_var = tk.StringVar()
+    ctx._accessories_by_name = {}
+    ctx._accessories_names = []
+    try:
+        import os, json
+        apath = os.path.join(os.getcwd(), 'sewing_accessories.json')
+        if os.path.exists(apath):
+            with open(apath, 'r', encoding='utf-8') as f:
+                adata = json.load(f)
+            if isinstance(adata, list):
+                for it in adata:
+                    nm = (it.get('name') or '').strip(); un = (it.get('unit') or '').strip()
+                    if nm:
+                        ctx._accessories_by_name[nm] = un
+                ctx._accessories_names = sorted(ctx._accessories_by_name.keys())
+    except Exception:
+        pass
+
+    def _update_unit_from_accessory(*_a):
+        try:
+            if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
+                nm = (ctx.dn_product_var.get() or '').strip()
+                ctx.dn_unit_var.set(ctx._accessories_by_name.get(nm, ''))
+            else:
+                ctx.dn_unit_var.set('')
+        except Exception:
+            ctx.dn_unit_var.set('')
+
+    def _on_main_category_change(*_a):
+        mode = ctx.dn_main_category_var.get()
+        if mode == 'אביזרי תפירה':
+            # switch product input to accessory list
+            try:
+                ctx.dn_product_combo['values'] = ctx._accessories_names
+                ctx.dn_product_combo.set('')
+            except Exception:
+                pass
+            # disable product-variant combos
+            for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo, ctx.dn_category_combo):
+                try:
+                    combo.set(''); combo.state(['disabled'])
+                except Exception:
+                    pass
+            try:
+                ctx.dn_fabric_category_var.set('')
+                dn_print_entry.delete(0, tk.END)
+            except Exception:
+                pass
+            _update_unit_from_accessory()
+        else:
+            # back to products
+            try:
+                ctx.dn_product_combo['values'] = ctx._delivery_products_allowed_full
+                ctx.dn_product_combo.set('')
+            except Exception:
+                pass
+            for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo, ctx.dn_category_combo):
+                try:
+                    combo.state(['!disabled'])
+                except Exception:
+                    pass
+            ctx.dn_unit_var.set('')
+
+    try:
+        ctx.dn_main_category_var.trace_add('write', _on_main_category_change)
+    except Exception:
+        pass
+
+    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","תת קטגוריה","יחידה","כמות","הערה"]
     for i,lbl in enumerate(lbls):
-        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
+        # shift by +1 column group to make space for main category controls at col 0/1
+        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=(i+1)*2,sticky='w',padx=2)
 
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
@@ -164,7 +240,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
-    # New: General Category (from categories.json)
+    # New: Subcategory (from categories.json)
     ctx.dn_category_var = tk.StringVar()
     ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
     try:
@@ -184,6 +260,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
+    # Create unit entry (read-only)
+    dn_unit_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_unit_var, width=10, state='readonly')
+
     widgets = [
         ctx.dn_product_combo,
         ctx.dn_size_combo,
@@ -192,11 +271,12 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.dn_fabric_category_entry,
         dn_print_entry,
         ctx.dn_category_combo,
+        dn_unit_entry,
         tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
     ]
     for i,w in enumerate(widgets):
-        w.grid(row=1,column=i*2,sticky='w',padx=2)
+        w.grid(row=1,column=(i+1)*2,sticky='w',padx=2)
 
     def _on_product_change(*_a):
         try:
@@ -244,15 +324,15 @@ def build_entry_tab(ctx, container: tk.Frame):
         except Exception: pass
 
     # After adding a new field, shift action buttons to the right to avoid overlap
-    _btn_base_col = len(widgets) * 2
+    _btn_base_col = (len(widgets) + 1) * 2
     tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=_btn_base_col,padx=6)
     tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
     tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
 
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','unit','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'quantity':70,'note':220}
+    headers = {'product':'מוצר/פריט','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'תת קטגוריה','unit':'יחידה','quantity':'כמות','note':'הערה'}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'unit':70,'quantity':70,'note':220}
     for c in cols:
         ctx.delivery_tree.heading(c, text=headers[c])
         ctx.delivery_tree.column(c, width=widths[c], anchor='center')

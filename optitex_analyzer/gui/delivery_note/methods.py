@@ -164,21 +164,55 @@ class DeliveryNoteMethodsMixin:
         fabric_type = self.dn_fabric_type_var.get().strip(); fabric_color = self.dn_fabric_color_var.get().strip(); print_name = self.dn_print_name_var.get().strip() or 'חלק'
         fabric_category = getattr(self, 'dn_fabric_category_var', None)
         fabric_category = fabric_category.get().strip() if fabric_category else ''
+        main_cat = getattr(self, 'dn_main_category_var', None)
+        main_mode = main_cat.get().strip() if isinstance(main_cat, tk.StringVar) else 'מוצרים'
         if not product or not qty_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות"); return
-        if self._delivery_products_allowed and product not in self._delivery_products_allowed:
-            messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד"); return
+            messagebox.showerror("שגיאה", "חובה לבחור פריט ולהזין כמות"); return
         try:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
+        # Validate product name from respective list
+        if main_mode == 'אביזרי תפירה':
+            try:
+                allowed = getattr(self, '_accessories_names', []) or []
+            except Exception:
+                allowed = []
+            if allowed and product not in allowed:
+                messagebox.showerror("שגיאה", "יש לבחור פריט מהרשימה (אביזרי תפירה)"); return
+        else:
+            if self._delivery_products_allowed and product not in self._delivery_products_allowed:
+                messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד"); return
+        # Category/subcategory
         category = getattr(self, 'dn_category_var', None)
         category = category.get().strip() if category else ''
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
+        # Unit (for accessories)
+        unit = getattr(self, 'dn_unit_var', None)
+        unit = unit.get().strip() if isinstance(unit, tk.StringVar) else ''
+        # In accessories mode, ignore product variant fields
+        if main_mode == 'אביזרי תפירה':
+            size = ''
+            fabric_type = ''
+            fabric_color = ''
+            print_name = ''
+            fabric_category = ''
+        line = {
+            'product': product,
+            'size': size,
+            'fabric_type': fabric_type,
+            'fabric_color': fabric_color,
+            'fabric_category': fabric_category,
+            'print_name': print_name,
+            'category': category,
+            'unit': unit,
+            'quantity': qty,
+            'note': note,
+            'kind': 'accessory' if main_mode == 'אביזרי תפירה' else 'product'
+        }
         self._delivery_lines.append(line)
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
+        # Insert into tree with unit column
+        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,unit,qty,note))
+        # clear minimal fields
         self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
         try: self.dn_product_combo['values'] = self._delivery_products_allowed_full
         except Exception: pass
