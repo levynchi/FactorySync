@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "name": "בגדים",
+    "created_at": "2025-08-18 12:42:06",
+    "fields": [
+      "model_name",
+      "sub_category",
+      "fabric_category",
+      "sizes",
+      "fabric_type",
+      "fabric_color",
+      "print_name",
+      "ticks_qty",
+      "elastic_qty",
+      "ribbon_qty"
+    ]
+  }
+]

@@ -11,20 +11,36 @@ class ProductsCatalogMethodsMixin:
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
         self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar()
-        self.prod_fabric_category_var = tk.StringVar()
+        self.prod_fabric_category_var = tk.StringVar(); self.prod_main_category_var = tk.StringVar()
 
-        tk.Label(form, text="שם הדגם:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        # --- Main Category selector (drives field visibility) ---
+        self._products_field_widgets = {}
+        tk.Label(form, text="קטגוריה ראשית:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=(0,6))
+        main_cat_names = [c.get('name','') for c in getattr(self.data_processor, 'main_categories', [])]
+        self.prod_main_category_combobox = ttk.Combobox(form, textvariable=self.prod_main_category_var, values=main_cat_names, state='readonly', width=16, justify='right')
+        self.prod_main_category_combobox.grid(row=0, column=1, sticky='w', padx=2, pady=(0,6))
+        self.prod_main_category_combobox.bind('<<ComboboxSelected>>', lambda e: self._apply_main_category_field_visibility())
+
+        # shift existing rows by +1 to make space for main category row
+        tk.Label(form, text="שם הדגם:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         model_names = [r.get('name') for r in getattr(self.data_processor, 'product_model_names', [])]
         self.model_name_combobox = ttk.Combobox(form, textvariable=self.prod_name_var, values=model_names, state='readonly', width=16, justify='right')
-        self.model_name_combobox.grid(row=0, column=1, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        self.model_name_combobox.grid(row=1, column=1, sticky='w', padx=2, pady=4)
+        # map widgets for field visibility: model_name
+        self._products_field_widgets['model_name'] = []
+        self._products_field_widgets['model_name'].append(self.model_name_combobox)
+
+        tk.Label(form, text="קטגוריה:", font=('Arial',10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         self.category_combobox = ttk.Combobox(form, textvariable=self.prod_category_var, values=cat_names, state='readonly', width=12, justify='right')
-        self.category_combobox.grid(row=0, column=3, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=0, column=4, sticky='w', padx=4, pady=4)
+        self.category_combobox.grid(row=1, column=3, sticky='w', padx=2, pady=4)
+        # sub_category mapping (label+combo will be toggled together)
+        # We'll collect after creating label widgets too using winfo_children search if needed
+
+        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=1, column=4, sticky='w', padx=4, pady=4)
         fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
         self.fabric_category_combobox = ttk.Combobox(form, textvariable=self.prod_fabric_category_var, values=fabric_cat_names, state='readonly', width=12, justify='right')
-        self.fabric_category_combobox.grid(row=0, column=5, sticky='w', padx=2, pady=4)
+        self.fabric_category_combobox.grid(row=1, column=5, sticky='w', padx=2, pady=4)
 
         # multiselect helpers state
         self.selected_sizes = []
@@ -33,44 +49,44 @@ class ProductsCatalogMethodsMixin:
         self.selected_print_names = []
 
         # size
-        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=0, column=6, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
         self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=10, justify='right')
-        self.size_picker.grid(row=0, column=7, sticky='w', padx=2, pady=4)
+        self.size_picker.grid(row=1, column=7, sticky='w', padx=2, pady=4)
         self.size_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('size'))
-        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=0, column=8, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=0, column=9, padx=2)
+        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=1, column=8, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=1, column=9, padx=2)
         # types
-        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=0, column=10, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=1, column=10, sticky='w', padx=4, pady=4)
         self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=10, justify='right')
-        self.ftype_picker.grid(row=0, column=11, sticky='w', padx=2, pady=4)
+        self.ftype_picker.grid(row=1, column=11, sticky='w', padx=2, pady=4)
         self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
-        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=0, column=12, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=0, column=13, padx=2)
+        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=1, column=12, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=1, column=13, padx=2)
         # colors
-        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=0, column=14, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=1, column=14, sticky='w', padx=4, pady=4)
         self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=10, justify='right')
-        self.fcolor_picker.grid(row=0, column=15, sticky='w', padx=2, pady=4)
+        self.fcolor_picker.grid(row=1, column=15, sticky='w', padx=2, pady=4)
         self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
-        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=0, column=16, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=0, column=17, padx=2)
+        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=1, column=16, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=1, column=17, padx=2)
         # prints + accessories
-        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=10, justify='right')
-        self.pname_picker.grid(row=1, column=1, sticky='w', padx=2, pady=4)
+        self.pname_picker.grid(row=2, column=1, sticky='w', padx=2, pady=4)
         self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
-        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=1, column=2, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=1, column=3, padx=2, pady=4)
-        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=1, column=4, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ticks_var, width=8).grid(row=1, column=5, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_elastic_var, width=8).grid(row=1, column=7, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=1, column=8, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ribbon_var, width=8).grid(row=1, column=9, sticky='w', padx=2, pady=4)
+        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=2, column=2, sticky='w', padx=2, pady=4)
+        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=2, column=3, padx=2, pady=4)
+        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=2, column=4, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ticks_var, width=8).grid(row=2, column=5, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=2, column=6, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_elastic_var, width=8).grid(row=2, column=7, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=2, column=8, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ribbon_var, width=8).grid(row=2, column=9, sticky='w', padx=2, pady=4)
 
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=1, column=10, padx=12, pady=4)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=1, column=11, padx=4, pady=4)
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=1, column=12, padx=4, pady=4)
-        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=1, column=13, padx=4, pady=4)
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=2, column=10, padx=12, pady=4)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=2, column=11, padx=4, pady=4)
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=2, column=12, padx=4, pady=4)
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=2, column=13, padx=4, pady=4)
 
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -86,6 +102,119 @@ class ProductsCatalogMethodsMixin:
         self.products_tree.pack(side='left', fill='both', expand=True)
         vs.pack(side='right', fill='y')
         self._load_products_catalog_into_tree()
+
+        # collect field widgets for toggling (labels + inputs/buttons)
+        # Helper to find label widgets by text; if not found we still toggle inputs
+        def _try_find_label(text):
+            for w in form.grid_slaves():
+                if isinstance(w, tk.Label) and str(w.cget('text')) == text:
+                    return w
+            return None
+
+        # Helper to find a widget by grid row/column, optionally class and text
+        def _get_grid_widget(row: int, col: int, cls=None, text: str | None = None):
+            for w in form.grid_slaves():
+                info = w.grid_info()
+                try:
+                    r = int(info.get('row'))
+                    c = int(info.get('column'))
+                except Exception:
+                    continue
+                if r == row and c == col:
+                    if cls and not isinstance(w, cls):
+                        continue
+                    if text is not None and str(getattr(w, 'cget', lambda *_: '')('text')) != text:
+                        continue
+                    return w
+            return None
+
+        # Map labels explicitly
+        lbl_model = _try_find_label("שם הדגם:")
+        lbl_subcat = _try_find_label("קטגוריה:")
+        lbl_fabric_cat = _try_find_label("קטגוריית בד:")
+        lbl_sizes = _try_find_label("מידות:")
+        lbl_ftype = _try_find_label("סוגי בד:")
+        lbl_fcolor = _try_find_label("צבעי בד:")
+        lbl_pname = _try_find_label("שמות פרינט:")
+        lbl_ticks = _try_find_label("טיקטקים:")
+        lbl_elastic = _try_find_label("גומי:")
+        lbl_ribbon = _try_find_label("סרט:")
+
+        self._products_field_widgets['model_name'] = [x for x in [lbl_model, self.model_name_combobox] if x]
+        self._products_field_widgets['sub_category'] = [x for x in [lbl_subcat, self.category_combobox] if x]
+        self._products_field_widgets['fabric_category'] = [x for x in [lbl_fabric_cat, self.fabric_category_combobox] if x]
+        # sizes group includes picker, readonly entry, clear button
+        sizes_widgets = [lbl_sizes, self.size_picker]
+        # find the readonly entry and clear button by variable/command we already have references for
+        # readonly entry is not saved; but we can search by associated StringVar
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
+                # there are multiple readonly entries; match the variable name
+                if str(w.cget('textvariable')) == str(self.prod_size_var):
+                    sizes_widgets.append(w)
+        # add clear button (row=1, col=9)
+        btn_clear_size = _get_grid_widget(1, 9, tk.Button, 'נקה')
+        if btn_clear_size:
+            sizes_widgets.append(btn_clear_size)
+        self._products_field_widgets['sizes'] = [w for w in sizes_widgets if w]
+
+        # fabric type group
+        ftype_widgets = [lbl_ftype, self.ftype_picker]
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
+                if str(w.cget('textvariable')) == str(self.prod_fabric_type_var):
+                    ftype_widgets.append(w)
+        # add clear button (row=1, col=13)
+        btn_clear_ftype = _get_grid_widget(1, 13, tk.Button, 'נקה')
+        if btn_clear_ftype:
+            ftype_widgets.append(btn_clear_ftype)
+        self._products_field_widgets['fabric_type'] = [w for w in ftype_widgets if w]
+
+        # fabric color group
+        fcolor_widgets = [lbl_fcolor, self.fcolor_picker]
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
+                if str(w.cget('textvariable')) == str(self.prod_fabric_color_var):
+                    fcolor_widgets.append(w)
+        # add clear button (row=1, col=17)
+        btn_clear_fcolor = _get_grid_widget(1, 17, tk.Button, 'נקה')
+        if btn_clear_fcolor:
+            fcolor_widgets.append(btn_clear_fcolor)
+        self._products_field_widgets['fabric_color'] = [w for w in fcolor_widgets if w]
+
+        # print name group
+        pname_widgets = [lbl_pname, self.pname_picker]
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
+                if str(w.cget('textvariable')) == str(self.prod_print_name_var):
+                    pname_widgets.append(w)
+        # add clear button (row=2, col=3)
+        btn_clear_pname = _get_grid_widget(2, 3, tk.Button, 'נקה')
+        if btn_clear_pname:
+            pname_widgets.append(btn_clear_pname)
+        self._products_field_widgets['print_name'] = [w for w in pname_widgets if w]
+
+        # quantities
+        ticks_widgets = [x for x in [lbl_ticks] if x]
+        elastic_widgets = [x for x in [lbl_elastic] if x]
+        ribbon_widgets = [x for x in [lbl_ribbon] if x]
+        # entries created above (not readonly) can be matched by textvariable name
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') != 'readonly' and w.cget('textvariable'):
+                tv = str(w.cget('textvariable'))
+                if tv == str(self.prod_ticks_var):
+                    ticks_widgets.append(w)
+                elif tv == str(self.prod_elastic_var):
+                    elastic_widgets.append(w)
+                elif tv == str(self.prod_ribbon_var):
+                    ribbon_widgets.append(w)
+        self._products_field_widgets['ticks_qty'] = ticks_widgets
+        self._products_field_widgets['elastic_qty'] = elastic_widgets
+        self._products_field_widgets['ribbon_qty'] = ribbon_widgets
+
+        # initial visibility
+        self._refresh_main_categories_for_products()
+        self._apply_main_category_field_visibility()
 
     # ===== accessories builders =====
     def _build_accessories_section(self, parent):
@@ -141,15 +270,25 @@ class ProductsCatalogMethodsMixin:
 
     # ===== main categories builders =====
     def _build_main_categories_section(self, parent):
+        # Notebook inside the Main Categories tab
+        mcat_nb = ttk.Notebook(parent)
+        mcat_nb.pack(fill='both', expand=True, padx=8, pady=6)
+
+        manage_tab = tk.Frame(mcat_nb, bg='#f7f9fa')
+        fields_tab = tk.Frame(mcat_nb, bg='#f7f9fa')
+        mcat_nb.add(manage_tab, text='קטגוריות')
+        mcat_nb.add(fields_tab, text='שדות לקטגוריה')
+
+        # Manage tab: add/delete + list
         self.main_cat_name_var = tk.StringVar()
-        mcat_form = ttk.LabelFrame(parent, text="הוספת קטגוריה ראשית", padding=10)
+        mcat_form = ttk.LabelFrame(manage_tab, text="הוספת קטגוריה ראשית", padding=10)
         mcat_form.pack(fill='x', padx=10, pady=6)
         tk.Label(mcat_form, text="שם קטגוריה ראשית:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
         tk.Entry(mcat_form, textvariable=self.main_cat_name_var, width=22).grid(row=0, column=1, padx=4, pady=4)
         tk.Button(mcat_form, text="➕ הוסף", command=self._add_main_category, bg='#27ae60', fg='white').grid(row=0, column=2, padx=8)
         tk.Button(mcat_form, text="🗑️ מחק נבחר", command=self._delete_selected_main_category, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
 
-        mcat_tree_frame = ttk.LabelFrame(parent, text="קטגוריות ראשיות", padding=6)
+        mcat_tree_frame = ttk.LabelFrame(manage_tab, text="קטגוריות ראשיות", padding=6)
         mcat_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         mcat_cols = ('id','name','created_at')
         self.main_categories_tree = ttk.Treeview(mcat_tree_frame, columns=mcat_cols, show='headings', height=10)
@@ -163,6 +302,100 @@ class ProductsCatalogMethodsMixin:
         self.main_categories_tree.pack(side='left', fill='both', expand=True)
         mcat_vs.pack(side='right', fill='y')
         self._load_main_categories_into_tree()
+
+        # Fields tab: assign item fields to main category
+        self._build_main_category_fields_tab(fields_tab)
+
+    def _get_item_fields_defs(self) -> list[tuple[str, str]]:
+        # key, display label mapping for item fields in 'פריטים > הוספת פריט'
+        return [
+            ('model_name', 'שם הדגם'),
+            ('sub_category', 'תת קטגוריה'),
+            ('fabric_category', 'קטגוריית בד'),
+            ('sizes', 'מידות'),
+            ('fabric_type', 'סוגי בד'),
+            ('fabric_color', 'צבעי בד'),
+            ('print_name', 'שמות פרינט'),
+            ('ticks_qty', 'טיקטקים'),
+            ('elastic_qty', 'גומי'),
+            ('ribbon_qty', 'סרט'),
+        ]
+
+    def _build_main_category_fields_tab(self, parent):
+        frm = ttk.LabelFrame(parent, text='שיוך שדות לקטגוריה ראשית', padding=10)
+        frm.pack(fill='both', expand=True, padx=10, pady=8)
+
+        # Category selector
+        tk.Label(frm, text='קטגוריה ראשית:', font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        self.main_cat_fields_var = tk.StringVar()
+        self.main_cat_fields_combo = ttk.Combobox(frm, textvariable=self.main_cat_fields_var, state='readonly', width=24, justify='right')
+        self.main_cat_fields_combo.grid(row=0, column=1, sticky='w', padx=4, pady=4)
+        self.main_cat_fields_combo.bind('<<ComboboxSelected>>', lambda e: self._on_select_main_category_for_fields())
+
+        # Checkboxes
+        fields_defs = self._get_item_fields_defs()
+        self.main_cat_field_vars = {}
+        chk_container = ttk.Frame(frm)
+        chk_container.grid(row=1, column=0, columnspan=3, sticky='w', padx=2, pady=4)
+        col = 0; row = 0
+        for key, label in fields_defs:
+            var = tk.BooleanVar(value=False)
+            self.main_cat_field_vars[key] = var
+            cb = ttk.Checkbutton(chk_container, text=label, variable=var)
+            cb.grid(row=row, column=col, padx=8, pady=4, sticky='w')
+            col += 1
+            if col >= 3:
+                col = 0; row += 1
+
+        # Action buttons
+        tk.Button(frm, text='💾 שמור שדות', command=self._save_main_category_fields, bg='#2c3e50', fg='white').grid(row=2, column=0, padx=4, pady=8, sticky='w')
+        tk.Button(frm, text='אפס בחירה', command=self._reset_main_category_fields).grid(row=2, column=1, padx=4, pady=8, sticky='w')
+
+        # Load categories into combo
+        self._load_main_categories_for_fields()
+
+    def _load_main_categories_for_fields(self):
+        names = [c.get('name','') for c in getattr(self.data_processor, 'main_categories', [])]
+        if hasattr(self, 'main_cat_fields_combo'):
+            self.main_cat_fields_combo['values'] = names
+            # keep selection if still valid
+            cur = self.main_cat_fields_var.get()
+            if cur not in names:
+                self.main_cat_fields_var.set('')
+
+    def _find_main_category_by_name(self, name: str):
+        for c in getattr(self.data_processor, 'main_categories', []):
+            if c.get('name','') == name:
+                return c
+        return None
+
+    def _on_select_main_category_for_fields(self):
+        name = self.main_cat_fields_var.get().strip()
+        rec = self._find_main_category_by_name(name)
+        if not rec:
+            self._reset_main_category_fields()
+            return
+        fields = rec.get('fields') or self.data_processor.get_main_category_fields(rec.get('id'))
+        fields = fields or []
+        for key, var in self.main_cat_field_vars.items():
+            var.set(key in fields)
+
+    def _reset_main_category_fields(self):
+        for var in self.main_cat_field_vars.values():
+            var.set(False)
+
+    def _save_main_category_fields(self):
+        name = self.main_cat_fields_var.get().strip()
+        rec = self._find_main_category_by_name(name)
+        if not rec:
+            messagebox.showerror('שגיאה', 'בחר קטגוריה ראשית לשיוך שדות')
+            return
+        selected_keys = [k for k,v in self.main_cat_field_vars.items() if v.get()]
+        ok = self.data_processor.set_main_category_fields(int(rec.get('id')), selected_keys)
+        if ok:
+            messagebox.showinfo('הצלחה', 'השדות נשמרו לקטגוריה')
+        else:
+            messagebox.showerror('שגיאה', 'שמירת השדות נכשלה')
 
     # ===== attributes builders =====
     def _build_attributes_section(self, attributes_tab):
@@ -360,6 +593,40 @@ class ProductsCatalogMethodsMixin:
         except Exception:
             pass
 
+    def _refresh_main_categories_for_products(self):
+        names = [c.get('name','') for c in getattr(self.data_processor, 'main_categories', [])]
+        if hasattr(self, 'prod_main_category_combobox'):
+            self.prod_main_category_combobox['values'] = names
+            cur = self.prod_main_category_var.get()
+            if cur not in names:
+                self.prod_main_category_var.set('')
+
+    def _apply_main_category_field_visibility(self):
+        # When no main category is selected: hide all product fields.
+        # When selected: show only fields configured for that category.
+        name = self.prod_main_category_var.get().strip() if hasattr(self, 'prod_main_category_var') else ''
+        fields = []
+        if name:
+            rec = self._find_main_category_by_name(name) if hasattr(self, '_find_main_category_by_name') else None
+            if rec:
+                fields = rec.get('fields') or []
+                if not fields and hasattr(self, 'data_processor'):
+                    try:
+                        fields = self.data_processor.get_main_category_fields(rec.get('id'))
+                    except Exception:
+                        fields = []
+        # If no name chosen -> hide everything
+        for key, widgets in getattr(self, '_products_field_widgets', {}).items():
+            visible = (bool(name) and (not fields or key in fields))
+            for w in widgets:
+                try:
+                    if visible:
+                        w.grid()
+                    else:
+                        w.grid_remove()
+                except Exception:
+                    pass
+
     def _add_category(self):
         name = self.cat_name_var.get().strip()
         if not name:
@@ -396,6 +663,7 @@ class ProductsCatalogMethodsMixin:
             new_id = self.data_processor.add_main_category(name)
             self.main_categories_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             self.main_cat_name_var.set('')
+            self._load_main_categories_for_fields()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -411,6 +679,7 @@ class ProductsCatalogMethodsMixin:
                     deleted = True
         if deleted:
             self._load_main_categories_into_tree()
+            self._load_main_categories_for_fields()
 
     def _load_sizes_into_tree(self):
         if not hasattr(self, 'sizes_tree'): return

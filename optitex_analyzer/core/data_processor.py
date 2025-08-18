@@ -1013,7 +1013,12 @@ class DataProcessor:
 				if c.get('name','').strip() == name.strip():
 					raise ValueError("קטגוריה ראשית קיימת")
 			new_id = max([c.get('id',0) for c in self.main_categories], default=0) + 1
-			rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+			rec = {
+				'id': new_id,
+				'name': name.strip(),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+				'fields': []
+			}
 			self.main_categories.append(rec)
 			self.save_main_categories(); return new_id
 		except Exception as e:
@@ -1028,6 +1033,27 @@ class DataProcessor:
 
 	def refresh_main_categories(self):
 		self.main_categories = self.load_main_categories()
+
+	def get_main_category_fields(self, cat_id: int) -> list[str]:
+		try:
+			for c in self.main_categories:
+				if int(c.get('id', 0)) == int(cat_id):
+					fields = c.get('fields')
+					return list(fields) if isinstance(fields, list) else []
+			return []
+		except Exception:
+			return []
+
+	def set_main_category_fields(self, cat_id: int, fields: list[str]) -> bool:
+		try:
+			for c in self.main_categories:
+				if int(c.get('id', 0)) == int(cat_id):
+					c['fields'] = list(fields)
+					self.save_main_categories()
+					return True
+		except Exception:
+			pass
+		return False
 
 	def add_category(self, name: str) -> int:
 		try:
