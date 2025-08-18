@@ -224,6 +224,9 @@ class DeliveryNoteMethodsMixin:
                 self.dn_category_combo['values'] = values
                 if self.dn_category_var.get() and self.dn_category_var.get() not in values:
                     self.dn_category_var.set('')
+                # Default to 'גזרות לא תפורות' if available and nothing chosen
+                if (not self.dn_category_var.get()) and ('גזרות לא תפורות' in values):
+                    self.dn_category_var.set('גזרות לא תפורות')
             except Exception:
                 pass
         except Exception:

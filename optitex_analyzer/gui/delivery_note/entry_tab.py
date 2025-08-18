@@ -230,6 +230,18 @@ def build_entry_tab(ctx, container: tk.Frame):
                 except Exception:
                     pass
             ctx.dn_unit_var.set('')
+            # Default print name to 'חלק' in products mode
+            try:
+                if hasattr(ctx, 'dn_print_combo'):
+                    vals = list(ctx.dn_print_combo['values']) if ctx.dn_print_combo else []
+                    if 'חלק' in vals:
+                        ctx.dn_print_combo.set('חלק')
+                    else:
+                        ctx.dn_print_name_var.set('חלק')
+                else:
+                    ctx.dn_print_name_var.set('חלק')
+            except Exception:
+                pass
 
     try:
         ctx.dn_main_category_var.trace_add('write', lambda *_: (_on_main_category_change(), _apply_mode_visibility()))
@@ -354,6 +366,19 @@ def build_entry_tab(ctx, container: tk.Frame):
             # refresh subcategory options based on chosen product/variant
             if hasattr(ctx, '_update_delivery_subcategory_options'):
                 ctx._update_delivery_subcategory_options()
+            # In products mode, default print name to 'חלק' when product changes and no print selected
+            try:
+                if ctx.dn_main_category_var.get() == 'מוצרים' and not (ctx.dn_print_name_var.get() or '').strip():
+                    if hasattr(ctx, 'dn_print_combo'):
+                        vals = list(ctx.dn_print_combo['values']) if ctx.dn_print_combo else []
+                        if 'חלק' in vals:
+                            ctx.dn_print_combo.set('חלק')
+                        else:
+                            ctx.dn_print_name_var.set('חלק')
+                    else:
+                        ctx.dn_print_name_var.set('חלק')
+            except Exception:
+                pass
         except Exception:
             pass
     try:
