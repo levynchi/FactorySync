@@ -158,6 +158,80 @@ class DeliveryNoteMethodsMixin:
             except Exception:
                 pass
 
+    def _update_delivery_subcategory_options(self):
+        """Populate the 'תת קטגוריה' combobox with options relevant to the selected product/variant.
+        Uses products_catalog 'category' field (comma-separated) from matching records.
+        """
+        try:
+            # If accessories mode, keep disabled/cleared
+            main_mode = getattr(self, 'dn_main_category_var', None)
+            mode = main_mode.get().strip() if isinstance(main_mode, tk.StringVar) else 'מוצרים'
+            if mode == 'אביזרי תפירה':
+                try:
+                    self.dn_category_var.set('')
+                    self.dn_category_combo['values'] = []
+                except Exception:
+                    pass
+                return
+
+            product = (self.dn_product_var.get() or '').strip()
+            if not product:
+                # Fallback to all categories from categories.json (if present)
+                try:
+                    import json
+                    path = os.path.join(os.getcwd(), 'categories.json')
+                    cats = []
+                    if os.path.exists(path):
+                        with open(path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        if isinstance(data, list):
+                            for item in data:
+                                nm = (item.get('name') or '').strip()
+                                if nm:
+                                    cats.append(nm)
+                    self.dn_category_combo['values'] = sorted({c for c in cats})
+                except Exception:
+                    try:
+                        self.dn_category_combo['values'] = []
+                    except Exception:
+                        pass
+                return
+
+            size = (self.dn_size_var.get() or '').strip()
+            ft = (self.dn_fabric_type_var.get() or '').strip()
+            col = (self.dn_fabric_color_var.get() or '').strip()
+            pn = (self.dn_print_name_var.get() or '').strip()
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            cats_set = set()
+            for rec in catalog:
+                if (rec.get('name') or '').strip() != product:
+                    continue
+                if size and (rec.get('size') or '').strip() != size:
+                    continue
+                if ft and (rec.get('fabric_type') or '').strip() != ft:
+                    continue
+                if col and (rec.get('fabric_color') or '').strip() != col:
+                    continue
+                if pn and (rec.get('print_name') or '').strip() != pn:
+                    continue
+                raw = (rec.get('category') or '').strip()
+                if raw:
+                    parts = [p.strip() for p in raw.split(',') if p and p.strip()]
+                    for p in parts:
+                        cats_set.add(p)
+            try:
+                values = sorted(cats_set)
+                self.dn_category_combo['values'] = values
+                if self.dn_category_var.get() and self.dn_category_var.get() not in values:
+                    self.dn_category_var.set('')
+            except Exception:
+                pass
+        except Exception:
+            try:
+                self.dn_category_combo['values'] = []
+            except Exception:
+                pass
+
     # ---- Lines ops ----
     def _add_delivery_line(self):
         product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()

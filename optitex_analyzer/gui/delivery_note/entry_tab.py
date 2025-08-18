@@ -351,6 +351,9 @@ def build_entry_tab(ctx, container: tk.Frame):
             # also recompute fabric category when product changes
             if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                 ctx._update_delivery_fabric_category_auto()
+            # refresh subcategory options based on chosen product/variant
+            if hasattr(ctx, '_update_delivery_subcategory_options'):
+                ctx._update_delivery_subcategory_options()
         except Exception:
             pass
     try:
@@ -364,23 +367,25 @@ def build_entry_tab(ctx, container: tk.Frame):
                 ctx._update_delivery_fabric_color_options()
                 if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                     ctx._update_delivery_fabric_category_auto()
+                if hasattr(ctx, '_update_delivery_subcategory_options'):
+                    ctx._update_delivery_subcategory_options()
             except Exception:
                 pass
         ctx.dn_fabric_type_var.trace_add('write', _on_fabric_type_change)
     except Exception:
         pass
 
-    # When size / color / print name change, try to auto-fill fabric category
+    # When size / color / print name change, update fabric category and subcategory options
     try:
-        ctx.dn_size_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
+        ctx.dn_size_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
     except Exception:
         pass
     try:
-        ctx.dn_fabric_color_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
+        ctx.dn_fabric_color_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
     except Exception:
         pass
     try:
-        ctx.dn_print_name_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
+        ctx.dn_print_name_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
     except Exception:
         pass
 
