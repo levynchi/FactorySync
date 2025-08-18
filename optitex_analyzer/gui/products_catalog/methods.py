@@ -48,45 +48,55 @@ class ProductsCatalogMethodsMixin:
         self.selected_fabric_colors = []
         self.selected_print_names = []
 
-        # size
-        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
-        self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=10, justify='right')
-        self.size_picker.grid(row=1, column=7, sticky='w', padx=2, pady=4)
+        # size (new row for more space)
+        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
+        self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=12, justify='right')
+        self.size_picker.grid(row=2, column=1, sticky='w', padx=2, pady=4)
         self.size_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('size'))
-        tk.Entry(form, textvariable=self.prod_size_var, width=18, state='readonly').grid(row=1, column=8, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4).grid(row=1, column=9, padx=2)
-        # types
-        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=1, column=10, sticky='w', padx=4, pady=4)
-        self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=10, justify='right')
-        self.ftype_picker.grid(row=1, column=11, sticky='w', padx=2, pady=4)
-        self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
-        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=18, state='readonly').grid(row=1, column=12, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4).grid(row=1, column=13, padx=2)
-        # colors
-        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=1, column=14, sticky='w', padx=4, pady=4)
-        self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=10, justify='right')
-        self.fcolor_picker.grid(row=1, column=15, sticky='w', padx=2, pady=4)
-        self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
-        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=18, state='readonly').grid(row=1, column=16, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4).grid(row=1, column=17, padx=2)
-        # prints + accessories
-        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
-        self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=10, justify='right')
-        self.pname_picker.grid(row=2, column=1, sticky='w', padx=2, pady=4)
-        self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
-        tk.Entry(form, textvariable=self.prod_print_name_var, width=18, state='readonly').grid(row=2, column=2, sticky='w', padx=2, pady=4)
-        tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4).grid(row=2, column=3, padx=2, pady=4)
-        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=2, column=4, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ticks_var, width=8).grid(row=2, column=5, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=2, column=6, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_elastic_var, width=8).grid(row=2, column=7, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=2, column=8, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_ribbon_var, width=8).grid(row=2, column=9, sticky='w', padx=2, pady=4)
+        tk.Entry(form, textvariable=self.prod_size_var, width=20, state='readonly').grid(row=2, column=2, sticky='w', padx=2, pady=4)
+        self.btn_clear_size = tk.Button(form, text='נקה', command=lambda: self._clear_attr('size'), width=4)
+        self.btn_clear_size.grid(row=2, column=3, padx=2)
 
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=2, column=10, padx=12, pady=4)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=2, column=11, padx=4, pady=4)
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=2, column=12, padx=4, pady=4)
-        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=2, column=13, padx=4, pady=4)
+        # types (move to its own row for more space)
+        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
+        self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=12, justify='right')
+        self.ftype_picker.grid(row=3, column=1, sticky='w', padx=2, pady=4)
+        self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
+        tk.Entry(form, textvariable=self.prod_fabric_type_var, width=20, state='readonly').grid(row=3, column=2, sticky='w', padx=2, pady=4)
+        self.btn_clear_ftype = tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_type'), width=4)
+        self.btn_clear_ftype.grid(row=3, column=3, padx=2)
+
+        # colors (keep on their own row)
+        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=4, column=0, sticky='w', padx=4, pady=4)
+        self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=12, justify='right')
+        self.fcolor_picker.grid(row=4, column=1, sticky='w', padx=2, pady=4)
+        self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
+        tk.Entry(form, textvariable=self.prod_fabric_color_var, width=20, state='readonly').grid(row=4, column=2, sticky='w', padx=2, pady=4)
+        self.btn_clear_fcolor = tk.Button(form, text='נקה', command=lambda: self._clear_attr('fabric_color'), width=4)
+        self.btn_clear_fcolor.grid(row=4, column=3, padx=2)
+
+        # prints (move to a dedicated row)
+        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=5, column=0, sticky='w', padx=4, pady=4)
+        self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=12, justify='right')
+        self.pname_picker.grid(row=5, column=1, sticky='w', padx=2, pady=4)
+        self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
+        tk.Entry(form, textvariable=self.prod_print_name_var, width=20, state='readonly').grid(row=5, column=2, sticky='w', padx=2, pady=4)
+        self.btn_clear_pname = tk.Button(form, text='נקה', command=lambda: self._clear_attr('print_name'), width=4)
+        self.btn_clear_pname.grid(row=5, column=3, padx=2, pady=4)
+
+        # accessories quantities (move down to separate row)
+        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=6, column=0, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ticks_var, width=10).grid(row=6, column=1, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=6, column=2, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_elastic_var, width=10).grid(row=6, column=3, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=6, column=4, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_ribbon_var, width=10).grid(row=6, column=5, sticky='w', padx=2, pady=4)
+
+        # actions moved to their own row to avoid horizontal clipping
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=7, column=0, padx=12, pady=6, sticky='w')
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=7, column=1, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=7, column=2, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=7, column=3, padx=4, pady=6, sticky='w')
 
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -152,8 +162,8 @@ class ProductsCatalogMethodsMixin:
                 # there are multiple readonly entries; match the variable name
                 if str(w.cget('textvariable')) == str(self.prod_size_var):
                     sizes_widgets.append(w)
-        # add clear button (row=1, col=9)
-        btn_clear_size = _get_grid_widget(1, 9, tk.Button, 'נקה')
+        # add clear button (direct reference)
+        btn_clear_size = getattr(self, 'btn_clear_size', None)
         if btn_clear_size:
             sizes_widgets.append(btn_clear_size)
         self._products_field_widgets['sizes'] = [w for w in sizes_widgets if w]
@@ -164,8 +174,8 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_fabric_type_var):
                     ftype_widgets.append(w)
-        # add clear button (row=1, col=13)
-        btn_clear_ftype = _get_grid_widget(1, 13, tk.Button, 'נקה')
+        # add clear button (direct reference)
+        btn_clear_ftype = getattr(self, 'btn_clear_ftype', None)
         if btn_clear_ftype:
             ftype_widgets.append(btn_clear_ftype)
         self._products_field_widgets['fabric_type'] = [w for w in ftype_widgets if w]
@@ -176,8 +186,8 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_fabric_color_var):
                     fcolor_widgets.append(w)
-        # add clear button (row=1, col=17)
-        btn_clear_fcolor = _get_grid_widget(1, 17, tk.Button, 'נקה')
+        # add clear button (direct reference)
+        btn_clear_fcolor = getattr(self, 'btn_clear_fcolor', None)
         if btn_clear_fcolor:
             fcolor_widgets.append(btn_clear_fcolor)
         self._products_field_widgets['fabric_color'] = [w for w in fcolor_widgets if w]
@@ -188,8 +198,8 @@ class ProductsCatalogMethodsMixin:
             if isinstance(w, tk.Entry) and w.cget('state') == 'readonly' and w.cget('textvariable'):
                 if str(w.cget('textvariable')) == str(self.prod_print_name_var):
                     pname_widgets.append(w)
-        # add clear button (row=2, col=3)
-        btn_clear_pname = _get_grid_widget(2, 3, tk.Button, 'נקה')
+        # add clear button (direct reference)
+        btn_clear_pname = getattr(self, 'btn_clear_pname', None)
         if btn_clear_pname:
             pname_widgets.append(btn_clear_pname)
         self._products_field_widgets['print_name'] = [w for w in pname_widgets if w]
