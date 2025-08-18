@@ -40,17 +40,11 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_color_var = tk.StringVar(value='לבן')
     ctx.dn_print_name_var = tk.StringVar(value='חלק')
     ctx.dn_fabric_category_var = tk.StringVar()
-    # Main category (Products / Accessories)
-    ctx.dn_main_category_var = tk.StringVar(value='מוצרים')
+
+    # Product list
     ctx._delivery_products_allowed = []
     ctx._refresh_delivery_products_allowed(initial=True)
     ctx._delivery_products_allowed_full = list(ctx._delivery_products_allowed)
-    # Main category chooser controls
-    tk.Label(entry_bar, text='קטגוריה ראשית', bg='#f7f9fa').grid(row=0, column=0, sticky='w', padx=2)
-    ctx.dn_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_main_category_var, width=12, state='readonly', values=['מוצרים','אביזרי תפירה'])
-    ctx.dn_main_category_combo.grid(row=1, column=0, sticky='w', padx=2)
-
-    # Product/Accessory name field
     ctx.dn_product_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_product_var, width=16, state='normal')
     ctx.dn_product_combo['values'] = ctx._delivery_products_allowed_full
 
@@ -104,7 +98,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         if event and event.keysym in ('Escape',):
             _hide_popup(); return
         text = ctx.dn_product_var.get().strip()
-        base = ctx._accessories_names if ctx.dn_main_category_var.get() == 'אביזרי תפירה' else ctx._delivery_products_allowed_full
+        base = ctx._delivery_products_allowed_full
         if not text:
             matches = base[:50]
         else:
@@ -150,14 +144,6 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_product_combo.bind('<FocusOut>', lambda e: ctx.root.after(150, _hide_popup))
 
     def _product_chosen(event=None):
-        # If accessories mode, update unit and focus qty
-        try:
-            if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
-                _update_unit_from_accessory()
-                if hasattr(ctx, '_dn_qty_entry'):
-                    ctx._dn_qty_entry.focus_set(); return
-        except Exception:
-            pass
         try:
             widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
         except Exception:
@@ -167,120 +153,18 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Accessories catalog and unit handling
-    ctx.dn_unit_var = tk.StringVar()
-    ctx._accessories_by_name = {}
-    ctx._accessories_names = []
-    try:
-        import os, json
-        apath = os.path.join(os.getcwd(), 'sewing_accessories.json')
-        if os.path.exists(apath):
-            with open(apath, 'r', encoding='utf-8') as f:
-                adata = json.load(f)
-            if isinstance(adata, list):
-                for it in adata:
-                    nm = (it.get('name') or '').strip(); un = (it.get('unit') or '').strip()
-                    if nm:
-                        ctx._accessories_by_name[nm] = un
-                ctx._accessories_names = sorted(ctx._accessories_by_name.keys())
-    except Exception:
-        pass
-
-    def _update_unit_from_accessory(*_a):
-        try:
-            if ctx.dn_main_category_var.get() == 'אביזרי תפירה':
-                nm = (ctx.dn_product_var.get() or '').strip()
-                ctx.dn_unit_var.set(ctx._accessories_by_name.get(nm, ''))
-            else:
-                ctx.dn_unit_var.set('')
-        except Exception:
-            ctx.dn_unit_var.set('')
-
-    def _on_main_category_change(*_a):
-        mode = ctx.dn_main_category_var.get()
-        if mode == 'אביזרי תפירה':
-            # switch product input to accessory list
-            try:
-                ctx.dn_product_combo['values'] = ctx._accessories_names
-                ctx.dn_product_combo.set('')
-            except Exception:
-                pass
-            # disable product-variant combos
-            for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo, ctx.dn_category_combo):
-                try:
-                    combo.set(''); combo.state(['disabled'])
-                except Exception:
-                    pass
-            try:
-                ctx.dn_fabric_category_var.set('')
-                ctx.dn_print_combo.set('')
-            except Exception:
-                pass
-            _update_unit_from_accessory()
-        else:
-            # back to products
-            try:
-                ctx.dn_product_combo['values'] = ctx._delivery_products_allowed_full
-                ctx.dn_product_combo.set('')
-            except Exception:
-                pass
-            for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo, ctx.dn_category_combo):
-                try:
-                    combo.state(['!disabled'])
-                except Exception:
-                    pass
-            ctx.dn_unit_var.set('')
-            # Default print name to 'חלק' in products mode
-            try:
-                if hasattr(ctx, 'dn_print_combo'):
-                    vals = list(ctx.dn_print_combo['values']) if ctx.dn_print_combo else []
-                    if 'חלק' in vals:
-                        ctx.dn_print_combo.set('חלק')
-                    else:
-                        ctx.dn_print_name_var.set('חלק')
-                else:
-                    ctx.dn_print_name_var.set('חלק')
-            except Exception:
-                pass
-
-    try:
-        ctx.dn_main_category_var.trace_add('write', lambda *_: (_on_main_category_change(), _apply_mode_visibility()))
-    except Exception:
-        pass
-
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","תת קטגוריה","יחידה","כמות","הערה"]
-    ctx._dn_labels = []
+    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","כמות","הערה"]
     for i,lbl in enumerate(lbls):
-        # shift by +1 column group to make space for main category controls at col 0/1
-        _lab = tk.Label(entry_bar, text=lbl, bg='#f7f9fa')
-        _lab.grid(row=0,column=(i+1)*2,sticky='w',padx=2)
-        ctx._dn_labels.append(_lab)
+        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog match; show as read-only entry (not user-selectable)
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
-    # Print name as a read-only Combobox sourced from print_names.json
-    ctx.dn_print_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_print_name_var, width=12, state='readonly')
-    try:
-        import os, json
-        ppath = os.path.join(os.getcwd(), 'print_names.json')
-        names = []
-        if os.path.exists(ppath):
-            with open(ppath, 'r', encoding='utf-8') as f:
-                pdata = json.load(f)
-            if isinstance(pdata, list):
-                for it in pdata:
-                    nm = (it.get('name') or '').strip()
-                    if nm:
-                        names.append(nm)
-        if names:
-            ctx.dn_print_combo['values'] = sorted(set(names))
-    except Exception:
-        pass
+    dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
-    # New: Subcategory (from categories.json)
+    # New: General Category (from categories.json)
     ctx.dn_category_var = tk.StringVar()
     ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
     try:
@@ -300,60 +184,19 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    # Create unit entry (read-only)
-    dn_unit_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_unit_var, width=10, state='readonly')
-
-    # Keep references for qty and note entries so we can focus/hide them
-    ctx._dn_qty_entry = tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7)
-    ctx._dn_note_entry = tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
-
     widgets = [
         ctx.dn_product_combo,
         ctx.dn_size_combo,
         ctx.dn_fabric_type_combo,
         ctx.dn_fabric_color_combo,
         ctx.dn_fabric_category_entry,
-    ctx.dn_print_combo,
+        dn_print_entry,
         ctx.dn_category_combo,
-        dn_unit_entry,
-        ctx._dn_qty_entry,
-        ctx._dn_note_entry
+        tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
+        tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
     ]
-    ctx._dn_widgets = widgets
-    for i,w in enumerate(ctx._dn_widgets):
-        w.grid(row=1,column=(i+1)*2,sticky='w',padx=2)
-
-    def _apply_mode_visibility():
-        # Show all by default
-        try:
-            for i, lab in enumerate(ctx._dn_labels):
-                lab.grid(row=0, column=(i+1)*2, sticky='w', padx=2)
-            for i, w in enumerate(ctx._dn_widgets):
-                w.grid(row=1, column=(i+1)*2, sticky='w', padx=2)
-        except Exception:
-            pass
-        mode = ctx.dn_main_category_var.get()
-        # Hide irrelevant fields in accessories mode (indices 1..6). In products mode hide Unit (index 7)
-        if mode == 'אביזרי תפירה':
-            for idx in (1,2,3,4,5,6):
-                try:
-                    ctx._dn_labels[idx].grid_remove()
-                except Exception:
-                    pass
-                try:
-                    ctx._dn_widgets[idx].grid_remove()
-                except Exception:
-                    pass
-        else:
-            # Products mode: hide Unit field
-            try:
-                ctx._dn_labels[7].grid_remove()
-            except Exception:
-                pass
-            try:
-                ctx._dn_widgets[7].grid_remove()
-            except Exception:
-                pass
+    for i,w in enumerate(widgets):
+        w.grid(row=1,column=i*2,sticky='w',padx=2)
 
     def _on_product_change(*_a):
         try:
@@ -363,22 +206,6 @@ def build_entry_tab(ctx, container: tk.Frame):
             # also recompute fabric category when product changes
             if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                 ctx._update_delivery_fabric_category_auto()
-            # refresh subcategory options based on chosen product/variant
-            if hasattr(ctx, '_update_delivery_subcategory_options'):
-                ctx._update_delivery_subcategory_options()
-            # In products mode, default print name to 'חלק' when product changes and no print selected
-            try:
-                if ctx.dn_main_category_var.get() == 'מוצרים' and not (ctx.dn_print_name_var.get() or '').strip():
-                    if hasattr(ctx, 'dn_print_combo'):
-                        vals = list(ctx.dn_print_combo['values']) if ctx.dn_print_combo else []
-                        if 'חלק' in vals:
-                            ctx.dn_print_combo.set('חלק')
-                        else:
-                            ctx.dn_print_name_var.set('חלק')
-                    else:
-                        ctx.dn_print_name_var.set('חלק')
-            except Exception:
-                pass
         except Exception:
             pass
     try:
@@ -392,25 +219,23 @@ def build_entry_tab(ctx, container: tk.Frame):
                 ctx._update_delivery_fabric_color_options()
                 if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                     ctx._update_delivery_fabric_category_auto()
-                if hasattr(ctx, '_update_delivery_subcategory_options'):
-                    ctx._update_delivery_subcategory_options()
             except Exception:
                 pass
         ctx.dn_fabric_type_var.trace_add('write', _on_fabric_type_change)
     except Exception:
         pass
 
-    # When size / color / print name change, update fabric category and subcategory options
+    # When size / color / print name change, try to auto-fill fabric category
     try:
-        ctx.dn_size_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
+        ctx.dn_size_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
     except Exception:
         pass
     try:
-        ctx.dn_fabric_color_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
+        ctx.dn_fabric_color_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
     except Exception:
         pass
     try:
-        ctx.dn_print_name_var.trace_add('write', lambda *_: (getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)(), getattr(ctx, '_update_delivery_subcategory_options', lambda: None)()))
+        ctx.dn_print_name_var.trace_add('write', lambda *_: getattr(ctx, '_update_delivery_fabric_category_auto', lambda: None)())
     except Exception:
         pass
 
@@ -418,19 +243,16 @@ def build_entry_tab(ctx, container: tk.Frame):
         try: combo.state(['disabled'])
         except Exception: pass
 
-    # Apply initial visibility based on default mode
-    _apply_mode_visibility()
-
     # After adding a new field, shift action buttons to the right to avoid overlap
-    _btn_base_col = (len(widgets) + 1) * 2
+    _btn_base_col = len(widgets) * 2
     tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=_btn_base_col,padx=6)
     tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
     tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
 
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','unit','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
-    headers = {'product':'מוצר/פריט','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'תת קטגוריה','unit':'יחידה','quantity':'כמות','note':'הערה'}
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'unit':70,'quantity':70,'note':220}
+    headers = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה','quantity':'כמות','note':'הערה'}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'quantity':70,'note':220}
     for c in cols:
         ctx.delivery_tree.heading(c, text=headers[c])
         ctx.delivery_tree.column(c, width=widths[c], anchor='center')

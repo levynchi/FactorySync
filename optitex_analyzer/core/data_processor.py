@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -37,6 +37,8 @@ class DataProcessor:
 		self.fabric_categories_file = fabric_categories_file
 		# קובץ 'שם הדגם'
 		self.model_names_file = model_names_file
+		# קובץ קטגוריה ראשית
+		self.main_categories_file = main_categories_file
 		# load base datasets
 		self.drawings_data = self.load_drawings_data()
 		self.fabrics_inventory = self.load_fabrics_inventory()
@@ -44,6 +46,7 @@ class DataProcessor:
 		self.products_catalog = self.load_products_catalog()
 		self.sewing_accessories = self.load_sewing_accessories()
 		self.categories = self.load_categories()
+		self.main_categories = self.load_main_categories()
 		# טעינת תכונות מוצר (מידות, סוגי בד, צבעי בד, שמות פרינט)
 		self.product_sizes = self.load_product_sizes()
 		self.product_fabric_types = self.load_fabric_types()
@@ -981,6 +984,50 @@ class DataProcessor:
 			return True
 		except Exception as e:
 			print(f"שגיאה בשמירת קטגוריות: {e}"); return False
+
+	# ===== Main Categories Management =====
+	def load_main_categories(self) -> List[Dict]:
+		try:
+			if os.path.exists(self.main_categories_file):
+				with open(self.main_categories_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					if isinstance(data, list):
+						return data
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת קטגוריות ראשיות: {e}"); return []
+
+	def save_main_categories(self) -> bool:
+		try:
+			with open(self.main_categories_file, 'w', encoding='utf-8') as f:
+				json.dump(self.main_categories, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת קטגוריות ראשיות: {e}"); return False
+
+	def add_main_category(self, name: str) -> int:
+		try:
+			if not name:
+				raise ValueError("חובה להזין שם קטגוריה ראשית")
+			for c in self.main_categories:
+				if c.get('name','').strip() == name.strip():
+					raise ValueError("קטגוריה ראשית קיימת")
+			new_id = max([c.get('id',0) for c in self.main_categories], default=0) + 1
+			rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+			self.main_categories.append(rec)
+			self.save_main_categories(); return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת קטגוריה ראשית: {str(e)}")
+
+	def delete_main_category(self, cat_id: int) -> bool:
+		before = len(self.main_categories)
+		self.main_categories = [c for c in self.main_categories if int(c.get('id',0)) != int(cat_id)]
+		if len(self.main_categories) != before:
+			self.save_main_categories(); return True
+		return False
+
+	def refresh_main_categories(self):
+		self.main_categories = self.load_main_categories()
 
 	def add_category(self, name: str) -> int:
 		try:
