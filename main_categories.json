@@ -20,6 +20,8 @@
     "id": 2,
     "name": "אביזרי תפירה",
     "created_at": "2025-08-19 06:39:17",
-    "fields": []
+    "fields": [
+      "unit_type"
+    ]
   }
 ]

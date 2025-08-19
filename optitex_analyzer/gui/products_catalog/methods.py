@@ -10,7 +10,7 @@ class ProductsCatalogMethodsMixin:
         form = ttk.LabelFrame(parent, text="הוספת פריט", padding=10)
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
-        self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar()
+        self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar(); self.prod_unit_type_var = tk.StringVar()
         self.prod_fabric_category_var = tk.StringVar(); self.prod_main_category_var = tk.StringVar()
 
         # --- Main Category selector (drives field visibility) ---
@@ -123,6 +123,9 @@ class ProductsCatalogMethodsMixin:
         tk.Entry(form, textvariable=self.prod_elastic_var, width=10).grid(row=6, column=3, sticky='w', padx=2, pady=4)
         tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=6, column=4, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_ribbon_var, width=10).grid(row=6, column=5, sticky='w', padx=2, pady=4)
+        # Unit Type (סוג יחידה)
+        tk.Label(form, text="סוג יחידה:", font=('Arial',10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_unit_type_var, width=12).grid(row=6, column=7, sticky='w', padx=2, pady=4)
 
         # actions moved to their own row to avoid horizontal clipping
         tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=7, column=0, padx=12, pady=6, sticky='w')
@@ -210,6 +213,7 @@ class ProductsCatalogMethodsMixin:
         lbl_ticks = _try_find_label("טיקטקים:")
         lbl_elastic = _try_find_label("גומי:")
         lbl_ribbon = _try_find_label("סרט:")
+        lbl_unit_type = _try_find_label("סוג יחידה:")
 
         self._products_field_widgets['model_name'] = [x for x in [lbl_model, self.model_name_combobox] if x]
         # include readonly entry and clear for sub_category
@@ -280,6 +284,13 @@ class ProductsCatalogMethodsMixin:
         self._products_field_widgets['ticks_qty'] = ticks_widgets
         self._products_field_widgets['elastic_qty'] = elastic_widgets
         self._products_field_widgets['ribbon_qty'] = ribbon_widgets
+        # unit type group
+        unit_widgets = [x for x in [lbl_unit_type] if x]
+        for w in form.grid_slaves():
+            if isinstance(w, tk.Entry) and w.cget('state') != 'readonly' and w.cget('textvariable'):
+                if str(w.cget('textvariable')) == str(self.prod_unit_type_var):
+                    unit_widgets.append(w)
+        self._products_field_widgets['unit_type'] = unit_widgets
 
         # initial visibility
         self._refresh_main_categories_for_products()
@@ -381,6 +392,7 @@ class ProductsCatalogMethodsMixin:
             ('model_name', 'שם הדגם'),
             ('sub_category', 'תת קטגוריה'),
             ('fabric_category', 'קטגוריית בד'),
+            ('unit_type', 'סוג יחידה'),
             ('sizes', 'מידות'),
             ('fabric_type', 'סוגי בד'),
             ('fabric_color', 'צבעי בד'),
