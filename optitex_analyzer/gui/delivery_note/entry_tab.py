@@ -38,7 +38,8 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_note_var = tk.StringVar()
     ctx.dn_fabric_type_var = tk.StringVar()
     ctx.dn_fabric_color_var = tk.StringVar(value='לבן')
-    ctx.dn_print_name_var = tk.StringVar(value='חלק')
+    # Default print name empty; will be populated only when applicable
+    ctx.dn_print_name_var = tk.StringVar(value='')
     ctx.dn_fabric_category_var = tk.StringVar()
 
     # Product list
@@ -170,7 +171,8 @@ def build_entry_tab(ctx, container: tk.Frame):
         pass
 
     # Sub Category (from categories.json)
-    ctx.dn_category_var = tk.StringVar(value='גזרות לא תפורות')
+    # Standardize default to 'גזרות שלא נתפרו' (instead of the older 'גזרות לא תפורות')
+    ctx.dn_category_var = tk.StringVar(value='גזרות שלא נתפרו')
     ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
     try:
         import os, json
@@ -184,8 +186,8 @@ def build_entry_tab(ctx, container: tk.Frame):
                     name = (item.get('name') or '').strip()
                     if name:
                         cats.append(name)
-        # Ensure default subcategory exists in values
-        cats = sorted({c for c in cats} | {'גזרות לא תפורות'})
+        # Ensure standardized default subcategory exists in values
+        cats = sorted({c for c in cats} | {'גזרות שלא נתפרו'})
         ctx.dn_category_combo['values'] = cats
         # If default not present, it's already injected above; keep default selection
     except Exception:
@@ -279,6 +281,8 @@ def build_entry_tab(ctx, container: tk.Frame):
         visible_keys = []
         # Base order for fields in the row
         order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name','sub_category']
+        mc_has_print = False
+        mc_has_sub = False
         if selected:
             rec = _find_main_category_by_name(selected)
             fields = []
@@ -289,6 +293,8 @@ def build_entry_tab(ctx, container: tk.Frame):
                         fields = ctx.data_processor.get_main_category_fields(rec.get('id')) or []
                     except Exception:
                         fields = []
+            mc_has_print = ('print_name' in (fields or []))
+            mc_has_sub = ('sub_category' in (fields or []))
             # Always show main_category and model_name; add the rest according to configured fields
             visible_keys = ['main_category','model_name'] + [k for k in order if k in fields]
         else:
@@ -318,6 +324,19 @@ def build_entry_tab(ctx, container: tk.Frame):
         btn_del.grid(row=1, column=col+1, padx=4)
         btn_clr.grid(row=1, column=col+2, padx=4)
 
+        # If print_name is not part of this main category, clear its value
+        try:
+            if not mc_has_print:
+                ctx.dn_print_name_var.set('')
+        except Exception:
+            pass
+        # If sub_category is not part of this main category, clear its value
+        try:
+            if not mc_has_sub:
+                ctx.dn_category_var.set('')
+        except Exception:
+            pass
+
     # Initial layout
     _apply_layout_for_main_category()
 
@@ -336,14 +355,38 @@ def build_entry_tab(ctx, container: tk.Frame):
         try:
             if hasattr(ctx, '_refresh_delivery_print_name_options'):
                 ctx._refresh_delivery_print_name_options()
-                # Clear selection if no longer valid
+                # If print_name isn't a field in this main category, clear it and clear list
                 try:
-                    vals = list(getattr(ctx.dn_print_name_combo, '__getitem__', lambda k: [])('values') or [])
+                    mc = (ctx.dn_main_category_var.get() or '').strip()
+                    has_print = False
+                    if mc:
+                        for c in getattr(ctx.data_processor, 'main_categories', []) or []:
+                            if (c.get('name') or '').strip() == mc:
+                                fields = (c.get('fields') or [])
+                                if (not fields) and hasattr(ctx.data_processor, 'get_main_category_fields'):
+                                    try:
+                                        fields = ctx.data_processor.get_main_category_fields(c.get('id')) or []
+                                    except Exception:
+                                        fields = []
+                                has_print = 'print_name' in (fields or [])
+                                break
+                    if not has_print:
+                        ctx.dn_print_name_var.set('')
+                        try:
+                            ctx.dn_print_name_combo['values'] = []
+                        except Exception:
+                            pass
+                    else:
+                        # Clear selection if not valid under the refreshed list
+                        try:
+                            vals = list(ctx.dn_print_name_combo['values'] or [])
+                        except Exception:
+                            vals = []
+                        cur = (ctx.dn_print_name_var.get() or '').strip()
+                        if cur and vals and cur not in vals:
+                            ctx.dn_print_name_var.set('')
                 except Exception:
-                    vals = []
-                cur = (ctx.dn_print_name_var.get() or '').strip()
-                if cur and vals and cur not in vals:
-                    ctx.dn_print_name_var.set('')
+                    pass
         except Exception:
             pass
         # Clear product and dependent selections as their domains changed
@@ -377,6 +420,29 @@ def build_entry_tab(ctx, container: tk.Frame):
             # Update print-name options to those available for this product (or fallback by main category)
             if hasattr(ctx, '_refresh_delivery_print_name_options'):
                 ctx._refresh_delivery_print_name_options()
+                # Respect main category: if print_name is not allowed, clear value/options
+                try:
+                    mc = (ctx.dn_main_category_var.get() or '').strip()
+                    has_print = False
+                    if mc:
+                        for c in getattr(ctx.data_processor, 'main_categories', []) or []:
+                            if (c.get('name') or '').strip() == mc:
+                                fields = (c.get('fields') or [])
+                                if (not fields) and hasattr(ctx.data_processor, 'get_main_category_fields'):
+                                    try:
+                                        fields = ctx.data_processor.get_main_category_fields(c.get('id')) or []
+                                    except Exception:
+                                        fields = []
+                                has_print = 'print_name' in (fields or [])
+                                break
+                    if not has_print:
+                        ctx.dn_print_name_var.set('')
+                        try:
+                            ctx.dn_print_name_combo['values'] = []
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
             # also recompute fabric category when product changes
             if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                 ctx._update_delivery_fabric_category_auto()

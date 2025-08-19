@@ -493,6 +493,25 @@ class ProductsBalanceTabMixin:
                 self._build_products_balance_tree(by_size)
             except Exception:
                 pass
+        # עזר: מיפוי מוצר -> קטגוריה ראשית (עם נפילה ל"בגדים" כברירת מחדל)
+        try:
+            model_names = getattr(self.data_processor, 'product_model_names', []) or []
+        except Exception:
+            model_names = []
+        name_to_main = {}
+        try:
+            for m in model_names:
+                n = (m.get('name') or '').strip()
+                if not n:
+                    continue
+                name_to_main[n] = (m.get('main_category') or 'בגדים').strip()
+        except Exception:
+            pass
+        def _main_cat_of(n: str) -> str:
+            try:
+                return (name_to_main.get((n or '').strip()) or 'בגדים').strip()
+            except Exception:
+                return 'בגדים'
         include_cuts = bool(getattr(self, 'include_cuts_in_shipped_var', tk.BooleanVar(value=False)).get())
         shipped = {}
         received = {}
@@ -506,6 +525,16 @@ class ProductsBalanceTabMixin:
                     size = (ln.get('size') or '').strip()
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
+                        continue
+                    # סינון: נשלח רק כאשר קטגוריה ראשית=בגדים ותת קטגוריה=גזרות שלא נתפרו
+                    try:
+                        mc = _main_cat_of(name)
+                        subc = (ln.get('category') or '').strip()
+                        # accept both the standardized and the legacy label
+                        sent_sub_ok = subc in ('גזרות שלא נתפרו', 'גזרות לא תפורות')
+                        if not (mc == 'בגדים' and sent_sub_ok):
+                            continue
+                    except Exception:
                         continue
                     # קביעת קטגורית בד לשיוך: לפי השורה, ואם חסר – לפי majority בקטלוג
                     f_cat_line = (ln.get('fabric_category') or '').strip()
@@ -528,6 +557,15 @@ class ProductsBalanceTabMixin:
                     size = (ln.get('size') or '').strip()
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
+                        continue
+                    # סינון: התקבל כאשר קטגוריה ראשית=בגדים ותת קטגוריה=בגדים תפורים
+                    # (כעת ללא חובה ש"חזר מציור" יהיה 'כן')
+                    try:
+                        mc = _main_cat_of(name)
+                        subc = (ln.get('category') or '').strip()
+                        if not (mc == 'בגדים' and subc == 'בגדים תפורים'):
+                            continue
+                    except Exception:
                         continue
                     f_cat_line = (ln.get('fabric_category') or '').strip()
                     if not f_cat_line:
@@ -577,7 +615,8 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
         # בניית שורות מאוחדות + החלת מסננים
-        keys = sorted(set(list(shipped.keys()) + list(received.keys())))
+        # מציגים רק מוצרים שנשלחו (כפי שנתבקש) – ולכן מפתחות רק מתוך shipped
+        keys = sorted(set(list(shipped.keys())))
         search_txt = (getattr(self, 'balance_search_var', tk.StringVar()).get() or '').strip().lower()
         only_pending = bool(getattr(self, 'balance_only_pending_var', tk.BooleanVar()).get())
         for key in keys:
