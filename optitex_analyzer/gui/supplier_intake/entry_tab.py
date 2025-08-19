@@ -168,6 +168,31 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Fabric category is auto-filled from products_catalog; show as read-only entry
     ctx.sup_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.sup_fabric_category_var, width=14, state='readonly')
     ctx.sup_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_print_name_var, width=12, state='readonly')
+    # Sub Category (from categories.json) – default to 'בגדים תפורים'
+    ctx.sup_category_var = tk.StringVar(value='בגדים תפורים')
+    ctx.sup_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_category_var, width=14, state='readonly')
+    try:
+        import os, json
+        path = os.path.join(os.getcwd(), 'categories.json')
+        cats = []
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                for item in data:
+                    name = (item.get('name') or '').strip()
+                    if name:
+                        cats.append(name)
+        cats = sorted({c for c in cats} | {'בגדים תפורים'})
+        # Normalize default if exists in list
+        try:
+            if 'בגדים תפורים' in cats:
+                ctx.sup_category_var.set('בגדים תפורים')
+        except Exception:
+            pass
+        ctx.sup_category_combo['values'] = cats
+    except Exception:
+        pass
     # Returned from drawing selector and Drawing ID selection (from drawings_data.json)
     ctx.sup_returned_from_drawing_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_returned_from_drawing_var, width=10, state='readonly', values=['לא','כן'])
     ctx.sup_drawing_id_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_drawing_id_var, width=10, state='disabled')
@@ -179,12 +204,17 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    # Main Category (values from data_processor.main_categories)
-    ctx.sup_main_category_var = tk.StringVar()
+    # Main Category (values from data_processor.main_categories) – default 'בגדים'
+    ctx.sup_main_category_var = tk.StringVar(value='בגדים')
     ctx.sup_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_main_category_var, width=14, state='readonly')
     try:
         names = [c.get('name','') for c in getattr(ctx.data_processor, 'main_categories', [])]
         ctx.sup_main_category_combo['values'] = names
+        if 'בגדים' in names:
+            try:
+                ctx.sup_main_category_var.set('בגדים')
+            except Exception:
+                pass
     except Exception:
         try:
             import json, os
@@ -196,6 +226,11 @@ def build_entry_tab(ctx, container: tk.Frame):
                 if isinstance(data, list):
                     names = [ (d.get('name') or '').strip() for d in data if (d.get('name') or '').strip() ]
             ctx.sup_main_category_combo['values'] = names
+            if 'בגדים' in names:
+                try:
+                    ctx.sup_main_category_var.set('בגדים')
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -208,6 +243,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'fabric_color': 'צבע בד',
         'fabric_category': 'קטגורית בד',
         'print_name': 'שם פרינט',
+        'sub_category': 'תת קטגוריה',
         'returned_from_drawing': 'חזר מציור',
         'drawing_id': "מס' ציור",
         'quantity': 'כמות',
@@ -226,6 +262,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'fabric_color': (label_widgets['fabric_color'], ctx.sup_fabric_color_combo),
         'fabric_category': (label_widgets['fabric_category'], ctx.sup_fabric_category_entry),
         'print_name': (label_widgets['print_name'], ctx.sup_print_name_combo),
+        'sub_category': (label_widgets['sub_category'], ctx.sup_category_combo),
         'returned_from_drawing': (label_widgets['returned_from_drawing'], ctx.sup_returned_from_drawing_combo),
         'drawing_id': (label_widgets['drawing_id'], ctx.sup_drawing_id_combo),
         'quantity': (label_widgets['quantity'], qty_entry),
@@ -263,8 +300,8 @@ def build_entry_tab(ctx, container: tk.Frame):
         else:
             visible_keys = ['main_category','model_name']
 
-        # Always keep returned-from-drawing, drawing_id, quantity, note
-        tail = ['returned_from_drawing','drawing_id','quantity','note']
+        # Always keep sub_category, returned-from-drawing, drawing_id, quantity, note
+        tail = ['sub_category','returned_from_drawing','drawing_id','quantity','note']
 
         # Hide all first
         for key,(lbl,inp) in field_pairs.items():
@@ -382,15 +419,15 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Buttons placed dynamically above with the layout
 
     # Lines tree
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','returned_from_drawing','drawing_id','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','returned_from_drawing','drawing_id','quantity','note')
     ctx.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
     headers = {
         'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
-        'fabric_category':'קטגורית בד','print_name':'שם פרינט',
+        'fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה',
         'returned_from_drawing':'חזר מציור','drawing_id':"מס' ציור",
         'quantity':'כמות','note':'הערה'
     }
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
     for c in cols:
         ctx.supplier_tree.heading(c, text=headers[c])
         ctx.supplier_tree.column(c, width=widths[c], anchor='center')

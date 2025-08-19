@@ -272,6 +272,7 @@ class SupplierIntakeMethodsMixin:
         # if not returned, ignore drawing_id
         if returned_from_drawing != 'כן':
             drawing_id = ''
+        category = (getattr(self, 'sup_category_var', tk.StringVar(value='')).get() or '').strip()
         line = {
             'product': product,
             'size': size,
@@ -279,13 +280,14 @@ class SupplierIntakeMethodsMixin:
             'fabric_color': fabric_color,
             'fabric_category': fabric_category,
             'print_name': print_name,
+            'category': category,
             'returned_from_drawing': returned_from_drawing,
             'drawing_id': drawing_id,
             'quantity': qty,
             'note': note
         }
         self._supplier_lines.append(line)
-        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,returned_from_drawing,drawing_id,qty,note))
+        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,returned_from_drawing,drawing_id,qty,note))
         self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
         try:
             self.sup_returned_from_drawing_var.set('לא')
@@ -496,16 +498,16 @@ class SupplierIntakeMethodsMixin:
 
         lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
         lines_frame.pack(fill='both', expand=True, pady=6)
-        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','returned_from_drawing','drawing_id','quantity','note')
+        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','returned_from_drawing','drawing_id','quantity','note')
         tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
         headers = {
             'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
-            'fabric_category':'קטגורית בד','print_name':'שם פרינט',
+            'fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה',
             'returned_from_drawing':'חזר מציור','drawing_id':'"מס\' ציור"','quantity':'כמות','note':'הערה'
         }
         widths = {
             'product':180,'size':80,'fabric_type':100,'fabric_color':90,
-            'fabric_category':120,'print_name':110,
+            'fabric_category':120,'print_name':110,'category':110,
             'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220
         }
         for c in cols:
@@ -518,7 +520,7 @@ class SupplierIntakeMethodsMixin:
         for ln in rec.get('lines', []) or []:
             tree.insert('', 'end', values=(
                 ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''), ln.get('fabric_category',''),
-                ln.get('print_name',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('note','')
+                ln.get('print_name',''), ln.get('category',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('note','')
             ))
 
         pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg='#f7f9fa')
