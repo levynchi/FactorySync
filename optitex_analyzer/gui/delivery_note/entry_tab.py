@@ -298,9 +298,37 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Initial layout
     _apply_layout_for_main_category()
 
-    # React to main category changes
+    # React to main category changes: update layout and filter products + reset dependent fields
+    def _on_main_category_change(*_):
+        try:
+            _apply_layout_for_main_category()
+        except Exception:
+            pass
+        # Refresh allowed products by main category
+        try:
+            ctx._refresh_delivery_products_allowed()
+        except Exception:
+            pass
+        # Clear product and dependent selections as their domains changed
+        try:
+            ctx.dn_product_var.set('')
+            ctx.dn_size_var.set('')
+            ctx.dn_fabric_type_var.set('')
+            ctx.dn_fabric_color_var.set('')
+            # keep print name as free text; keep fabric category auto blank until next compute
+            ctx.dn_fabric_category_var.set('')
+        except Exception:
+            pass
+        # Disable combos until product chosen
+        for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo):
+            try:
+                combo.set('')
+                combo.state(['disabled'])
+            except Exception:
+                pass
+
     try:
-        ctx.dn_main_category_var.trace_add('write', lambda *_: _apply_layout_for_main_category())
+        ctx.dn_main_category_var.trace_add('write', _on_main_category_change)
     except Exception:
         pass
 

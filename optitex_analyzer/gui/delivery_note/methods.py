@@ -32,7 +32,19 @@ class DeliveryNoteMethodsMixin:
     def _refresh_delivery_products_allowed(self, initial: bool = False):
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
-            names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
+            # Optional filtering by selected main category using product_model_names list
+            selected_mc = ''
+            try:
+                if hasattr(self, 'dn_main_category_var'):
+                    selected_mc = (self.dn_main_category_var.get() or '').strip()
+            except Exception:
+                selected_mc = ''
+            if selected_mc:
+                model_names = getattr(self.data_processor, 'product_model_names', []) or []
+                allowed_models = { (m.get('name') or '').strip() for m in model_names if (m.get('main_category') or 'בגדים') == selected_mc and (m.get('name') or '').strip() }
+                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if (rec.get('name') or '').strip() in allowed_models })
+            else:
+                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
             self._delivery_products_allowed = names
             self._delivery_products_allowed_full = list(names)
             if hasattr(self, 'dn_product_combo'):
@@ -40,8 +52,10 @@ class DeliveryNoteMethodsMixin:
                     cur = self.dn_product_var.get()
                     self.dn_product_combo['values'] = self._delivery_products_allowed_full
                     if cur and cur not in self._delivery_products_allowed_full:
+                        # Clear selection if it no longer valid under current main category
                         self.dn_product_var.set('')
-                except Exception: pass
+                except Exception:
+                    pass
         except Exception:
             self._delivery_products_allowed = []
             self._delivery_products_allowed_full = []
