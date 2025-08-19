@@ -40,25 +40,28 @@ class ProductsCatalogMethodsMixin:
         # sub category (תת קטגוריה) - multi-select like sizes/types/colors/prints
         tk.Label(form, text="תת קטגוריה:", font=('Arial',10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
+        # Group sub-category picker + display + clear into one frame to keep them adjacent
+        self.subcat_frame = ttk.Frame(form)
+        self.subcat_frame.grid(row=1, column=3, columnspan=3, sticky='w', padx=2, pady=4)
         self.category_combobox = ttk.Combobox(
-            form,
+            self.subcat_frame,
             values=cat_names,
             state='readonly',
             width=12,
             justify='right'
         )
-        self.category_combobox.grid(row=1, column=3, sticky='w', padx=2, pady=4)
+        self.category_combobox.pack(side='left', padx=(0, 4))
         self.category_combobox.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('sub_category'))
         # readonly display of selected sub-categories and clear button
-        self.subcat_selected_entry = tk.Entry(form, textvariable=self.prod_category_var, width=20, state='readonly')
-        self.subcat_selected_entry.grid(row=1, column=6, sticky='w', padx=2, pady=4)
-        self.btn_clear_subcat = tk.Button(form, text='נקה', command=lambda: self._clear_attr('sub_category'), width=4)
-        self.btn_clear_subcat.grid(row=1, column=7, padx=2)
+        self.subcat_selected_entry = tk.Entry(self.subcat_frame, textvariable=self.prod_category_var, width=20, state='readonly')
+        self.subcat_selected_entry.pack(side='left', padx=(0, 4))
+        self.btn_clear_subcat = tk.Button(self.subcat_frame, text='נקה', command=lambda: self._clear_attr('sub_category'), width=4)
+        self.btn_clear_subcat.pack(side='left')
         # sub_category mapping (label+combo will be toggled together)
         # We'll collect after creating label widgets too using winfo_children search if needed
 
         # fabric category
-        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=1, column=4, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
         fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
         self.fabric_category_combobox = ttk.Combobox(
             form,
@@ -68,16 +71,16 @@ class ProductsCatalogMethodsMixin:
             width=12,
             justify='right'
         )
-        self.fabric_category_combobox.grid(row=1, column=5, sticky='w', padx=2, pady=4)
+        self.fabric_category_combobox.grid(row=1, column=7, sticky='w', padx=2, pady=4)
 
-    # multiselect helpers state
+        # multiselect helpers state
         self.selected_sub_categories = []
         self.selected_sizes = []
         self.selected_fabric_types = []
         self.selected_fabric_colors = []
         self.selected_print_names = []
 
-        # size (new row for more space)
+    # size (new row for more space)
         tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=12, justify='right')
         self.size_picker.grid(row=2, column=1, sticky='w', padx=2, pady=4)
@@ -210,11 +213,10 @@ class ProductsCatalogMethodsMixin:
 
         self._products_field_widgets['model_name'] = [x for x in [lbl_model, self.model_name_combobox] if x]
         # include readonly entry and clear for sub_category
-        subcat_widgets = [lbl_subcat, self.category_combobox]
-        if hasattr(self, 'subcat_selected_entry'):
-            subcat_widgets.append(self.subcat_selected_entry)
-        if hasattr(self, 'btn_clear_subcat'):
-            subcat_widgets.append(self.btn_clear_subcat)
+        # Toggle the entire frame to show/hide sub-category widgets together
+        subcat_widgets = [lbl_subcat]
+        if hasattr(self, 'subcat_frame'):
+            subcat_widgets.append(self.subcat_frame)
         self._products_field_widgets['sub_category'] = [x for x in subcat_widgets if x]
         self._products_field_widgets['fabric_category'] = [x for x in [lbl_fabric_cat, self.fabric_category_combobox] if x]
 
