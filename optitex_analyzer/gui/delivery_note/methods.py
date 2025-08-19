@@ -172,6 +172,40 @@ class DeliveryNoteMethodsMixin:
             except Exception:
                 pass
 
+    def _refresh_delivery_print_name_options(self):
+        """Refresh available print names optionally filtered by selected main category when product doesn’t constrain them."""
+        try:
+            product = (self.dn_product_var.get() or '').strip()
+            names = []
+            if product:
+                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                for rec in catalog:
+                    if (rec.get('name') or '').strip() == product:
+                        pn = (rec.get('print_name') or '').strip()
+                        if pn:
+                            names.append(pn)
+                names = sorted({n for n in names})
+            if not names:
+                selected_mc = ''
+                try:
+                    if hasattr(self, 'dn_main_category_var'):
+                        selected_mc = (self.dn_main_category_var.get() or '').strip()
+                except Exception:
+                    selected_mc = ''
+                plist = getattr(self.data_processor, 'product_print_names', []) or []
+                if selected_mc:
+                    names = [ (r.get('name') or '') for r in plist if r.get('name') and (r.get('main_category') or 'בגדים') == selected_mc ]
+                else:
+                    names = [ (r.get('name') or '') for r in plist if r.get('name') ]
+        except Exception:
+            names = []
+        # If a print-name combobox exists (future-proof), set it
+        try:
+            if hasattr(self, 'dn_print_name_combo'):
+                self.dn_print_name_combo['values'] = names
+        except Exception:
+            pass
+
     # ---- Lines ops ----
     def _add_delivery_line(self):
         product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()

@@ -172,7 +172,18 @@ class SupplierIntakeMethodsMixin:
                 names = sorted({n for n in names})
                 if not names:
                     try:
-                        names = [r.get('name') for r in getattr(self.data_processor, 'product_print_names', []) if r.get('name')]
+                        # Fallback to global print names, filtered by selected main category if provided
+                        selected_mc = ''
+                        try:
+                            if hasattr(self, 'sup_main_category_var'):
+                                selected_mc = (self.sup_main_category_var.get() or '').strip()
+                        except Exception:
+                            selected_mc = ''
+                        plist = getattr(self.data_processor, 'product_print_names', []) or []
+                        if selected_mc:
+                            names = [ (r.get('name') or '') for r in plist if r.get('name') and (r.get('main_category') or 'בגדים') == selected_mc ]
+                        else:
+                            names = [ (r.get('name') or '') for r in plist if r.get('name') ]
                     except Exception:
                         names = []
             except Exception:
