@@ -950,5 +950,19 @@
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2025-08-16 12:29:06"
+  },
+  {
+    "id": 69,
+    "name": "טיק טק קומפלט",
+    "size": "",
+    "fabric_type": "",
+    "fabric_color": "",
+    "print_name": "",
+    "category": "",
+    "fabric_category": "",
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-08-19 14:53:52"
   }
 ]

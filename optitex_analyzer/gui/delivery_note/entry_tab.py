@@ -153,10 +153,8 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","כמות","הערה"]
-    for i,lbl in enumerate(lbls):
-        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
-
+    # Define all input widgets and drive their visibility by Main Category selection
+    # Create inputs
     ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
@@ -164,7 +162,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
-    # New: General Category (from categories.json)
+    # Sub Category (from categories.json)
     ctx.dn_category_var = tk.StringVar()
     ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
     try:
@@ -184,19 +182,127 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    widgets = [
-        ctx.dn_product_combo,
-        ctx.dn_size_combo,
-        ctx.dn_fabric_type_combo,
-        ctx.dn_fabric_color_combo,
-        ctx.dn_fabric_category_entry,
-        dn_print_entry,
-        ctx.dn_category_combo,
-        tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
-        tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
-    ]
-    for i,w in enumerate(widgets):
-        w.grid(row=1,column=i*2,sticky='w',padx=2)
+    # Main Category (from main_categories.json via data_processor)
+    ctx.dn_main_category_var = tk.StringVar()
+    ctx.dn_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_main_category_var, width=14, state='readonly')
+    try:
+        names = [c.get('name','') for c in getattr(ctx.data_processor, 'main_categories', [])]
+        ctx.dn_main_category_combo['values'] = names
+    except Exception:
+        # fallback: direct file read
+        try:
+            import json, os
+            path = os.path.join(os.getcwd(), 'main_categories.json')
+            names = []
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    names = [ (d.get('name') or '').strip() for d in data if (d.get('name') or '').strip() ]
+            ctx.dn_main_category_combo['values'] = names
+        except Exception:
+            pass
+
+    # Build labels for each field and a mapping for dynamic layout
+    label_texts = {
+        'main_category': 'קטגוריה ראשית',
+        'model_name': 'מוצר',
+        'sizes': 'מידה',
+        'fabric_type': 'סוג בד',
+        'fabric_color': 'צבע בד',
+        'fabric_category': 'קטגורית בד',
+        'print_name': 'שם פרינט',
+        'sub_category': 'קטגוריה',
+        'quantity': 'כמות',
+        'note': 'הערה',
+    }
+    label_widgets = {k: tk.Label(entry_bar, text=v, bg='#f7f9fa') for k,v in label_texts.items()}
+
+    # Create dedicated qty/note entries so we can layout them dynamically
+    dn_qty_entry = tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7)
+    dn_note_entry = tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
+
+    # Pair inputs with their labels by logical keys
+    field_pairs = {
+        'main_category': (label_widgets['main_category'], ctx.dn_main_category_combo),
+        'model_name': (label_widgets['model_name'], ctx.dn_product_combo),
+        'sizes': (label_widgets['sizes'], ctx.dn_size_combo),
+        'fabric_type': (label_widgets['fabric_type'], ctx.dn_fabric_type_combo),
+        'fabric_color': (label_widgets['fabric_color'], ctx.dn_fabric_color_combo),
+        'fabric_category': (label_widgets['fabric_category'], ctx.dn_fabric_category_entry),
+        'print_name': (label_widgets['print_name'], dn_print_entry),
+        'sub_category': (label_widgets['sub_category'], ctx.dn_category_combo),
+        'quantity': (label_widgets['quantity'], dn_qty_entry),
+        'note': (label_widgets['note'], dn_note_entry),
+    }
+
+    # Create action buttons but position them dynamically after laying out fields
+    btn_add = tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white')
+    btn_del = tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white')
+    btn_clr = tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white')
+
+    def _find_main_category_by_name(name: str):
+        try:
+            for c in getattr(ctx.data_processor, 'main_categories', []) or []:
+                if (c.get('name') or '').strip() == (name or '').strip():
+                    return c
+        except Exception:
+            pass
+        return None
+
+    def _apply_layout_for_main_category():
+        # Determine which logical keys to show based on selected main category fields
+        selected = (ctx.dn_main_category_var.get() or '').strip()
+        visible_keys = []
+        # Base order for fields in the row
+        order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name','sub_category']
+        if selected:
+            rec = _find_main_category_by_name(selected)
+            fields = []
+            if rec:
+                fields = (rec.get('fields') or [])
+                if not fields and hasattr(ctx.data_processor, 'get_main_category_fields'):
+                    try:
+                        fields = ctx.data_processor.get_main_category_fields(rec.get('id')) or []
+                    except Exception:
+                        fields = []
+            # Always show main_category and model_name; add the rest according to configured fields
+            visible_keys = ['main_category','model_name'] + [k for k in order if k in fields]
+        else:
+            # When no main category selected: show minimal inputs
+            visible_keys = ['main_category','model_name']
+
+        # Always include quantity and note at the end
+        tail = ['quantity','note']
+
+        # First, hide everything
+        for key, (lbl, inp) in field_pairs.items():
+            try:
+                lbl.grid_remove(); inp.grid_remove()
+            except Exception:
+                pass
+
+        # Re-grid visible fields in compact order
+        col = 0
+        for key in visible_keys + tail:
+            lbl, inp = field_pairs[key]
+            lbl.grid(row=0, column=col, sticky='w', padx=2)
+            inp.grid(row=1, column=col, sticky='w', padx=2)
+            col += 2
+
+        # Position action buttons after the last field
+        btn_add.grid(row=1, column=col, padx=6)
+        btn_del.grid(row=1, column=col+1, padx=4)
+        btn_clr.grid(row=1, column=col+2, padx=4)
+
+    # Initial layout
+    _apply_layout_for_main_category()
+
+    # React to main category changes
+    try:
+        ctx.dn_main_category_var.trace_add('write', lambda *_: _apply_layout_for_main_category())
+    except Exception:
+        pass
 
     def _on_product_change(*_a):
         try:
@@ -243,11 +349,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         try: combo.state(['disabled'])
         except Exception: pass
 
-    # After adding a new field, shift action buttons to the right to avoid overlap
-    _btn_base_col = len(widgets) * 2
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=_btn_base_col,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
+    # Buttons are positioned dynamically by _apply_layout_for_main_category
 
     cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)

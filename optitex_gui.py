@@ -7,6 +7,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import pandas as pd
 import os
 from threading import Thread
+import json
 
 class OptitexAnalyzerGUI:
     def __init__(self, root):
@@ -28,18 +29,31 @@ class OptitexAnalyzerGUI:
         self.create_widgets()
     
     def create_widgets(self):
-        # כותרת
+        # כותרת עליונה
         title_label = tk.Label(
-            self.root, 
-            text="ממיר אקספורט של אופטיטקס לאקסל נקי", 
+            self.root,
+            text="ממיר אקספורט של אופטיטקס לאקסל נקי",
             font=('Arial', 16, 'bold'),
             bg='#f0f0f0',
             fg='#2c3e50'
         )
         title_label.pack(pady=10)
-        
+
+        # מחברת טאבים
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill="both", expand=True, padx=10, pady=5)
+
+        # טאב ראשי (הקיים)
+        self.main_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.main_tab, text="ראשי")
+
+        # טאב מדבקות
+        self.stickers_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.stickers_tab, text="מדבקות")
+
+        # ===== תוכן הטאב הראשי (קודם היה על ה-root) =====
         # מסגרת לקבצים
-        files_frame = ttk.LabelFrame(self.root, text="בחירת קבצים", padding=10)
+        files_frame = ttk.LabelFrame(self.main_tab, text="בחירת קבצים", padding=10)
         files_frame.pack(fill="x", padx=20, pady=10)
         
         # בחירת קובץ RIB
@@ -75,7 +89,7 @@ class OptitexAnalyzerGUI:
         ).pack(side="right")
         
         # מסגרת לאפשרויות
-        options_frame = ttk.LabelFrame(self.root, text="אפשרויות", padding=10)
+        options_frame = ttk.LabelFrame(self.main_tab, text="אפשרויות", padding=10)
         options_frame.pack(fill="x", padx=20, pady=10)
         
         # תיבת סימון לטיפול ב-Tubular
@@ -95,7 +109,7 @@ class OptitexAnalyzerGUI:
         ).pack(anchor="w")
         
         # כפתורי פעולה
-        buttons_frame = tk.Frame(self.root)
+        buttons_frame = tk.Frame(self.main_tab)
         buttons_frame.pack(fill="x", padx=20, pady=10)
         
         tk.Button(
@@ -139,7 +153,7 @@ class OptitexAnalyzerGUI:
         ).pack(side="right", padx=5)
         
         # אזור תוצאות
-        results_frame = ttk.LabelFrame(self.root, text="תוצאות", padding=10)
+        results_frame = ttk.LabelFrame(self.main_tab, text="תוצאות", padding=10)
         results_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
         # טקסט תוצאות עם גלילה
@@ -151,7 +165,10 @@ class OptitexAnalyzerGUI:
         )
         self.results_text.pack(fill="both", expand=True)
         
-        # שורת סטטוס
+        # יצירת טאב המדבקות
+        self._create_stickers_tab()
+
+        # שורת סטטוס (גלובלית לכל הטאבים)
         self.status_label = tk.Label(
             self.root,
             text="מוכן לעבודה",
@@ -161,9 +178,253 @@ class OptitexAnalyzerGUI:
             padx=10
         )
         self.status_label.pack(fill="x", side="bottom")
-        
+
         # עדכון תצוגת קובץ המוצרים אם נמצא
         self.update_products_display()
+
+    def _create_stickers_tab(self):
+        """יצירת תוכן טאב 'מדבקות'"""
+        container = self.stickers_tab
+
+        # כותרת טאב
+        tk.Label(
+            container,
+            text="ניהול מדבקות למוצרים",
+            font=('Arial', 14, 'bold')
+        ).pack(pady=(10, 5))
+
+        # מסגרת קלט
+        input_frame = ttk.LabelFrame(container, text="שורת קליטה", padding=10)
+        input_frame.pack(fill="x", padx=15, pady=10)
+
+        # שדות קלט: שם המוצר | כמות באריזה | מידה | סוג הבד
+        self.stk_product_var = tk.StringVar()
+        self.stk_qty_var = tk.StringVar()
+        self.stk_size_var = tk.StringVar()
+        self.stk_fabric_var = tk.StringVar()
+
+        # סידור השדות בשורה
+        # שם המוצר
+        tk.Label(input_frame, text="שם המוצר:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        tk.Entry(input_frame, textvariable=self.stk_product_var, width=30).grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        # כמות באריזה
+        tk.Label(input_frame, text="כמות באריזה:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
+        tk.Entry(input_frame, textvariable=self.stk_qty_var, width=10).grid(row=0, column=3, padx=5, pady=5, sticky="w")
+
+        # מידה
+        tk.Label(input_frame, text="מידה:").grid(row=0, column=4, padx=5, pady=5, sticky="e")
+        tk.Entry(input_frame, textvariable=self.stk_size_var, width=15).grid(row=0, column=5, padx=5, pady=5, sticky="w")
+
+        # סוג הבד
+        tk.Label(input_frame, text="סוג הבד:").grid(row=0, column=6, padx=5, pady=5, sticky="e")
+        fabric_types = self._load_fabric_types()
+        self.stk_fabric_cb = ttk.Combobox(input_frame, textvariable=self.stk_fabric_var, values=fabric_types, width=20)
+        self.stk_fabric_cb.grid(row=0, column=7, padx=5, pady=5, sticky="w")
+
+        # כפתורים
+        btns_frame = tk.Frame(input_frame)
+        btns_frame.grid(row=0, column=8, padx=10, pady=5, sticky="w")
+        tk.Button(btns_frame, text="➕ הוסף", bg="#27ae60", fg="white", command=self._add_sticker_row).pack(side="left", padx=3)
+        tk.Button(btns_frame, text="🧹 נקה", bg="#95a5a6", fg="white", command=self._clear_sticker_inputs).pack(side="left", padx=3)
+
+        # מסגרת טבלה
+        table_frame = ttk.LabelFrame(container, text="טבלת מדבקות", padding=10)
+        table_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        # טבלת תצוגה
+        columns = ("שם המוצר", "כמות באריזה", "מידה", "סוג הבד")
+        self.stickers_tree = ttk.Treeview(table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.stickers_tree.heading(col, text=col)
+            # רוחב עמודות סביר
+            width = 220 if col == "שם המוצר" else 120
+            self.stickers_tree.column(col, width=width, anchor="center")
+
+        # גלילה
+        vs = ttk.Scrollbar(table_frame, orient="vertical", command=self.stickers_tree.yview)
+        self.stickers_tree.configure(yscrollcommand=vs.set)
+
+        self.stickers_tree.grid(row=0, column=0, sticky="nsew")
+        vs.grid(row=0, column=1, sticky="ns")
+
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        # שורת פעולות תחת הטבלה
+        actions = tk.Frame(container)
+        actions.pack(fill="x", padx=15, pady=(0, 10))
+        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_selected_sticker).pack(side="left", padx=5)
+        tk.Button(actions, text="💾 שמור ל-Excel", bg="#3498db", fg="white", command=self._export_stickers_to_excel).pack(side="left", padx=5)
+
+        # נתונים מקומיים + טעינה מקובץ
+        self.stickers_data = []
+        self._load_stickers_data()
+        self._refresh_stickers_table()
+
+    # ===== פונקציות עזר לטאב המדבקות =====
+    def _load_fabric_types(self):
+        """טעינת סוגי בדים מקובץ json אם קיים"""
+        try:
+            path = os.path.join(os.getcwd(), "fabric_types.json")
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                # קובץ זה נראה במבנה של רשימת מחרוזות או אובייקטים; ננסה להפיק שמות
+                if isinstance(data, list):
+                    if data and isinstance(data[0], dict):
+                        # נסה לשלוף ערך בשם או key רגיל
+                        keys = list(data[0].keys())
+                        cand_keys = ["name", "שם", "type", "סוג"]
+                        key = next((k for k in cand_keys if k in keys), keys[0])
+                        return [str(d.get(key, "")) for d in data]
+                    return [str(x) for x in data]
+        except Exception:
+            pass
+        return []
+
+    def _validate_sticker_inputs(self):
+        """ולידציה לשדות קלט של מדבקות"""
+        name = self.stk_product_var.get().strip()
+        qty = self.stk_qty_var.get().strip()
+        size = self.stk_size_var.get().strip()
+        fabric = self.stk_fabric_var.get().strip()
+
+        if not name:
+            messagebox.showwarning("אזהרה", "אנא הזן שם מוצר")
+            return None
+        if not qty:
+            messagebox.showwarning("אזהרה", "אנא הזן כמות באריזה")
+            return None
+        try:
+            qty_num = int(qty)
+            if qty_num <= 0:
+                raise ValueError()
+        except Exception:
+            messagebox.showwarning("אזהרה", "כמות באריזה חייבת להיות מספר שלם חיובי")
+            return None
+        if not size:
+            messagebox.showwarning("אזהרה", "אנא הזן מידה")
+            return None
+        if not fabric:
+            messagebox.showwarning("אזהרה", "אנא בחר סוג בד")
+            return None
+
+        return {
+            "שם המוצר": name,
+            "כמות באריזה": qty_num,
+            "מידה": size,
+            "סוג הבד": fabric,
+        }
+
+    def _add_sticker_row(self):
+        row = self._validate_sticker_inputs()
+        if not row:
+            return
+        self.stickers_data.append(row)
+        self._refresh_stickers_table()
+        self._save_stickers_data()
+        self._clear_sticker_inputs()
+        self.update_status("שורה נוספה לטבלת המדבקות")
+
+    def _clear_sticker_inputs(self):
+        self.stk_product_var.set("")
+        self.stk_qty_var.set("")
+        self.stk_size_var.set("")
+        self.stk_fabric_var.set("")
+
+    def _refresh_stickers_table(self):
+        # נקה טבלה
+        for item in self.stickers_tree.get_children():
+            self.stickers_tree.delete(item)
+        # הוסף נתונים
+        for row in self.stickers_data:
+            self.stickers_tree.insert("", "end", values=(
+                row.get("שם המוצר", ""),
+                row.get("כמות באריזה", ""),
+                row.get("מידה", ""),
+                row.get("סוג הבד", ""),
+            ))
+
+    def _delete_selected_sticker(self):
+        sel = self.stickers_tree.selection()
+        if not sel:
+            messagebox.showwarning("אזהרה", "אנא בחר שורה למחיקה")
+            return
+        if not messagebox.askyesno("אישור", "למחוק את השורה הנבחרת?"):
+            return
+        # מצא את הערכים של השורה ומחק מהרשימה הראשונה שתואמת
+        item = self.stickers_tree.item(sel[0])
+        vals = item.get('values', [])
+        if vals:
+            to_delete = {
+                "שם המוצר": vals[0],
+                "כמות באריזה": vals[1],
+                "מידה": vals[2],
+                "סוג הבד": vals[3],
+            }
+            # מחיקה לפי התאמה מלאה של השדות
+            new_data = []
+            deleted = False
+            for r in self.stickers_data:
+                if (not deleted and r.get("שם המוצר") == to_delete["שם המוצר"] and
+                    r.get("כמות באריזה") == to_delete["כמות באריזה"] and
+                    r.get("מידה") == to_delete["מידה"] and
+                    r.get("סוג הבד") == to_delete["סוג הבד"]):
+                    deleted = True
+                    continue
+                new_data.append(r)
+            self.stickers_data = new_data
+            self._refresh_stickers_table()
+            self._save_stickers_data()
+            self.update_status("שורה נמחקה מטבלת המדבקות")
+
+    def _stickers_data_path(self):
+        return os.path.join(os.getcwd(), "stickers_data.json")
+
+    def _load_stickers_data(self):
+        try:
+            path = self._stickers_data_path()
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    self.stickers_data = data
+        except Exception:
+            # אם יש שגיאה בקריאה, נתחיל מריק
+            self.stickers_data = []
+
+    def _save_stickers_data(self):
+        try:
+            path = self._stickers_data_path()
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(self.stickers_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            # לא נכשיל את ה-UI בגלל שמירה, רק הודעה בלוג
+            try:
+                self.log_message(f"❌ שגיאה בשמירת טבלת מדבקות: {e}")
+            except Exception:
+                pass
+
+    def _export_stickers_to_excel(self):
+        if not self.stickers_data:
+            messagebox.showwarning("אזהרה", "אין נתונים לייצוא")
+            return
+        try:
+            df = pd.DataFrame(self.stickers_data)
+            file_path = filedialog.asksaveasfilename(
+                title="שמור טבלת מדבקות",
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+            if file_path:
+                if file_path.lower().endswith('.csv'):
+                    df.to_csv(file_path, index=False, encoding='utf-8-sig')
+                else:
+                    df.to_excel(file_path, index=False)
+                messagebox.showinfo("הצלחה", f"הטבלה נשמרה בהצלחה:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצוא: {e}")
     
     def select_rib_file(self):
         """בחירת קובץ אופטיטקס אקסל אקספורט"""
