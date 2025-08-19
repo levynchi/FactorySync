@@ -451,8 +451,8 @@ class DrawingsManagerTabMixin:
             # גליון RTL
             try: ws.sheet_view.rightToLeft = True
             except Exception: pass
-            # הוספת שורת מידע מעל הטבלה: עמודה A (ימין RTL) = ID, B = סוג בד, C = תאריך (ללא שעה)
-            ws.insert_rows(1, amount=2)  # מזיז הכל למטה; headers יעברו לשורה 3
+            # הוספת שורות מידע מעל הטבלה: נזיז 3 שורות כדי לפנות מקום ל-A1, A2/B2, B3
+            ws.insert_rows(1, amount=3)  # headers יעברו לשורה 4
             max_col = ws.max_column
             raw_dt = record.get('תאריך יצירה','')
             # שמירת תאריך בלבד ללא זמן; אם כולל זמן נחתוך ברווח הראשון
@@ -463,20 +463,49 @@ class DrawingsManagerTabMixin:
                 else:
                     # אם כבר רק תאריך באורך 10 (YYYY-MM-DD) נשאיר
                     formatted_date = raw_dt
-            # שינוי בקשת המשתמש: במקום 'ID' יוצג 'ציור מספר'
-            ws.cell(row=1, column=1, value=f"ציור מספר: {record.get('id','')}")
-            ws.cell(row=1, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
-            ws.cell(row=1, column=3, value=f"תאריך יצירה: {formatted_date}")
-            meta_font = Font(bold=True, size=16)
-            for c in range(1, min(3, max_col)+1):
-                cell = ws.cell(row=1, column=c)
-                cell.font = meta_font
-                # עדכון: כל שלושת התאים בשורת המטא במרכז (בקשת משתמש)
-                cell.alignment = Alignment(horizontal='center', vertical='center')
-            # שורה ריקה (2) לרווח
-            for c in range(1, max_col+1):
-                ws.cell(row=2, column=c).value = None
-            header_row_index = 3
+            # שם העסק מתוך טאב "פרטי עסק"
+            business_name = ''
+            try:
+                s = getattr(self, 'settings', None)
+                if s:
+                    business_name = s.get('business.name', '') or ''
+            except Exception:
+                business_name = ''
+            # A1: שם העסק (ממורכז וממוזג על פני כל העמודות הקיימות)
+            if business_name:
+                ws.cell(row=1, column=1, value=business_name)
+            # מזג בין A1 ועד העמודה האחרונה בהדר (לפחות C)
+            try:
+                last_col_letter = ws.cell(row=1, column=max_col).column_letter
+                ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
+            except Exception:
+                last_col_letter = 'C'
+            # עיצוב שורת כותרת העסק
+            title_font = Font(bold=True, size=16)
+            title_cell = ws.cell(row=1, column=1)
+            title_cell.font = title_font
+            title_cell.alignment = Alignment(horizontal='center', vertical='center')
+
+            # A2: ציור מספר, B2: סוג בד
+            ws.cell(row=2, column=1, value=f"ציור מספר: {record.get('id','')}")
+            ws.cell(row=2, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
+
+            # B3: תאריך יצירה עם הטקסט המלא
+            if formatted_date:
+                ws.cell(row=3, column=2, value=f"תאריך יצירה: {formatted_date}")
+
+            # עיצוב גודל כמו הכותרות (16) לשורות 2-3
+            meta_font = Font(size=16)
+            for (r, c) in [(2,1), (2,2), (3,2)]:
+                try:
+                    cell = ws.cell(row=r, column=c)
+                    if cell.value is not None:
+                        cell.font = meta_font
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                except Exception:
+                    pass
+
+            header_row_index = 4
             header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
             header_font = Font(bold=True, size=16)
             base_font = Font(size=16)
@@ -486,12 +515,14 @@ class DrawingsManagerTabMixin:
                 cell.fill = header_fill
             # יישור וגבולות לכל התאים + חישוב רוחב עמודה (מרכז לכל התאים)
             thin = Side(border_style='thin', color='000000')
-            # נכלול גם את שורת המטא-דאטה (row 1) בחישוב רוחב
+            # נכלול גם את שורות המטא-דאטה (rows 1-3) בחישוב רוחב
             col_max = {}
             for col in range(1, ws.max_column+1):
                 header_len = len(str(ws.cell(row=header_row_index, column=col).value or ''))
-                meta_len = len(str(ws.cell(row=1, column=col).value or ''))
-                col_max[col] = max(header_len, meta_len)
+                meta_len_1 = len(str(ws.cell(row=1, column=col).value or ''))
+                meta_len_2 = len(str(ws.cell(row=2, column=col).value or ''))
+                meta_len_3 = len(str(ws.cell(row=3, column=col).value or ''))
+                col_max[col] = max(header_len, meta_len_1, meta_len_2, meta_len_3)
             for r in range(header_row_index+1, ws.max_row+1):
                 for c in range(1, ws.max_column+1):
                     cell = ws.cell(row=r, column=c)
