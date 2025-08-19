@@ -161,10 +161,6 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Labels row (added 'קטגורית בד' + 'חזר מציור' + 'מס' ציור')
-    for i,lbl in enumerate(["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","חזר מציור","מס' ציור","כמות","הערה"]):
-        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
-
     # Variant controls
     ctx.sup_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_size_var, width=10, state='readonly')
     ctx.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_type_var, width=12, state='readonly')
@@ -183,20 +179,144 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    widgets = [
-        ctx.sup_product_combo,
-        ctx.sup_size_combo,
-        ctx.sup_fabric_type_combo,
-    ctx.sup_fabric_color_combo,
-    ctx.sup_fabric_category_entry,
-    ctx.sup_print_name_combo,
-    ctx.sup_returned_from_drawing_combo,
-    ctx.sup_drawing_id_combo,
-        tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7),
-        tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
-    ]
-    for i,w in enumerate(widgets):
-        w.grid(row=1,column=i*2,sticky='w',padx=2)
+    # Main Category (values from data_processor.main_categories)
+    ctx.sup_main_category_var = tk.StringVar()
+    ctx.sup_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_main_category_var, width=14, state='readonly')
+    try:
+        names = [c.get('name','') for c in getattr(ctx.data_processor, 'main_categories', [])]
+        ctx.sup_main_category_combo['values'] = names
+    except Exception:
+        try:
+            import json, os
+            path = os.path.join(os.getcwd(), 'main_categories.json')
+            names = []
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    names = [ (d.get('name') or '').strip() for d in data if (d.get('name') or '').strip() ]
+            ctx.sup_main_category_combo['values'] = names
+        except Exception:
+            pass
+
+    # Labels and dynamic layout like Delivery Note
+    label_texts = {
+        'main_category': 'קטגוריה ראשית',
+        'model_name': 'מוצר',
+        'sizes': 'מידה',
+        'fabric_type': 'סוג בד',
+        'fabric_color': 'צבע בד',
+        'fabric_category': 'קטגורית בד',
+        'print_name': 'שם פרינט',
+        'returned_from_drawing': 'חזר מציור',
+        'drawing_id': "מס' ציור",
+        'quantity': 'כמות',
+        'note': 'הערה',
+    }
+    label_widgets = {k: tk.Label(entry_bar, text=v, bg='#f7f9fa') for k,v in label_texts.items()}
+
+    qty_entry = tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7)
+    note_entry = tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
+
+    field_pairs = {
+        'main_category': (label_widgets['main_category'], ctx.sup_main_category_combo),
+        'model_name': (label_widgets['model_name'], ctx.sup_product_combo),
+        'sizes': (label_widgets['sizes'], ctx.sup_size_combo),
+        'fabric_type': (label_widgets['fabric_type'], ctx.sup_fabric_type_combo),
+        'fabric_color': (label_widgets['fabric_color'], ctx.sup_fabric_color_combo),
+        'fabric_category': (label_widgets['fabric_category'], ctx.sup_fabric_category_entry),
+        'print_name': (label_widgets['print_name'], ctx.sup_print_name_combo),
+        'returned_from_drawing': (label_widgets['returned_from_drawing'], ctx.sup_returned_from_drawing_combo),
+        'drawing_id': (label_widgets['drawing_id'], ctx.sup_drawing_id_combo),
+        'quantity': (label_widgets['quantity'], qty_entry),
+        'note': (label_widgets['note'], note_entry),
+    }
+
+    # Action buttons placed after fields dynamically
+    btn_add = tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white')
+    btn_del = tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white')
+    btn_clr = tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white')
+
+    def _find_main_category_by_name(name: str):
+        try:
+            for c in getattr(ctx.data_processor, 'main_categories', []) or []:
+                if (c.get('name') or '').strip() == (name or '').strip():
+                    return c
+        except Exception:
+            pass
+        return None
+
+    def _apply_layout_for_main_category():
+        selected = (ctx.sup_main_category_var.get() or '').strip()
+        order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name']
+        if selected:
+            rec = _find_main_category_by_name(selected)
+            fields = []
+            if rec:
+                fields = (rec.get('fields') or [])
+                if not fields and hasattr(ctx.data_processor, 'get_main_category_fields'):
+                    try:
+                        fields = ctx.data_processor.get_main_category_fields(rec.get('id')) or []
+                    except Exception:
+                        fields = []
+            visible_keys = ['main_category','model_name'] + [k for k in order if k in fields]
+        else:
+            visible_keys = ['main_category','model_name']
+
+        # Always keep returned-from-drawing, drawing_id, quantity, note
+        tail = ['returned_from_drawing','drawing_id','quantity','note']
+
+        # Hide all first
+        for key,(lbl,inp) in field_pairs.items():
+            try:
+                lbl.grid_remove(); inp.grid_remove()
+            except Exception:
+                pass
+
+        col = 0
+        for key in visible_keys + tail:
+            lbl, inp = field_pairs[key]
+            lbl.grid(row=0, column=col, sticky='w', padx=2)
+            inp.grid(row=1, column=col, sticky='w', padx=2)
+            col += 2
+
+        btn_add.grid(row=1, column=col, padx=6)
+        btn_del.grid(row=1, column=col+1, padx=4)
+        btn_clr.grid(row=1, column=col+2, padx=4)
+
+    # Initial layout
+    _apply_layout_for_main_category()
+
+    # React to main category changes: update layout and filter products + reset dependent fields
+    def _on_main_category_change(*_):
+        try:
+            _apply_layout_for_main_category()
+        except Exception:
+            pass
+        try:
+            ctx._refresh_supplier_products_allowed()
+        except Exception:
+            pass
+        try:
+            ctx.sup_product_var.set('')
+            ctx.sup_size_var.set('')
+            ctx.sup_fabric_type_var.set('')
+            ctx.sup_fabric_color_var.set('')
+            ctx.sup_print_name_var.set('')
+            ctx.sup_fabric_category_var.set('')
+        except Exception:
+            pass
+        for combo in (ctx.sup_size_combo, ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):
+            try:
+                combo.set('')
+                combo.state(['disabled'])
+            except Exception:
+                pass
+
+    try:
+        ctx.sup_main_category_var.trace_add('write', _on_main_category_change)
+    except Exception:
+        pass
 
     # Enable/disable drawing ID entry by toggle
     def _toggle_drawing_id(*_a):
@@ -259,11 +379,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         try: combo.state(['disabled'])
         except Exception: pass
 
-    # Buttons
-    # Shift action buttons after adding a new field
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white').grid(row=1,column=22,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white').grid(row=1,column=23,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white').grid(row=1,column=24,padx=4)
+    # Buttons placed dynamically above with the layout
 
     # Lines tree
     cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','returned_from_drawing','drawing_id','quantity','note')

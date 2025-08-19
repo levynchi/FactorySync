@@ -27,7 +27,18 @@ class SupplierIntakeMethodsMixin:
         """רענון רשימת המוצרים האפשריים מתוך קטלוג המוצרים."""
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
-            names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
+            selected_mc = ''
+            try:
+                if hasattr(self, 'sup_main_category_var'):
+                    selected_mc = (self.sup_main_category_var.get() or '').strip()
+            except Exception:
+                selected_mc = ''
+            if selected_mc:
+                model_names = getattr(self.data_processor, 'product_model_names', []) or []
+                allowed_models = { (m.get('name') or '').strip() for m in model_names if (m.get('main_category') or 'בגדים') == selected_mc and (m.get('name') or '').strip() }
+                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if (rec.get('name') or '').strip() in allowed_models })
+            else:
+                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
             self._supplier_products_allowed = names
             self._supplier_products_allowed_full = list(names)
             if hasattr(self, 'sup_product_combo'):
