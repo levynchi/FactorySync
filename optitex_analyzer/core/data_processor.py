@@ -54,6 +54,11 @@ class DataProcessor:
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
 		self.product_model_names = self.load_model_names()
+		# Ensure all attribute records have a main_category (default 'בגדים')
+		try:
+			self._ensure_main_category_on_attributes()
+		except Exception:
+			pass
 		self.suppliers = self.load_suppliers()
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
@@ -1135,7 +1140,7 @@ class DataProcessor:
 	def save_model_names(self):
 		return self._save_simple_list(self.model_names_file, self.product_model_names)
 
-	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str) -> int:
+	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str, extra: dict | None = None) -> int:
 		if not name:
 			raise Exception("חובה להזין שם")
 		for rec in data_list:
@@ -1143,6 +1148,11 @@ class DataProcessor:
 				raise Exception("פריט כבר קיים")
 		new_id = max([r.get('id',0) for r in data_list], default=0) + 1
 		rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+		try:
+			if extra and isinstance(extra, dict):
+				rec.update(extra)
+		except Exception:
+			pass
 		data_list.append(rec)
 		save_func(); return new_id
 
@@ -1153,38 +1163,38 @@ class DataProcessor:
 			save_func(); return True
 		return False
 
-	def add_product_size(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_sizes, self.save_product_sizes, name)
+	def add_product_size(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_sizes, self.save_product_sizes, name, {'main_category': (main_category or '').strip()})
 
 	def delete_product_size(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_sizes, self.save_product_sizes, rec_id)
 
-	def add_fabric_type_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name)
+	def add_fabric_type_item(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name, {'main_category': (main_category or '').strip()})
 
 	def delete_fabric_type_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_types, self.save_fabric_types, rec_id)
 
-	def add_fabric_color_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name)
+	def add_fabric_color_item(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name, {'main_category': (main_category or '').strip()})
 
 	def delete_fabric_color_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_colors, self.save_fabric_colors, rec_id)
 
-	def add_print_name_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name)
+	def add_print_name_item(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name, {'main_category': (main_category or '').strip()})
 
 	def delete_print_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_print_names, self.save_print_names, rec_id)
 
-	def add_fabric_category_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_fabric_categories, self.save_fabric_categories, name)
+	def add_fabric_category_item(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_fabric_categories, self.save_fabric_categories, name, {'main_category': (main_category or '').strip()})
 
 	def delete_fabric_category_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_categories, self.save_fabric_categories, rec_id)
 
-	def add_model_name_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name)
+	def add_model_name_item(self, name: str, main_category: str = '') -> int:
+		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name, {'main_category': (main_category or '').strip()})
 
 	def delete_model_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_model_names, self.save_model_names, rec_id)
@@ -1196,4 +1206,41 @@ class DataProcessor:
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
 		self.product_model_names = self.load_model_names()
+		try:
+			self._ensure_main_category_on_attributes()
+		except Exception:
+			pass
+
+	def _ensure_main_category_on_attributes(self, default: str = 'בגדים'):
+		"""Ensure each attribute record has 'main_category'; default to provided value and persist if changed."""
+		changed = False
+		for lst, saver in [
+			(self.product_sizes, self.save_product_sizes),
+			(self.product_fabric_types, self.save_fabric_types),
+			(self.product_fabric_colors, self.save_fabric_colors),
+			(self.product_print_names, self.save_print_names),
+			(self.product_fabric_categories, self.save_fabric_categories),
+			(self.product_model_names, self.save_model_names),
+		]:
+			try:
+				for rec in lst:
+					if not (rec.get('main_category') or '').strip():
+						rec['main_category'] = default
+						changed = True
+			except Exception:
+				pass
+		if changed:
+			# Save each list via its saver to persist defaults
+			try: self.save_product_sizes()
+			except Exception: pass
+			try: self.save_fabric_types()
+			except Exception: pass
+			try: self.save_fabric_colors()
+			except Exception: pass
+			try: self.save_print_names()
+			except Exception: pass
+			try: self.save_fabric_categories()
+			except Exception: pass
+			try: self.save_model_names()
+			except Exception: pass
 
