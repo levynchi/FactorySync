@@ -163,7 +163,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
 
     # Sub Category (from categories.json)
-    ctx.dn_category_var = tk.StringVar()
+    ctx.dn_category_var = tk.StringVar(value='גזרות לא תפורות')
     ctx.dn_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_category_var, width=14, state='readonly')
     try:
         import os, json
@@ -177,17 +177,28 @@ def build_entry_tab(ctx, container: tk.Frame):
                     name = (item.get('name') or '').strip()
                     if name:
                         cats.append(name)
-        cats = sorted({c for c in cats})
+        # Ensure default subcategory exists in values
+        cats = sorted({c for c in cats} | {'גזרות לא תפורות'})
         ctx.dn_category_combo['values'] = cats
+        # If default not present, it's already injected above; keep default selection
     except Exception:
         pass
 
     # Main Category (from main_categories.json via data_processor)
-    ctx.dn_main_category_var = tk.StringVar()
+    ctx.dn_main_category_var = tk.StringVar(value='בגדים')
     ctx.dn_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_main_category_var, width=14, state='readonly')
     try:
         names = [c.get('name','') for c in getattr(ctx.data_processor, 'main_categories', [])]
         ctx.dn_main_category_combo['values'] = names
+        # Normalize default if not in list
+        if 'בגדים' in names:
+            try:
+                ctx.dn_main_category_var.set('בגדים')
+            except Exception:
+                pass
+        else:
+            # leave blank if not available
+            pass
     except Exception:
         # fallback: direct file read
         try:
@@ -200,6 +211,11 @@ def build_entry_tab(ctx, container: tk.Frame):
                 if isinstance(data, list):
                     names = [ (d.get('name') or '').strip() for d in data if (d.get('name') or '').strip() ]
             ctx.dn_main_category_combo['values'] = names
+            if 'בגדים' in names:
+                try:
+                    ctx.dn_main_category_var.set('בגדים')
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -212,7 +228,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'fabric_color': 'צבע בד',
         'fabric_category': 'קטגורית בד',
         'print_name': 'שם פרינט',
-        'sub_category': 'קטגוריה',
+    'sub_category': 'תת קטגוריה',
         'quantity': 'כמות',
         'note': 'הערה',
     }

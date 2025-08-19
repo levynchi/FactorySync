@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": 2,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-08-12",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "print_name": "חלק",
+        "quantity": 10,
+        "note": ""
+      }
+    ],
+    "total_quantity": 10,
+    "packages": [],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2025-08-12 14:53:06"
+  }
+]
