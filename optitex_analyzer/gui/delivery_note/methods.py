@@ -166,6 +166,27 @@ class DeliveryNoteMethodsMixin:
             else:
                 # fallback: blank
                 self.dn_fabric_category_var.set('')
+
+            # Also auto-fill print name from best-matching variant if user hasn't picked one yet
+            try:
+                if hasattr(self, 'dn_print_name_var'):
+                    cur_pn = (self.dn_print_name_var.get() or '').strip()
+                    cand_pn = ((best or {}).get('print_name') or '').strip()
+                    if cand_pn and not cur_pn:
+                        # Ensure combobox (if exists) contains the candidate
+                        if hasattr(self, 'dn_print_name_combo'):
+                            try:
+                                vals = list(self.dn_print_name_combo['values'] or [])
+                                if cand_pn not in vals:
+                                    # append without duplicates while preserving order
+                                    vals.append(cand_pn)
+                                    seen = set(); vals = [x for x in vals if not (x in seen or seen.add(x))]
+                                    self.dn_print_name_combo['values'] = vals
+                            except Exception:
+                                pass
+                        self.dn_print_name_var.set(cand_pn)
+            except Exception:
+                pass
         except Exception:
             try:
                 self.dn_fabric_category_var.set('')

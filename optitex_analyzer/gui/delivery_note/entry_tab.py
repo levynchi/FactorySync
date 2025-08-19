@@ -160,7 +160,14 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog match; show as read-only entry (not user-selectable)
     ctx.dn_fabric_category_entry = ttk.Entry(entry_bar, textvariable=ctx.dn_fabric_category_var, width=14, state='readonly')
-    dn_print_entry = tk.Entry(entry_bar, textvariable=ctx.dn_print_name_var, width=12)
+    # Print name: selection from catalog (filtered by product or main category)
+    ctx.dn_print_name_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_print_name_var, width=12, state='readonly')
+    try:
+        # initial population of print-name options
+        if hasattr(ctx, '_refresh_delivery_print_name_options'):
+            ctx._refresh_delivery_print_name_options()
+    except Exception:
+        pass
 
     # Sub Category (from categories.json)
     ctx.dn_category_var = tk.StringVar(value='גזרות לא תפורות')
@@ -245,8 +252,8 @@ def build_entry_tab(ctx, container: tk.Frame):
         'sizes': (label_widgets['sizes'], ctx.dn_size_combo),
         'fabric_type': (label_widgets['fabric_type'], ctx.dn_fabric_type_combo),
         'fabric_color': (label_widgets['fabric_color'], ctx.dn_fabric_color_combo),
-        'fabric_category': (label_widgets['fabric_category'], ctx.dn_fabric_category_entry),
-        'print_name': (label_widgets['print_name'], dn_print_entry),
+    'fabric_category': (label_widgets['fabric_category'], ctx.dn_fabric_category_entry),
+    'print_name': (label_widgets['print_name'], ctx.dn_print_name_combo),
         'sub_category': (label_widgets['sub_category'], ctx.dn_category_combo),
         'quantity': (label_widgets['quantity'], dn_qty_entry),
         'note': (label_widgets['note'], dn_note_entry),
@@ -325,6 +332,20 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx._refresh_delivery_products_allowed()
         except Exception:
             pass
+        # Refresh print-name options by selected main category (fallback list)
+        try:
+            if hasattr(ctx, '_refresh_delivery_print_name_options'):
+                ctx._refresh_delivery_print_name_options()
+                # Clear selection if no longer valid
+                try:
+                    vals = list(getattr(ctx.dn_print_name_combo, '__getitem__', lambda k: [])('values') or [])
+                except Exception:
+                    vals = []
+                cur = (ctx.dn_print_name_var.get() or '').strip()
+                if cur and vals and cur not in vals:
+                    ctx.dn_print_name_var.set('')
+        except Exception:
+            pass
         # Clear product and dependent selections as their domains changed
         try:
             ctx.dn_product_var.set('')
@@ -353,6 +374,9 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx._update_delivery_size_options()
             ctx._update_delivery_fabric_type_options()
             ctx._update_delivery_fabric_color_options()
+            # Update print-name options to those available for this product (or fallback by main category)
+            if hasattr(ctx, '_refresh_delivery_print_name_options'):
+                ctx._refresh_delivery_print_name_options()
             # also recompute fabric category when product changes
             if hasattr(ctx, '_update_delivery_fabric_category_auto'):
                 ctx._update_delivery_fabric_category_auto()
