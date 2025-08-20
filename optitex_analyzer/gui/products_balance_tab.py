@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+import calendar as _cal
 
 class ProductsBalanceTabMixin:
     """Mixin לטאב 'מאזן מוצרים ופריטים'.
@@ -103,19 +104,44 @@ class ProductsBalanceTabMixin:
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
         inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
         inner_bar.pack(fill='x', padx=10, pady=(0,6))
-        # טווח תאריכים: מתאריך ... עד תאריך ...
+        # טווח תאריכים: מתאריך ... עד תאריך ... עם בורר גרפי אם tkcalendar מותקן
         try:
+            DateEntry = None
+            try:
+                from tkcalendar import DateEntry  # type: ignore
+            except Exception:
+                DateEntry = None
             tk.Label(inner_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
             self.balance_to_date_var = tk.StringVar()
-            to_entry = tk.Entry(inner_bar, textvariable=self.balance_to_date_var, width=12)
+            if DateEntry is not None:
+                to_entry = DateEntry(inner_bar, textvariable=self.balance_to_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+                # רענון בעת בחירה מהקלנדר
+                try: to_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_products_balance_table())
+                except Exception: pass
+            else:
+                to_entry = tk.Entry(inner_bar, textvariable=self.balance_to_date_var, width=12)
+                to_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
             to_entry.pack(side='right', padx=(0,10))
-            to_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+            # כפתור פתיחת קלנדר מפורש – גם אם DateEntry קיים
+            try:
+                tk.Button(inner_bar, text='📅', width=2, command=lambda e=to_entry,v=self.balance_to_date_var: self._open_date_picker(e, v)).pack(side='right', padx=(0,4))
+            except Exception:
+                pass
 
             tk.Label(inner_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
             self.balance_from_date_var = tk.StringVar()
-            from_entry = tk.Entry(inner_bar, textvariable=self.balance_from_date_var, width=12)
+            if DateEntry is not None:
+                from_entry = DateEntry(inner_bar, textvariable=self.balance_from_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+                try: from_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_products_balance_table())
+                except Exception: pass
+            else:
+                from_entry = tk.Entry(inner_bar, textvariable=self.balance_from_date_var, width=12)
+                from_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
             from_entry.pack(side='right', padx=(0,6))
-            from_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+            try:
+                tk.Button(inner_bar, text='📅', width=2, command=lambda e=from_entry,v=self.balance_from_date_var: self._open_date_picker(e, v)).pack(side='right', padx=(0,4))
+            except Exception:
+                pass
         except Exception:
             pass
         tk.Label(inner_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
@@ -148,6 +174,178 @@ class ProductsBalanceTabMixin:
 
         # טעינה ראשונית – ריק עד בחירת ספק
         self._refresh_balance_views()
+
+    def _open_date_picker(self, anchor_widget, target_var: tk.StringVar):
+        """פותח חלון בחירת תאריך גרפי ללא תלות ב-tkcalendar; אם tkcalendar קיים – ישתמש בו.
+
+        יעדכן את target_var במחרוזת YYYY-MM-DD וירענן את הטבלה.
+        """
+        # נסה תחילה להשתמש ב-tkcalendar אם קיים
+        Calendar = None
+        try:
+            from tkcalendar import Calendar  # type: ignore
+        except Exception:
+            Calendar = None
+
+        top = tk.Toplevel(self._balance_page_frame)
+        top.transient(self._balance_page_frame)
+        top.title('בחירת תאריך')
+        top.resizable(False, False)
+        # מיקום ליד השדה
+        try:
+            x = anchor_widget.winfo_rootx(); y = anchor_widget.winfo_rooty() + anchor_widget.winfo_height()
+            top.geometry(f"320x320+{x}+{y}")
+        except Exception:
+            top.geometry('320x320')
+
+        # עזר: פרש תאריך התחלתי
+        def _parse_dt(s: str):
+            s = (s or '').strip()
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                try:
+                    return datetime.strptime(s, fmt)
+                except Exception:
+                    pass
+            return None
+
+        now_dt = _parse_dt(target_var.get()) or datetime.now()
+
+        # אם Calendar קיים – הצג אותו בפשטות
+        if Calendar is not None:
+            cal = Calendar(top, selectmode='day', year=now_dt.year, month=now_dt.month, day=now_dt.day, locale='he_IL')
+            cal.pack(fill='both', expand=True, padx=6, pady=6)
+            btns = tk.Frame(top); btns.pack(fill='x', padx=6, pady=(0,6))
+            def _set_and_close_from_cal():
+                try:
+                    d = cal.selection_get()
+                    if d:
+                        target_var.set(d.strftime('%Y-%m-%d'))
+                        self._refresh_products_balance_table()
+                except Exception:
+                    pass
+                try: top.destroy()
+                except Exception: pass
+            def _clear_and_close():
+                try: target_var.set('')
+                except Exception: pass
+                try: self._refresh_products_balance_table()
+                except Exception: pass
+                try: top.destroy()
+                except Exception: pass
+            tk.Button(btns, text='היום', command=lambda: [target_var.set(datetime.now().strftime('%Y-%m-%d')), self._refresh_products_balance_table(), top.destroy()]).pack(side='left')
+            tk.Button(btns, text='נקה', command=_clear_and_close).pack(side='left')
+            tk.Button(btns, text='בחר', command=_set_and_close_from_cal).pack(side='right')
+            try:
+                top.focus_set(); top.grab_set()
+            except Exception:
+                pass
+            return
+
+        # אחרת: בניית יומן בסיסי ב-Tk בלבד
+        header = tk.Frame(top)
+        header.pack(fill='x', padx=8, pady=(8,4))
+        month_var = tk.IntVar(value=now_dt.month)
+        year_var = tk.IntVar(value=now_dt.year)
+
+        def _update_title():
+            try:
+                title_lbl.config(text=f"{year_var.get():04d}-{month_var.get():02d}")
+            except Exception:
+                pass
+
+        def _change_month(delta):
+            m = month_var.get() + delta
+            y = year_var.get()
+            if m < 1:
+                m = 12; y -= 1
+            elif m > 12:
+                m = 1; y += 1
+            month_var.set(m); year_var.set(y)
+            _update_title(); _rebuild_days()
+
+        tk.Button(header, text='«', width=3, command=lambda: _change_month(-1)).pack(side='right')
+        title_lbl = tk.Label(header, text='', font=('Arial', 10, 'bold'))
+        title_lbl.pack(side='right', padx=6)
+        tk.Button(header, text='»', width=3, command=lambda: _change_month(+1)).pack(side='right')
+
+        # Today / Clear
+        tk.Button(header, text='היום', command=lambda: _select_date(datetime.now().year, datetime.now().month, datetime.now().day)).pack(side='left', padx=(0,6))
+        tk.Button(header, text='נקה', command=lambda: (_clear_and_close())).pack(side='left')
+
+        grid = tk.Frame(top)
+        grid.pack(fill='both', expand=True, padx=8, pady=6)
+
+        # כותרות ימים (א עד ש) – נתחיל ביום ראשון
+        # יצירת סדר שבוע החל מיום ראשון
+        weekdays = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
+        for i, w in enumerate(weekdays):
+            tk.Label(grid, text=w, width=4, anchor='center', fg='#2c3e50').grid(row=0, column=i, pady=(0,4))
+
+        day_btns = []  # נשמור כדי לעדכן/לנקות אם צריך
+
+        def _select_date(y, m, d):
+            try:
+                dt = datetime(int(y), int(m), int(d))
+                target_var.set(dt.strftime('%Y-%m-%d'))
+                self._refresh_products_balance_table()
+            except Exception:
+                pass
+            try:
+                top.destroy()
+            except Exception:
+                pass
+
+        def _clear_and_close():
+            try:
+                target_var.set('')
+            except Exception:
+                pass
+            try:
+                self._refresh_products_balance_table()
+            except Exception:
+                pass
+            try:
+                top.destroy()
+            except Exception:
+                pass
+
+        def _rebuild_days():
+            # נקה כפתורים ישנים
+            for b in day_btns:
+                try: b.destroy()
+                except Exception: pass
+            day_btns.clear()
+            y = year_var.get(); m = month_var.get()
+            _update_title()
+            # היום לצורך הדגשה
+            today = datetime.now()
+            # קבל את היום בשבוע של ה-1 לחודש (0=שני לפי calendar ברירת מחדל; נרצה ראשון בתחילת שבוע)
+            first_weekday, days_in_month = _cal.monthrange(y, m)  # 0=Monday..6=Sunday
+            # מיפוי כדי שעמודה 0 תהיה ראשון
+            start_col = (first_weekday + 1) % 7  # העתקה: Monday->1,... Sunday->0
+            row = 1; col = start_col
+            for d in range(1, days_in_month + 1):
+                txt = f"{d:02d}"
+                is_today = (d == today.day and m == today.month and y == today.year)
+                btn = tk.Button(
+                    grid,
+                    text=txt,
+                    width=4,
+                    relief='raised',
+                    bg=('#eaf2f8' if is_today else None),
+                    command=lambda D=d, Y=y, M=m: _select_date(Y, M, D)
+                )
+                btn.grid(row=row, column=col, padx=1, pady=1)
+                day_btns.append(btn)
+                col += 1
+                if col > 6:
+                    col = 0; row += 1
+
+        _rebuild_days()
+        try:
+            top.focus_set(); top.grab_set()
+        except Exception:
+            pass
 
     def _refresh_balance_views(self):
         """רענון שני המצבים: מאזן מוצרים ומה נגזר אצל הספק."""
