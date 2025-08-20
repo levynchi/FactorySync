@@ -103,6 +103,21 @@ class ProductsBalanceTabMixin:
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
         inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
         inner_bar.pack(fill='x', padx=10, pady=(0,6))
+        # טווח תאריכים: מתאריך ... עד תאריך ...
+        try:
+            tk.Label(inner_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            self.balance_to_date_var = tk.StringVar()
+            to_entry = tk.Entry(inner_bar, textvariable=self.balance_to_date_var, width=12)
+            to_entry.pack(side='right', padx=(0,10))
+            to_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+
+            tk.Label(inner_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            self.balance_from_date_var = tk.StringVar()
+            from_entry = tk.Entry(inner_bar, textvariable=self.balance_from_date_var, width=12)
+            from_entry.pack(side='right', padx=(0,6))
+            from_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
+        except Exception:
+            pass
         tk.Label(inner_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
         self.balance_search_var = tk.StringVar()
         search_entry = tk.Entry(inner_bar, textvariable=self.balance_search_var, width=24)
@@ -478,6 +493,34 @@ class ProductsBalanceTabMixin:
                 self.data_processor.refresh_supplier_receipts()
         except Exception:
             pass
+        # פרשנות טווח תאריכים
+        def _parse_dt(s):
+            s = (s or '').strip()
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                try:
+                    return datetime.strptime(s, fmt)
+                except Exception:
+                    pass
+            return None
+        try:
+            from_s = (getattr(self, 'balance_from_date_var', tk.StringVar()).get() or '').strip()
+            to_s   = (getattr(self, 'balance_to_date_var', tk.StringVar()).get() or '').strip()
+        except Exception:
+            from_s = to_s = ''
+        from_dt = _parse_dt(from_s) if from_s else None
+        to_dt   = _parse_dt(to_s) if to_s else None
+        def _in_range(date_str):
+            if not (from_dt or to_dt):
+                return True
+            d = _parse_dt(date_str)
+            if d is None:
+                # אם לא ניתן לפרש – אל תכלול כאשר מופעלים מסנני תאריך
+                return False
+            if from_dt and d < from_dt:
+                return False
+            if to_dt and d > to_dt:
+                return False
+            return True
         # איסוף כמויות לפי מוצר או לפי (מוצר, מידה)
         by_size = getattr(self, '_balance_detail_by_size', False)
         # ודא שהעמודות תואמות למצב הנוכחי
@@ -520,6 +563,9 @@ class ProductsBalanceTabMixin:
             for rec in notes:
                 if (rec.get('supplier') or '').strip() != supplier:
                     continue
+                # סינון לפי טווח תאריכים
+                if not _in_range(rec.get('date') or rec.get('created_at') or ''):
+                    continue
                 for ln in rec.get('lines', []) or []:
                     name = (ln.get('product') or '').strip()
                     size = (ln.get('size') or '').strip()
@@ -551,6 +597,9 @@ class ProductsBalanceTabMixin:
             intakes = getattr(self.data_processor, 'supplier_intakes', []) or []
             for rec in intakes:
                 if (rec.get('supplier') or '').strip() != supplier:
+                    continue
+                # סינון לפי טווח תאריכים
+                if not _in_range(rec.get('date') or rec.get('created_at') or ''):
                     continue
                 for ln in rec.get('lines', []) or []:
                     name = (ln.get('product') or '').strip()
@@ -591,6 +640,9 @@ class ProductsBalanceTabMixin:
                     if rec.get('status') != 'נחתך':
                         continue
                     if (rec.get('נמען') or '').strip() != supplier:
+                        continue
+                    # סינון לפי טווח תאריכים
+                    if not _in_range(rec.get('תאריך') or rec.get('date') or ''):
                         continue
                     layers = rec.get('שכבות')
                     try:
