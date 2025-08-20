@@ -115,28 +115,18 @@ class ProductsBalanceTabMixin:
         self.accessories_only_pending_var = tk.BooleanVar(value=False)
         tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
         tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
-        # כפתורי סינון מהיר לאביזרים עיקריים
+    # כפתורי סינון מהיר לאביזרים עיקריים
         self.accessories_kind_filter_var = tk.StringVar(value='')
+        tk.Button(acc_bar, text='כל האביזרים', command=self._set_accessories_summary).pack(side='left', padx=(4,12))
         tk.Button(acc_bar, text='טיקטקים', command=lambda: self._set_accessories_kind_filter('טיק טק קומפלט')).pack(side='left', padx=(16,4))
         tk.Button(acc_bar, text='גומי', command=lambda: self._set_accessories_kind_filter('גומי')).pack(side='left', padx=4)
         tk.Button(acc_bar, text='סרט', command=lambda: self._set_accessories_kind_filter('סרט')).pack(side='left', padx=4)
-        # טבלה
-        acc_cols = ('name','unit','shipped','received','diff','status')
-        self.accessories_tree = ttk.Treeview(accessories_page, columns=acc_cols, show='headings', height=18)
-        acc_headers = {'name':'שם אביזר','unit':'יחידה','shipped':'נשלח','received':'נתקבל','diff':'הפרש (נותר לקבל)','status':'סטטוס'}
-        acc_widths = {'name':300,'unit':80,'shipped':90,'received':90,'diff':140,'status':150}
-        for c in acc_cols:
-            self.accessories_tree.heading(c, text=acc_headers[c])
-            self.accessories_tree.column(c, width=acc_widths[c], anchor='center')
-        vs4 = ttk.Scrollbar(accessories_page, orient='vertical', command=self.accessories_tree.yview)
-        self.accessories_tree.configure(yscroll=vs4.set)
-        self.accessories_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
-        vs4.pack(side='left', fill='y', pady=6)
-        try:
-            self.accessories_tree.bind('<Double-1>', self._on_accessories_row_double_click)
-            self.accessories_tree.bind('<Return>', self._on_accessories_row_double_click)
-        except Exception:
-            pass
+        # טבלה (נבנית דינמית – סיכום או פירוט)
+        self._accessories_detail_mode = False
+        self._accessories_page_frame = accessories_page
+        self._accessories_tree_scrollbar = None
+        self.accessories_tree = None
+        self._build_accessories_tree(detail=False)
 
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
         inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
@@ -1412,9 +1402,95 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
-        # הצגה
+        detail = bool(getattr(self, '_accessories_detail_mode', False))
         search_txt = (getattr(self, 'accessories_search_var', tk.StringVar()).get() or '').strip().lower()
         only_pending = bool(getattr(self, 'accessories_only_pending_var', tk.BooleanVar()).get())
+        kind_filter = (getattr(self, 'accessories_kind_filter_var', tk.StringVar()).get() or '').strip()
+
+        if detail and kind_filter:
+            # פירוט כרונולוגי עבור אביזר נבחר
+            moves = []
+            def add(date, kind, doc_no, qty, direction):
+                moves.append({'date': date or '', 'kind': kind or '', 'no': str(doc_no or ''), 'qty': int(qty or 0), 'direction': direction or ''})
+            # משלוחים ישירים של האביזר
+            try:
+                for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in rec.get('lines', []) or []:
+                        if norm(ln.get('product')) != norm(kind_filter):
+                            continue
+                        qty = int(ln.get('quantity', 0) or 0)
+                        if qty > 0:
+                            add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
+            except Exception:
+                pass
+            # קליטות ישירות של האביזר
+            try:
+                for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in rec.get('lines', []) or []:
+                        if norm(ln.get('product')) == norm(kind_filter):
+                            qty = int(ln.get('quantity', 0) or 0)
+                            if qty > 0:
+                                add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
+                        # החזרי אביזרים מבגדים תפורים
+                        subc = norm(ln.get('category'))
+                        if subc == 'בגדים תפורים':
+                            p_name = norm(ln.get('product'))
+                            p_size = norm(ln.get('size'))
+                            qty_units = int(ln.get('quantity', 0) or 0)
+                            if qty_units <= 0:
+                                continue
+                            try:
+                                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                            except Exception:
+                                catalog = []
+                            def _match(r):
+                                return norm(r.get('name')) == p_name and (not p_size or norm(r.get('size')) == p_size)
+                            per_ticks = per_elastic = per_ribbon = 0
+                            try:
+                                for r in catalog:
+                                    if _match(r):
+                                        per_ticks = int(r.get('ticks_qty', 0) or 0)
+                                        per_elastic = int(r.get('elastic_qty', 0) or 0)
+                                        per_ribbon = int(r.get('ribbon_qty', 0) or 0)
+                                        break
+                            except Exception:
+                                pass
+                            if norm(kind_filter) == 'טיק טק קומפלט' and per_ticks > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ticks * qty_units, 'נתקבל')
+                            if norm(kind_filter) == 'גומי' and per_elastic > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל')
+                            if norm(kind_filter) == 'סרט' and per_ribbon > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל')
+            except Exception:
+                pass
+
+            # מיון והצגה
+            def parse_dt(s):
+                s = (s or '').strip()
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                    try:
+                        return datetime.strptime(s, fmt)
+                    except Exception:
+                        pass
+                return None
+            moves_sorted = sorted(moves, key=lambda m: (parse_dt(m['date']) or datetime.min, m['kind'], m['no']))
+            for m in moves_sorted:
+                # חיפוש טקסטואלי על שדות עיקריים
+                hay = f"{m['date']} {m['kind']} {m['no']} {m['direction']}"
+                if search_txt and search_txt.lower() not in hay.lower():
+                    continue
+                self.accessories_tree.insert('', 'end', values=(m['date'], m['kind'], m['no'], m['direction'], m['qty']))
+            return
+
+        # סיכום לפי 3 אביזרים עיקריים
         # יחידות
         unit_by_name = {}
         try:
@@ -1422,11 +1498,9 @@ class ProductsBalanceTabMixin:
                 unit_by_name[norm(r.get('name'))] = norm(r.get('unit')) or "יח'"
         except Exception:
             pass
-        names = sorted(set(list(shipped.keys()) + list(received.keys())))
-        kind_filter = (getattr(self, 'accessories_kind_filter_var', tk.StringVar()).get() or '').strip()
+        # תעדף רק שלושת הסוגים
+        names = ['גומי', 'טיק טק קומפלט', 'סרט']
         for name in names:
-            if kind_filter and norm(name) != kind_filter:
-                continue
             s = int(shipped.get(name, 0) or 0)
             r = int(received.get(name, 0) or 0)
             diff = s - r
@@ -1443,15 +1517,78 @@ class ProductsBalanceTabMixin:
         try:
             cur = (self.accessories_kind_filter_var.get() or '').strip()
             if cur == value:
-                self.accessories_kind_filter_var.set('')
+                # חזרה לתצוגת סיכום
+                self._set_accessories_summary()
             else:
                 self.accessories_kind_filter_var.set(value)
+                self._accessories_detail_mode = True
+                self._build_accessories_tree(detail=True)
         except Exception:
             pass
         self._refresh_accessories_balance_table()
 
+    def _set_accessories_summary(self):
+        # ביטול סינון והצגת שלוש השורות כסיכום
+        try:
+            self.accessories_kind_filter_var.set('')
+        except Exception:
+            pass
+        self._accessories_detail_mode = False
+        try:
+            self._build_accessories_tree(detail=False)
+        except Exception:
+            pass
+        self._refresh_accessories_balance_table()
+
+    def _build_accessories_tree(self, detail: bool):
+        # השמדת טבלה קודמת
+        try:
+            if self.accessories_tree is not None:
+                self.accessories_tree.destroy()
+        except Exception:
+            pass
+        try:
+            if self._accessories_tree_scrollbar is not None:
+                self._accessories_tree_scrollbar.destroy()
+        except Exception:
+            pass
+        # בניה
+        if detail:
+            cols = ('date','doc_type','doc_no','direction','qty')
+            headers = {'date':'תאריך','doc_type':'סוג מסמך','doc_no':'מס׳','direction':'תנועה','qty':'כמות'}
+            widths = {'date':140,'doc_type':170,'doc_no':120,'direction':90,'qty':90}
+        else:
+            cols = ('name','unit','shipped','received','diff','status')
+            headers = {'name':'שם אביזר','unit':'יחידה','shipped':'נשלח','received':'נתקבל','diff':'הפרש (נותר לקבל)','status':'סטטוס'}
+            widths = {'name':300,'unit':80,'shipped':90,'received':90,'diff':140,'status':150}
+        self.accessories_tree = ttk.Treeview(self._accessories_page_frame, columns=cols, show='headings', height=18)
+        for c in cols:
+            self.accessories_tree.heading(c, text=headers[c])
+            self.accessories_tree.column(c, width=widths[c], anchor='center')
+        self._accessories_tree_scrollbar = ttk.Scrollbar(self._accessories_page_frame, orient='vertical', command=self.accessories_tree.yview)
+        self.accessories_tree.configure(yscroll=self._accessories_tree_scrollbar.set)
+        self.accessories_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
+        self._accessories_tree_scrollbar.pack(side='left', fill='y', pady=6)
+        try:
+            self.accessories_tree.bind('<Double-1>', self._on_accessories_row_double_click)
+            self.accessories_tree.bind('<Return>', self._on_accessories_row_double_click)
+        except Exception:
+            pass
+
     def _on_accessories_row_double_click(self, event=None):
         try:
+            # אם במצב פירוט – פתח חלון פירוט עבור סוג האביזר המסונן, לא עבור השורה (שהעמודה הראשונה בה היא תאריך)
+            if bool(getattr(self, '_accessories_detail_mode', False)):
+                try:
+                    name = (self.accessories_kind_filter_var.get() or '').strip()
+                except Exception:
+                    name = ''
+                if name:
+                    # מעביר מערך שבו התא הראשון הוא שם האביזר כדי שחלון הפירוט יעבוד נכון
+                    self._open_accessory_details((name,))
+                return
+
+            # במצב סיכום – פתח פירוט לפי האביזר שנבחר מהטבלה
             sel = self.accessories_tree.selection()
             if not sel:
                 return
