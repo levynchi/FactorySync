@@ -115,6 +115,11 @@ class ProductsBalanceTabMixin:
         self.accessories_only_pending_var = tk.BooleanVar(value=False)
         tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
         tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        # כפתורי סינון מהיר לאביזרים עיקריים
+        self.accessories_kind_filter_var = tk.StringVar(value='')
+        tk.Button(acc_bar, text='טיקטקים', command=lambda: self._set_accessories_kind_filter('טיק טק קומפלט')).pack(side='left', padx=(16,4))
+        tk.Button(acc_bar, text='גומי', command=lambda: self._set_accessories_kind_filter('גומי')).pack(side='left', padx=4)
+        tk.Button(acc_bar, text='סרט', command=lambda: self._set_accessories_kind_filter('סרט')).pack(side='left', padx=4)
         # טבלה
         acc_cols = ('name','unit','shipped','received','diff','status')
         self.accessories_tree = ttk.Treeview(accessories_page, columns=acc_cols, show='headings', height=18)
@@ -1418,7 +1423,10 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         names = sorted(set(list(shipped.keys()) + list(received.keys())))
+        kind_filter = (getattr(self, 'accessories_kind_filter_var', tk.StringVar()).get() or '').strip()
         for name in names:
+            if kind_filter and norm(name) != kind_filter:
+                continue
             s = int(shipped.get(name, 0) or 0)
             r = int(received.get(name, 0) or 0)
             diff = s - r
@@ -1429,6 +1437,18 @@ class ProductsBalanceTabMixin:
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
             unit = unit_by_name.get(name, "יח'")
             self.accessories_tree.insert('', 'end', values=(name, unit, s, r, max(diff,0), status))
+
+    def _set_accessories_kind_filter(self, value: str):
+        """טוגל סינון לפי סוג אביזר עיקרי (טיק טק קומפלט/גומי/סרט). לחיצה חוזרת מנקה את הסינון."""
+        try:
+            cur = (self.accessories_kind_filter_var.get() or '').strip()
+            if cur == value:
+                self.accessories_kind_filter_var.set('')
+            else:
+                self.accessories_kind_filter_var.set(value)
+        except Exception:
+            pass
+        self._refresh_accessories_balance_table()
 
     def _on_accessories_row_double_click(self, event=None):
         try:
