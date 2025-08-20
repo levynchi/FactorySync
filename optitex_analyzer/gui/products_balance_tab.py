@@ -101,6 +101,38 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
+        # עמוד חדש: מאזן אביזרי תפירה
+        accessories_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(accessories_page, text='מאזן אביזרי תפירה')
+        tk.Label(accessories_page, text='מאזן אביזרי תפירה לפי ספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        acc_bar = tk.Frame(accessories_page, bg='#f7f9fa'); acc_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(acc_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.accessories_search_var = tk.StringVar(); acc_search = tk.Entry(acc_bar, textvariable=self.accessories_search_var, width=24); acc_search.pack(side='right', padx=(0,6))
+        try:
+            acc_search.bind('<KeyRelease>', lambda e: self._refresh_accessories_balance_table())
+        except Exception:
+            pass
+        self.accessories_only_pending_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
+        tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        # טבלה
+        acc_cols = ('name','unit','shipped','received','diff','status')
+        self.accessories_tree = ttk.Treeview(accessories_page, columns=acc_cols, show='headings', height=18)
+        acc_headers = {'name':'שם אביזר','unit':'יחידה','shipped':'נשלח','received':'נתקבל','diff':'הפרש (נותר לקבל)','status':'סטטוס'}
+        acc_widths = {'name':300,'unit':80,'shipped':90,'received':90,'diff':140,'status':150}
+        for c in acc_cols:
+            self.accessories_tree.heading(c, text=acc_headers[c])
+            self.accessories_tree.column(c, width=acc_widths[c], anchor='center')
+        vs4 = ttk.Scrollbar(accessories_page, orient='vertical', command=self.accessories_tree.yview)
+        self.accessories_tree.configure(yscroll=vs4.set)
+        self.accessories_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
+        vs4.pack(side='left', fill='y', pady=6)
+        try:
+            self.accessories_tree.bind('<Double-1>', self._on_accessories_row_double_click)
+            self.accessories_tree.bind('<Return>', self._on_accessories_row_double_click)
+        except Exception:
+            pass
+
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
         inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
         inner_bar.pack(fill='x', padx=10, pady=(0,6))
@@ -359,6 +391,10 @@ class ProductsBalanceTabMixin:
             pass
         try:
             self._refresh_cut_balance_table()
+        except Exception:
+            pass
+        try:
+            self._refresh_accessories_balance_table()
         except Exception:
             pass
 
@@ -1277,6 +1313,190 @@ class ProductsBalanceTabMixin:
             try:
                 shipped_sum = sum(m['qty'] for m in movements if m['direction'] == 'נשלח')
                 received_sum = sum(m['qty'] for m in movements if m['direction'] == 'נתקבל')
+                diff = shipped_sum - received_sum
+                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
+                summary.pack(fill='x', padx=10, pady=(0,10))
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    # === מאזן אביזרי תפירה ===
+    def _refresh_accessories_balance_table(self):
+        supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+        if not hasattr(self, 'accessories_tree'):
+            return
+        # ניקוי
+        for iid in self.accessories_tree.get_children():
+            self.accessories_tree.delete(iid)
+        if not supplier:
+            return
+        # ריענון נתונים
+        try:
+            if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                self.data_processor.refresh_supplier_receipts()
+        except Exception:
+            pass
+
+        # צבירה: אביזרים שנשלחו ונתקבלו
+        shipped = {}   # name -> qty
+        received = {}  # name -> qty
+
+        def norm(s):
+            return (s or '').strip()
+
+        # נשלח: מתוך תעודות משלוח, שורות ללא main category של בגדים ושם מוצר קיים כאביזר או ללא מידה
+        try:
+            acc_names = set(norm(r.get('name')) for r in getattr(self.data_processor, 'sewing_accessories', []) or [])
+        except Exception:
+            acc_names = set()
+        try:
+            for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
+                if norm(rec.get('supplier')) != norm(supplier):
+                    continue
+                for ln in rec.get('lines', []) or []:
+                    name = norm(ln.get('product'))
+                    qty = int(ln.get('quantity', 0) or 0)
+                    if not name or qty <= 0:
+                        continue
+                    # אביזרי תפירה מזוהים לפי רשימת האביזרים או לפי חוסר מידה/קטגוריות בד
+                    if name in acc_names or (not norm(ln.get('size')) and not norm(ln.get('fabric_type')) and not norm(ln.get('fabric_category'))):
+                        shipped[name] = shipped.get(name, 0) + qty
+        except Exception:
+            pass
+
+        # נתקבל: מתוך תעודות קליטה, אותו היגיון
+        try:
+            for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+                if norm(rec.get('supplier')) != norm(supplier):
+                    continue
+                for ln in rec.get('lines', []) or []:
+                    name = norm(ln.get('product'))
+                    qty = int(ln.get('quantity', 0) or 0)
+                    if not name or qty <= 0:
+                        continue
+                    if name in acc_names or (not norm(ln.get('size')) and not norm(ln.get('fabric_type')) and not norm(ln.get('fabric_category'))):
+                        received[name] = received.get(name, 0) + qty
+        except Exception:
+            pass
+
+        # הצגה
+        search_txt = (getattr(self, 'accessories_search_var', tk.StringVar()).get() or '').strip().lower()
+        only_pending = bool(getattr(self, 'accessories_only_pending_var', tk.BooleanVar()).get())
+        # יחידות
+        unit_by_name = {}
+        try:
+            for r in getattr(self.data_processor, 'sewing_accessories', []) or []:
+                unit_by_name[norm(r.get('name'))] = norm(r.get('unit')) or "יח'"
+        except Exception:
+            pass
+        names = sorted(set(list(shipped.keys()) + list(received.keys())))
+        for name in names:
+            s = int(shipped.get(name, 0) or 0)
+            r = int(received.get(name, 0) or 0)
+            diff = s - r
+            if search_txt and search_txt not in name.lower():
+                continue
+            if only_pending and diff <= 0:
+                continue
+            status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
+            unit = unit_by_name.get(name, "יח'")
+            self.accessories_tree.insert('', 'end', values=(name, unit, s, r, max(diff,0), status))
+
+    def _on_accessories_row_double_click(self, event=None):
+        try:
+            sel = self.accessories_tree.selection()
+            if not sel:
+                return
+            item_id = sel[0]
+            values = self.accessories_tree.item(item_id, 'values') or []
+            self._open_accessory_details(values)
+        except Exception:
+            pass
+
+    def _open_accessory_details(self, row_values):
+        """חלון פירוט תנועות עבור אביזר נבחר (נשלח/נתקבל לפי מסמכים)."""
+        try:
+            supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+            if not supplier:
+                return
+            def _get(i, d=''):
+                try:
+                    return (row_values[i] if i < len(row_values) else d) or d
+                except Exception:
+                    return d
+            name = _get(0, '')
+            def norm(s):
+                return (s or '').strip()
+            try:
+                if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                    self.data_processor.refresh_supplier_receipts()
+            except Exception:
+                pass
+            moves = []
+            def add(date, kind, doc_no, qty, direction):
+                moves.append({'date': date or '', 'kind': kind or '', 'no': str(doc_no or ''), 'qty': int(qty or 0), 'direction': direction or ''})
+            # משלוחים
+            try:
+                for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in rec.get('lines', []) or []:
+                        if norm(ln.get('product')) != norm(name):
+                            continue
+                        qty = int(ln.get('quantity', 0) or 0)
+                        if qty > 0:
+                            add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
+            except Exception:
+                pass
+            # קליטות
+            try:
+                for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+                    if norm(rec.get('supplier')) != norm(supplier):
+                        continue
+                    rec_date = rec.get('date') or rec.get('created_at') or ''
+                    rec_no = rec.get('number') or rec.get('id') or ''
+                    for ln in rec.get('lines', []) or []:
+                        if norm(ln.get('product')) != norm(name):
+                            continue
+                        qty = int(ln.get('quantity', 0) or 0)
+                        if qty > 0:
+                            add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
+            except Exception:
+                pass
+
+            win = tk.Toplevel(self._balance_page_frame)
+            win.title(f"פירוט תנועות – אביזר: {name}")
+            win.geometry('720x520')
+            cols = ('date','kind','no','direction','qty')
+            headers = {'date':'תאריך','kind':'סוג מסמך','no':'מס׳','direction':'תנועה','qty':'כמות'}
+            widths = {'date':140,'kind':170,'no':120,'direction':90,'qty':80}
+            tree = ttk.Treeview(win, columns=cols, show='headings', height=18)
+            for c in cols:
+                tree.heading(c, text=headers[c])
+                tree.column(c, width=widths[c], anchor='center')
+            vs = ttk.Scrollbar(win, orient='vertical', command=tree.yview)
+            tree.configure(yscroll=vs.set)
+            tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=10)
+            vs.pack(side='left', fill='y', pady=10)
+
+            def parse_dt(s):
+                s = (s or '').strip()
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                    try:
+                        return datetime.strptime(s, fmt)
+                    except Exception:
+                        pass
+                return None
+            moves_sorted = sorted(moves, key=lambda m: (parse_dt(m['date']) or datetime.min, m['kind'], m['no']))
+            for m in moves_sorted:
+                tree.insert('', 'end', values=(m['date'], m['kind'], m['no'], m['direction'], m['qty']))
+
+            try:
+                shipped_sum = sum(m['qty'] for m in moves if m['direction'] == 'נשלח')
+                received_sum = sum(m['qty'] for m in moves if m['direction'] == 'נתקבל')
                 diff = shipped_sum - received_sum
                 summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
                 summary.pack(fill='x', padx=10, pady=(0,10))
