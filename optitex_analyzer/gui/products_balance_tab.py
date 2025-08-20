@@ -1377,6 +1377,33 @@ class ProductsBalanceTabMixin:
                         continue
                     if name in acc_names or (not norm(ln.get('size')) and not norm(ln.get('fabric_type')) and not norm(ln.get('fabric_category'))):
                         received[name] = received.get(name, 0) + qty
+                    # תוספת: אביזרים שחזרו מבגדים תפורים – חישוב לפי הקטלוג
+                    subc = norm(ln.get('category'))
+                    if subc == 'בגדים תפורים':
+                        # חפש בקטלוג את רשומת המוצר לפי שם/מידה לקבלת כמויות אביזרים ליחידה
+                        psize = norm(ln.get('size'))
+                        try:
+                            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                        except Exception:
+                            catalog = []
+                        def _match(r):
+                            return norm(r.get('name')) == name and (not psize or norm(r.get('size')) == psize)
+                        per_ticks = per_elastic = per_ribbon = 0
+                        try:
+                            for r in catalog:
+                                if _match(r):
+                                    per_ticks = int(r.get('ticks_qty', 0) or 0)
+                                    per_elastic = int(r.get('elastic_qty', 0) or 0)
+                                    per_ribbon = int(r.get('ribbon_qty', 0) or 0)
+                                    break
+                        except Exception:
+                            pass
+                        if per_ticks > 0:
+                            received['טיק טק קומפלט'] = received.get('טיק טק קומפלט', 0) + per_ticks * qty
+                        if per_elastic > 0:
+                            received['גומי'] = received.get('גומי', 0) + per_elastic * qty
+                        if per_ribbon > 0:
+                            received['סרט'] = received.get('סרט', 0) + per_ribbon * qty
         except Exception:
             pass
 
@@ -1459,11 +1486,41 @@ class ProductsBalanceTabMixin:
                     rec_date = rec.get('date') or rec.get('created_at') or ''
                     rec_no = rec.get('number') or rec.get('id') or ''
                     for ln in rec.get('lines', []) or []:
-                        if norm(ln.get('product')) != norm(name):
-                            continue
-                        qty = int(ln.get('quantity', 0) or 0)
-                        if qty > 0:
-                            add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
+                        # אם זו קליטה של אביזר ישיר
+                        if norm(ln.get('product')) == norm(name):
+                            qty = int(ln.get('quantity', 0) or 0)
+                            if qty > 0:
+                                add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
+                        # אם זו קליטה של בגדים תפורים – חשב אביזרים שחזרו
+                        subc = norm(ln.get('category'))
+                        if subc == 'בגדים תפורים':
+                            p_name = norm(ln.get('product'))
+                            p_size = norm(ln.get('size'))
+                            qty_units = int(ln.get('quantity', 0) or 0)
+                            if qty_units <= 0:
+                                continue
+                            try:
+                                catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                            except Exception:
+                                catalog = []
+                            def _match(r):
+                                return norm(r.get('name')) == p_name and (not p_size or norm(r.get('size')) == p_size)
+                            per_ticks = per_elastic = per_ribbon = 0
+                            try:
+                                for r in catalog:
+                                    if _match(r):
+                                        per_ticks = int(r.get('ticks_qty', 0) or 0)
+                                        per_elastic = int(r.get('elastic_qty', 0) or 0)
+                                        per_ribbon = int(r.get('ribbon_qty', 0) or 0)
+                                        break
+                            except Exception:
+                                pass
+                            if norm(name) == 'טיק טק קומפלט' and per_ticks > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ticks * qty_units, 'נתקבל')
+                            if norm(name) == 'גומי' and per_elastic > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל')
+                            if norm(name) == 'סרט' and per_ribbon > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל')
             except Exception:
                 pass
 
