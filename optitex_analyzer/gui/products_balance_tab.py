@@ -112,6 +112,44 @@ class ProductsBalanceTabMixin:
             acc_search.bind('<KeyRelease>', lambda e: self._refresh_accessories_balance_table())
         except Exception:
             pass
+        # טווח תאריכים לאביזרים – כמו בעמוד מאזן מוצרים
+        try:
+            DateEntry = None
+            try:
+                from tkcalendar import DateEntry  # type: ignore
+            except Exception:
+                DateEntry = None
+            tk.Label(acc_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            self.accessories_to_date_var = tk.StringVar()
+            if DateEntry is not None:
+                acc_to_entry = DateEntry(acc_bar, textvariable=self.accessories_to_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+                try: acc_to_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_accessories_balance_table())
+                except Exception: pass
+            else:
+                acc_to_entry = tk.Entry(acc_bar, textvariable=self.accessories_to_date_var, width=12)
+                acc_to_entry.bind('<KeyRelease>', lambda e: self._refresh_accessories_balance_table())
+            acc_to_entry.pack(side='right', padx=(0,10))
+            try:
+                tk.Button(acc_bar, text='📅', width=2, command=lambda e=acc_to_entry,v=self.accessories_to_date_var: self._open_date_picker(e, v, self._refresh_accessories_balance_table)).pack(side='right', padx=(0,4))
+            except Exception:
+                pass
+
+            tk.Label(acc_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            self.accessories_from_date_var = tk.StringVar()
+            if DateEntry is not None:
+                acc_from_entry = DateEntry(acc_bar, textvariable=self.accessories_from_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+                try: acc_from_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_accessories_balance_table())
+                except Exception: pass
+            else:
+                acc_from_entry = tk.Entry(acc_bar, textvariable=self.accessories_from_date_var, width=12)
+                acc_from_entry.bind('<KeyRelease>', lambda e: self._refresh_accessories_balance_table())
+            acc_from_entry.pack(side='right', padx=(0,6))
+            try:
+                tk.Button(acc_bar, text='📅', width=2, command=lambda e=acc_from_entry,v=self.accessories_from_date_var: self._open_date_picker(e, v, self._refresh_accessories_balance_table)).pack(side='right', padx=(0,4))
+            except Exception:
+                pass
+        except Exception:
+            pass
         self.accessories_only_pending_var = tk.BooleanVar(value=False)
         tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
         tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
@@ -151,7 +189,7 @@ class ProductsBalanceTabMixin:
             to_entry.pack(side='right', padx=(0,10))
             # כפתור פתיחת קלנדר מפורש – גם אם DateEntry קיים
             try:
-                tk.Button(inner_bar, text='📅', width=2, command=lambda e=to_entry,v=self.balance_to_date_var: self._open_date_picker(e, v)).pack(side='right', padx=(0,4))
+                tk.Button(inner_bar, text='📅', width=2, command=lambda e=to_entry,v=self.balance_to_date_var: self._open_date_picker(e, v, self._refresh_products_balance_table)).pack(side='right', padx=(0,4))
             except Exception:
                 pass
 
@@ -166,7 +204,7 @@ class ProductsBalanceTabMixin:
                 from_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
             from_entry.pack(side='right', padx=(0,6))
             try:
-                tk.Button(inner_bar, text='📅', width=2, command=lambda e=from_entry,v=self.balance_from_date_var: self._open_date_picker(e, v)).pack(side='right', padx=(0,4))
+                tk.Button(inner_bar, text='📅', width=2, command=lambda e=from_entry,v=self.balance_from_date_var: self._open_date_picker(e, v, self._refresh_products_balance_table)).pack(side='right', padx=(0,4))
             except Exception:
                 pass
         except Exception:
@@ -202,7 +240,7 @@ class ProductsBalanceTabMixin:
         # טעינה ראשונית – ריק עד בחירת ספק
         self._refresh_balance_views()
 
-    def _open_date_picker(self, anchor_widget, target_var: tk.StringVar):
+    def _open_date_picker(self, anchor_widget, target_var: tk.StringVar, on_change=None):
         """פותח חלון בחירת תאריך גרפי ללא תלות ב-tkcalendar; אם tkcalendar קיים – ישתמש בו.
 
         יעדכן את target_var במחרוזת YYYY-MM-DD וירענן את הטבלה.
@@ -247,7 +285,10 @@ class ProductsBalanceTabMixin:
                     d = cal.selection_get()
                     if d:
                         target_var.set(d.strftime('%Y-%m-%d'))
-                        self._refresh_products_balance_table()
+                        try:
+                            (on_change or self._refresh_products_balance_table)()
+                        except Exception:
+                            pass
                 except Exception:
                     pass
                 try: top.destroy()
@@ -255,11 +296,13 @@ class ProductsBalanceTabMixin:
             def _clear_and_close():
                 try: target_var.set('')
                 except Exception: pass
-                try: self._refresh_products_balance_table()
-                except Exception: pass
+                try:
+                    (on_change or self._refresh_products_balance_table)()
+                except Exception:
+                    pass
                 try: top.destroy()
                 except Exception: pass
-            tk.Button(btns, text='היום', command=lambda: [target_var.set(datetime.now().strftime('%Y-%m-%d')), self._refresh_products_balance_table(), top.destroy()]).pack(side='left')
+            tk.Button(btns, text='היום', command=lambda: [target_var.set(datetime.now().strftime('%Y-%m-%d')), (on_change or self._refresh_products_balance_table)(), top.destroy()]).pack(side='left')
             tk.Button(btns, text='נקה', command=_clear_and_close).pack(side='left')
             tk.Button(btns, text='בחר', command=_set_and_close_from_cal).pack(side='right')
             try:
@@ -314,7 +357,10 @@ class ProductsBalanceTabMixin:
             try:
                 dt = datetime(int(y), int(m), int(d))
                 target_var.set(dt.strftime('%Y-%m-%d'))
-                self._refresh_products_balance_table()
+                try:
+                    (on_change or self._refresh_products_balance_table)()
+                except Exception:
+                    pass
             except Exception:
                 pass
             try:
@@ -328,7 +374,7 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
             try:
-                self._refresh_products_balance_table()
+                (on_change or self._refresh_products_balance_table)()
             except Exception:
                 pass
             try:
@@ -1326,6 +1372,36 @@ class ProductsBalanceTabMixin:
             self.accessories_tree.delete(iid)
         if not supplier:
             return
+        # סינון לפי טווח תאריכים
+        def parse_dt(s):
+            s = (s or '').strip()
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+                try:
+                    return datetime.strptime(s, fmt)
+                except Exception:
+                    pass
+            return None
+        try:
+            from_s = (getattr(self, 'accessories_from_date_var', tk.StringVar()).get() or '').strip()
+        except Exception:
+            from_s = ''
+        try:
+            to_s = (getattr(self, 'accessories_to_date_var', tk.StringVar()).get() or '').strip()
+        except Exception:
+            to_s = ''
+        start_dt = parse_dt(from_s)
+        end_dt = parse_dt(to_s)
+        def in_range(date_str: str) -> bool:
+            if not (start_dt or end_dt):
+                return True
+            d = parse_dt(date_str)
+            if not d:
+                return True
+            if start_dt and d < start_dt:
+                return False
+            if end_dt and d > end_dt:
+                return False
+            return True
         # ריענון נתונים
         try:
             if hasattr(self.data_processor, 'refresh_supplier_receipts'):
@@ -1370,6 +1446,9 @@ class ProductsBalanceTabMixin:
             for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
                 if norm(rec.get('supplier')) != norm(supplier):
                     continue
+                rec_date = rec.get('date') or rec.get('created_at') or ''
+                if not in_range(rec_date):
+                    continue
                 for ln in rec.get('lines', []) or []:
                     name = norm(ln.get('product'))
                     qty = int(ln.get('quantity', 0) or 0)
@@ -1385,6 +1464,9 @@ class ProductsBalanceTabMixin:
         try:
             for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
                 if norm(rec.get('supplier')) != norm(supplier):
+                    continue
+                rec_date = rec.get('date') or rec.get('created_at') or ''
+                if not in_range(rec_date):
                     continue
                 for ln in rec.get('lines', []) or []:
                     name = norm(ln.get('product'))
@@ -1439,6 +1521,8 @@ class ProductsBalanceTabMixin:
                     if norm(rec.get('supplier')) != norm(supplier):
                         continue
                     rec_date = rec.get('date') or rec.get('created_at') or ''
+                    if not in_range(rec_date):
+                        continue
                     rec_no = rec.get('number') or rec.get('id') or ''
                     for ln in rec.get('lines', []) or []:
                         if norm(ln.get('product')) != norm(kind_filter):
@@ -1454,6 +1538,8 @@ class ProductsBalanceTabMixin:
                     if norm(rec.get('supplier')) != norm(supplier):
                         continue
                     rec_date = rec.get('date') or rec.get('created_at') or ''
+                    if not in_range(rec_date):
+                        continue
                     rec_no = rec.get('number') or rec.get('id') or ''
                     for ln in rec.get('lines', []) or []:
                         if norm(ln.get('product')) == norm(kind_filter):
