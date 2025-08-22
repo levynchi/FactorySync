@@ -7,13 +7,20 @@ class BusinessDetailsTabMixin:
     """Tab for managing business/company details (name, VAT id, logo, address, etc.)."""
 
     def _create_business_details_tab(self):
+        """Create a standalone 'Business Details' tab on the main notebook (legacy placement)."""
         tab = tk.Frame(self.notebook, bg="#f7f9fa")
         self.notebook.add(tab, text="פרטי עסק")
+        self._build_business_details_panel(tab)
 
-        title = tk.Label(tab, text="פרטי העסק", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+    def _build_business_details_panel(self, parent: tk.Widget):
+        """Build the Business Details UI into the given parent container.
+
+        Used by the standalone tab and by the 'ניהול תוכנה' wrapper tab.
+        """
+        title = tk.Label(parent, text="פרטי העסק", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
         title.pack(pady=(10, 6))
 
-        body = tk.Frame(tab, bg="#f7f9fa")
+        body = tk.Frame(parent, bg="#f7f9fa")
         body.pack(fill="both", expand=True, padx=14, pady=8)
 
         # state vars
@@ -85,6 +92,21 @@ class BusinessDetailsTabMixin:
 
         # Load values
         self._bd_load_from_settings()
+
+    def _create_software_management_tab(self):
+        """Create a parent tab 'ניהול תוכנה' and place 'פרטי עסק' as a sub-tab within it."""
+        parent_tab = tk.Frame(self.notebook, bg="#f7f9fa")
+        self.notebook.add(parent_tab, text="ניהול תוכנה")
+
+        # Inner notebook for management pages
+        inner_nb = ttk.Notebook(parent_tab)
+        inner_nb.pack(fill="both", expand=True)
+        self.software_mgmt_notebook = inner_nb
+
+        # Business Details sub-tab
+        bd_tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        inner_nb.add(bd_tab, text="פרטי עסק")
+        self._build_business_details_panel(bd_tab)
 
     # ---- Logo helpers ----
     def _bd_pick_logo(self):
