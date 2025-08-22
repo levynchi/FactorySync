@@ -1,4 +1,6 @@
 import os
+import zipfile
+from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -107,6 +109,258 @@ class BusinessDetailsTabMixin:
         bd_tab = tk.Frame(inner_nb, bg="#f7f9fa")
         inner_nb.add(bd_tab, text="פרטי עסק")
         self._build_business_details_panel(bd_tab)
+
+        # Backups sub-tab
+        self._create_backups_tab(inner_nb)
+
+    # ---- Backups Tab ----
+    def _create_backups_tab(self, inner_nb: ttk.Notebook):
+        tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        inner_nb.add(tab, text="גיבויים")
+
+        title = tk.Label(tab, text="גיבוי כל נתוני התוכנה", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        title.pack(pady=(10, 6))
+
+        body = tk.Frame(tab, bg="#f7f9fa")
+        body.pack(fill="both", expand=True, padx=12, pady=8)
+
+        # Controls
+        ctrl = tk.Frame(body, bg="#f7f9fa")
+        ctrl.pack(fill="x", pady=(0, 8))
+        tk.Button(ctrl, text="צור גיבוי עכשיו", bg="#2980b9", fg="white", command=self._run_full_backup).pack(side="right", padx=(8, 0))
+        tk.Button(ctrl, text="שחזר מגיבוי…", command=self._restore_from_backup).pack(side="right", padx=(8, 0))
+        tk.Button(ctrl, text="פתח תיקיית גיבויים", command=self._open_backups_folder).pack(side="right", padx=(8, 0))
+        tk.Button(ctrl, text="רענן רשימה", command=self._refresh_backups_list).pack(side="right")
+
+        self.backup_status_label = tk.Label(body, text="", bg="#f7f9fa", fg="#2c3e50", anchor="e", justify="right")
+        self.backup_status_label.pack(fill="x", pady=(0, 6))
+
+        # Backups list
+        list_frame = tk.Frame(body, bg="#f7f9fa")
+        list_frame.pack(fill="both", expand=True)
+
+        columns = ("name", "size", "date")
+        self.backups_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=10)
+        self.backups_tree.heading("name", text="שם קובץ")
+        self.backups_tree.heading("size", text="גודל")
+        self.backups_tree.heading("date", text="תאריך")
+        self.backups_tree.column("name", anchor="e", width=460)
+        self.backups_tree.column("size", anchor="center", width=120)
+        self.backups_tree.column("date", anchor="center", width=180)
+        self.backups_tree.pack(side="right", fill="both", expand=True)
+
+        yscroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.backups_tree.yview)
+        self.backups_tree.configure(yscrollcommand=yscroll.set)
+        yscroll.pack(side="left", fill="y")
+
+        # Ensure backups dir exists and load list
+        try:
+            os.makedirs(self._get_backups_dir(), exist_ok=True)
+        except Exception:
+            pass
+        self._refresh_backups_list()
+
+    def _get_root_dir(self) -> str:
+        # project root (folder containing main.py)
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+
+    def _get_backups_dir(self) -> str:
+        return os.path.join(self._get_root_dir(), "backups")
+
+    def _format_size(self, bytes_val: int) -> str:
+        try:
+            for unit in ["B", "KB", "MB", "GB"]:
+                if bytes_val < 1024.0:
+                    return f"{bytes_val:3.1f} {unit}"
+                bytes_val /= 1024.0
+            return f"{bytes_val:.1f} TB"
+        except Exception:
+            return str(bytes_val)
+
+    def _refresh_backups_list(self):
+        try:
+            dir_path = self._get_backups_dir()
+            items = []
+            if os.path.isdir(dir_path):
+                for name in os.listdir(dir_path):
+                    if not name.lower().endswith(".zip"):
+                        continue
+                    fp = os.path.join(dir_path, name)
+                    try:
+                        st = os.stat(fp)
+                        size = self._format_size(st.st_size)
+                        dt = datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M")
+                        items.append((name, size, dt))
+                    except Exception:
+                        pass
+            # sort newest first by date string (already formatted), sort by name as fallback
+            items.sort(key=lambda x: x[2], reverse=True)
+            # update tree
+            for iid in self.backups_tree.get_children():
+                self.backups_tree.delete(iid)
+            if not items:
+                self.backups_tree.insert("", "end", values=("— אין גיבויים —", "", ""))
+            else:
+                for row in items:
+                    self.backups_tree.insert("", "end", values=row)
+        except Exception:
+            pass
+
+    def _open_backups_folder(self):
+        try:
+            path = self._get_backups_dir()
+            os.makedirs(path, exist_ok=True)
+            # Open in OS file explorer
+            if os.name == "nt":
+                os.startfile(path)  # type: ignore[attr-defined]
+            else:
+                import subprocess, sys
+                subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", path])
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"פתיחת התיקייה נכשלה: {e}")
+            except Exception:
+                pass
+
+    def _run_full_backup(self):
+        root_dir = self._get_root_dir()
+        backups_dir = self._get_backups_dir()
+        try:
+            os.makedirs(backups_dir, exist_ok=True)
+        except Exception:
+            pass
+
+        # Build file list: include data files, exclude code/virtual env/backups
+        include_exts = {".json", ".xlsx", ".csv", ".txt"}
+        exclude_dirs = {"optitex_analyzer", "src", ".git", "__pycache__", "backups", ".venv", "venv", "legacy"}
+
+        files_to_zip = []
+        for base, dirs, files in os.walk(root_dir):
+            rel_base = os.path.relpath(base, root_dir)
+            # Skip excluded dirs at any depth
+            parts = set(rel_base.split(os.sep)) if rel_base != "." else set()
+            if parts & exclude_dirs:
+                # prune traversal
+                dirs[:] = []
+                continue
+            # Always include everything under 'exports'
+            if os.path.basename(base) == "exports" or "exports" in parts:
+                for f in files:
+                    files_to_zip.append(os.path.join(base, f))
+                continue
+            for f in files:
+                ext = os.path.splitext(f)[1].lower()
+                if ext in include_exts:
+                    files_to_zip.append(os.path.join(base, f))
+
+        if not files_to_zip:
+            try:
+                messagebox.showwarning("אין נתונים", "לא נמצאו קבצים לגיבוי")
+            except Exception:
+                pass
+            return
+
+        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        backup_name = f"backup_{ts}.zip"
+        backup_path = os.path.join(backups_dir, backup_name)
+
+        ok = True
+        try:
+            with zipfile.ZipFile(backup_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for abs_path in files_to_zip:
+                    try:
+                        arcname = os.path.relpath(abs_path, root_dir)
+                        zf.write(abs_path, arcname)
+                    except Exception:
+                        ok = False
+                        # continue with other files
+                        continue
+        except Exception:
+            ok = False
+
+        if ok:
+            msg = f"נוצר גיבוי: {backup_name}"
+            try:
+                messagebox.showinfo("גיבוי הושלם", msg)
+            except Exception:
+                pass
+            if hasattr(self, "backup_status_label"):
+                try:
+                    self.backup_status_label.config(text=msg)
+                except Exception:
+                    pass
+            self._refresh_backups_list()
+        else:
+            try:
+                messagebox.showwarning("הושלם חלקית", "הגיבוי נוצר אך ייתכן שחלק מהקבצים לא נכללו.")
+            except Exception:
+                pass
+
+    def _restore_from_backup(self):
+        try:
+            initial_dir = self._get_backups_dir()
+        except Exception:
+            initial_dir = None
+        fp = filedialog.askopenfilename(
+            title="בחר קובץ גיבוי לשחזור",
+            filetypes=[("קובץ גיבוי (ZIP)", "*.zip"), ("כל הקבצים", "*.*")],
+            initialdir=initial_dir or os.getcwd(),
+        )
+        if not fp:
+            return
+        try:
+            size_mb = os.path.getsize(fp) / (1024*1024)
+        except Exception:
+            size_mb = 0.0
+        if not messagebox.askyesno("אישור שחזור", f"לשחזר את הגיבוי הבא?\n\n{os.path.basename(fp)} ({size_mb:.1f} MB)\n\nפעולה זו תחליף קבצי נתונים קיימים." ):
+            return
+
+        # Auto backup current state before restore
+        try:
+            self._run_full_backup()
+        except Exception:
+            pass
+
+        root_dir = self._get_root_dir()
+        ok = True
+        err = None
+        try:
+            with zipfile.ZipFile(fp, 'r') as zf:
+                for member in zf.infolist():
+                    # prevent directory traversal
+                    member_name = member.filename
+                    # skip absolute or parent-traversal paths
+                    if os.path.isabs(member_name):
+                        continue
+                    norm_target = os.path.normpath(os.path.join(root_dir, member_name))
+                    if not norm_target.startswith(os.path.abspath(root_dir)):
+                        continue
+                    if member.is_dir():
+                        os.makedirs(norm_target, exist_ok=True)
+                        continue
+                    os.makedirs(os.path.dirname(norm_target), exist_ok=True)
+                    with zf.open(member, 'r') as src, open(norm_target, 'wb') as dst:
+                        dst.write(src.read())
+        except Exception as e:
+            ok = False
+            err = e
+
+        if ok:
+            try:
+                messagebox.showinfo("שחזור הושלם", "השחזור הושלם בהצלחה. מומלץ להפעיל את התוכנה מחדש.")
+            except Exception:
+                pass
+            if hasattr(self, "backup_status_label"):
+                try:
+                    self.backup_status_label.config(text=f"שוחזר מגיבוי: {os.path.basename(fp)}")
+                except Exception:
+                    pass
+            self._refresh_backups_list()
+        else:
+            try:
+                messagebox.showerror("שגיאת שחזור", f"השחזור נכשל: {err}")
+            except Exception:
+                pass
 
     # ---- Logo helpers ----
     def _bd_pick_logo(self):
