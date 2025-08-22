@@ -266,6 +266,7 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             mc = ''
         allow_print = False
+        allow_barcode = False
         try:
             if mc:
                 mcs = getattr(self.data_processor, 'main_categories', []) or []
@@ -278,11 +279,19 @@ class DeliveryNoteMethodsMixin:
                             except Exception:
                                 fields = []
                         allow_print = 'print_name' in (fields or [])
+                        allow_barcode = 'barcode' in (fields or [])
                         break
         except Exception:
             allow_print = False
+            allow_barcode = False
         raw_print = (self.dn_print_name_var.get() or '').strip()
         print_name = raw_print if allow_print else ''
+        raw_barcode = ''
+        try:
+            raw_barcode = (self.dn_barcode_var.get() or '').strip()
+        except Exception:
+            raw_barcode = ''
+        barcode = raw_barcode if allow_barcode else ''
         fabric_category = getattr(self, 'dn_fabric_category_var', None)
         fabric_category = fabric_category.get().strip() if fabric_category else ''
         if not product or not qty_raw:
@@ -313,11 +322,10 @@ class DeliveryNoteMethodsMixin:
                 category = ''
         except Exception:
             pass
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
+        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'barcode': barcode, 'category': category, 'quantity': qty, 'note': note}
         self._delivery_lines.append(line)
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
+        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,quantity,note
+        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,qty,note))
         self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
         try:
             self.dn_product_combo['values'] = self._delivery_products_allowed_full
@@ -490,15 +498,19 @@ class DeliveryNoteMethodsMixin:
             # שורות מוצרים
             lines_frame = tk.LabelFrame(body, text='שורות מוצרים')
             body.add(lines_frame, stretch='always')
-            lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
+            # Include barcode column for categories like Fabrics; remains empty otherwise
+            lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','quantity','note')
             lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=8)
-            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
-            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'quantity':60,'note':160}
+            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','barcode':'בר קוד','quantity':'כמות','note':'הערה'}
+            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'barcode':110,'quantity':60,'note':160}
             for c in lines_cols:
                 lines_tree.heading(c, text=headers_map[c])
                 lines_tree.column(c, width=widths_map[c], anchor='center')
             for line in rec.get('lines', []) or []:
-                lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')))
+                lines_tree.insert('', 'end', values=(
+                    line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'),
+                    line.get('fabric_category',''), line.get('print_name'), line.get('barcode',''), line.get('quantity'), line.get('note')
+                ))
             lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
             # חבילות הובלה
             pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')

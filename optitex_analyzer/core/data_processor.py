@@ -704,7 +704,8 @@ class DataProcessor:
 			return False
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
-								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '') -> int:
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '',
+								 barcode: str = '', main_category: str = '', unit_type: str = '') -> int:
 		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
 
 		:param name: שם מוצר (חובה)
@@ -739,6 +740,9 @@ class DataProcessor:
 				'print_name': print_name.strip(),
 				'category': (category or '').strip(),
 				'fabric_category': (fabric_category or '').strip(),
+				'barcode': (barcode or '').strip(),
+				'main_category': (main_category or '').strip(),
+				'unit_type': (unit_type or '').strip(),
 				'ticks_qty': ticks_i,
 				'elastic_qty': elastic_i,
 				'ribbon_qty': ribbon_i,
@@ -767,16 +771,17 @@ class DataProcessor:
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category'
+			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודות החדשות
 			columns = [
-				'id','name','category','size','fabric_type','fabric_color','fabric_category',
-				'print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'
+				'id','name','main_category','category','size','fabric_type','fabric_color','fabric_category',
+				'print_name','barcode','unit_type','ticks_qty','elastic_qty','ribbon_qty','created_at'
 			]
 			rows = []
 			for rec in self.products_catalog:
 				rows.append({
 					'id': rec.get('id'),
 					'name': rec.get('name',''),
+					'main_category': rec.get('main_category',''),
 					'category': rec.get('category',''),
 					'size': rec.get('size',''),
 					'fabric_type': rec.get('fabric_type',''),
@@ -784,6 +789,8 @@ class DataProcessor:
 					# ברירת מחדל: "בלי קטגוריה" אם חסר
 					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
 					'print_name': rec.get('print_name',''),
+					'barcode': rec.get('barcode',''),
+					'unit_type': rec.get('unit_type',''),
 					'ticks_qty': rec.get('ticks_qty', 0),
 					'elastic_qty': rec.get('elastic_qty', 0),
 					'ribbon_qty': rec.get('ribbon_qty', 0),
@@ -806,7 +813,7 @@ class DataProcessor:
 			if not os.path.exists(file_path):
 				raise Exception("קובץ לא נמצא")
 			df = pd.read_excel(file_path)
-			# נוודא קיום עמודות נדרשות
+			# נוודא קיום עמודות נדרשות (תמיכה לאחור: barcode/main_category/unit_type לא חובה)
 			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'}
 			cols = {str(c).strip() for c in df.columns}
 			missing = required - cols
@@ -849,6 +856,9 @@ class DataProcessor:
 					# ננרמל 'בלי קטגוריה' לריק	
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
+					barcode = str(row.get('barcode') or '').strip() if 'barcode' in cols else ''
+					main_cat = str(row.get('main_category') or '').strip() if 'main_category' in cols else ''
+					unit_type = str(row.get('unit_type') or '').strip() if 'unit_type' in cols else ''
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
@@ -866,6 +876,9 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
+						'barcode': barcode,
+						'main_category': main_cat,
+						'unit_type': unit_type,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
@@ -887,6 +900,9 @@ class DataProcessor:
 					fcat = (str(row.get('fabric_category') or '').strip())
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
+					barcode = str(row.get('barcode') or '').strip() if 'barcode' in cols else ''
+					main_cat = str(row.get('main_category') or '').strip() if 'main_category' in cols else ''
+					unit_type = str(row.get('unit_type') or '').strip() if 'unit_type' in cols else ''
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
@@ -904,6 +920,9 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
+						'barcode': barcode,
+						'main_category': main_cat,
+						'unit_type': unit_type,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,

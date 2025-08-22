@@ -115,7 +115,7 @@ class ProductsBalanceTabMixin:
         self.accessories_only_pending_var = tk.BooleanVar(value=False)
         tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
         tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
-    # כפתורי סינון מהיר לאביזרים עיקריים
+        # כפתורי סינון מהיר לאביזרים עיקריים
         self.accessories_kind_filter_var = tk.StringVar(value='')
         tk.Button(acc_bar, text='כל האביזרים', command=self._set_accessories_summary).pack(side='left', padx=(4,12))
         tk.Button(acc_bar, text='טיקטקים', command=lambda: self._set_accessories_kind_filter('טיק טק קומפלט')).pack(side='left', padx=(16,4))
@@ -1333,6 +1333,27 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
+        # עזר: זיהוי האם מוצר הוא אביזר תפירה לפי הקטלוג/מיפוי שמות
+        def _is_accessory(name: str) -> bool:
+            n = (name or '').strip()
+            if not n:
+                return False
+            try:
+                # העדפה: product_model_names אם זמין
+                for m in getattr(self.data_processor, 'product_model_names', []) or []:
+                    if (m.get('name') or '').strip() == n:
+                        return (m.get('main_category') or '').strip() == 'אביזרי תפירה'
+            except Exception:
+                pass
+            # נפילה לקטלוג מוצרים: קח main_category של הרשומה הראשונה המתאימה
+            try:
+                for r in getattr(self.data_processor, 'products_catalog', []) or []:
+                    if (r.get('name') or '').strip() == n:
+                        return (r.get('main_category') or '').strip() == 'אביזרי תפירה'
+            except Exception:
+                pass
+            return False
+
         # צבירה: אביזרים שנשלחו ונתקבלו
         shipped = {}   # name -> qty
         received = {}  # name -> qty
@@ -1340,7 +1361,7 @@ class ProductsBalanceTabMixin:
         def norm(s):
             return (s or '').strip()
 
-        # נשלח: מתוך תעודות משלוח, שורות ללא main category של בגדים ושם מוצר קיים כאביזר או ללא מידה
+        # נשלח: מתוך תעודות משלוח – לפי main_category 'אביזרי תפירה' (או fallback לרשימת אביזרים)
         try:
             acc_names = set(norm(r.get('name')) for r in getattr(self.data_processor, 'sewing_accessories', []) or [])
         except Exception:
@@ -1354,8 +1375,8 @@ class ProductsBalanceTabMixin:
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    # אביזרי תפירה מזוהים לפי רשימת האביזרים או לפי חוסר מידה/קטגוריות בד
-                    if name in acc_names or (not norm(ln.get('size')) and not norm(ln.get('fabric_type')) and not norm(ln.get('fabric_category'))):
+                    # אביזרי תפירה: לפי קטגוריה ראשית בקטלוג; אם לא ידוע – fallback לשמות אביזרים
+                    if _is_accessory(name) or name in acc_names:
                         shipped[name] = shipped.get(name, 0) + qty
         except Exception:
             pass
@@ -1370,7 +1391,7 @@ class ProductsBalanceTabMixin:
                     qty = int(ln.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    if name in acc_names or (not norm(ln.get('size')) and not norm(ln.get('fabric_type')) and not norm(ln.get('fabric_category'))):
+                    if _is_accessory(name) or name in acc_names:
                         received[name] = received.get(name, 0) + qty
                     # תוספת: אביזרים שחזרו מבגדים תפורים – חישוב לפי הקטלוג
                     subc = norm(ln.get('category'))
@@ -1490,7 +1511,7 @@ class ProductsBalanceTabMixin:
                 self.accessories_tree.insert('', 'end', values=(m['date'], m['kind'], m['no'], m['direction'], m['qty']))
             return
 
-        # סיכום לפי 3 אביזרים עיקריים
+        # סיכום: כל האביזרים שנשלחו/נתקבלו (לא רק 3 העיקריים)
         # יחידות
         unit_by_name = {}
         try:
@@ -1498,9 +1519,9 @@ class ProductsBalanceTabMixin:
                 unit_by_name[norm(r.get('name'))] = norm(r.get('unit')) or "יח'"
         except Exception:
             pass
-        # תעדף רק שלושת הסוגים
-        names = ['גומי', 'טיק טק קומפלט', 'סרט']
-        for name in names:
+        # כל השמות שנמצאו בשניהם
+        all_names = sorted({*shipped.keys(), *received.keys()})
+        for name in all_names:
             s = int(shipped.get(name, 0) or 0)
             r = int(received.get(name, 0) or 0)
             diff = s - r
@@ -1511,6 +1532,15 @@ class ProductsBalanceTabMixin:
             status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
             unit = unit_by_name.get(name, "יח'")
             self.accessories_tree.insert('', 'end', values=(name, unit, s, r, max(diff,0), status))
+        # אם אין אף שורה – הצג שורת Placeholder כדי לסמן שאין תנועות
+        if not all_names:
+            unit = ""
+            try:
+                sel_supplier = (self.balance_supplier_var.get() if hasattr(self, 'balance_supplier_var') else '') or ''
+            except Exception:
+                sel_supplier = ''
+            msg = 'אין תנועות אביזרים עבור ספק זה'
+            self.accessories_tree.insert('', 'end', values=(msg, unit, 0, 0, 0, ''))
 
     def _set_accessories_kind_filter(self, value: str):
         """טוגל סינון לפי סוג אביזר עיקרי (טיק טק קומפלט/גומי/סרט). לחיצה חוזרת מנקה את הסינון."""

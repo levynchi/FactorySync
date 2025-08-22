@@ -45,6 +45,8 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_fabric_color_var = tk.StringVar(value='לבן')
     ctx.sup_print_name_var = tk.StringVar(value='חלק')
     ctx.sup_fabric_category_var = tk.StringVar()
+    # Optional Barcode for categories like Fabrics
+    ctx.sup_barcode_var = tk.StringVar()
     # Returned from drawing + Drawing ID
     ctx.sup_returned_from_drawing_var = tk.StringVar(value='לא')
     ctx.sup_drawing_id_var = tk.StringVar()
@@ -243,6 +245,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'fabric_color': 'צבע בד',
         'fabric_category': 'קטגורית בד',
         'print_name': 'שם פרינט',
+        'barcode': 'בר קוד',
         'sub_category': 'תת קטגוריה',
         'returned_from_drawing': 'חזר מציור',
         'drawing_id': "מס' ציור",
@@ -254,6 +257,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     qty_entry = tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7)
     note_entry = tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
 
+    # Barcode input
+    sup_barcode_entry = tk.Entry(entry_bar, textvariable=ctx.sup_barcode_var, width=14)
+
     field_pairs = {
         'main_category': (label_widgets['main_category'], ctx.sup_main_category_combo),
         'model_name': (label_widgets['model_name'], ctx.sup_product_combo),
@@ -262,6 +268,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'fabric_color': (label_widgets['fabric_color'], ctx.sup_fabric_color_combo),
         'fabric_category': (label_widgets['fabric_category'], ctx.sup_fabric_category_entry),
         'print_name': (label_widgets['print_name'], ctx.sup_print_name_combo),
+        'barcode': (label_widgets['barcode'], sup_barcode_entry),
         'sub_category': (label_widgets['sub_category'], ctx.sup_category_combo),
         'returned_from_drawing': (label_widgets['returned_from_drawing'], ctx.sup_returned_from_drawing_combo),
         'drawing_id': (label_widgets['drawing_id'], ctx.sup_drawing_id_combo),
@@ -285,7 +292,8 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     def _apply_layout_for_main_category():
         selected = (ctx.sup_main_category_var.get() or '').strip()
-        order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name']
+        order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name','barcode']
+        mc_has_barcode = False
         if selected:
             rec = _find_main_category_by_name(selected)
             fields = []
@@ -296,6 +304,7 @@ def build_entry_tab(ctx, container: tk.Frame):
                         fields = ctx.data_processor.get_main_category_fields(rec.get('id')) or []
                     except Exception:
                         fields = []
+            mc_has_barcode = ('barcode' in (fields or []))
             visible_keys = ['main_category','model_name'] + [k for k in order if k in fields]
         else:
             visible_keys = ['main_category','model_name']
@@ -320,6 +329,18 @@ def build_entry_tab(ctx, container: tk.Frame):
         btn_add.grid(row=1, column=col, padx=6)
         btn_del.grid(row=1, column=col+1, padx=4)
         btn_clr.grid(row=1, column=col+2, padx=4)
+
+        # If barcode isn't enabled for this main category, clear it
+        try:
+            if not mc_has_barcode:
+                ctx.sup_barcode_var.set('')
+        except Exception:
+            pass
+        # Update qty label text (unit) after layout
+        try:
+            _update_qty_label()
+        except Exception:
+            pass
 
     # Initial layout
     _apply_layout_for_main_category()
@@ -349,6 +370,11 @@ def build_entry_tab(ctx, container: tk.Frame):
                 combo.state(['disabled'])
             except Exception:
                 pass
+        # Reset qty label (product cleared)
+        try:
+            _update_qty_label()
+        except Exception:
+            pass
 
     try:
         ctx.sup_main_category_var.trace_add('write', _on_main_category_change)
@@ -385,6 +411,11 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx._update_supplier_print_name_options()
         except Exception:
             pass
+        # Update quantity unit label based on product
+        try:
+            _update_qty_label()
+        except Exception:
+            pass
     try:
         ctx.sup_product_var.trace_add('write', _on_product_change)
         # also recompute fabric category when product changes
@@ -418,16 +449,55 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     # Buttons placed dynamically above with the layout
 
+    # Helper: compute and show unit type next to Quantity label
+    def _compute_unit_for_product(name: str) -> str:
+        try:
+            catalog = getattr(ctx.data_processor, 'products_catalog', []) or []
+        except Exception:
+            catalog = []
+        name = (name or '').strip()
+        if not name:
+            return ''
+        units = []
+        try:
+            for rec in catalog:
+                if (rec.get('name') or '').strip() == name:
+                    ut = (rec.get('unit_type') or '').strip()
+                    if ut:
+                        units.append(ut)
+        except Exception:
+            pass
+        if not units:
+            return ''
+        try:
+            from collections import Counter
+            return Counter(units).most_common(1)[0][0]
+        except Exception:
+            return units[0]
+
+    def _update_qty_label():
+        try:
+            unit = _compute_unit_for_product(ctx.sup_product_var.get())
+            lbl = label_widgets.get('quantity')
+            if not lbl:
+                return
+            if unit:
+                lbl.config(text=f"כמות ({unit})")
+            else:
+                lbl.config(text='כמות')
+        except Exception:
+            pass
+
     # Lines tree
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','returned_from_drawing','drawing_id','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','note')
     ctx.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
     headers = {
         'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
-        'fabric_category':'קטגורית בד','print_name':'שם פרינט','category':'קטגוריה',
+        'fabric_category':'קטגורית בד','print_name':'שם פרינט','barcode':'בר קוד','category':'קטגוריה',
         'returned_from_drawing':'חזר מציור','drawing_id':"מס' ציור",
         'quantity':'כמות','note':'הערה'
     }
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'category':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'barcode':110,'category':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
     for c in cols:
         ctx.supplier_tree.heading(c, text=headers[c])
         ctx.supplier_tree.column(c, width=widths[c], anchor='center')
