@@ -178,11 +178,22 @@ class ProductsBalanceTabMixin:
                 DateEntry = None
             tk.Label(inner_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
             self.balance_to_date_var = tk.StringVar()
+            # ברירת מחדל: היום
+            try:
+                _today_str = datetime.now().strftime('%Y-%m-%d')
+                self.balance_to_date_var.set(_today_str)
+            except Exception:
+                pass
             if DateEntry is not None:
                 to_entry = DateEntry(inner_bar, textvariable=self.balance_to_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
                 # רענון בעת בחירה מהקלנדר
                 try: to_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_products_balance_table())
                 except Exception: pass
+                # החלת ברירת המחדל בפועל על ה-Widget (DateEntry מאפס לטודיי אם לא)
+                try:
+                    to_entry.set_date(datetime.now())
+                except Exception:
+                    pass
             else:
                 to_entry = tk.Entry(inner_bar, textvariable=self.balance_to_date_var, width=12)
                 to_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
@@ -195,10 +206,21 @@ class ProductsBalanceTabMixin:
 
             tk.Label(inner_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
             self.balance_from_date_var = tk.StringVar()
+            # ברירת מחדל: תחילת השנה הנוכחית
+            try:
+                _now = datetime.now(); _start_year = datetime(_now.year, 1, 1).strftime('%Y-%m-%d')
+                self.balance_from_date_var.set(_start_year)
+            except Exception:
+                pass
             if DateEntry is not None:
                 from_entry = DateEntry(inner_bar, textvariable=self.balance_from_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
                 try: from_entry.bind('<<DateEntrySelected>>', lambda e: self._refresh_products_balance_table())
                 except Exception: pass
+                # החלת ברירת המחדל: 1 בינואר של השנה הנוכחית
+                try:
+                    _now = datetime.now(); from_entry.set_date(datetime(_now.year, 1, 1))
+                except Exception:
+                    pass
             else:
                 from_entry = tk.Entry(inner_bar, textvariable=self.balance_from_date_var, width=12)
                 from_entry.bind('<KeyRelease>', lambda e: self._refresh_products_balance_table())
