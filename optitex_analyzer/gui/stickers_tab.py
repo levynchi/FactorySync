@@ -27,32 +27,56 @@ class StickersTabMixin:
         frm = ttk.LabelFrame(container, text="שורת קליטה", padding=10)
         frm.pack(fill="x", padx=15, pady=10)
 
+        self._stk_main_category_var = tk.StringVar()
         self._stk_product_var = tk.StringVar()
         self._stk_qty_var = tk.StringVar()
         self._stk_size_var = tk.StringVar()
         self._stk_fabric_var = tk.StringVar()
 
-        # Product name
-        tk.Label(frm, text="שם המוצר:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-        tk.Entry(frm, textvariable=self._stk_product_var, width=30).grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        # Main category (default: בגדים)
+        tk.Label(frm, text="קטגוריה ראשית:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        try:
+            cats = self._stk_get_main_categories()
+        except Exception:
+            cats = []
+        if 'בגדים' not in cats:
+            cats = ['בגדים'] + [c for c in cats if c != 'בגדים']
+        if not self._stk_main_category_var.get():
+            self._stk_main_category_var.set('בגדים')
+        self._stk_main_category_cb = ttk.Combobox(frm, textvariable=self._stk_main_category_var, values=cats, width=18, state='readonly')
+        self._stk_main_category_cb.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        try:
+            self._stk_main_category_cb.bind('<<ComboboxSelected>>', lambda e: self._stk_on_main_category_change())
+        except Exception:
+            pass
+
+        # Product name (filtered by selected main category)
+        tk.Label(frm, text="שם המוצר:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
+        self._stk_product_cb = ttk.Combobox(frm, textvariable=self._stk_product_var, values=[], width=30)
+        self._stk_product_cb.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+        # Initialize product options for default category
+        try:
+            self._stk_refresh_product_options()
+        except Exception:
+            pass
 
         # Qty per package
-        tk.Label(frm, text="כמות באריזה:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        tk.Entry(frm, textvariable=self._stk_qty_var, width=10).grid(row=0, column=3, padx=5, pady=5, sticky="w")
+        tk.Label(frm, text="כמות באריזה:").grid(row=0, column=4, padx=5, pady=5, sticky="e")
+        tk.Entry(frm, textvariable=self._stk_qty_var, width=10).grid(row=0, column=5, padx=5, pady=5, sticky="w")
 
         # Size
-        tk.Label(frm, text="מידה:").grid(row=0, column=4, padx=5, pady=5, sticky="e")
-        tk.Entry(frm, textvariable=self._stk_size_var, width=15).grid(row=0, column=5, padx=5, pady=5, sticky="w")
+        tk.Label(frm, text="מידה:").grid(row=0, column=6, padx=5, pady=5, sticky="e")
+        tk.Entry(frm, textvariable=self._stk_size_var, width=15).grid(row=0, column=7, padx=5, pady=5, sticky="w")
 
         # Fabric type
-        tk.Label(frm, text="סוג הבד:").grid(row=0, column=6, padx=5, pady=5, sticky="e")
+        tk.Label(frm, text="סוג הבד:").grid(row=0, column=8, padx=5, pady=5, sticky="e")
         fabric_types = self._load_fabric_types_for_stickers()
         self._stk_fabric_cb = ttk.Combobox(frm, textvariable=self._stk_fabric_var, values=fabric_types, width=20)
-        self._stk_fabric_cb.grid(row=0, column=7, padx=5, pady=5, sticky="w")
+        self._stk_fabric_cb.grid(row=0, column=9, padx=5, pady=5, sticky="w")
 
         # Buttons
         btns = tk.Frame(frm)
-        btns.grid(row=0, column=8, padx=10, pady=5, sticky="w")
+        btns.grid(row=0, column=10, padx=10, pady=5, sticky="w")
         tk.Button(btns, text="➕ הוסף", bg="#27ae60", fg="white", command=self._stk_add).pack(side="left", padx=4)
         tk.Button(btns, text="🧹 נקה", bg="#95a5a6", fg="white", command=self._stk_clear_inputs).pack(side="left", padx=4)
 
@@ -106,14 +130,107 @@ class StickersTabMixin:
             pass
         return []
 
+    def _stk_get_main_categories(self):
+        """Return list of main category names from data processor or json file."""
+        # Try data_processor
+        try:
+            mcs = getattr(self, 'data_processor', None)
+            if mcs is not None:
+                lst = getattr(self.data_processor, 'main_categories', []) or []
+                names = []
+                for c in lst:
+                    name = (c.get('name') or c.get('שם') or '').strip()
+                    if name:
+                        names.append(name)
+                if names:
+                    return sorted(set(names), key=lambda x: (x!='בגדים', x))
+        except Exception:
+            pass
+        # Fallback: read from main_categories.json if exists
+        try:
+            p = os.path.join(os.getcwd(), 'main_categories.json')
+            if os.path.exists(p):
+                with open(p, 'r', encoding='utf-8') as f:
+                    data = json.load(f) or []
+                names = []
+                for c in data:
+                    if isinstance(c, dict):
+                        nm = (c.get('name') or c.get('שם') or '').strip()
+                        if nm:
+                            names.append(nm)
+                    elif isinstance(c, str) and c.strip():
+                        names.append(c.strip())
+                if names:
+                    return sorted(set(names), key=lambda x: (x!='בגדים', x))
+        except Exception:
+            pass
+        return ['בגדים']
+
+    def _stk_get_products_for_category(self, main_category: str):
+        """Return product names filtered by main_category from catalog; fallback to all."""
+        names = []
+        try:
+            model_names = getattr(self, 'data_processor', None)
+            if model_names is not None:
+                lst = getattr(self.data_processor, 'product_model_names', []) or []
+                if lst:
+                    for r in lst:
+                        n = (r.get('name') or '').strip()
+                        mc = (r.get('main_category') or 'בגדים').strip()
+                        if n and (not main_category or mc == main_category):
+                            names.append(n)
+            if not names:
+                catalog = getattr(self, 'data_processor', None)
+                if catalog is not None:
+                    cl = getattr(self.data_processor, 'products_catalog', []) or []
+                    for r in cl:
+                        n = (r.get('name') or '').strip()
+                        mc = (r.get('main_category') or 'בגדים').strip()
+                        if n and (not main_category or mc == main_category):
+                            names.append(n)
+        except Exception:
+            names = []
+        # Dedup + sort
+        seen = set(); names = [x for x in names if not (x in seen or seen.add(x))]
+        return sorted(names)
+
+    def _stk_refresh_product_options(self):
+        cat = (self._stk_main_category_var.get() or '').strip()
+        try:
+            options = self._stk_get_products_for_category(cat)
+        except Exception:
+            options = []
+        try:
+            self._stk_product_cb['values'] = options
+        except Exception:
+            pass
+
+    def _stk_on_main_category_change(self):
+        try:
+            self._stk_product_var.set('')
+        except Exception:
+            pass
+        self._stk_refresh_product_options()
+
     def _stk_validate(self):
         name = (self._stk_product_var.get() or "").strip()
         qty = (self._stk_qty_var.get() or "").strip()
         size = (self._stk_size_var.get() or "").strip()
         fabric = (self._stk_fabric_var.get() or "").strip()
+        # Enforce selection from the filtered list
+        try:
+            allowed = list(self._stk_product_cb['values'] or [])
+        except Exception:
+            allowed = []
         if not name:
             try:
                 messagebox.showwarning("אזהרה", "אנא הזן שם מוצר")
+            except Exception:
+                pass
+            return None
+        if allowed and name not in allowed:
+            try:
+                messagebox.showwarning("אזהרה", "יש לבחור מוצר מהרשימה לפי הקטגוריה הראשית")
             except Exception:
                 pass
             return None
