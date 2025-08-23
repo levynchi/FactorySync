@@ -573,7 +573,8 @@ class DeliveryNoteMethodsMixin:
                         pass
                     try:
                         if PageMargins:
-                            ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+                            # Excel Narrow preset: Top/Bottom 1.91 cm (~0.75"), Left/Right 0.64 cm (~0.25"), Header/Footer 0.76 cm (~0.3")
+                            ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.75, bottom=0.75, header=0.3, footer=0.3)
                     except Exception:
                         pass
                     # Business header (from settings): Business Name + VAT/Type line + optional logo
@@ -590,85 +591,9 @@ class DeliveryNoteMethodsMixin:
                         biz_logo = _sget('business.logo_path')
                     except Exception:
                         biz_name = biz_type = biz_vat = biz_logo = ""
-                    # Insert logo if available (left side), and styled header text to the right
-                    try:
-                        last_col = 4  # we use 4 columns in the table below
-                        header_start_col = 1
-                        logo_inserted = False
-                        # Try placing the logo at A1 while constraining its dimensions
-                        if XLImage and biz_logo and os.path.exists(biz_logo):
-                            try:
-                                # Load directly from path (robust for saving), then scale via width/height
-                                img_obj = XLImage(biz_logo)
-                                try:
-                                    # Make it span the printable A4 width (like a page header)
-                                    A4_WIDTH_INCH = 8.27
-                                    try:
-                                        lm = float(getattr(ws.page_margins, 'left', 0.5) or 0.5)
-                                        rm = float(getattr(ws.page_margins, 'right', 0.5) or 0.5)
-                                    except Exception:
-                                        lm = rm = 0.5
-                                    printable_inch = max(4.0, A4_WIDTH_INCH - lm - rm)
-                                    DPI = 96.0  # Excel images approx in screen pixels
-                                    target_w_px = int(printable_inch * DPI)
-                                    # Requested visual height: 48.75mm ≈ 1.92in → scale to pixels
-                                    target_h_in = 48.75 / 25.4
-                                    target_h_px = int(target_h_in * DPI)
-                                    # Set desired dimensions (Excel will keep aspect but we aim for a banner)
-                                    img_obj.width = target_w_px
-                                    img_obj.height = target_h_px
-                                except Exception:
-                                    pass
-                                if img_obj is not None:
-                                    try:
-                                        img_obj.anchor = 'A1'
-                                    except Exception:
-                                        pass
-                                    try:
-                                        ws.add_image(img_obj)
-                                        logo_inserted = True
-                                        # Increase top row height to fit the logo visually
-                                        try:
-                                            # Excel row height in points (1pt = 1/72 inch)
-                                            header_pts = (48.75 / 25.4) * 72.0
-                                            ws.row_dimensions[1].height = max(ws.row_dimensions[1].height or 15, header_pts)
-                                        except Exception:
-                                            pass
-                                    except Exception:
-                                        pass
-                            except Exception:
-                                pass
-                        if logo_inserted:
-                            header_start_col = 2
-                        if biz_name:
-                            ws.append([biz_name])
-                            r = ws.max_row
-                            try:
-                                ws.merge_cells(start_row=r, start_column=header_start_col, end_row=r, end_column=last_col)
-                            except Exception:
-                                pass
-                            try:
-                                ws.cell(row=r, column=header_start_col).font = Font(size=16, bold=True)
-                                ws.cell(row=r, column=header_start_col).alignment = Alignment(horizontal='right')
-                            except Exception:
-                                pass
-                        if (biz_type or biz_vat):
-                            line = f"{(biz_type or '').strip()} {(biz_vat or '').strip()}".strip()
-                            ws.append([line])
-                            r = ws.max_row
-                            try:
-                                ws.merge_cells(start_row=r, start_column=header_start_col, end_row=r, end_column=last_col)
-                            except Exception:
-                                pass
-                            try:
-                                ws.cell(row=r, column=header_start_col).font = Font(size=12)
-                                ws.cell(row=r, column=header_start_col).alignment = Alignment(horizontal='right')
-                            except Exception:
-                                pass
-                        if biz_name or biz_vat or biz_type:
-                            ws.append([])  # spacing
-                    except Exception:
-                        pass
+                    # Defer logo insertion until after columns are autosized; remember path and desired height
+                    pending_logo_path = biz_logo if (biz_logo and os.path.exists(biz_logo)) else ""
+                    desired_header_height_in = 48.75 / 25.4  # ≈1.92 inches
 
                     # Document info header (keys and values)
                     doc_info_start = ws.max_row + 1
@@ -823,6 +748,48 @@ class DeliveryNoteMethodsMixin:
                                 except Exception:
                                     pass
                             ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
+                    except Exception:
+                        pass
+                    # Insert the logo banner at the very top, sized to the full printable A4 width (independent of column widths)
+                    try:
+                        if XLImage and pending_logo_path:
+                            # Compute physical printable width of A4 and use it directly
+                            try:
+                                A4_WIDTH_INCH = 8.27
+                                lm = float(getattr(ws.page_margins, 'left', 0.25) or 0.25)
+                                rm = float(getattr(ws.page_margins, 'right', 0.25) or 0.25)
+                                printable_inch = max(4.0, A4_WIDTH_INCH - lm - rm)
+                                # Safety pad so the banner never touches printable edge and won't be clipped
+                                safety_in = 0.35
+                                if printable_inch > safety_in:
+                                    printable_inch -= safety_in
+                                total_px = int(printable_inch * 96.0)
+                            except Exception:
+                                total_px = int(8.0 * 96.0)
+                            # Prepare image
+                            img_obj = XLImage(pending_logo_path)
+                            img_obj.width = max(200, int(total_px))
+                            img_obj.height = int(desired_header_height_in * 96.0)
+                            # Insert two rows at top so banner sits above all content
+                            try:
+                                ws.insert_rows(1, amount=2)
+                            except Exception:
+                                pass
+                            try:
+                                img_obj.anchor = 'A1'
+                            except Exception:
+                                pass
+                            ws.add_image(img_obj)
+                            # Set row 1 height to banner height in points (1in = 72pt)
+                            try:
+                                ws.row_dimensions[1].height = desired_header_height_in * 72.0
+                            except Exception:
+                                pass
+                            # Keep a small spacer row
+                            try:
+                                ws.row_dimensions[2].height = 6
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                     # Save to exports folder
