@@ -16,15 +16,29 @@ class StickersTabMixin:
 
         container = self.stickers_tab
 
-        # Header
+        # Sub-notebook inside the Stickers tab
+        self.stickers_sub_notebook = ttk.Notebook(container)
+        self.stickers_sub_notebook.pack(fill="both", expand=True)
+
+        # First sub-tab: existing form/table UI
+        form_tab = ttk.Frame(self.stickers_sub_notebook)
+        self.stickers_sub_notebook.add(form_tab, text="טופס")
+
+        # Second sub-tab: Mapping (מיפוי)
+        self.stickers_mapping_tab = ttk.Frame(self.stickers_sub_notebook)
+        self.stickers_sub_notebook.add(self.stickers_mapping_tab, text="מיפוי")
+        # Placeholder content for mapping tab (can be replaced later)
+        tk.Label(self.stickers_mapping_tab, text="מסך מיפוי", font=('Arial', 12, 'bold')).pack(pady=12)
+
+        # Header (in form tab)
         tk.Label(
-            container,
+            form_tab,
             text="ניהול מדבקות למוצרים",
             font=('Arial', 14, 'bold')
         ).pack(pady=(10, 5))
 
         # Input row
-        frm = ttk.LabelFrame(container, text="שורת קליטה", padding=10)
+        frm = ttk.LabelFrame(form_tab, text="שורת קליטה", padding=10)
         frm.pack(fill="x", padx=15, pady=10)
 
         self._stk_main_category_var = tk.StringVar()
@@ -81,7 +95,7 @@ class StickersTabMixin:
         tk.Button(btns, text="🧹 נקה", bg="#95a5a6", fg="white", command=self._stk_clear_inputs).pack(side="left", padx=4)
 
         # Table
-        tbl_frame = ttk.LabelFrame(container, text="טבלת מדבקות", padding=10)
+        tbl_frame = ttk.LabelFrame(form_tab, text="טבלת מדבקות", padding=10)
         tbl_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
         cols = ("שם המוצר", "כמות באריזה", "מידה", "סוג הבד")
@@ -97,7 +111,7 @@ class StickersTabMixin:
         tbl_frame.grid_rowconfigure(0, weight=1)
         tbl_frame.grid_columnconfigure(0, weight=1)
 
-        actions = tk.Frame(container)
+        actions = tk.Frame(form_tab)
         actions.pack(fill="x", padx=15, pady=(0, 10))
         tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._stk_delete_selected).pack(side="left", padx=5)
         tk.Button(actions, text="💾 שמור ל-Excel", bg="#3498db", fg="white", command=self._stk_export_excel).pack(side="left", padx=5)
