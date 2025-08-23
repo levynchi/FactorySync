@@ -372,10 +372,22 @@ class BusinessDetailsTabMixin:
             return
         self.bd_logo_path.set(fn)
         self._bd_update_logo_preview()
+        # Persist immediately so it loads after restart
+        try:
+            if hasattr(self, 'settings') and self.settings:
+                self.settings.set("business.logo_path", fn)
+        except Exception:
+            pass
 
     def _bd_clear_logo(self):
         self.bd_logo_path.set("")
         self._bd_update_logo_preview()
+        # Persist removal immediately
+        try:
+            if hasattr(self, 'settings') and self.settings:
+                self.settings.set("business.logo_path", "")
+        except Exception:
+            pass
 
     def _bd_update_logo_preview(self):
         # Show image if possible; use subsample to shrink if very large

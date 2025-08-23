@@ -538,6 +538,10 @@ class DeliveryNoteMethodsMixin:
                         from openpyxl.worksheet.page import PageMargins  # type: ignore
                     except Exception:
                         PageMargins = None  # type: ignore
+                    try:
+                        from openpyxl.drawing.image import Image as XLImage  # type: ignore
+                    except Exception:
+                        XLImage = None  # type: ignore
                 except Exception as e:
                     try:
                         messagebox.showerror("שגיאה", f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
@@ -572,7 +576,7 @@ class DeliveryNoteMethodsMixin:
                             ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
                     except Exception:
                         pass
-                    # Business header (from settings): Business Name + VAT/Type line
+                    # Business header (from settings): Business Name + VAT/Type line + optional logo
                     try:
                         s = getattr(self, 'settings', None)
                         def _sget(k, default=""):
@@ -583,21 +587,69 @@ class DeliveryNoteMethodsMixin:
                         biz_name = _sget('business.name')
                         biz_type = _sget('business.type')
                         biz_vat  = _sget('business.vat_id')
+                        biz_logo = _sget('business.logo_path')
                     except Exception:
-                        biz_name = biz_type = biz_vat = ""
-                    # Insert styled business header if available
+                        biz_name = biz_type = biz_vat = biz_logo = ""
+                    # Insert logo if available (left side), and styled header text to the right
                     try:
                         last_col = 4  # we use 4 columns in the table below
+                        header_start_col = 1
+                        logo_inserted = False
+                        # Try placing the logo at A1 while constraining its dimensions
+                        if XLImage and biz_logo and os.path.exists(biz_logo):
+                            try:
+                                # Load directly from path (robust for saving), then scale via width/height
+                                img_obj = XLImage(biz_logo)
+                                try:
+                                    # Make it span the printable A4 width (like a page header)
+                                    A4_WIDTH_INCH = 8.27
+                                    try:
+                                        lm = float(getattr(ws.page_margins, 'left', 0.5) or 0.5)
+                                        rm = float(getattr(ws.page_margins, 'right', 0.5) or 0.5)
+                                    except Exception:
+                                        lm = rm = 0.5
+                                    printable_inch = max(4.0, A4_WIDTH_INCH - lm - rm)
+                                    DPI = 96.0  # Excel images approx in screen pixels
+                                    target_w_px = int(printable_inch * DPI)
+                                    # Requested visual height: 48.75mm ≈ 1.92in → scale to pixels
+                                    target_h_in = 48.75 / 25.4
+                                    target_h_px = int(target_h_in * DPI)
+                                    # Set desired dimensions (Excel will keep aspect but we aim for a banner)
+                                    img_obj.width = target_w_px
+                                    img_obj.height = target_h_px
+                                except Exception:
+                                    pass
+                                if img_obj is not None:
+                                    try:
+                                        img_obj.anchor = 'A1'
+                                    except Exception:
+                                        pass
+                                    try:
+                                        ws.add_image(img_obj)
+                                        logo_inserted = True
+                                        # Increase top row height to fit the logo visually
+                                        try:
+                                            # Excel row height in points (1pt = 1/72 inch)
+                                            header_pts = (48.75 / 25.4) * 72.0
+                                            ws.row_dimensions[1].height = max(ws.row_dimensions[1].height or 15, header_pts)
+                                        except Exception:
+                                            pass
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+                        if logo_inserted:
+                            header_start_col = 2
                         if biz_name:
                             ws.append([biz_name])
                             r = ws.max_row
                             try:
-                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                                ws.merge_cells(start_row=r, start_column=header_start_col, end_row=r, end_column=last_col)
                             except Exception:
                                 pass
                             try:
-                                ws.cell(row=r, column=1).font = Font(size=16, bold=True)
-                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                                ws.cell(row=r, column=header_start_col).font = Font(size=16, bold=True)
+                                ws.cell(row=r, column=header_start_col).alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
                         if (biz_type or biz_vat):
@@ -605,12 +657,12 @@ class DeliveryNoteMethodsMixin:
                             ws.append([line])
                             r = ws.max_row
                             try:
-                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                                ws.merge_cells(start_row=r, start_column=header_start_col, end_row=r, end_column=last_col)
                             except Exception:
                                 pass
                             try:
-                                ws.cell(row=r, column=1).font = Font(size=12)
-                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                                ws.cell(row=r, column=header_start_col).font = Font(size=12)
+                                ws.cell(row=r, column=header_start_col).alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
                         if biz_name or biz_vat or biz_type:
