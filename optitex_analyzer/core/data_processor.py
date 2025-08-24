@@ -190,16 +190,16 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה במיגרציית קליטות ספק: {e}")
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake", *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
 		"""שכבת תאימות – מפנה לפונקציה המתאימה לפי receipt_kind."""
 		if receipt_kind == 'delivery_note':
-			return self.add_delivery_note(supplier, date_str, lines, packages)
-		return self.add_supplier_intake(supplier, date_str, lines, packages)
+			return self.add_delivery_note(supplier, date_str, lines, packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
+		return self.add_supplier_intake(supplier, date_str, lines, packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
 
 	def _next_id(self, records: List[Dict]) -> int:
 		return max([r.get('id', 0) for r in records], default=0) + 1
 
-	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -213,6 +213,8 @@ class DataProcessor:
 				'total_quantity': total_quantity,
 				'packages': packages or [],
 				'receipt_kind': 'supplier_intake',
+				'arrival_date': arrival_date or "",
+				'supplier_doc_number': supplier_doc_number or "",
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.supplier_intakes.append(record)
@@ -222,7 +224,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת קליטת ספק: {e}")
 
-	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -236,6 +238,8 @@ class DataProcessor:
 				'total_quantity': total_quantity,
 				'packages': packages or [],
 				'receipt_kind': 'delivery_note',
+				'arrival_date': arrival_date or "",
+				'supplier_doc_number': supplier_doc_number or "",
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.delivery_notes.append(record)

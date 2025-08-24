@@ -30,6 +30,20 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.supplier_date_var.set('')
     tk.Entry(form, textvariable=ctx.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
+    # New fields: Arrival date and supplier document number
+    tk.Label(form, text="תאריך הגעה:", font=('Arial',10,'bold')).grid(row=1,column=0,sticky='w',padx=4,pady=4)
+    ctx.supplier_arrival_date_var = tk.StringVar()
+    try:
+        from datetime import datetime
+        ctx.supplier_arrival_date_var.set(datetime.now().strftime('%Y-%m-%d'))
+    except Exception:
+        ctx.supplier_arrival_date_var.set('')
+    tk.Entry(form, textvariable=ctx.supplier_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
+
+    tk.Label(form, text="מס' מסמך ספק:", font=('Arial',10,'bold')).grid(row=1,column=2,sticky='w',padx=4,pady=4)
+    ctx.supplier_doc_number_var = tk.StringVar()
+    tk.Entry(form, textvariable=ctx.supplier_doc_number_var, width=18).grid(row=1,column=3,sticky='w',padx=4,pady=4)
+
     # Lines frame and entry bar
     lines_frame = ttk.LabelFrame(container, text="שורות קליטה", padding=8)
     lines_frame.pack(fill='both', expand=True, padx=10, pady=4)

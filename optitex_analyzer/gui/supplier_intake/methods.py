@@ -359,10 +359,37 @@ class SupplierIntakeMethodsMixin:
         except Exception:
             pass
         try:
+            # Collect optional extra fields
+            arrival_date = ''
+            supplier_doc_number = ''
+            try:
+                arrival_date = (getattr(self, 'supplier_arrival_date_var', None).get() or '').strip() if hasattr(self, 'supplier_arrival_date_var') else ''
+            except Exception:
+                arrival_date = ''
+            try:
+                supplier_doc_number = (getattr(self, 'supplier_doc_number_var', None).get() or '').strip() if hasattr(self, 'supplier_doc_number_var') else ''
+            except Exception:
+                supplier_doc_number = ''
+
             if hasattr(self.data_processor, 'add_supplier_intake'):
-                new_id = self.data_processor.add_supplier_intake(supplier, date_str, self._supplier_lines, packages=self._supplier_packages)
+                new_id = self.data_processor.add_supplier_intake(
+                    supplier,
+                    date_str,
+                    self._supplier_lines,
+                    packages=self._supplier_packages,
+                    arrival_date=arrival_date,
+                    supplier_doc_number=supplier_doc_number,
+                )
             else:
-                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._supplier_lines, packages=self._supplier_packages, receipt_kind='supplier_intake')
+                new_id = self.data_processor.add_supplier_receipt(
+                    supplier,
+                    date_str,
+                    self._supplier_lines,
+                    packages=self._supplier_packages,
+                    receipt_kind='supplier_intake',
+                    arrival_date=arrival_date,
+                    supplier_doc_number=supplier_doc_number,
+                )
             messagebox.showinfo("הצלחה", f"קליטה נשמרה (ID: {new_id})")
             self._clear_supplier_lines()
             self._clear_supplier_packages()

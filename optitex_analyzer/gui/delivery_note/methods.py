@@ -387,11 +387,22 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             pass
         try:
+            # Extra fields from entry header
+            arrival_date = ''
+            supplier_doc_number = ''
+            try:
+                arrival_date = (getattr(self, 'dn_arrival_date_var', None).get() or '').strip() if hasattr(self, 'dn_arrival_date_var') else ''
+            except Exception:
+                arrival_date = ''
+            try:
+                supplier_doc_number = (getattr(self, 'dn_supplier_doc_number_var', None).get() or '').strip() if hasattr(self, 'dn_supplier_doc_number_var') else ''
+            except Exception:
+                supplier_doc_number = ''
             # שימוש בשיטה החדשה לאחר פיצול הקבצים (עם נפילה אחורה)
             if hasattr(self.data_processor, 'add_delivery_note'):
-                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages)
+                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
             else:
-                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note', arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
             self._clear_packages()
