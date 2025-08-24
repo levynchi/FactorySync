@@ -38,7 +38,31 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.supplier_arrival_date_var.set(datetime.now().strftime('%Y-%m-%d'))
     except Exception:
         ctx.supplier_arrival_date_var.set('')
-    tk.Entry(form, textvariable=ctx.supplier_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
+    # DateEntry if available; else plain Entry with a calendar button using ctx._open_date_picker
+    try:
+        DateEntry = None
+        try:
+            from tkcalendar import DateEntry  # type: ignore
+        except Exception:
+            DateEntry = None
+        if DateEntry is not None:
+            sup_arrival_entry = DateEntry(form, textvariable=ctx.supplier_arrival_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+            # Apply today in the widget
+            try:
+                from datetime import datetime as _dt
+                sup_arrival_entry.set_date(_dt.now())
+            except Exception:
+                pass
+        else:
+            sup_arrival_entry = tk.Entry(form, textvariable=ctx.supplier_arrival_date_var, width=12)
+        sup_arrival_entry.grid(row=1,column=1,sticky='w',padx=(4,0),pady=4)
+        # Calendar button (works for both widget types)
+        try:
+            tk.Button(form, text='📅', width=2, command=lambda e=sup_arrival_entry,v=ctx.supplier_arrival_date_var: ctx._open_date_picker(e, v)).grid(row=1,column=1,sticky='w',padx=(120,0),pady=4)
+        except Exception:
+            pass
+    except Exception:
+        tk.Entry(form, textvariable=ctx.supplier_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
 
     tk.Label(form, text="מס' מסמך ספק:", font=('Arial',10,'bold')).grid(row=1,column=2,sticky='w',padx=4,pady=4)
     ctx.supplier_doc_number_var = tk.StringVar()

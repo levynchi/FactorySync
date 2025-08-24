@@ -28,7 +28,28 @@ def build_entry_tab(ctx, container: tk.Frame):
     # New fields in entry details: arrival date and supplier doc number
     tk.Label(form, text="תאריך הגעה:", font=('Arial',10,'bold')).grid(row=1,column=0,sticky='w',padx=4,pady=4)
     ctx.dn_arrival_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-    tk.Entry(form, textvariable=ctx.dn_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
+    # DateEntry if available; else Entry + popup calendar
+    try:
+        DateEntry = None
+        try:
+            from tkcalendar import DateEntry  # type: ignore
+        except Exception:
+            DateEntry = None
+        if DateEntry is not None:
+            dn_arrival_entry = DateEntry(form, textvariable=ctx.dn_arrival_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+            try:
+                dn_arrival_entry.set_date(datetime.now())
+            except Exception:
+                pass
+        else:
+            dn_arrival_entry = tk.Entry(form, textvariable=ctx.dn_arrival_date_var, width=12)
+        dn_arrival_entry.grid(row=1,column=1,sticky='w',padx=(4,0),pady=4)
+        try:
+            tk.Button(form, text='📅', width=2, command=lambda e=dn_arrival_entry,v=ctx.dn_arrival_date_var: ctx._open_date_picker(e, v)).grid(row=1,column=1,sticky='w',padx=(120,0),pady=4)
+        except Exception:
+            pass
+    except Exception:
+        tk.Entry(form, textvariable=ctx.dn_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
 
     tk.Label(form, text="מס' מסמך ספק:", font=('Arial',10,'bold')).grid(row=1,column=2,sticky='w',padx=4,pady=4)
     ctx.dn_supplier_doc_number_var = tk.StringVar()
