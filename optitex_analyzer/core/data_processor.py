@@ -709,7 +709,7 @@ class DataProcessor:
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
 								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '',
-								 barcode: str = '', main_category: str = '', unit_type: str = '') -> int:
+								 barcode: str = '', main_category: str = '', unit_type: str = '', zipper_qty: int | str = 0) -> int:
 		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
 
 		:param name: שם מוצר (חובה)
@@ -721,6 +721,7 @@ class DataProcessor:
 		:param ticks_qty: כמות טיקטקים (אופציונלי, מספר שלם)
 		:param elastic_qty: כמות גומי (אופציונלי, מספר שלם)
 		:param ribbon_qty: כמות סרט (אופציונלי, מספר שלם)
+		:param zipper_qty: כמות רוכסן (אופציונלי, מספר שלם)
 		"""
 		try:
 			if not name:
@@ -734,6 +735,7 @@ class DataProcessor:
 			ticks_i = _to_int(ticks_qty)
 			elastic_i = _to_int(elastic_qty)
 			ribbon_i = _to_int(ribbon_qty)
+			zipper_i = _to_int(zipper_qty)
 			new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
 			record = {
 				'id': new_id,
@@ -750,6 +752,7 @@ class DataProcessor:
 				'ticks_qty': ticks_i,
 				'elastic_qty': elastic_i,
 				'ribbon_qty': ribbon_i,
+				'zipper_qty': zipper_i,
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.products_catalog.append(record)
@@ -778,7 +781,7 @@ class DataProcessor:
 			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודות החדשות
 			columns = [
 				'id','name','main_category','category','size','fabric_type','fabric_color','fabric_category',
-				'print_name','barcode','unit_type','ticks_qty','elastic_qty','ribbon_qty','created_at'
+				'print_name','barcode','unit_type','ticks_qty','elastic_qty','ribbon_qty','zipper_qty','created_at'
 			]
 			rows = []
 			for rec in self.products_catalog:
@@ -798,6 +801,7 @@ class DataProcessor:
 					'ticks_qty': rec.get('ticks_qty', 0),
 					'elastic_qty': rec.get('elastic_qty', 0),
 					'ribbon_qty': rec.get('ribbon_qty', 0),
+					'zipper_qty': rec.get('zipper_qty', 0),
 					'created_at': rec.get('created_at','')
 				})
 			df = pd.DataFrame(rows, columns=columns)
@@ -818,7 +822,7 @@ class DataProcessor:
 				raise Exception("קובץ לא נמצא")
 			df = pd.read_excel(file_path)
 			# נוודא קיום עמודות נדרשות (תמיכה לאחור: barcode/main_category/unit_type לא חובה)
-			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'}
+			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','zipper_qty','created_at'}
 			cols = {str(c).strip() for c in df.columns}
 			missing = required - cols
 			if missing:
@@ -866,6 +870,7 @@ class DataProcessor:
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
+					zipper = _to_int(row.get('zipper_qty'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -886,6 +891,7 @@ class DataProcessor:
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
+						'zipper_qty': zipper,
 						'created_at': created_str
 					}
 					self.products_catalog.append(rec)
@@ -910,6 +916,7 @@ class DataProcessor:
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
+					zipper = _to_int(row.get('zipper_qty'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -930,6 +937,7 @@ class DataProcessor:
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
+						'zipper_qty': zipper,
 						'created_at': created_str
 					}
 					self.products_catalog.append(rec)

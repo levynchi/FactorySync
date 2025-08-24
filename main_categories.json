@@ -13,7 +13,8 @@
       "print_name",
       "ticks_qty",
       "elastic_qty",
-      "ribbon_qty"
+      "ribbon_qty",
+      "zipper_qty"
     ]
   },
   {

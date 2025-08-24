@@ -11,7 +11,7 @@ class ProductsCatalogMethodsMixin:
         form.pack(fill='x', padx=10, pady=6)
         # bind vars
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
-        self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar(); self.prod_unit_type_var = tk.StringVar()
+        self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar(); self.prod_unit_type_var = tk.StringVar(); self.prod_zipper_var = tk.StringVar()
         self.prod_fabric_category_var = tk.StringVar(); self.prod_main_category_var = tk.StringVar()
         self.prod_barcode_var = tk.StringVar()
 
@@ -125,13 +125,16 @@ class ProductsCatalogMethodsMixin:
         tk.Entry(form, textvariable=self.prod_elastic_var, width=10).grid(row=6, column=3, sticky='w', padx=2, pady=4)
         tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=6, column=4, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_ribbon_var, width=10).grid(row=6, column=5, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="רוכסן:", font=('Arial',10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_zipper_var, width=10).grid(row=6, column=7, sticky='w', padx=2, pady=4)
         # Unit Type (סוג יחידה)
-        tk.Label(form, text="סוג יחידה:", font=('Arial',10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_unit_type_var, width=12).grid(row=6, column=7, sticky='w', padx=2, pady=4)
+        # move unit type to next row for space
+        tk.Label(form, text="סוג יחידה:", font=('Arial',10,'bold')).grid(row=7, column=0, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_unit_type_var, width=12).grid(row=7, column=1, sticky='w', padx=2, pady=4)
 
         # barcode row
-        tk.Label(form, text="בר קוד:", font=('Arial',10,'bold')).grid(row=7, column=0, sticky='w', padx=4, pady=4)
-        tk.Entry(form, textvariable=self.prod_barcode_var, width=20).grid(row=7, column=1, sticky='w', padx=2, pady=4)
+        tk.Label(form, text="בר קוד:", font=('Arial',10,'bold')).grid(row=7, column=2, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_barcode_var, width=20).grid(row=7, column=3, sticky='w', padx=2, pady=4)
 
         # actions moved to next row to avoid overlap with barcode
         tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=8, column=0, padx=12, pady=6, sticky='w')
@@ -142,7 +145,7 @@ class ProductsCatalogMethodsMixin:
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         # Add main_category column for display
-        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','barcode','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','barcode','fabric_category','ticks_qty','elastic_qty','ribbon_qty','zipper_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
         headers = {
             'id':'ID',
@@ -158,6 +161,7 @@ class ProductsCatalogMethodsMixin:
             'ticks_qty':'טיקטקים',
             'elastic_qty':'גומי',
             'ribbon_qty':'סרט',
+            'zipper_qty':'רוכסן',
             'created_at':'נוצר'
         }
         widths = {
@@ -174,6 +178,7 @@ class ProductsCatalogMethodsMixin:
             'ticks_qty':70,
             'elastic_qty':60,
             'ribbon_qty':60,
+            'zipper_qty':60,
             'created_at':140
         }
         for c in cols:
@@ -222,6 +227,7 @@ class ProductsCatalogMethodsMixin:
         lbl_ticks = _try_find_label("טיקטקים:")
         lbl_elastic = _try_find_label("גומי:")
         lbl_ribbon = _try_find_label("סרט:")
+        lbl_zipper = _try_find_label("רוכסן:")
         lbl_unit_type = _try_find_label("סוג יחידה:")
 
         self._products_field_widgets['model_name'] = [x for x in [lbl_model, self.model_name_combobox] if x]
@@ -233,15 +239,14 @@ class ProductsCatalogMethodsMixin:
         self._products_field_widgets['sub_category'] = [x for x in subcat_widgets if x]
         self._products_field_widgets['fabric_category'] = [x for x in [lbl_fabric_cat, self.fabric_category_combobox] if x]
 
-        # barcode field mapping
-        try:
-            barcode_entry = None
-            for w in form.grid_slaves():
-                info = w.grid_info();
-                if int(info.get('row', -1)) == 7 and int(info.get('column', -1)) == 1:
+        # barcode field mapping (find by textvariable instead of fixed grid position)
+        barcode_entry = None
+        for w in form.grid_slaves():
+            try:
+                if isinstance(w, tk.Entry) and w.cget('textvariable') and str(w.cget('textvariable')) == str(self.prod_barcode_var):
                     barcode_entry = w; break
-        except Exception:
-            barcode_entry = None
+            except Exception:
+                pass
         self._products_field_widgets['barcode'] = [x for x in [lbl_barcode, barcode_entry] if x]
 
         # sizes group includes picker, readonly entry, clear button
@@ -292,6 +297,7 @@ class ProductsCatalogMethodsMixin:
         ticks_widgets = [x for x in [lbl_ticks] if x]
         elastic_widgets = [x for x in [lbl_elastic] if x]
         ribbon_widgets = [x for x in [lbl_ribbon] if x]
+        zipper_widgets = [x for x in [lbl_zipper] if x]
         for w in form.grid_slaves():
             if isinstance(w, tk.Entry) and w.cget('state') != 'readonly' and w.cget('textvariable'):
                 tv = str(w.cget('textvariable'))
@@ -301,9 +307,12 @@ class ProductsCatalogMethodsMixin:
                     elastic_widgets.append(w)
                 elif tv == str(self.prod_ribbon_var):
                     ribbon_widgets.append(w)
+                elif tv == str(self.prod_zipper_var):
+                    zipper_widgets.append(w)
         self._products_field_widgets['ticks_qty'] = ticks_widgets
         self._products_field_widgets['elastic_qty'] = elastic_widgets
         self._products_field_widgets['ribbon_qty'] = ribbon_widgets
+        self._products_field_widgets['zipper_qty'] = zipper_widgets
         # unit type group
         unit_widgets = [x for x in [lbl_unit_type] if x]
         for w in form.grid_slaves():
@@ -421,6 +430,7 @@ class ProductsCatalogMethodsMixin:
             ('ticks_qty', 'טיקטקים'),
             ('elastic_qty', 'גומי'),
             ('ribbon_qty', 'סרט'),
+            ('zipper_qty', 'רוכסן'),
         ]
 
     def _build_main_category_fields_tab(self, parent):
@@ -683,7 +693,7 @@ class ProductsCatalogMethodsMixin:
                 self.products_tree.insert('', 'end', values=(
                     rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
                     rec.get('fabric_color'), rec.get('print_name'), rec.get('barcode',''), fabric_category_value, rec.get('ticks_qty'), rec.get('elastic_qty'),
-                    rec.get('ribbon_qty'), rec.get('created_at')
+                    rec.get('ribbon_qty'), rec.get('zipper_qty'), rec.get('created_at')
                 ))
         except Exception:
             pass
@@ -1007,23 +1017,24 @@ class ProductsCatalogMethodsMixin:
                 key = (name, cat, sz, ft, fc, pn)
                 if key in existing:
                     continue
+                zipper_raw = self.prod_zipper_var.get().strip()
                 new_id = self.data_processor.add_product_catalog_entry(
                     name, sz, ft, fc, pn, cat, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw,
-                    barcode=barcode_raw, main_category=main_category_value, unit_type=unit_type_raw
+                    barcode=barcode_raw, main_category=main_category_value, unit_type=unit_type_raw, zipper_qty=zipper_raw
                 )
                 existing.add(key)
                 added += 1
                 fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
                 self.products_tree.insert('', 'end', values=(
                     new_id, name, main_category_value, cat, sz, ft, fc, pn, barcode_raw, fabric_category_value,
-                    ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
+                    ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0, (zipper_raw or 0),
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
 
             # Clear fields
             self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_fabric_category_var.set(''); self.prod_size_var.set('')
             self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set('')
-            self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set(''); self.prod_barcode_var.set(''); self.prod_unit_type_var.set('')
+            self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set(''); self.prod_zipper_var.set(''); self.prod_barcode_var.set(''); self.prod_unit_type_var.set('')
             self.selected_sizes.clear(); self.selected_fabric_types.clear(); self.selected_fabric_colors.clear(); self.selected_print_names.clear()
             if hasattr(self, 'size_picker'): self.size_picker.set('')
             if hasattr(self, 'ftype_picker'): self.ftype_picker.set('')
