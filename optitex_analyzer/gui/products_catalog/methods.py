@@ -983,7 +983,14 @@ class ProductsCatalogMethodsMixin:
         size_tokens = [_normalize_size(s) for s in size_tokens]
 
         from itertools import product
-        combos = list(product(category_tokens, size_tokens, ft_tokens, fc_tokens, pn_tokens)) or [( '', '', '', '', '' )]
+        # When main category is 'בגדים' and multiple sub-categories were selected,
+        # do NOT create variants per sub-category; instead, keep them as a single
+        # comma-separated value in one product row.
+        if (self.prod_main_category_var.get().strip() if hasattr(self, 'prod_main_category_var') else '') == 'בגדים' and len([t for t in category_tokens if t]) > 1:
+            cat_dim = [','.join(category_tokens)]
+        else:
+            cat_dim = category_tokens
+        combos = list(product(cat_dim, size_tokens, ft_tokens, fc_tokens, pn_tokens)) or [( '', '', '', '', '' )]
 
         # Build existing set to avoid duplicates
         existing = set()
