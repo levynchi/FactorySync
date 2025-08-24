@@ -1295,6 +1295,10 @@ class DataProcessor:
 		"""Ensure each attribute record has 'main_category' and optional 'main_categories'.
 		- If neither present, default to provided value.
 		- If only 'main_category' present, mirror into 'main_categories' list.
+		- If 'main_category' contains a comma-separated list (legacy data), split into list and
+		  set the first token as the primary.
+		- If 'main_categories' exists but contains a single string with commas (bad import),
+		  split that string into a proper list and set the first as primary.
 		"""
 		changed = False
 		for lst, saver in [
@@ -1309,12 +1313,25 @@ class DataProcessor:
 				for rec in lst:
 					mc = (rec.get('main_category') or '').strip()
 					mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else []
+					# If main_categories exists but is a single comma-joined string in a list, fix it
+					if mcs and isinstance(mcs, list) and len(mcs) == 1 and isinstance(mcs[0], str) and (',' in mcs[0]):
+						parts = [t.strip() for t in mcs[0].split(',') if t and t.strip()]
+						if parts:
+							rec['main_categories'] = parts
+							rec['main_category'] = parts[0]
+							changed = True
 					if not mc and not mcs:
 						rec['main_category'] = default
 						rec['main_categories'] = [default]
 						changed = True
 					elif mc and not mcs:
-						rec['main_categories'] = [mc]
+						# Normalize legacy comma-separated primary into list
+						parts = [t.strip() for t in mc.split(',') if t and t.strip()]
+						if parts:
+							rec['main_categories'] = parts
+							rec['main_category'] = parts[0]
+						else:
+							rec['main_categories'] = [mc]
 						changed = True
 			except Exception:
 				pass
@@ -1332,4 +1349,119 @@ class DataProcessor:
 			except Exception: pass
 			try: self.save_model_names()
 			except Exception: pass
+
+	# ===== Attribute export/import (Excel) =====
+	def _export_attr_list(self, items: list[dict], file_path: str) -> bool:
+		"""Export attribute list to Excel with one category column: id,name,main_category,created_at.
+		- If multiple categories exist, they are joined by commas into main_category for user editing.
+		"""
+		try:
+			rows = []
+			for rec in items or []:
+				mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else None
+				mc = (rec.get('main_category') or '').strip()
+				if not mcs and mc:
+					mcs = [mc]
+				rows.append({
+					'id': rec.get('id'),
+					'name': rec.get('name', ''),
+					'main_category': ','.join(mcs) if mcs else '',
+					'created_at': rec.get('created_at',''),
+				})
+			df = pd.DataFrame(rows, columns=['id','name','main_category','created_at'])
+			df.to_excel(file_path, index=False)
+			return True
+		except Exception as e:
+			raise Exception(f"שגיאה בייצוא אקסל: {e}")
+
+	def _import_attr_list(self, file_path: str, mode: str, target_list: list[dict], save_func, add_func, supports_multi_mc: bool = False) -> dict:
+		"""Import attribute list from Excel. If overwrite, replace list; else append unique by 'name'.
+		- supports_multi_mc: when True, will pass list of categories to add_func; otherwise single string.
+		"""
+		try:
+			if not os.path.exists(file_path):
+				raise Exception("קובץ לא נמצא")
+			df = pd.read_excel(file_path)
+			cols = {str(c).strip() for c in df.columns}
+			if 'name' not in cols:
+				raise Exception("עמודת 'name' חסרה בקובץ")
+			imported = 0; skipped = 0
+			if mode == 'overwrite':
+				target_list.clear()
+				save_func()
+				existing = set()
+			else:
+				existing = { (rec.get('name') or '').strip() for rec in (target_list or []) }
+			for _, row in df.iterrows():
+				name = str(row.get('name') or '').strip()
+				if not name:
+					continue
+				if name in existing:
+					skipped += 1; continue
+				# categories
+				mcs = []
+				try:
+					if 'main_categories' in cols:
+						val = row.get('main_categories')
+						s = '' if val is None else str(val)
+						mcs = [t.strip() for t in s.split(',') if t and t.strip()]
+					if (not mcs) and 'main_category' in cols:
+						mc_val = row.get('main_category')
+						s = '' if mc_val is None else str(mc_val)
+						# When multi-category is supported, split comma-separated values from single column
+						if supports_multi_mc:
+							mcs = [t.strip() for t in s.split(',') if t and t.strip()]
+						else:
+							mc = s.strip()
+							if mc: mcs = [mc]
+				except Exception:
+					mcs = []
+				try:
+					if supports_multi_mc:
+						add_func(name, main_category=(mcs or ''))
+					else:
+						mc = mcs[0] if mcs else ''
+						add_func(name, main_category=mc)
+					imported += 1
+					existing.add(name)
+				except Exception:
+					skipped += 1
+			save_func(); return {'imported': imported, 'skipped_duplicates': skipped, 'overwritten': (mode=='overwrite')}
+		except Exception as e:
+			raise Exception(f"שגיאה בייבוא אקסל: {e}")
+
+	# Sizes
+	def export_sizes_to_excel(self, file_path: str) -> bool:
+		return self._export_attr_list(self.product_sizes, file_path)
+
+	def import_sizes_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		return self._import_attr_list(file_path, mode, self.product_sizes, self.save_product_sizes, self.add_product_size, supports_multi_mc=False)
+
+	# Fabric Types
+	def export_fabric_types_to_excel(self, file_path: str) -> bool:
+		return self._export_attr_list(self.product_fabric_types, file_path)
+
+	def import_fabric_types_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		return self._import_attr_list(file_path, mode, self.product_fabric_types, self.save_fabric_types, self.add_fabric_type_item, supports_multi_mc=True)
+
+	# Fabric Colors
+	def export_fabric_colors_to_excel(self, file_path: str) -> bool:
+		return self._export_attr_list(self.product_fabric_colors, file_path)
+
+	def import_fabric_colors_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		return self._import_attr_list(file_path, mode, self.product_fabric_colors, self.save_fabric_colors, self.add_fabric_color_item, supports_multi_mc=True)
+
+	# Print Names
+	def export_print_names_to_excel(self, file_path: str) -> bool:
+		return self._export_attr_list(self.product_print_names, file_path)
+
+	def import_print_names_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		return self._import_attr_list(file_path, mode, self.product_print_names, self.save_print_names, self.add_print_name_item, supports_multi_mc=True)
+
+	# Model Names
+	def export_model_names_to_excel(self, file_path: str) -> bool:
+		return self._export_attr_list(self.product_model_names, file_path)
+
+	def import_model_names_from_excel(self, file_path: str, mode: str = 'append') -> dict:
+		return self._import_attr_list(file_path, mode, self.product_model_names, self.save_model_names, self.add_model_name_item, supports_multi_mc=False)
 

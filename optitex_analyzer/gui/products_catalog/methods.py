@@ -536,6 +536,11 @@ class ProductsCatalogMethodsMixin:
         ttk.Combobox(sz_form, textvariable=self.attr_main_category_var, state='readonly', width=16, values=_attr_main_cat_values()).grid(row=0, column=3, padx=4, pady=4)
         tk.Button(sz_form, text='➕ הוסף', command=self._add_product_size, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
         tk.Button(sz_form, text='🗑️ מחק נבחר', command=self._delete_selected_product_size, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        # Actions for sizes import/export
+        sz_actions = ttk.Frame(sizes_tab)
+        sz_actions.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(sz_actions, text="💾 ייצוא לאקסל", command=lambda: self._export_attr('sizes'), bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(sz_actions, text="⬆️ יבוא מאקסל", command=lambda: self._import_attr('sizes'), bg='#34495e', fg='white').pack(side='right', padx=4)
         sz_tree_frame = ttk.LabelFrame(sizes_tab, text='מידות', padding=4)
         sz_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.sizes_tree = ttk.Treeview(sz_tree_frame, columns=('id','name','main_category','created_at'), show='headings', height=10)
@@ -559,6 +564,10 @@ class ProductsCatalogMethodsMixin:
         self.attr_ftype_mcs.grid(row=0, column=3, padx=4, pady=4, sticky='w')
         tk.Button(ft_form, text='➕ הוסף', command=self._add_fabric_type_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
         tk.Button(ft_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_type_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        ft_actions = ttk.Frame(ftypes_tab)
+        ft_actions.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(ft_actions, text="💾 ייצוא לאקסל", command=lambda: self._export_attr('fabric_types'), bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(ft_actions, text="⬆️ יבוא מאקסל", command=lambda: self._import_attr('fabric_types'), bg='#34495e', fg='white').pack(side='right', padx=4)
         ft_tree_frame = ttk.LabelFrame(ftypes_tab, text='סוגי בד', padding=4)
         ft_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.fabric_types_tree = ttk.Treeview(ft_tree_frame, columns=('id','name','main_category','created_at'), show='headings', height=10)
@@ -581,6 +590,10 @@ class ProductsCatalogMethodsMixin:
         self.attr_fcolor_mcs.grid(row=0, column=3, padx=4, pady=4, sticky='w')
         tk.Button(fc_form, text='➕ הוסף', command=self._add_fabric_color_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
         tk.Button(fc_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_color_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        fc_actions = ttk.Frame(fcolors_tab)
+        fc_actions.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(fc_actions, text="💾 ייצוא לאקסל", command=lambda: self._export_attr('fabric_colors'), bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(fc_actions, text="⬆️ יבוא מאקסל", command=lambda: self._import_attr('fabric_colors'), bg='#34495e', fg='white').pack(side='right', padx=4)
         fc_tree_frame = ttk.LabelFrame(fcolors_tab, text='צבעי בד', padding=4)
         fc_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.fabric_colors_tree = ttk.Treeview(fc_tree_frame, columns=('id','name','main_category','created_at'), show='headings', height=10)
@@ -603,6 +616,10 @@ class ProductsCatalogMethodsMixin:
         self.attr_pname_mcs.grid(row=0, column=3, padx=4, pady=4, sticky='w')
         tk.Button(pn_form, text='➕ הוסף', command=self._add_print_name_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
         tk.Button(pn_form, text='🗑️ מחק נבחר', command=self._delete_selected_print_name_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        pn_actions = ttk.Frame(prints_tab)
+        pn_actions.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(pn_actions, text="💾 ייצוא לאקסל", command=lambda: self._export_attr('print_names'), bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(pn_actions, text="⬆️ יבוא מאקסל", command=lambda: self._import_attr('print_names'), bg='#34495e', fg='white').pack(side='right', padx=4)
         pn_tree_frame = ttk.LabelFrame(prints_tab, text='שמות פרינט', padding=4)
         pn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.print_names_tree = ttk.Treeview(pn_tree_frame, columns=('id','name','main_category','created_at'), show='headings', height=10)
@@ -641,6 +658,10 @@ class ProductsCatalogMethodsMixin:
         ttk.Combobox(mn_form, textvariable=self.attr_main_category_var, state='readonly', width=16, values=_attr_main_cat_values()).grid(row=0, column=3, padx=4, pady=4)
         tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
         tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        mn_actions = ttk.Frame(modelnames_tab)
+        mn_actions.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(mn_actions, text="💾 ייצוא לאקסל", command=lambda: self._export_attr('model_names'), bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(mn_actions, text="⬆️ יבוא מאקסל", command=lambda: self._import_attr('model_names'), bg='#34495e', fg='white').pack(side='right', padx=4)
         mn_tree_frame = ttk.LabelFrame(modelnames_tab, text='שמות דגם', padding=4)
         mn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.model_names_tree = ttk.Treeview(mn_tree_frame, columns=('id','name','main_category','created_at'), show='headings', height=10)
@@ -847,22 +868,34 @@ class ProductsCatalogMethodsMixin:
         if not hasattr(self, 'fabric_types_tree'): return
         for item in self.fabric_types_tree.get_children(): self.fabric_types_tree.delete(item)
         for rec in getattr(self.data_processor, 'product_fabric_types', []):
-            mc = rec.get('main_category') or 'בגדים'
-            self.fabric_types_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc, rec.get('created_at')))
+            mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else None
+            if mcs:
+                mc_disp = ','.join(mcs)
+            else:
+                mc_disp = rec.get('main_category') or 'בגדים'
+            self.fabric_types_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc_disp, rec.get('created_at')))
 
     def _load_fabric_colors_into_tree(self):
         if not hasattr(self, 'fabric_colors_tree'): return
         for item in self.fabric_colors_tree.get_children(): self.fabric_colors_tree.delete(item)
         for rec in getattr(self.data_processor, 'product_fabric_colors', []):
-            mc = rec.get('main_category') or 'בגדים'
-            self.fabric_colors_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc, rec.get('created_at')))
+            mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else None
+            if mcs:
+                mc_disp = ','.join(mcs)
+            else:
+                mc_disp = rec.get('main_category') or 'בגדים'
+            self.fabric_colors_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc_disp, rec.get('created_at')))
 
     def _load_print_names_into_tree(self):
         if not hasattr(self, 'print_names_tree'): return
         for item in self.print_names_tree.get_children(): self.print_names_tree.delete(item)
         for rec in getattr(self.data_processor, 'product_print_names', []):
-            mc = rec.get('main_category') or 'בגדים'
-            self.print_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc, rec.get('created_at')))
+            mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else None
+            if mcs:
+                mc_disp = ','.join(mcs)
+            else:
+                mc_disp = rec.get('main_category') or 'בגדים'
+            self.print_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), mc_disp, rec.get('created_at')))
 
     def _load_fabric_categories_into_tree(self):
         if not hasattr(self, 'fabric_categories_tree'): return
@@ -1069,6 +1102,84 @@ class ProductsCatalogMethodsMixin:
         ttk.Button(btns, text="ייבוא", command=_do_import).pack(side='right', padx=4)
         ttk.Button(btns, text="ביטול", command=top.destroy).pack(side='right', padx=4)
 
+    # ===== Attribute import/export helpers =====
+    def _export_attr(self, kind: str):
+        title_map = {
+            'sizes': 'ייצוא מידות',
+            'fabric_types': 'ייצוא סוגי בד',
+            'fabric_colors': 'ייצוא צבעי בד',
+            'print_names': 'ייצוא שמות פרינט',
+            'model_names': 'ייצוא שמות דגם',
+        }
+        file_path = filedialog.asksaveasfilename(title=title_map.get(kind,'ייצוא'), defaultextension='.xlsx', filetypes=[('Excel','*.xlsx')])
+        if not file_path: return
+        try:
+            if kind == 'sizes':
+                self.data_processor.export_sizes_to_excel(file_path)
+            elif kind == 'fabric_types':
+                self.data_processor.export_fabric_types_to_excel(file_path)
+            elif kind == 'fabric_colors':
+                self.data_processor.export_fabric_colors_to_excel(file_path)
+            elif kind == 'print_names':
+                self.data_processor.export_print_names_to_excel(file_path)
+            elif kind == 'model_names':
+                self.data_processor.export_model_names_to_excel(file_path)
+            messagebox.showinfo('הצלחה', 'קובץ נוצר בהצלחה')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    def _import_attr(self, kind: str):
+        top = tk.Toplevel(self.notebook)
+        top.title('ייבוא מאקסל')
+        top.grab_set(); top.resizable(False, False)
+        frm = ttk.Frame(top, padding=10)
+        frm.pack(fill='both', expand=True)
+
+        path_var = tk.StringVar(); overwrite_var = tk.BooleanVar(value=False)
+        ttk.Label(frm, text="בחר קובץ Excel עם עמודות name ו-main_category (ניתן להזין כמה קטגוריות מופרדות בפסיקים)").grid(row=0, column=0, columnspan=3, sticky='w', pady=(0,6))
+        ttk.Entry(frm, textvariable=path_var, width=50).grid(row=1, column=0, columnspan=2, sticky='we', padx=(0,6))
+        def _browse():
+            p = filedialog.askopenfilename(title="בחר קובץ", filetypes=[('Excel','*.xlsx')])
+            if p: path_var.set(p)
+        ttk.Button(frm, text="עיון...", command=_browse).grid(row=1, column=2, sticky='w')
+        ttk.Checkbutton(frm, text="דרוס את הטבלה (במקום להוסיף)", variable=overwrite_var).grid(row=2, column=0, columnspan=3, sticky='w', pady=8)
+
+        btns = ttk.Frame(frm); btns.grid(row=3, column=0, columnspan=3, sticky='e')
+        def _do_import():
+            path = path_var.get().strip()
+            if not path:
+                messagebox.showerror('שגיאה', 'בחר קובץ לייבוא')
+                return
+            mode = 'overwrite' if overwrite_var.get() else 'append'
+            try:
+                if kind == 'sizes':
+                    res = self.data_processor.import_sizes_from_excel(path, mode)
+                    self._load_sizes_into_tree()
+                elif kind == 'fabric_types':
+                    res = self.data_processor.import_fabric_types_from_excel(path, mode)
+                    self._load_fabric_types_into_tree()
+                elif kind == 'fabric_colors':
+                    res = self.data_processor.import_fabric_colors_from_excel(path, mode)
+                    self._load_fabric_colors_into_tree()
+                elif kind == 'print_names':
+                    res = self.data_processor.import_print_names_from_excel(path, mode)
+                    self._load_print_names_into_tree()
+                elif kind == 'model_names':
+                    res = self.data_processor.import_model_names_from_excel(path, mode)
+                    self._load_model_names_into_tree()
+                else:
+                    res = {'imported': 0, 'skipped_duplicates': 0, 'overwritten': False}
+                self._refresh_attribute_pickers()
+                msg = f"יובאו {res.get('imported',0)} רשומות."
+                skipped = res.get('skipped_duplicates',0)
+                if skipped: msg += f"\nדולגו {skipped} כפילויות."
+                if res.get('overwritten'): msg += "\nבוצעה דריסה מלאה של הטבלה."
+                messagebox.showinfo('הצלחה', msg); top.destroy()
+            except Exception as e:
+                messagebox.showerror('שגיאה', str(e))
+        ttk.Button(btns, text='ייבוא', command=_do_import).pack(side='right', padx=4)
+        ttk.Button(btns, text='ביטול', command=top.destroy).pack(side='right', padx=4)
+
     # ===== ATTR helpers =====
     def _on_attr_select(self, kind: str):
         picker_map = {
@@ -1106,12 +1217,29 @@ class ProductsCatalogMethodsMixin:
                 for r in (items or []):
                     mc = (r.get('main_category') or '').strip()
                     mcs = r.get('main_categories') if isinstance(r.get('main_categories'), list) else []
+                    # Build a normalized set of categories for this record
+                    tokens = set()
                     if mcs:
-                        if selected_mc in mcs:
-                            filtered.append(r)
+                        for x in mcs:
+                            try:
+                                if isinstance(x, str):
+                                    parts = [t.strip() for t in x.split(',') if t and t.strip()]
+                                    if parts:
+                                        tokens.update(parts)
+                            except Exception:
+                                pass
                     else:
-                        if (mc or 'בגדים') == selected_mc:
+                        # If no list available, treat comma-separated string as multiple categories
+                        if mc:
+                            parts = [t.strip() for t in mc.split(',') if t and t.strip()]
+                            if parts:
+                                tokens.update(parts)
+                    if not tokens and not mc:
+                        # Default legacy behaviour
+                        if selected_mc == 'בגדים':
                             filtered.append(r)
+                    elif selected_mc in tokens or (not tokens and mc == selected_mc):
+                        filtered.append(r)
                 return filtered
             return items or []
 
