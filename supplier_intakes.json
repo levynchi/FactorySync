@@ -78,5 +78,80 @@
     ],
     "receipt_kind": "supplier_intake",
     "created_at": "2025-08-20 06:16:05"
+  },
+  {
+    "id": 5,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-08-24",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 125,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 122,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 56,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "5",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 118,
+        "note": ""
+      }
+    ],
+    "total_quantity": 421,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "arrival_date": "2025-07-03",
+    "supplier_doc_number": "144",
+    "created_at": "2025-08-24 09:29:54"
   }
 ]

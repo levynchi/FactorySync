@@ -36,5 +36,17 @@
       "fabric_color",
       "print_name"
     ]
+  },
+  {
+    "id": 4,
+    "name": "מוצרים לחדר השינה",
+    "created_at": "2025-08-24 09:30:46",
+    "fields": [
+      "model_name",
+      "sizes",
+      "fabric_type",
+      "fabric_color",
+      "print_name"
+    ]
   }
 ]
