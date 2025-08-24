@@ -1192,20 +1192,77 @@ class DataProcessor:
 	def delete_product_size(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_sizes, self.save_product_sizes, rec_id)
 
-	def add_fabric_type_item(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name, {'main_category': (main_category or '').strip()})
+	def add_fabric_type_item(self, name: str, main_category: str | list[str] = '') -> int:
+		"""Add fabric type; supports single or multiple main categories.
+		- main_category: str or list[str]. If list, will be saved under 'main_categories' and 'main_category' (first) for compatibility.
+		"""
+		extra: dict = {}
+		mcs: list[str] = []
+		try:
+			if isinstance(main_category, list):
+				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
+			elif isinstance(main_category, str):
+				s = (main_category or '').strip()
+				# support comma-separated input
+				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
+			else:
+				mcs = []
+		except Exception:
+			mcs = []
+		if mcs:
+			extra['main_categories'] = mcs
+			extra['main_category'] = mcs[0]
+		else:
+			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
+		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name, extra)
 
 	def delete_fabric_type_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_types, self.save_fabric_types, rec_id)
 
-	def add_fabric_color_item(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name, {'main_category': (main_category or '').strip()})
+	def add_fabric_color_item(self, name: str, main_category: str | list[str] = '') -> int:
+		"""Add fabric color; supports single or multiple main categories."""
+		extra: dict = {}
+		mcs: list[str] = []
+		try:
+			if isinstance(main_category, list):
+				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
+			elif isinstance(main_category, str):
+				s = (main_category or '').strip()
+				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
+			else:
+				mcs = []
+		except Exception:
+			mcs = []
+		if mcs:
+			extra['main_categories'] = mcs
+			extra['main_category'] = mcs[0]
+		else:
+			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
+		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name, extra)
 
 	def delete_fabric_color_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_colors, self.save_fabric_colors, rec_id)
 
-	def add_print_name_item(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name, {'main_category': (main_category or '').strip()})
+	def add_print_name_item(self, name: str, main_category: str | list[str] = '') -> int:
+		"""Add print name; supports single or multiple main categories."""
+		extra: dict = {}
+		mcs: list[str] = []
+		try:
+			if isinstance(main_category, list):
+				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
+			elif isinstance(main_category, str):
+				s = (main_category or '').strip()
+				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
+			else:
+				mcs = []
+		except Exception:
+			mcs = []
+		if mcs:
+			extra['main_categories'] = mcs
+			extra['main_category'] = mcs[0]
+		else:
+			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
+		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name, extra)
 
 	def delete_print_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_print_names, self.save_print_names, rec_id)
@@ -1235,7 +1292,10 @@ class DataProcessor:
 			pass
 
 	def _ensure_main_category_on_attributes(self, default: str = 'בגדים'):
-		"""Ensure each attribute record has 'main_category'; default to provided value and persist if changed."""
+		"""Ensure each attribute record has 'main_category' and optional 'main_categories'.
+		- If neither present, default to provided value.
+		- If only 'main_category' present, mirror into 'main_categories' list.
+		"""
 		changed = False
 		for lst, saver in [
 			(self.product_sizes, self.save_product_sizes),
@@ -1247,8 +1307,14 @@ class DataProcessor:
 		]:
 			try:
 				for rec in lst:
-					if not (rec.get('main_category') or '').strip():
+					mc = (rec.get('main_category') or '').strip()
+					mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else []
+					if not mc and not mcs:
 						rec['main_category'] = default
+						rec['main_categories'] = [default]
+						changed = True
+					elif mc and not mcs:
+						rec['main_categories'] = [mc]
 						changed = True
 			except Exception:
 				pass

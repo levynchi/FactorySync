@@ -3,78 +3,117 @@
     "id": 1,
     "name": "בגד גוף ש.א",
     "created_at": "2025-08-16 07:18:02",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 2,
     "name": "בגד גוף ש.ק",
     "created_at": "2025-08-16 07:18:21",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 3,
     "name": "בגד גוף גופייה",
     "created_at": "2025-08-16 07:19:32",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 4,
     "name": "בגד גוף מעטפת",
     "created_at": "2025-08-16 07:19:54",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 5,
     "name": "רגליות",
     "created_at": "2025-08-16 07:20:03",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 7,
     "name": "גופיות סבא",
     "created_at": "2025-08-16 07:20:25",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 8,
     "name": "גופיות פלנל",
     "created_at": "2025-08-16 07:20:37",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 9,
     "name": "גטקס",
     "created_at": "2025-08-16 07:27:35",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 10,
     "name": "טיק טק קומפלט",
     "created_at": "2025-08-19 20:28:15",
-    "main_category": "אביזרי תפירה"
+    "main_category": "אביזרי תפירה",
+    "main_categories": [
+      "אביזרי תפירה"
+    ]
   },
   {
     "id": 11,
     "name": "רוכסן צבע קאמל",
     "created_at": "2025-08-21 13:19:46",
-    "main_category": "אביזרי תפירה"
+    "main_category": "אביזרי תפירה",
+    "main_categories": [
+      "אביזרי תפירה"
+    ]
   },
   {
     "id": 12,
     "name": "גומי 4 ס\"מ",
     "created_at": "2025-08-21 13:22:52",
-    "main_category": "אביזרי תפירה"
+    "main_category": "אביזרי תפירה",
+    "main_categories": [
+      "אביזרי תפירה"
+    ]
   },
   {
     "id": 13,
     "name": "סיליקון 8 ס\"מ לשמלה",
     "created_at": "2025-08-21 13:25:20",
-    "main_category": "אביזרי תפירה"
+    "main_category": "אביזרי תפירה",
+    "main_categories": [
+      "אביזרי תפירה"
+    ]
   },
   {
     "id": 14,
     "name": "שמיכת  ליס",
     "created_at": "2025-08-24 09:33:28",
-    "main_category": "מוצרים לחדר השינה"
+    "main_category": "מוצרים לחדר השינה",
+    "main_categories": [
+      "מוצרים לחדר השינה"
+    ]
   }
 ]

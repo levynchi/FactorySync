@@ -3,24 +3,36 @@
     "id": 1,
     "name": "פלנל לבן",
     "created_at": "2025-08-15 05:36:54",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 2,
     "name": "טריקו לבן",
     "created_at": "2025-08-15 05:37:02",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 3,
     "name": "פלנל מודפס",
     "created_at": "2025-08-15 05:37:19",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   },
   {
     "id": 4,
     "name": "טריקו מודפס",
     "created_at": "2025-08-15 05:37:47",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   }
 ]

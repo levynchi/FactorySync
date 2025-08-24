@@ -3,6 +3,9 @@
     "id": 1,
     "name": "חלק",
     "created_at": "2025-08-13 12:31:51",
-    "main_category": "בגדים"
+    "main_category": "בגדים",
+    "main_categories": [
+      "בגדים"
+    ]
   }
 ]
