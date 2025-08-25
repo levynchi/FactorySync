@@ -147,17 +147,17 @@ class ProductsBalanceTabMixin:
         inv_create_page = tk.Frame(inv_nb, bg='#f7f9fa')
         inv_nb.add(inv_create_page, text='יצירת קובץ מלאי')
         tk.Label(inv_create_page, text='יצירת קובץ מלאי חדש', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
-        form = tk.Frame(inv_create_page, bg='#f7f9fa'); form.pack(fill='x', padx=10, pady=(0,6))
+        form = tk.Frame(inv_create_page, bg='#f7f9fa'); form.pack(anchor='e', padx=10, pady=(0,6))
         # שדות
         tk.Label(form, text='שם דגם:', bg='#f7f9fa').grid(row=0, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_name_var = tk.StringVar()
-        self.inv_create_name_cb = ttk.Combobox(form, textvariable=self.inv_create_name_var, width=32)
+        self.inv_create_name_cb = ttk.Combobox(form, textvariable=self.inv_create_name_var, width=32, justify='right')
         try:
             names = sorted({(r.get('name') or '').strip() for r in getattr(self.data_processor, 'products_catalog', []) if r.get('name')})
             self.inv_create_name_cb['values'] = names
         except Exception:
             pass
-        self.inv_create_name_cb.grid(row=0, column=5, padx=4, pady=2, sticky='w')
+        self.inv_create_name_cb.grid(row=0, column=5, padx=4, pady=2, sticky='e')
         try:
             self.inv_create_name_cb.bind('<<ComboboxSelected>>', lambda e: self._inv_create_on_name_change())
         except Exception:
@@ -165,7 +165,7 @@ class ProductsBalanceTabMixin:
 
         tk.Label(form, text='קטגוריה ראשית:', bg='#f7f9fa').grid(row=0, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_main_cat_var = tk.StringVar()
-        self.inv_create_main_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly')
+        self.inv_create_main_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly', justify='right')
         # ערכי ברירת מחדל לקטגוריות ראשיות
         try:
             cats = self._get_main_category_names_for_inventory()
@@ -176,31 +176,31 @@ class ProductsBalanceTabMixin:
                 self.inv_create_main_cat_var.set(cats[0])
         except Exception:
             pass
-        self.inv_create_main_cat_cb.grid(row=0, column=3, padx=4, pady=2, sticky='w')
+        self.inv_create_main_cat_cb.grid(row=0, column=3, padx=4, pady=2, sticky='e')
 
         tk.Label(form, text='מידה:', bg='#f7f9fa').grid(row=0, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_size_var = tk.StringVar()
-        self.inv_create_size_cb = ttk.Combobox(form, textvariable=self.inv_create_size_var, width=16)
-        self.inv_create_size_cb.grid(row=0, column=1, padx=4, pady=2, sticky='w')
+        self.inv_create_size_cb = ttk.Combobox(form, textvariable=self.inv_create_size_var, width=16, justify='right')
+        self.inv_create_size_cb.grid(row=0, column=1, padx=4, pady=2, sticky='e')
 
         tk.Label(form, text='סוג בד:', bg='#f7f9fa').grid(row=1, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_fabric_var = tk.StringVar()
-        self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24)
-        self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='w')
+        self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24, justify='right')
+        self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='e')
 
         tk.Label(form, text='כמות:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_qty_var = tk.StringVar(value='0')
-        tk.Entry(form, textvariable=self.inv_create_qty_var, width=10).grid(row=1, column=3, padx=4, pady=2, sticky='w')
+        tk.Entry(form, textvariable=self.inv_create_qty_var, width=10, justify='right').grid(row=1, column=3, padx=4, pady=2, sticky='e')
 
         tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_location_var = tk.StringVar()
-        self.inv_create_location_cb = ttk.Combobox(form, textvariable=self.inv_create_location_var, width=16)
-        self.inv_create_location_cb.grid(row=1, column=1, padx=4, pady=2, sticky='w')
+        self.inv_create_location_cb = ttk.Combobox(form, textvariable=self.inv_create_location_var, width=16, justify='right')
+        self.inv_create_location_cb.grid(row=1, column=1, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=1, column=0, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=2, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_packaging_var = tk.StringVar()
-        self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16)
-        self.inv_create_packaging_cb.grid(row=1, column=0, padx=4, pady=2, sticky='w')
+        self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16, justify='right')
+        self.inv_create_packaging_cb.grid(row=2, column=5, padx=4, pady=2, sticky='e')
 
         actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
