@@ -2061,20 +2061,15 @@ class ProductsBalanceTabMixin:
     def _export_products_inventory_to_excel(self):
         """ייצוא השורות המוצגות בטבלת המלאי לקובץ Excel."""
         tree = getattr(self, 'products_inventory_tree', None)
-        if not tree:
-            return
-        items = tree.get_children()
-        if not items:
-            try:
-                messagebox.showinfo('ייצוא מלאי', 'אין נתונים לייצוא')
-            except Exception:
-                pass
-            return
-        # איסוף נתונים מהטבלה
+        # איסוף נתונים מהטבלה (גם אם אין – נייצא קובץ ריק עם כותרות)
         rows = []
-        for iid in items:
-            vals = tree.item(iid, 'values') or []
-            rows.append(tuple(vals))
+        try:
+            if tree is not None:
+                for iid in tree.get_children():
+                    vals = tree.item(iid, 'values') or []
+                    rows.append(tuple(vals))
+        except Exception:
+            pass
         # כותרות מתוך הטבלה
         cols = ('name','main_category','size','fabric_type','quantity','location','packaging')
         headers = ['שם הדגם','קטגוריה ראשית','מידה','סוג בד','כמות','מיקום','צורת אריזה']
