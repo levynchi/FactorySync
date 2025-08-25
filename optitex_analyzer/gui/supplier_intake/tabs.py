@@ -65,6 +65,40 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         table_wrap.grid_rowconfigure(0, weight=1)
         table_wrap.grid_columnconfigure(0, weight=1)
 
+        # מקטע הובלה (כמו בקלטת מוצרים)
+        pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
+        pkg_frame.pack(fill='x', padx=10, pady=(0,6))
+        # וודא רשימת חבילות קיימת
+        if not hasattr(self, '_fi_packages'):
+            self._fi_packages = []
+        self.fi_pkg_type_var = tk.StringVar(value='בד')
+        self.fi_pkg_qty_var = tk.StringVar()
+        self.fi_pkg_driver_var = tk.StringVar()
+        tk.Label(pkg_frame, text="פריט הובלה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
+        self.fi_pkg_type_combo = ttk.Combobox(pkg_frame, textvariable=self.fi_pkg_type_var, state='readonly', width=14, values=['בד','שק','שקית קטנה'])
+        self.fi_pkg_type_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
+        tk.Label(pkg_frame, text="כמות:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
+        tk.Entry(pkg_frame, textvariable=self.fi_pkg_qty_var, width=8).grid(row=0,column=3,sticky='w',padx=4,pady=2)
+        tk.Label(pkg_frame, text="שם המוביל:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
+        self.fi_pkg_driver_combo = ttk.Combobox(pkg_frame, textvariable=self.fi_pkg_driver_var, width=16, state='readonly')
+        self.fi_pkg_driver_combo.grid(row=0,column=5,sticky='w',padx=4,pady=2)
+        try:
+            # יעדכן גם את הקומבו של קליטת בדים אם המיקסין תומך
+            self._refresh_driver_names_for_intake()
+        except Exception:
+            pass
+        tk.Button(pkg_frame, text="➕ הוסף", command=self._fi_add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
+        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._fi_delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
+        tk.Button(pkg_frame, text="❌ נקה", command=self._fi_clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+        self.fi_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
+        self.fi_packages_tree.heading('type', text='פריט הובלה')
+        self.fi_packages_tree.heading('quantity', text='כמות')
+        self.fi_packages_tree.heading('driver', text='שם המוביל')
+        self.fi_packages_tree.column('type', width=120, anchor='center')
+        self.fi_packages_tree.column('quantity', width=70, anchor='center')
+        self.fi_packages_tree.column('driver', width=110, anchor='center')
+        self.fi_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
+
         actions = tk.Frame(container, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,8))
         tk.Button(actions, text='💾 שמור קליטת בדים', command=self._fi_save_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
         self.fi_summary_var = tk.StringVar(value='0 בדים')

@@ -642,7 +642,8 @@ class SupplierIntakeMethodsMixin:
             pass
 
     def _fi_save_receipt(self):
-        """שומר קליטת בדים: משנה סטטוס לכל ברקוד ל'בדים שנתקבלו בחזרה' ומרענן טבלת מלאי בדים."""
+        """שומר קליטת בדים: משנה סטטוס לכל ברקוד ל'בדים שנתקבלו בחזרה' ומרענן טבלת מלאי בדים.
+        כולל שמירת פריטי הובלה מקטע ההובלה של קליטת בדים."""
         # אסוף ברקודים
         barcodes = []
         try:
@@ -656,6 +657,18 @@ class SupplierIntakeMethodsMixin:
             try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
             except Exception: pass
             return
+        # אסוף חבילות (לא חובה)
+        packages = []
+        try:
+            for iid in self.fi_packages_tree.get_children():
+                vals = self.fi_packages_tree.item(iid, 'values') or []
+                if vals:
+                    try:
+                        packages.append({'package_type': vals[0], 'quantity': int(vals[1]), 'driver': vals[2] if len(vals) > 2 else ''})
+                    except Exception:
+                        packages.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
+        except Exception:
+            packages = []
         # עדכן סטטוסים דרך DataProcessor
         updated = 0
         for bc in barcodes:
@@ -664,14 +677,61 @@ class SupplierIntakeMethodsMixin:
                     updated += 1
             except Exception:
                 pass
+        # אופציונלי: כתוב לוג קליטת בדים
+        try:
+            if hasattr(self.data_processor, 'add_fabrics_intake_log'):
+                self.data_processor.add_fabrics_intake_log({'barcodes': barcodes, 'packages': packages, 'created_at': datetime.now().isoformat(timespec='seconds')})
+        except Exception:
+            pass
         try:
             messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
         except Exception:
             pass
         # נקה את הטבלה ורענן טאב מלאי בדים אם קיים
         self._fi_clear_all()
+        self._fi_clear_packages()
         try:
             if hasattr(self, '_refresh_fabrics_table'):
                 self._refresh_fabrics_table()
+        except Exception:
+            pass
+
+    # ===== Fabrics intake packages helpers =====
+    def _fi_add_package_line(self):
+        ptype = (getattr(self, 'fi_pkg_type_var', tk.StringVar()).get() or '').strip()
+        qty_raw = (getattr(self, 'fi_pkg_qty_var', tk.StringVar()).get() or '').strip()
+        driver = (getattr(self, 'fi_pkg_driver_var', tk.StringVar()).get() or '').strip()
+        if not ptype or not qty_raw:
+            try: messagebox.showerror('שגיאה', 'יש לבחור פריט הובלה ולהזין כמות')
+            except Exception: pass
+            return
+        try:
+            qty = int(qty_raw); assert qty > 0
+        except Exception:
+            try: messagebox.showerror('שגיאה', 'כמות חייבת להיות מספר חיובי')
+            except Exception: pass
+            return
+        try:
+            self._fi_packages.append({'package_type': ptype, 'quantity': qty, 'driver': driver})
+            self.fi_packages_tree.insert('', 'end', values=(ptype, qty, driver))
+            self.fi_pkg_qty_var.set('')
+        except Exception:
+            pass
+
+    def _fi_delete_selected_package(self):
+        try:
+            sel = self.fi_packages_tree.selection()
+            if not sel: return
+            all_items = self.fi_packages_tree.get_children(); indices = [all_items.index(i) for i in sel]
+            for item in sel: self.fi_packages_tree.delete(item)
+            for idx in sorted(indices, reverse=True):
+                if 0 <= idx < len(self._fi_packages): del self._fi_packages[idx]
+        except Exception:
+            pass
+
+    def _fi_clear_packages(self):
+        try:
+            self._fi_packages = []
+            for item in self.fi_packages_tree.get_children(): self.fi_packages_tree.delete(item)
         except Exception:
             pass
