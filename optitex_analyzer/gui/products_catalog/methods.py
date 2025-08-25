@@ -311,9 +311,7 @@ class ProductsCatalogMethodsMixin:
                     zipper_widgets.append(w)
         self._products_field_widgets['ticks_qty'] = ticks_widgets
         self._products_field_widgets['elastic_qty'] = elastic_widgets
-        self._products_field_widgets['ribbon_qty'] = ribbon_widgets
-        self._products_field_widgets['zipper_qty'] = zipper_widgets
-        # unit type group
+        self._products_field_widgets['ribbon_qty'] = ribbon_widgets        # unit type group
         unit_widgets = [x for x in [lbl_unit_type] if x]
         for w in form.grid_slaves():
             if isinstance(w, tk.Entry) and w.cget('state') != 'readonly' and w.cget('textvariable'):
@@ -954,9 +952,13 @@ class ProductsCatalogMethodsMixin:
         unit_type_raw = self.prod_unit_type_var.get().strip()
 
         def _split(raw):
+            """Split user-entered multi-values strictly by comma.
+            Spaces are preserved within values (e.g., 'כוכבים ונקודות מולי').
+            """
             if not raw:
                 return ['']
-            return [s.strip() for s in re.split(r'[;,\.\s]+', raw) if s.strip()]
+            # Only comma is a delimiter; do not split on spaces/periods/semicolons
+            return [s.strip() for s in raw.split(',') if s.strip()]
 
         size_tokens = _split(sizes_raw)
         ft_tokens = _split(ftypes_raw)
