@@ -1,17 +1,89 @@
 {
   "batches": [
     {
-      "id": "batch_20250825_131555",
-      "created_at": "2025-08-25 13:15:55",
+      "id": "batch_20250825_150627",
+      "created_at": "2025-08-25 15:06:27",
       "mode": "add",
       "items": [
         {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "8",
+          "fabric_type": "פלנל",
+          "quantity": "220",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "6",
+          "fabric_type": "פלנל",
+          "quantity": "80",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
           "name": "בגד גוף ש.א",
+          "main_category": "בגדים",
+          "size": "24-30",
+          "fabric_type": "פלנל",
+          "quantity": "270",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "בגד גוף ש.א",
+          "main_category": "בגדים",
+          "size": "24-30",
+          "fabric_type": "פלנל",
+          "quantity": "270",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "6-12",
+          "fabric_type": "פלנל",
+          "quantity": "400",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "רגליות",
           "main_category": "בגדים",
           "size": "0-3",
           "fabric_type": "פלנל",
-          "quantity": "100",
-          "location": "גלריה 2",
+          "quantity": "400",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "3-6",
+          "fabric_type": "פלנל",
+          "quantity": "400",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "18-24",
+          "fabric_type": "פלנל",
+          "quantity": "140",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "18-24",
+          "fabric_type": "פלנל",
+          "quantity": "300",
+          "location": "גלריה 4",
           "packaging": "חמישיות"
         }
       ]

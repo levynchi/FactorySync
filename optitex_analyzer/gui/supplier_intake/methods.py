@@ -573,3 +573,105 @@ class SupplierIntakeMethodsMixin:
         btns = tk.Frame(win, bg='#f7f9fa')
         btns.pack(fill='x', padx=10, pady=(0,10))
         tk.Button(btns, text='סגור', command=win.destroy).pack(side='left')
+
+    # ===== Fabrics Intake (קליטת בדים) =====
+    def _fi_add_fabric_by_barcode(self):
+        """מוסיף רשומת בד לטבלת הקליטה לפי ברקוד, מתוך 'מלאי בדים > נתוני מלאי'."""
+        try:
+            barcode = (getattr(self, 'fi_barcode_var', tk.StringVar()).get() or '').strip()
+        except Exception:
+            barcode = ''
+        if not barcode:
+            return
+        # מצא בד לפי ברקוד ממסד הנתונים של מלאי בדים
+        try:
+            records = getattr(self.data_processor, 'fabrics_inventory', []) or []
+        except Exception:
+            records = []
+        rec = next((r for r in records if str(r.get('barcode') or '').strip() == barcode), None)
+        if not rec:
+            try: messagebox.showwarning('לא נמצא', 'ברקוד זה לא נמצא במלאי הבדים')
+            except Exception: pass
+            return
+        # הוסף לטבלה אם לא קיים כבר
+        try:
+            for iid in self.fi_tree.get_children():
+                vals = self.fi_tree.item(iid, 'values') or []
+                if vals and str(vals[0]) == barcode:
+                    try: messagebox.showinfo('מידע', 'ברקוד זה כבר ברשימה')
+                    except Exception: pass
+                    return
+        except Exception:
+            pass
+        values = (
+            rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''),
+            rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')
+        )
+        try:
+            self.fi_tree.insert('', 'end', values=values)
+            self.fi_barcode_var.set('')
+        except Exception:
+            pass
+        self._fi_update_summary()
+
+    def _fi_remove_selected(self):
+        try:
+            sel = self.fi_tree.selection()
+            for item in sel:
+                self.fi_tree.delete(item)
+        except Exception:
+            pass
+        self._fi_update_summary()
+
+    def _fi_clear_all(self):
+        try:
+            for item in self.fi_tree.get_children():
+                self.fi_tree.delete(item)
+        except Exception:
+            pass
+        self._fi_update_summary()
+
+    def _fi_update_summary(self):
+        try:
+            count = len(self.fi_tree.get_children())
+        except Exception:
+            count = 0
+        try:
+            self.fi_summary_var.set(f"{count} בדים")
+        except Exception:
+            pass
+
+    def _fi_save_receipt(self):
+        """שומר קליטת בדים: משנה סטטוס לכל ברקוד ל'בדים שנתקבלו בחזרה' ומרענן טבלת מלאי בדים."""
+        # אסוף ברקודים
+        barcodes = []
+        try:
+            for iid in self.fi_tree.get_children():
+                vals = self.fi_tree.item(iid, 'values') or []
+                if vals:
+                    barcodes.append(str(vals[0]))
+        except Exception:
+            pass
+        if not barcodes:
+            try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
+            except Exception: pass
+            return
+        # עדכן סטטוסים דרך DataProcessor
+        updated = 0
+        for bc in barcodes:
+            try:
+                if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'בדים שנתקבלו בחזרה'):
+                    updated += 1
+            except Exception:
+                pass
+        try:
+            messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
+        except Exception:
+            pass
+        # נקה את הטבלה ורענן טאב מלאי בדים אם קיים
+        self._fi_clear_all()
+        try:
+            if hasattr(self, '_refresh_fabrics_table'):
+                self._refresh_fabrics_table()
+        except Exception:
+            pass
