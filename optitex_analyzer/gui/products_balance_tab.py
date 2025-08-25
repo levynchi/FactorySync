@@ -112,6 +112,33 @@ class ProductsBalanceTabMixin:
         inv_nb.add(inv_view_page, text='מלאי עדכני')
         tk.Label(inv_view_page, text='מלאי עדכני מתוך הקטלוג (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
         inv_bar = tk.Frame(inv_view_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
+        # מסננים: שם דגם / סוג בד / קטגוריה ראשית
+        tk.Label(inv_bar, text='שם דגם:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.inv_view_name_filter_var = tk.StringVar()
+        inv_name_entry = tk.Entry(inv_bar, textvariable=self.inv_view_name_filter_var, width=22, justify='right')
+        try:
+            inv_name_entry.bind('<KeyRelease>', lambda e: self._refresh_products_inventory_table())
+        except Exception:
+            pass
+        inv_name_entry.pack(side='right', padx=(0,10))
+
+        tk.Label(inv_bar, text='סוג בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.inv_view_fabric_filter_var = tk.StringVar(value='הכל')
+        self.inv_view_fabric_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_fabric_filter_var, width=18, state='readonly', justify='right')
+        try:
+            self.inv_view_fabric_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_products_inventory_table())
+        except Exception:
+            pass
+        self.inv_view_fabric_filter_cb.pack(side='right', padx=(0,10))
+
+        tk.Label(inv_bar, text='קטגוריה ראשית:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.inv_view_main_cat_filter_var = tk.StringVar(value='הכל')
+        self.inv_view_main_cat_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_main_cat_filter_var, width=18, state='readonly', justify='right')
+        try:
+            self.inv_view_main_cat_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_products_inventory_table())
+        except Exception:
+            pass
+        self.inv_view_main_cat_filter_cb.pack(side='right', padx=(0,10))
         # תצוגת מלאי עדכני נמשכת מהקטלוג – אין צורך בבחירת קובץ
         tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg='#27ae60', fg='white').pack(side='right', padx=(6,0))
         tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
@@ -266,6 +293,11 @@ class ProductsBalanceTabMixin:
             self.products_inventory_file = last_inv
         except Exception:
             self.products_inventory_file = ''
+        # אתחול ערכים למסננים של "מלאי עדכני"
+        try:
+            self._reload_inventory_view_filters_options()
+        except Exception:
+            pass
         self._refresh_products_inventory_table()
 
         # עמוד חדש: מאזן אביזרי תפירה
@@ -450,6 +482,54 @@ class ProductsBalanceTabMixin:
 
         # טעינה ראשונית – ריק עד בחירת ספק
         self._refresh_balance_views()
+
+    def _reload_inventory_view_filters_options(self):
+        """טוען ערכי אפשרויות למסנני 'מלאי עדכני' מתוך הקטלוג."""
+        try:
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+        except Exception:
+            catalog = []
+        def norm(s):
+            return (str(s or '').strip())
+        # הפקת קטגוריה ראשית גם כאשר השדה לא קיים ברשומות הקטלוג (נשתמש בנגזר/ברירת מחדל)
+        def _derive_mc(rec: dict):
+            try:
+                mc = norm(rec.get('main_category'))
+                if mc:
+                    return mc
+                # נסה מתוך השדה 'category' – קח הטוקן הראשון לפני פסיק
+                cat = norm(rec.get('category'))
+                if cat:
+                    first = norm(cat.split(',')[0]) if ',' in cat else cat
+                    if first:
+                        return first
+                # נסה למצוא לפי שם הדגם מתוך טבלת שמות-דגמים
+                name = norm(rec.get('name'))
+                if name:
+                    model_names = getattr(self.data_processor, 'product_model_names', []) or getattr(self.data_processor, 'model_names', []) or []
+                    for m in model_names:
+                        if norm(m.get('name')) == name and norm(m.get('main_category')):
+                            return norm(m.get('main_category'))
+                # לבסוף – ברירת מחדל
+                return 'בגדים'
+            except Exception:
+                return 'בגדים'
+        main_cats = sorted({ _derive_mc(r) for r in catalog if r })
+        fabrics = sorted({norm(r.get('fabric_type')) for r in catalog if r.get('fabric_type')})
+        try:
+            values_main = ['הכל'] + main_cats
+            values_fab = ['הכל'] + fabrics
+            if hasattr(self, 'inv_view_main_cat_filter_cb'):
+                self.inv_view_main_cat_filter_cb['values'] = values_main
+            if hasattr(self, 'inv_view_fabric_filter_cb'):
+                self.inv_view_fabric_filter_cb['values'] = values_fab
+            # קבע ברירות מחדל אם ריק
+            if hasattr(self, 'inv_view_main_cat_filter_var') and not (self.inv_view_main_cat_filter_var.get() or '').strip():
+                self.inv_view_main_cat_filter_var.set('הכל')
+            if hasattr(self, 'inv_view_fabric_filter_var') and not (self.inv_view_fabric_filter_var.get() or '').strip():
+                self.inv_view_fabric_filter_var.set('הכל')
+        except Exception:
+            pass
 
     def _open_date_picker(self, anchor_widget, target_var: tk.StringVar, on_change=None):
         """פותח חלון בחירת תאריך גרפי ללא תלות ב-tkcalendar; אם tkcalendar קיים – ישתמש בו.
@@ -2073,6 +2153,11 @@ class ProductsBalanceTabMixin:
         tree = getattr(self, 'products_inventory_tree', None)
         if not tree:
             return
+        # רענון אפשרויות המסננים (למקרה שהקטלוג השתנה)
+        try:
+            self._reload_inventory_view_filters_options()
+        except Exception:
+            pass
         # ניקוי טבלה
         try:
             for iid in tree.get_children():
@@ -2087,9 +2172,33 @@ class ProductsBalanceTabMixin:
                 name = (rec.get('name') or '').strip()
                 if not name:
                     continue
+                # הפקת קטגוריה ראשית גם אם אינה שמורה כתכונה מפורשת
+                mc = ''
+                try:
+                    mc = (rec.get('main_category') or '').strip()
+                    if not mc:
+                        cat = (rec.get('category') or '').strip()
+                        if cat:
+                            mc = (cat.split(',')[0] or '').strip()
+                    if not mc:
+                        # חפש לפי טבלת שמות-דגמים
+                        try:
+                            model_names = getattr(self.data_processor, 'product_model_names', []) or getattr(self.data_processor, 'model_names', []) or []
+                        except Exception:
+                            model_names = []
+                        for m in model_names:
+                            try:
+                                if (m.get('name') or '').strip() == name and (m.get('main_category') or '').strip():
+                                    mc = (m.get('main_category') or '').strip(); break
+                            except Exception:
+                                pass
+                    if not mc:
+                        mc = 'בגדים'
+                except Exception:
+                    mc = 'בגדים'
                 rows.append({
                     'name': name,
-                    'main_category': (rec.get('main_category') or '').strip(),
+                    'main_category': mc,
                     'size': (rec.get('size') or '').strip(),
                     'fabric_type': (rec.get('fabric_type') or '').strip(),
                     'quantity': '',
@@ -2098,9 +2207,36 @@ class ProductsBalanceTabMixin:
                 })
         except Exception:
             rows = []
+        # החלת מסננים
+        def norm(s):
+            return (str(s or '').strip())
+        try:
+            name_filter = (getattr(self, 'inv_view_name_filter_var', tk.StringVar()).get() or '').strip().lower()
+        except Exception:
+            name_filter = ''
+        try:
+            main_cat_filter = norm(getattr(self, 'inv_view_main_cat_filter_var', tk.StringVar(value='הכל')).get())
+        except Exception:
+            main_cat_filter = 'הכל'
+        try:
+            fabric_filter = norm(getattr(self, 'inv_view_fabric_filter_var', tk.StringVar(value='הכל')).get())
+        except Exception:
+            fabric_filter = 'הכל'
+        filtered = []
+        try:
+            for r in rows:
+                if name_filter and name_filter not in (r.get('name','').strip().lower()):
+                    continue
+                if main_cat_filter and main_cat_filter != 'הכל' and norm(r.get('main_category','')) != main_cat_filter:
+                    continue
+                if fabric_filter and fabric_filter != 'הכל' and norm(r.get('fabric_type','')) != fabric_filter:
+                    continue
+                filtered.append(r)
+        except Exception:
+            filtered = rows
         # הצגה (הגבלה ל-3000 שורות להגנה על הביצועים)
         try:
-            for r in rows[:3000]:
+            for r in filtered[:3000]:
                 tree.insert('', 'end', values=(
                     r.get('name',''), r.get('main_category',''), r.get('size',''), r.get('fabric_type',''), r.get('quantity',''), r.get('location',''), r.get('packaging','')
                 ))
@@ -2108,7 +2244,7 @@ class ProductsBalanceTabMixin:
             pass
         # עדכון סטטוס
         try:
-            self.products_inventory_status_var.set(f"מקור: קטלוג מוצרים | שורות: {min(len(rows),3000)}")
+            self.products_inventory_status_var.set(f"מקור: קטלוג מוצרים | מסונן: {len(filtered)} מתוך {len(rows)} | שורות מוצגות: {min(len(filtered),3000)}")
         except Exception:
             pass
 
