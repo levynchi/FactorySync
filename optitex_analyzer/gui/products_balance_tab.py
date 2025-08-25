@@ -269,6 +269,7 @@ class ProductsBalanceTabMixin:
         tk.Label(inv_hist_page, text='היסטוריית עדכוני מלאי', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
         hist_bar = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_bar.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(hist_bar, text='🔄 רענן', command=self._inv_history_reload, bg='#3498db', fg='white').pack(side='right')
+        tk.Button(hist_bar, text='🗑️ מחק עדכון נבחר', command=self._inv_history_delete_selected, bg='#e74c3c', fg='white').pack(side='right', padx=(8,0))
         # חלוקה לשניים: תקציר למעלה, פריטים למטה
         hist_wrap = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         hist_wrap.grid_columnconfigure(0, weight=1)
@@ -538,6 +539,87 @@ class ProductsBalanceTabMixin:
 
         # טעינה ראשונית – ריק עד בחירת ספק
         self._refresh_balance_views()
+
+    def _inv_history_delete_selected(self):
+        """מוחק באצ׳ עדכון נבחר מהיסטוריה ומסיר את השפעתו מהמלאי העדכני."""
+        try:
+            sel = self.inv_updates_batches_tree.selection() if hasattr(self, 'inv_updates_batches_tree') else None
+            if not sel:
+                try:
+                    from tkinter import messagebox
+                    messagebox.showwarning('מחיקת עדכון', 'לא נבחר עדכון למחיקה.')
+                except Exception:
+                    pass
+                return
+            item_id = sel[0]
+            values = self.inv_updates_batches_tree.item(item_id, 'values') or []
+            batch_id = values[0] if values else ''
+            if not batch_id:
+                try:
+                    from tkinter import messagebox
+                    messagebox.showwarning('מחיקת עדכון', 'לא נמצאה מזהה לעדכון הנבחר.')
+                except Exception:
+                    pass
+                return
+            # טען מחסן עדכונים וחפש את הבאצ׳ לפי מזהה
+            store = {}
+            try:
+                store = self._inv_updates_load_store() or {}
+            except Exception:
+                store = {}
+            batches = list(store.get('batches') or [])
+            idx = -1; batch = None
+            for i, b in enumerate(batches):
+                if str(b.get('id') or '') == str(batch_id):
+                    idx = i; batch = b; break
+            if idx < 0 or batch is None:
+                try:
+                    from tkinter import messagebox
+                    messagebox.showinfo('מחיקת עדכון', 'לא נמצאה רשומת עדכון תואמת למחיקה.')
+                except Exception:
+                    pass
+                return
+            # בקש אישור מחיקה
+            try:
+                from tkinter import messagebox
+                mode = (batch.get('mode') or 'overwrite').strip()
+                mode_heb = 'הוספה' if mode == 'add' else 'דריסה'
+                created = batch.get('created_at') or ''
+                cnt = len(batch.get('items') or [])
+                ok = messagebox.askyesno('מחיקת עדכון', f"האם למחוק את העדכון הבא?\n\nמזהה: {batch_id}\nתאריך: {created}\nמצב: {mode_heb}\nמס׳ פריטים: {cnt}\n\nפעולה זו תסיר את השפעת העדכון מהמלאי העדכני.")
+                if not ok:
+                    return
+            except Exception:
+                pass
+            # מחיקה ושמירה
+            try:
+                del batches[idx]
+                store['batches'] = batches
+                self._inv_updates_save_store(store)
+            except Exception:
+                # אם השמירה נכשלה – אל תמשיך
+                try:
+                    from tkinter import messagebox
+                    messagebox.showerror('מחיקת עדכון', 'השמירה לקובץ נכשלה. המחיקה בוטלה.')
+                except Exception:
+                    pass
+                return
+            # ריענון היסטוריה והמלאי העדכני
+            try:
+                self._inv_history_reload()
+            except Exception:
+                pass
+            try:
+                self._refresh_products_inventory_table()
+            except Exception:
+                pass
+            try:
+                from tkinter import messagebox
+                messagebox.showinfo('מחיקת עדכון', 'העדכון נמחק וההשפעות הוסרו מהמלאי העדכני.')
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def _reload_inventory_view_filters_options(self):
         """טוען ערכי אפשרויות למסנני 'מלאי עדכני' מתוך הקטלוג."""
