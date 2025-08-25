@@ -165,7 +165,18 @@ class ProductsBalanceTabMixin:
 
         tk.Label(form, text='קטגוריה ראשית:', bg='#f7f9fa').grid(row=0, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_main_cat_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly').grid(row=0, column=3, padx=4, pady=2, sticky='w')
+        self.inv_create_main_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly')
+        # ערכי ברירת מחדל לקטגוריות ראשיות
+        try:
+            cats = self._get_main_category_names_for_inventory()
+            self.inv_create_main_cat_cb['values'] = cats
+            if 'בגדים' in cats:
+                self.inv_create_main_cat_var.set('בגדים')
+            elif cats:
+                self.inv_create_main_cat_var.set(cats[0])
+        except Exception:
+            pass
+        self.inv_create_main_cat_cb.grid(row=0, column=3, padx=4, pady=2, sticky='w')
 
         tk.Label(form, text='מידה:', bg='#f7f9fa').grid(row=0, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_size_var = tk.StringVar()
@@ -183,11 +194,13 @@ class ProductsBalanceTabMixin:
 
         tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_location_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.inv_create_location_var, width=16).grid(row=1, column=1, padx=4, pady=2, sticky='w')
+        self.inv_create_location_cb = ttk.Combobox(form, textvariable=self.inv_create_location_var, width=16)
+        self.inv_create_location_cb.grid(row=1, column=1, padx=4, pady=2, sticky='w')
 
         tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=1, column=0, padx=4, pady=2, sticky='e')
         self.inv_create_packaging_var = tk.StringVar()
-        tk.Entry(form, textvariable=self.inv_create_packaging_var, width=16).grid(row=1, column=0, padx=4, pady=2, sticky='w')
+        self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16)
+        self.inv_create_packaging_cb.grid(row=1, column=0, padx=4, pady=2, sticky='w')
 
         actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
@@ -204,6 +217,46 @@ class ProductsBalanceTabMixin:
         self.inv_create_tree.configure(yscroll=ivs2.set)
         self.inv_create_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=(0,8))
         ivs2.pack(side='left', fill='y', pady=(0,8))
+
+        # טען אפשרויות ברירת מחדל לשדות מיקום/צורת אריזה
+        try:
+            self._reload_inventory_aux_options()
+        except Exception:
+            pass
+
+        # תת-טאב ניהול: צורות אריזה
+        pkg_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_nb.add(pkg_page, text='צורות אריזה')
+        tk.Label(pkg_page, text='ניהול צורות אריזה', font=('Arial',14,'bold'), bg='#f7f9fa').pack(pady=(6,2))
+        pkg_bar = tk.Frame(pkg_page, bg='#f7f9fa'); pkg_bar.pack(fill='x', padx=10, pady=(0,6))
+        self.pkg_new_var = tk.StringVar()
+        tk.Entry(pkg_bar, textvariable=self.pkg_new_var, width=24).pack(side='right', padx=6)
+        tk.Button(pkg_bar, text='➕ הוסף', command=self._inv_pkg_add).pack(side='right')
+        tk.Button(pkg_bar, text='🗑️ מחק נבחר', command=self._inv_pkg_delete).pack(side='left', padx=6)
+        tk.Button(pkg_bar, text='💾 שמור', command=self._inv_pkg_save).pack(side='left')
+        self.pkg_list = tk.Listbox(pkg_page, height=12)
+        self.pkg_list.pack(fill='both', expand=True, padx=10, pady=6)
+        try:
+            self._load_pkg_list()
+        except Exception:
+            pass
+
+        # תת-טאב ניהול: מיקומים
+        loc_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_nb.add(loc_page, text='מיקומים')
+        tk.Label(loc_page, text='ניהול מיקומים', font=('Arial',14,'bold'), bg='#f7f9fa').pack(pady=(6,2))
+        loc_bar = tk.Frame(loc_page, bg='#f7f9fa'); loc_bar.pack(fill='x', padx=10, pady=(0,6))
+        self.loc_new_var = tk.StringVar()
+        tk.Entry(loc_bar, textvariable=self.loc_new_var, width=24).pack(side='right', padx=6)
+        tk.Button(loc_bar, text='➕ הוסף', command=self._inv_loc_add).pack(side='right')
+        tk.Button(loc_bar, text='🗑️ מחק נבחר', command=self._inv_loc_delete).pack(side='left', padx=6)
+        tk.Button(loc_bar, text='💾 שמור', command=self._inv_loc_save).pack(side='left')
+        self.loc_list = tk.Listbox(loc_page, height=12)
+        self.loc_list.pack(fill='both', expand=True, padx=10, pady=6)
+        try:
+            self._load_loc_list()
+        except Exception:
+            pass
 
         # נסה לטעון אוטומטית קובץ מלאי אחרון מהגדרות
         try:
@@ -2146,7 +2199,22 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         try:
-            self.inv_create_main_cat_var.set(main_cat)
+            # קבע בחירת קטגוריה והצע כל האפשרויות הקיימות עבור המוצר
+            cats = set()
+            for rec in getattr(self.data_processor, 'products_catalog', []) or []:
+                if (rec.get('name') or '').strip() == name:
+                    mc = (rec.get('main_category') or '').strip()
+                    if mc:
+                        cats.add(mc)
+            if not cats:
+                cats = set(self._get_main_category_names_for_inventory())
+            vals = sorted(cats, key=lambda x: (x!='בגדים', x))
+            self.inv_create_main_cat_cb['values'] = vals
+            if main_cat and main_cat in vals:
+                self.inv_create_main_cat_var.set(main_cat)
+            else:
+                # ברירת מחדל 'בגדים'
+                self.inv_create_main_cat_var.set('בגדים' if 'בגדים' in vals else (vals[0] if vals else ''))
         except Exception:
             pass
         try:
@@ -2291,3 +2359,143 @@ class ProductsBalanceTabMixin:
                 messagebox.showerror('ייצוא מלאי', f'שגיאה בשמירה לאקסל:\n{e}')
             except Exception:
                 pass
+
+    # === עזרי UI: קטגוריות/מיקומים/צורות אריזה למלאי ===
+    def _get_main_category_names_for_inventory(self):
+        """החזרת שמות קטגוריות ראשיות מהנתונים, עם 'בגדים' כברירת מחדל ראשונה."""
+        names = []
+        try:
+            lst = getattr(self.data_processor, 'main_categories', []) or []
+            for c in lst:
+                nm = (c.get('name') or c.get('שם') or '').strip()
+                if nm:
+                    names.append(nm)
+        except Exception:
+            pass
+        if 'בגדים' not in names:
+            names = ['בגדים'] + [n for n in names if n != 'בגדים']
+        else:
+            # סדר: בגדים תחילה
+            names = ['בגדים'] + [n for n in names if n != 'בגדים']
+        # הסר כפולים תוך שמירה על סדר
+        seen = set(); out = []
+        for n in names:
+            if n not in seen:
+                seen.add(n); out.append(n)
+        return out or ['בגדים']
+
+    def _reload_inventory_aux_options(self):
+        """טען מ'Settings' את רשימות המיקומים/צורות אריזה לתוך הקומבובוקסים."""
+        pkgs = []
+        locs = []
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'get'):
+                pkgs = self.settings.get('inventory.packaging_options', []) or []
+                locs = self.settings.get('inventory.location_options', []) or []
+        except Exception:
+            pkgs = locs = []
+        try:
+            self.inv_create_packaging_cb['values'] = pkgs
+            self.inv_create_location_cb['values'] = locs
+        except Exception:
+            pass
+
+    def _load_pkg_list(self):
+        try:
+            self.pkg_list.delete(0, 'end')
+        except Exception:
+            return
+        opts = []
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'get'):
+                opts = self.settings.get('inventory.packaging_options', []) or []
+        except Exception:
+            opts = []
+        for v in opts:
+            try: self.pkg_list.insert('end', v)
+            except Exception: pass
+
+    def _inv_pkg_add(self):
+        v = (getattr(self, 'pkg_new_var', tk.StringVar()).get() or '').strip()
+        if not v:
+            return
+        try:
+            self.pkg_list.insert('end', v)
+            self.pkg_new_var.set('')
+        except Exception:
+            pass
+
+    def _inv_pkg_delete(self):
+        try:
+            sel = list(self.pkg_list.curselection())
+            for i in reversed(sel):
+                self.pkg_list.delete(i)
+        except Exception:
+            pass
+
+    def _inv_pkg_save(self):
+        vals = []
+        try:
+            vals = [self.pkg_list.get(i) for i in range(self.pkg_list.size())]
+        except Exception:
+            pass
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'set'):
+                self.settings.set('inventory.packaging_options', vals)
+        except Exception:
+            pass
+        # ריענון קומבובוקס
+        try:
+            self.inv_create_packaging_cb['values'] = vals
+        except Exception:
+            pass
+
+    def _load_loc_list(self):
+        try:
+            self.loc_list.delete(0, 'end')
+        except Exception:
+            return
+        opts = []
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'get'):
+                opts = self.settings.get('inventory.location_options', []) or []
+        except Exception:
+            opts = []
+        for v in opts:
+            try: self.loc_list.insert('end', v)
+            except Exception: pass
+
+    def _inv_loc_add(self):
+        v = (getattr(self, 'loc_new_var', tk.StringVar()).get() or '').strip()
+        if not v:
+            return
+        try:
+            self.loc_list.insert('end', v)
+            self.loc_new_var.set('')
+        except Exception:
+            pass
+
+    def _inv_loc_delete(self):
+        try:
+            sel = list(self.loc_list.curselection())
+            for i in reversed(sel):
+                self.loc_list.delete(i)
+        except Exception:
+            pass
+
+    def _inv_loc_save(self):
+        vals = []
+        try:
+            vals = [self.loc_list.get(i) for i in range(self.loc_list.size())]
+        except Exception:
+            pass
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'set'):
+                self.settings.set('inventory.location_options', vals)
+        except Exception:
+            pass
+        # ריענון קומבובוקס
+        try:
+            self.inv_create_location_cb['values'] = vals
+        except Exception:
+            pass
