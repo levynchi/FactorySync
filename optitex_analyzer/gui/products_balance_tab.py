@@ -101,11 +101,17 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
-        # עמוד חדש: מלאי (קובץ המלאי האחרון)
+        # עמוד חדש: מלאי (עם טאב פנימי)
         inventory_page = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(inventory_page, text='מלאי')
-        tk.Label(inventory_page, text='קובץ המלאי האחרון (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
-        inv_bar = tk.Frame(inventory_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
+        inv_nb = ttk.Notebook(inventory_page)
+        inv_nb.pack(fill='both', expand=True, padx=6, pady=6)
+
+        # תת-טאב: קובץ קיים (תצוגה)
+        inv_view_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_nb.add(inv_view_page, text='קובץ קיים')
+        tk.Label(inv_view_page, text='קובץ המלאי האחרון (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
+        inv_bar = tk.Frame(inv_view_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(inv_bar, text='📂 בחר קובץ מלאי…', command=self._browse_products_inventory_file, bg='#2980b9', fg='white').pack(side='right', padx=(6,0))
         tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg='#27ae60', fg='white').pack(side='right', padx=(6,0))
         tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
@@ -124,7 +130,7 @@ class ProductsBalanceTabMixin:
             'packaging':'צורת אריזה'
         }
         inv_widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120}
-        inv_table_wrap = tk.Frame(inventory_page, bg='#ffffff', relief='groove', bd=1)
+        inv_table_wrap = tk.Frame(inv_view_page, bg='#ffffff', relief='groove', bd=1)
         inv_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         self.products_inventory_tree = ttk.Treeview(inv_table_wrap, columns=inv_cols, show='headings', height=18)
         for c in inv_cols:
@@ -136,6 +142,68 @@ class ProductsBalanceTabMixin:
         inv_vs.grid(row=0, column=1, sticky='ns')
         inv_table_wrap.grid_rowconfigure(0, weight=1)
         inv_table_wrap.grid_columnconfigure(0, weight=1)
+
+        # תת-טאב: יצירת קובץ מלאי
+        inv_create_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_nb.add(inv_create_page, text='יצירת קובץ מלאי')
+        tk.Label(inv_create_page, text='יצירת קובץ מלאי חדש', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
+        form = tk.Frame(inv_create_page, bg='#f7f9fa'); form.pack(fill='x', padx=10, pady=(0,6))
+        # שדות
+        tk.Label(form, text='שם דגם:', bg='#f7f9fa').grid(row=0, column=6, padx=4, pady=2, sticky='e')
+        self.inv_create_name_var = tk.StringVar()
+        self.inv_create_name_cb = ttk.Combobox(form, textvariable=self.inv_create_name_var, width=32)
+        try:
+            names = sorted({(r.get('name') or '').strip() for r in getattr(self.data_processor, 'products_catalog', []) if r.get('name')})
+            self.inv_create_name_cb['values'] = names
+        except Exception:
+            pass
+        self.inv_create_name_cb.grid(row=0, column=5, padx=4, pady=2, sticky='w')
+        try:
+            self.inv_create_name_cb.bind('<<ComboboxSelected>>', lambda e: self._inv_create_on_name_change())
+        except Exception:
+            pass
+
+        tk.Label(form, text='קטגוריה ראשית:', bg='#f7f9fa').grid(row=0, column=4, padx=4, pady=2, sticky='e')
+        self.inv_create_main_cat_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly').grid(row=0, column=3, padx=4, pady=2, sticky='w')
+
+        tk.Label(form, text='מידה:', bg='#f7f9fa').grid(row=0, column=2, padx=4, pady=2, sticky='e')
+        self.inv_create_size_var = tk.StringVar()
+        self.inv_create_size_cb = ttk.Combobox(form, textvariable=self.inv_create_size_var, width=16)
+        self.inv_create_size_cb.grid(row=0, column=1, padx=4, pady=2, sticky='w')
+
+        tk.Label(form, text='סוג בד:', bg='#f7f9fa').grid(row=1, column=6, padx=4, pady=2, sticky='e')
+        self.inv_create_fabric_var = tk.StringVar()
+        self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24)
+        self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='w')
+
+        tk.Label(form, text='כמות:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
+        self.inv_create_qty_var = tk.StringVar(value='0')
+        tk.Entry(form, textvariable=self.inv_create_qty_var, width=10).grid(row=1, column=3, padx=4, pady=2, sticky='w')
+
+        tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
+        self.inv_create_location_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.inv_create_location_var, width=16).grid(row=1, column=1, padx=4, pady=2, sticky='w')
+
+        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=1, column=0, padx=4, pady=2, sticky='e')
+        self.inv_create_packaging_var = tk.StringVar()
+        tk.Entry(form, textvariable=self.inv_create_packaging_var, width=16).grid(row=1, column=0, padx=4, pady=2, sticky='w')
+
+        actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        tk.Button(actions, text='🗑️ הסר שורה', command=self._inv_create_delete_selected).pack(side='right', padx=4)
+        tk.Button(actions, text='🧹 נקה הכל', command=self._inv_create_clear_all).pack(side='right', padx=4)
+        tk.Button(actions, text='💾 שמור לאקסל…', command=self._inv_create_export_to_excel, bg='#2c3e50', fg='white').pack(side='left', padx=4)
+
+        # טבלת בנייה
+        self.inv_create_tree = ttk.Treeview(inv_create_page, columns=inv_cols, show='headings', height=14)
+        for c in inv_cols:
+            self.inv_create_tree.heading(c, text=inv_headers[c])
+            self.inv_create_tree.column(c, width=inv_widths[c], anchor='center')
+        ivs2 = ttk.Scrollbar(inv_create_page, orient='vertical', command=self.inv_create_tree.yview)
+        self.inv_create_tree.configure(yscroll=ivs2.set)
+        self.inv_create_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=(0,8))
+        ivs2.pack(side='left', fill='y', pady=(0,8))
 
         # נסה לטעון אוטומטית קובץ מלאי אחרון מהגדרות
         try:
@@ -2057,6 +2125,112 @@ class ProductsBalanceTabMixin:
             self.products_inventory_status_var.set(f"מקור: {base} | שורות: {min(len(rows),3000)}{(' (pandas)' if used_engine=='pandas' else ' (openpyxl)') if rows else ''}")
         except Exception:
             pass
+
+    # === יצירת קובץ מלאי: עזרים ===
+    def _inv_create_on_name_change(self):
+        """בעת בחירת שם דגם – ננסה למלא קטגוריה ראשית ולהציע מידות/סוגי בד מהקטלוג."""
+        name = (self.inv_create_name_var.get() or '').strip()
+        sizes = set(); fabrics = set(); main_cat = ''
+        try:
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            for rec in catalog:
+                if (rec.get('name') or '').strip() == name:
+                    if not main_cat:
+                        main_cat = (rec.get('main_category') or '').strip()
+                    s = (rec.get('size') or '').strip()
+                    if s:
+                        sizes.add(s)
+                    f = (rec.get('fabric_type') or '').strip()
+                    if f:
+                        fabrics.add(f)
+        except Exception:
+            pass
+        try:
+            self.inv_create_main_cat_var.set(main_cat)
+        except Exception:
+            pass
+        try:
+            self.inv_create_size_cb['values'] = sorted(sizes)
+            self.inv_create_fabric_cb['values'] = sorted(fabrics)
+        except Exception:
+            pass
+
+    def _inv_create_add_row(self):
+        name = (self.inv_create_name_var.get() or '').strip()
+        if not name:
+            try: messagebox.showwarning('יצירת מלאי', 'בחר שם דגם')
+            except Exception: pass
+            return
+        size = (self.inv_create_size_var.get() or '').strip()
+        fabric = (self.inv_create_fabric_var.get() or '').strip()
+        qty = (self.inv_create_qty_var.get() or '').strip()
+        location = (self.inv_create_location_var.get() or '').strip()
+        packaging = (self.inv_create_packaging_var.get() or '').strip()
+        main_cat = (self.inv_create_main_cat_var.get() or '').strip()
+        self.inv_create_tree.insert('', 'end', values=(name, main_cat, size, fabric, qty, location, packaging))
+
+    def _inv_create_delete_selected(self):
+        tree = getattr(self, 'inv_create_tree', None)
+        if not tree:
+            return
+        for sel in tree.selection():
+            try: tree.delete(sel)
+            except Exception: pass
+
+    def _inv_create_clear_all(self):
+        tree = getattr(self, 'inv_create_tree', None)
+        if not tree:
+            return
+        for iid in tree.get_children():
+            try: tree.delete(iid)
+            except Exception: pass
+
+    def _inv_create_export_to_excel(self):
+        """ייצוא טבלת היצירה לאקסל."""
+        tree = getattr(self, 'inv_create_tree', None)
+        if tree is None:
+            return
+        rows = []
+        try:
+            for iid in tree.get_children():
+                rows.append(tuple(tree.item(iid, 'values') or []))
+        except Exception:
+            pass
+        headers = ['שם הדגם','קטגוריה ראשית','מידה','סוג בד','כמות','מיקום','צורת אריזה']
+        from tkinter import filedialog
+        from datetime import datetime as _dt
+        default_name = f"קובץ_מלאי_חדש_{_dt.now().strftime('%Y-%m-%d')}.xlsx"
+        try:
+            save_path = filedialog.asksaveasfilename(title='שמירת קובץ מלאי', defaultextension='.xlsx', initialfile=default_name, filetypes=[('Excel','*.xlsx')])
+        except Exception:
+            save_path = ''
+        if not save_path:
+            return
+        try:
+            from openpyxl import Workbook  # type: ignore
+            wb = Workbook(); ws = wb.active; ws.title = 'Inventory'
+            ws.append(headers)
+            def to_num(v):
+                s = str(v).strip()
+                try:
+                    if s == '':
+                        return ''
+                    f = float(s.replace(',', ''))
+                    return int(f) if abs(f-int(f))<1e-9 else f
+                except Exception:
+                    return s
+            for r in rows:
+                out = [
+                    r[0] if len(r)>0 else '', r[1] if len(r)>1 else '', r[2] if len(r)>2 else '', r[3] if len(r)>3 else '',
+                    to_num(r[4] if len(r)>4 else ''), r[5] if len(r)>5 else '', r[6] if len(r)>6 else ''
+                ]
+                ws.append(out)
+            wb.save(save_path)
+            try: messagebox.showinfo('שמירה', f'נשמר בהצלחה:\n{save_path}')
+            except Exception: pass
+        except Exception as e:
+            try: messagebox.showerror('שמירה', f'שגיאה:\n{e}')
+            except Exception: pass
 
     def _export_products_inventory_to_excel(self):
         """ייצוא השורות המוצגות בטבלת המלאי לקובץ Excel."""
