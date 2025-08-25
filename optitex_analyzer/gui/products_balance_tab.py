@@ -139,6 +139,13 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         self.inv_view_main_cat_filter_cb.pack(side='right', padx=(0,10))
+        # מיקום: בחירה מרובה או הכל
+        tk.Label(inv_bar, text='מיקום:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.inv_view_location_summary_var = tk.StringVar(value='כל המקומות')
+        self.inv_view_loc_menu_btn = tk.Menubutton(inv_bar, textvariable=self.inv_view_location_summary_var, relief='raised', direction='below')
+        self.inv_view_loc_menu = tk.Menu(self.inv_view_loc_menu_btn, tearoff=0)
+        self.inv_view_loc_menu_btn.configure(menu=self.inv_view_loc_menu)
+        self.inv_view_loc_menu_btn.pack(side='right', padx=(0,10))
         # תצוגת מלאי עדכני נמשכת מהקטלוג – אין צורך בבחירת קובץ
         tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg='#27ae60', fg='white').pack(side='right', padx=(6,0))
         tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
@@ -296,6 +303,11 @@ class ProductsBalanceTabMixin:
         # אתחול ערכים למסננים של "מלאי עדכני"
         try:
             self._reload_inventory_view_filters_options()
+        except Exception:
+            pass
+        # אתחול אפשרויות מיקום
+        try:
+            self._inv_view_reload_location_options()
         except Exception:
             pass
         self._refresh_products_inventory_table()
@@ -583,6 +595,84 @@ class ProductsBalanceTabMixin:
                 cur = (self.inv_view_name_filter_var.get() or '').strip()
                 if not cur or (cur != 'הכל' and cur not in names):
                     self.inv_view_name_filter_var.set('הכל')
+        except Exception:
+            pass
+
+    # ===== Inventory view: Location multi-select filter =====
+    def _inv_view_reload_location_options(self):
+        """בונה את תפריט המיקומים לבחירה מרובה, כולל 'כל המקומות' ו'ללא'."""
+        # קבל רשימת מיקומים מהגדרות
+        locations = []
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'get'):
+                locations = self.settings.get('inventory.location_options', []) or []
+        except Exception:
+            locations = []
+        # בנה פריטים עם BooleanVar לכל מיקום
+        self._inv_view_loc_vars = {}
+        menu = getattr(self, 'inv_view_loc_menu', None)
+        if not menu:
+            return
+        try:
+            menu.delete(0, 'end')
+        except Exception:
+            pass
+        # פעולה: עדכון טקסט תצוגה ורענון טבלה
+        def _on_change():
+            self._inv_view_update_location_summary()
+            try:
+                self._refresh_products_inventory_table()
+            except Exception:
+                pass
+        # פריט מיוחד: כל המקומות – מסמן/מנקה הכל
+        menu.add_command(label='כל המקומות', command=lambda: [self._inv_view_set_all_locations(True), _on_change()])
+        menu.add_command(label='נקה בחירה', command=lambda: [self._inv_view_set_all_locations(False), _on_change()])
+        menu.add_separator()
+        # פריט 'ללא' עבור ערך מיקום ריק
+        none_var = tk.BooleanVar(value=False)
+        self._inv_view_loc_vars['__NONE__'] = none_var
+        menu.add_checkbutton(label='ללא', variable=none_var, onvalue=True, offvalue=False, command=_on_change)
+        # שאר המיקומים לפי א-ב
+        for loc in sorted({str(x).strip() for x in locations if str(x).strip()}):
+            var = tk.BooleanVar(value=False)
+            self._inv_view_loc_vars[loc] = var
+            menu.add_checkbutton(label=loc, variable=var, onvalue=True, offvalue=False, command=_on_change)
+        # טקסט סיכום התחלתי
+        self._inv_view_update_location_summary()
+
+    def _inv_view_set_all_locations(self, checked: bool):
+        for v in getattr(self, '_inv_view_loc_vars', {}).values():
+            try:
+                v.set(bool(checked))
+            except Exception:
+                pass
+
+    def _inv_view_get_selected_locations(self):
+        """החזרת קבוצה של מיקומים שנבחרו. '__NONE__' מייצג ערך ריק."""
+        selected = set()
+        for key, var in (getattr(self, '_inv_view_loc_vars', {}) or {}).items():
+            try:
+                if bool(var.get()):
+                    selected.add(key)
+            except Exception:
+                pass
+        return selected
+
+    def _inv_view_update_location_summary(self):
+        sel = self._inv_view_get_selected_locations()
+        label = 'כל המקומות'
+        if sel:
+            # הצג עד 2 ראשונים + "ועוד"
+            names = []
+            for k in sel:
+                names.append('ללא' if k == '__NONE__' else k)
+            names = sorted(names)
+            if len(names) <= 2:
+                label = ', '.join(names)
+            else:
+                label = f"{names[0]}, {names[1]} ועוד"
+        try:
+            self.inv_view_location_summary_var.set(label)
         except Exception:
             pass
 
@@ -2277,6 +2367,11 @@ class ProductsBalanceTabMixin:
             fabric_filter = norm(getattr(self, 'inv_view_fabric_filter_var', tk.StringVar(value='הכל')).get())
         except Exception:
             fabric_filter = 'הכל'
+        # מיקומים: סט של בחירות; אם ריק => התייחס כ"כל המקומות"
+        try:
+            selected_locations = set(self._inv_view_get_selected_locations())
+        except Exception:
+            selected_locations = set()
         filtered = []
         try:
             for r in rows:
@@ -2287,6 +2382,13 @@ class ProductsBalanceTabMixin:
                     continue
                 if fabric_filter and fabric_filter != 'הכל' and norm(r.get('fabric_type','')) != fabric_filter:
                     continue
+                # מיקום: אם יש בחירות, חייב להתאים
+                if selected_locations:
+                    loc_val = norm(r.get('location',''))
+                    # '__NONE__' מייצג שורה ללא מיקום
+                    match = (loc_val in selected_locations) or (loc_val == '' and '__NONE__' in selected_locations)
+                    if not match:
+                        continue
                 filtered.append(r)
         except Exception:
             filtered = rows
