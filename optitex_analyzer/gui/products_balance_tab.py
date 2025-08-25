@@ -107,6 +107,7 @@ class ProductsBalanceTabMixin:
         tk.Label(inventory_page, text='קובץ המלאי האחרון (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
         inv_bar = tk.Frame(inventory_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(inv_bar, text='📂 בחר קובץ מלאי…', command=self._browse_products_inventory_file, bg='#2980b9', fg='white').pack(side='right', padx=(6,0))
+        tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg='#27ae60', fg='white').pack(side='right', padx=(6,0))
         tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
         self.products_inventory_status_var = tk.StringVar(value='אין קובץ מלאי נבחר')
         tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg='#f7f9fa', anchor='e').pack(side='right', expand=True, fill='x')
@@ -2056,3 +2057,68 @@ class ProductsBalanceTabMixin:
             self.products_inventory_status_var.set(f"מקור: {base} | שורות: {min(len(rows),3000)}{(' (pandas)' if used_engine=='pandas' else ' (openpyxl)') if rows else ''}")
         except Exception:
             pass
+
+    def _export_products_inventory_to_excel(self):
+        """ייצוא השורות המוצגות בטבלת המלאי לקובץ Excel."""
+        tree = getattr(self, 'products_inventory_tree', None)
+        if not tree:
+            return
+        items = tree.get_children()
+        if not items:
+            try:
+                messagebox.showinfo('ייצוא מלאי', 'אין נתונים לייצוא')
+            except Exception:
+                pass
+            return
+        # איסוף נתונים מהטבלה
+        rows = []
+        for iid in items:
+            vals = tree.item(iid, 'values') or []
+            rows.append(tuple(vals))
+        # כותרות מתוך הטבלה
+        cols = ('name','main_category','size','fabric_type','quantity','location','packaging')
+        headers = ['שם הדגם','קטגוריה ראשית','מידה','סוג בד','כמות','מיקום','צורת אריזה']
+        # דיאלוג שמירה
+        from tkinter import filedialog
+        from datetime import datetime as _dt
+        default_name = f"מלאי_מוצרים_{_dt.now().strftime('%Y-%m-%d')}.xlsx"
+        try:
+            save_path = filedialog.asksaveasfilename(title='שמירת מלאי לאקסל', defaultextension='.xlsx', initialfile=default_name, filetypes=[('Excel','*.xlsx')])
+        except Exception:
+            save_path = ''
+        if not save_path:
+            return
+        # כתיבה עם openpyxl
+        try:
+            from openpyxl import Workbook  # type: ignore
+            wb = Workbook()
+            ws = wb.active
+            ws.title = 'Inventory'
+            # כתיבת כותרות
+            ws.append(headers)
+            # המרה עדינה של כמויות למספרים אם אפשר
+            def to_num(v):
+                s = str(v).strip()
+                try:
+                    if s == '':
+                        return ''
+                    # עדיף int אם אפשר
+                    f = float(s.replace(',', ''))
+                    if abs(f - int(f)) < 1e-9:
+                        return int(f)
+                    return f
+                except Exception:
+                    return s
+            for r in rows:
+                out = [r[0] if len(r)>0 else '', r[1] if len(r)>1 else '', r[2] if len(r)>2 else '', r[3] if len(r)>3 else '', to_num(r[4] if len(r)>4 else ''), r[5] if len(r)>5 else '', r[6] if len(r)>6 else '']
+                ws.append(out)
+            wb.save(save_path)
+            try:
+                messagebox.showinfo('ייצוא מלאי', f'הייצוא הושלם בהצלחה:\n{save_path}')
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                messagebox.showerror('ייצוא מלאי', f'שגיאה בשמירה לאקסל:\n{e}')
+            except Exception:
+                pass
