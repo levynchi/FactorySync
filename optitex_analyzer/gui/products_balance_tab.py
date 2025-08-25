@@ -114,19 +114,19 @@ class ProductsBalanceTabMixin:
         inv_bar = tk.Frame(inv_view_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
         # מסננים: שם דגם / סוג בד / קטגוריה ראשית
         tk.Label(inv_bar, text='שם דגם:', bg='#f7f9fa').pack(side='right', padx=(8,4))
-        self.inv_view_name_filter_var = tk.StringVar()
-        inv_name_entry = tk.Entry(inv_bar, textvariable=self.inv_view_name_filter_var, width=22, justify='right')
+        self.inv_view_name_filter_var = tk.StringVar(value='הכל')
+        self.inv_view_name_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_name_filter_var, width=28, state='readonly', justify='right')
         try:
-            inv_name_entry.bind('<KeyRelease>', lambda e: self._refresh_products_inventory_table())
+            self.inv_view_name_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_products_inventory_table())
         except Exception:
             pass
-        inv_name_entry.pack(side='right', padx=(0,10))
+        self.inv_view_name_filter_cb.pack(side='right', padx=(0,10))
 
         tk.Label(inv_bar, text='סוג בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
         self.inv_view_fabric_filter_var = tk.StringVar(value='הכל')
         self.inv_view_fabric_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_fabric_filter_var, width=18, state='readonly', justify='right')
         try:
-            self.inv_view_fabric_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_products_inventory_table())
+            self.inv_view_fabric_filter_cb.bind('<<ComboboxSelected>>', lambda e: [self._inv_view_rebuild_name_filter_options(), self._refresh_products_inventory_table()])
         except Exception:
             pass
         self.inv_view_fabric_filter_cb.pack(side='right', padx=(0,10))
@@ -135,7 +135,7 @@ class ProductsBalanceTabMixin:
         self.inv_view_main_cat_filter_var = tk.StringVar(value='הכל')
         self.inv_view_main_cat_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_main_cat_filter_var, width=18, state='readonly', justify='right')
         try:
-            self.inv_view_main_cat_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_products_inventory_table())
+            self.inv_view_main_cat_filter_cb.bind('<<ComboboxSelected>>', lambda e: [self._inv_view_rebuild_name_filter_options(), self._refresh_products_inventory_table()])
         except Exception:
             pass
         self.inv_view_main_cat_filter_cb.pack(side='right', padx=(0,10))
@@ -528,6 +528,61 @@ class ProductsBalanceTabMixin:
                 self.inv_view_main_cat_filter_var.set('הכל')
             if hasattr(self, 'inv_view_fabric_filter_var') and not (self.inv_view_fabric_filter_var.get() or '').strip():
                 self.inv_view_fabric_filter_var.set('הכל')
+            # בנה אפשרויות לשם דגם בהתאם למסננים הפעילים
+            try:
+                self._inv_view_rebuild_name_filter_options()
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _inv_view_rebuild_name_filter_options(self):
+        """בונה את רשימת 'שם דגם' בהתאם לקטגוריה ראשית ולסוג בד הנבחרים (או 'הכל')."""
+        try:
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+        except Exception:
+            catalog = []
+        def norm(s):
+            return (str(s or '').strip())
+        # קריאת המסננים הפעילים
+        try:
+            mc_sel = norm(getattr(self, 'inv_view_main_cat_filter_var', tk.StringVar(value='הכל')).get())
+        except Exception:
+            mc_sel = 'הכל'
+        try:
+            fab_sel = norm(getattr(self, 'inv_view_fabric_filter_var', tk.StringVar(value='הכל')).get())
+        except Exception:
+            fab_sel = 'הכל'
+        # פונקציה להפקת קטגוריה ראשית מהשורה
+        def _derive_mc(rec: dict):
+            mc = norm(rec.get('main_category'))
+            if not mc:
+                cat = norm(rec.get('category'))
+                if cat:
+                    mc = norm(cat.split(',')[0]) if ',' in cat else cat
+            if not mc:
+                name = norm(rec.get('name'))
+                if name:
+                    model_names = getattr(self.data_processor, 'product_model_names', []) or getattr(self.data_processor, 'model_names', []) or []
+                    for m in model_names:
+                        if norm(m.get('name')) == name and norm(m.get('main_category')):
+                            mc = norm(m.get('main_category')); break
+            return mc or 'בגדים'
+        # סינון לפי מסננים נבחרים
+        def _match(rec):
+            if mc_sel != 'הכל' and _derive_mc(rec) != mc_sel:
+                return False
+            if fab_sel != 'הכל' and norm(rec.get('fabric_type')) != fab_sel:
+                return False
+            return True
+        names = sorted({ norm(r.get('name')) for r in catalog if r.get('name') and _match(r) })
+        try:
+            if hasattr(self, 'inv_view_name_filter_cb'):
+                self.inv_view_name_filter_cb['values'] = ['הכל'] + names
+                # אם הערך הנוכחי לא קיים – אפס ל'הכל'
+                cur = (self.inv_view_name_filter_var.get() or '').strip()
+                if not cur or (cur != 'הכל' and cur not in names):
+                    self.inv_view_name_filter_var.set('הכל')
         except Exception:
             pass
 
@@ -2211,9 +2266,9 @@ class ProductsBalanceTabMixin:
         def norm(s):
             return (str(s or '').strip())
         try:
-            name_filter = (getattr(self, 'inv_view_name_filter_var', tk.StringVar()).get() or '').strip().lower()
+            name_filter = (getattr(self, 'inv_view_name_filter_var', tk.StringVar(value='הכל')).get() or '').strip()
         except Exception:
-            name_filter = ''
+            name_filter = 'הכל'
         try:
             main_cat_filter = norm(getattr(self, 'inv_view_main_cat_filter_var', tk.StringVar(value='הכל')).get())
         except Exception:
@@ -2225,7 +2280,8 @@ class ProductsBalanceTabMixin:
         filtered = []
         try:
             for r in rows:
-                if name_filter and name_filter not in (r.get('name','').strip().lower()):
+                # שם דגם: בחירה מדויקת או 'הכל'
+                if name_filter and name_filter != 'הכל' and (r.get('name','').strip() != name_filter):
                     continue
                 if main_cat_filter and main_cat_filter != 'הכל' and norm(r.get('main_category','')) != main_cat_filter:
                     continue
