@@ -2405,11 +2405,30 @@ class ProductsBalanceTabMixin:
                 self._inventory_updates = updates_data
         except Exception:
             updates_data = None
-        # מפה אחרונה לכל צירוף מזהה
-        last_map = {}
+        # נחשב מצב סופי לכל מפתח לפי כרונולוגיה: מתחילים מכמות הבסיס בקטלוג, ואז מעבדים באצוות לפי created_at
+        base_qty_map = {}
+        base_pkg_map = {}
+        for r in rows:
+            key = (r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location',''))
+            qv = r.get('quantity','')
+            try:
+                base_qty_map[key] = float(str(qv).replace(',', '')) if str(qv).strip() != '' else 0.0
+            except Exception:
+                base_qty_map[key] = 0.0
+            if r.get('packaging',''):
+                base_pkg_map[key] = r.get('packaging','')
+
         try:
             if updates_data and isinstance(updates_data.get('batches', []), list):
-                for b in updates_data['batches']:
+                # מיין כרונולוגית – אם אין created_at שמור על סדר קיים
+                batches = updates_data['batches'][:]
+                try:
+                    batches = sorted(enumerate(batches), key=lambda t: ((t[1].get('created_at') or ''), t[0]))
+                    batches = [b for _, b in batches]
+                except Exception:
+                    pass
+                for b in batches:
+                    mode = (b.get('mode') or 'overwrite').strip()
                     for it in (b.get('items') or []):
                         key = (
                             (it.get('name') or '').strip(),
@@ -2417,43 +2436,45 @@ class ProductsBalanceTabMixin:
                             (it.get('fabric_type') or '').strip(),
                             (it.get('location') or '').strip()
                         )
-                        last_map[key] = {
-                            'quantity': (str(it.get('quantity') or '').strip()),
-                            'packaging': (it.get('packaging') or '').strip()
-                        }
+                        qty_str = (str(it.get('quantity') or '').strip())
+                        try:
+                            q = float(qty_str.replace(',', '')) if qty_str != '' else 0.0
+                        except Exception:
+                            q = 0.0
+                        pkg = (it.get('packaging') or '').strip()
+                        cur = base_qty_map.get(key, 0.0)
+                        if mode == 'add':
+                            base_qty_map[key] = cur + q
+                        else:
+                            base_qty_map[key] = q
+                        if pkg:
+                            base_pkg_map[key] = pkg
         except Exception:
-            last_map = {}
+            pass
         # החלה על rows: אם קיים עדכון עבור מפתח התואם למיקום ריק – נשאיר loc ריק; אחר כך נביא גם לפי כל מיקום מפורש
         try:
+            # עדכן שורות קיימות
             for r in rows:
                 key_same_loc = (r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location',''))
-                if key_same_loc in last_map:
-                    up = last_map[key_same_loc]
-                    r['quantity'] = up.get('quantity','')
-                    if up.get('packaging',''):
-                        r['packaging'] = up.get('packaging','')
-            # הוספת שורות נוספות עבור מיקומים שהתעדכנו שאינם קיימים כעת בקטלוג (לפי אותו name/size/fabric)
-            extra_rows = []
-            for key, up in last_map.items():
-                n, s, ft, loc = key
-                # אם יש רשומת בסיס בקטלוג עבור n,s,ft – נייצר/נעדכן שורה עם המיקום הספציפי
-                base = next((x for x in rows if x['name']==n and x['size']==s and x['fabric_type']==ft), None)
-                if base is not None:
-                    # אם המיקום במקור ריק – נעדכן באותו רשומה; אם לא, ניצור שכפול ייעודי למיקום
-                    if (base.get('location') or '') == '':
-                        base['location'] = loc
-                        base['quantity'] = up.get('quantity','')
-                        if up.get('packaging',''):
-                            base['packaging'] = up.get('packaging','')
-                    else:
-                        newr = dict(base)
+                if key_same_loc in base_qty_map:
+                    q = base_qty_map[key_same_loc]
+                    r['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
+                if key_same_loc in base_pkg_map and base_pkg_map[key_same_loc]:
+                    r['packaging'] = base_pkg_map[key_same_loc]
+
+            # הוסף שורות עבור מיקומים שנוצרו רק מעדכונים
+            existing_keys = set((r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location','')) for r in rows)
+            for key, q in base_qty_map.items():
+                if key not in existing_keys:
+                    n, s, ft, loc = key
+                    base0 = next((x for x in rows if x['name']==n and x['size']==s and x['fabric_type']==ft), None)
+                    if base0 is not None:
+                        newr = dict(base0)
                         newr['location'] = loc
-                        newr['quantity'] = up.get('quantity','')
-                        if up.get('packaging',''):
-                            newr['packaging'] = up.get('packaging','')
-                        extra_rows.append(newr)
-            if extra_rows:
-                rows.extend(extra_rows)
+                        newr['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
+                        if base_pkg_map.get(key):
+                            newr['packaging'] = base_pkg_map[key]
+                        rows.append(newr)
         except Exception:
             pass
         # החלת מסננים
@@ -2572,11 +2593,23 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
             return
+        # שאל את המשתמש על מצב עדכון: הוסף (חיבור) או דרוס (החלפה)
+        mode = 'overwrite'
+        try:
+            ans = messagebox.askyesnocancel(
+                'מצב עדכון מלאי',
+                "איך לעדכן את הכמות?\n\nכן = הוסף (חיבור לכמות קיימת)\nלא = דרוס (החלפה בכמות החדשה)\nביטול = בטל פעולה"
+            )
+            if ans is None:
+                return  # בוטל
+            mode = 'add' if ans else 'overwrite'
+        except Exception:
+            mode = 'overwrite'
         # טען/שמור היסטוריה
         data = self._inv_updates_load_store()
         from datetime import datetime as _dt
         batch_id = f"batch_{_dt.now().strftime('%Y%m%d_%H%M%S')}"
-        batch = {'id': batch_id, 'created_at': _dt.now().strftime('%Y-%m-%d %H:%M:%S'), 'items': items}
+        batch = {'id': batch_id, 'created_at': _dt.now().strftime('%Y-%m-%d %H:%M:%S'), 'mode': mode, 'items': items}
         try:
             data.setdefault('batches', []).append(batch)
             self._inv_updates_save_store(data)
@@ -2600,7 +2633,7 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         try:
-            messagebox.showinfo('עדכון מלאי', 'המלאי עודכן בהצלחה')
+            messagebox.showinfo('עדכון מלאי', f"המלאי עודכן בהצלחה ({'הוספה' if mode=='add' else 'דריסה'})")
         except Exception:
             pass
 
