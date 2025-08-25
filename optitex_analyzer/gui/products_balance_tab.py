@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import calendar as _cal
 
+import os
+
 class ProductsBalanceTabMixin:
     """Mixin לטאב 'מאזן מוצרים ופריטים'.
 
@@ -177,11 +179,12 @@ class ProductsBalanceTabMixin:
         inv_table_wrap.grid_rowconfigure(0, weight=1)
         inv_table_wrap.grid_columnconfigure(0, weight=1)
 
-        # תת-טאב: יצירת קובץ מלאי
+        # תת-טאב: יצירת עדכון מלאי
         inv_create_page = tk.Frame(inv_nb, bg='#f7f9fa')
-        inv_nb.add(inv_create_page, text='יצירת קובץ מלאי')
-        tk.Label(inv_create_page, text='יצירת קובץ מלאי חדש', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
+        inv_nb.add(inv_create_page, text='יצירת עדכון')
+        tk.Label(inv_create_page, text='עדכון מלאי עדכני', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
         form = tk.Frame(inv_create_page, bg='#f7f9fa'); form.pack(anchor='e', padx=10, pady=(0,6))
+
         # שדות
         tk.Label(form, text='שם דגם:', bg='#f7f9fa').grid(row=0, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_name_var = tk.StringVar()
@@ -240,6 +243,8 @@ class ProductsBalanceTabMixin:
         tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
         tk.Button(actions, text='🗑️ הסר שורה', command=self._inv_create_delete_selected).pack(side='right', padx=4)
         tk.Button(actions, text='🧹 נקה הכל', command=self._inv_create_clear_all).pack(side='right', padx=4)
+        # כפתור עדכון שיחיל את השורות על המלאי וירשום להיסטוריה
+        tk.Button(actions, text='⬆️ עדכן', command=self._inv_create_apply_updates, bg='#2ecc71', fg='white').pack(side='left', padx=4)
         tk.Button(actions, text='💾 שמור לאקסל…', command=self._inv_create_export_to_excel, bg='#2c3e50', fg='white').pack(side='left', padx=4)
 
         # טבלת בנייה
@@ -257,6 +262,45 @@ class ProductsBalanceTabMixin:
             self._reload_inventory_aux_options()
         except Exception:
             pass
+
+        # תת-טאב: היסטוריית עדכונים
+        inv_hist_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_nb.add(inv_hist_page, text='היסטוריית עדכונים')
+        tk.Label(inv_hist_page, text='היסטוריית עדכוני מלאי', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
+        hist_bar = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(hist_bar, text='🔄 רענן', command=self._inv_history_reload, bg='#3498db', fg='white').pack(side='right')
+        # חלוקה לשניים: תקציר למעלה, פריטים למטה
+        hist_wrap = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+        hist_wrap.grid_columnconfigure(0, weight=1)
+        hist_wrap.grid_rowconfigure(1, weight=1)
+        # טבלת באצ׳ים
+        self.inv_updates_batches_tree = ttk.Treeview(hist_wrap, columns=(
+            'id','created_at','items_count'
+        ), show='headings', height=6)
+        self.inv_updates_batches_tree.heading('id', text='מזהה')
+        self.inv_updates_batches_tree.heading('created_at', text='נוצר בתאריך')
+        self.inv_updates_batches_tree.heading('items_count', text='מס׳ פריטים')
+        self.inv_updates_batches_tree.column('id', width=120, anchor='center')
+        self.inv_updates_batches_tree.column('created_at', width=180, anchor='center')
+        self.inv_updates_batches_tree.column('items_count', width=100, anchor='center')
+        self.inv_updates_batches_tree.grid(row=0, column=0, sticky='ew')
+        try:
+            self.inv_updates_batches_tree.bind('<<TreeviewSelect>>', self._on_inv_history_select)
+        except Exception:
+            pass
+        # טבלת פרטים
+        self.inv_updates_details_tree = ttk.Treeview(hist_wrap, columns=(
+            'name','main_category','size','fabric_type','quantity','location','packaging'
+        ), show='headings', height=12)
+        headers = {'name':'שם הדגם','main_category':'קטגוריה ראשית','size':'מידה','fabric_type':'סוג בד','quantity':'כמות','location':'מיקום','packaging':'צורת אריזה'}
+        widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120}
+        for c in ('name','main_category','size','fabric_type','quantity','location','packaging'):
+            self.inv_updates_details_tree.heading(c, text=headers[c])
+            self.inv_updates_details_tree.column(c, width=widths[c], anchor='center')
+        vs_hist = ttk.Scrollbar(hist_wrap, orient='vertical', command=self.inv_updates_details_tree.yview)
+        self.inv_updates_details_tree.configure(yscroll=vs_hist.set)
+        self.inv_updates_details_tree.grid(row=1, column=0, sticky='nsew')
+        vs_hist.grid(row=1, column=1, sticky='ns')
 
         # תת-טאב ניהול: צורות אריזה
         pkg_page = tk.Frame(inv_nb, bg='#f7f9fa')
@@ -2309,7 +2353,7 @@ class ProductsBalanceTabMixin:
                 tree.delete(iid)
         except Exception:
             pass
-        # שליפת נתונים מהקטלוג
+    # שליפת נתונים מהקטלוג
         rows = []
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
@@ -2352,6 +2396,66 @@ class ProductsBalanceTabMixin:
                 })
         except Exception:
             rows = []
+
+        # החלת עדכונים שמורים (אם קיימים) על רשומות התאמה לפי name+size+fabric_type+location
+        try:
+            updates_data = getattr(self, '_inventory_updates', None)
+            if updates_data is None:
+                updates_data = self._inv_updates_load_store()
+                self._inventory_updates = updates_data
+        except Exception:
+            updates_data = None
+        # מפה אחרונה לכל צירוף מזהה
+        last_map = {}
+        try:
+            if updates_data and isinstance(updates_data.get('batches', []), list):
+                for b in updates_data['batches']:
+                    for it in (b.get('items') or []):
+                        key = (
+                            (it.get('name') or '').strip(),
+                            (it.get('size') or '').strip(),
+                            (it.get('fabric_type') or '').strip(),
+                            (it.get('location') or '').strip()
+                        )
+                        last_map[key] = {
+                            'quantity': (str(it.get('quantity') or '').strip()),
+                            'packaging': (it.get('packaging') or '').strip()
+                        }
+        except Exception:
+            last_map = {}
+        # החלה על rows: אם קיים עדכון עבור מפתח התואם למיקום ריק – נשאיר loc ריק; אחר כך נביא גם לפי כל מיקום מפורש
+        try:
+            for r in rows:
+                key_same_loc = (r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location',''))
+                if key_same_loc in last_map:
+                    up = last_map[key_same_loc]
+                    r['quantity'] = up.get('quantity','')
+                    if up.get('packaging',''):
+                        r['packaging'] = up.get('packaging','')
+            # הוספת שורות נוספות עבור מיקומים שהתעדכנו שאינם קיימים כעת בקטלוג (לפי אותו name/size/fabric)
+            extra_rows = []
+            for key, up in last_map.items():
+                n, s, ft, loc = key
+                # אם יש רשומת בסיס בקטלוג עבור n,s,ft – נייצר/נעדכן שורה עם המיקום הספציפי
+                base = next((x for x in rows if x['name']==n and x['size']==s and x['fabric_type']==ft), None)
+                if base is not None:
+                    # אם המיקום במקור ריק – נעדכן באותו רשומה; אם לא, ניצור שכפול ייעודי למיקום
+                    if (base.get('location') or '') == '':
+                        base['location'] = loc
+                        base['quantity'] = up.get('quantity','')
+                        if up.get('packaging',''):
+                            base['packaging'] = up.get('packaging','')
+                    else:
+                        newr = dict(base)
+                        newr['location'] = loc
+                        newr['quantity'] = up.get('quantity','')
+                        if up.get('packaging',''):
+                            newr['packaging'] = up.get('packaging','')
+                        extra_rows.append(newr)
+            if extra_rows:
+                rows.extend(extra_rows)
+        except Exception:
+            pass
         # החלת מסננים
         def norm(s):
             return (str(s or '').strip())
@@ -2403,6 +2507,181 @@ class ProductsBalanceTabMixin:
         # עדכון סטטוס
         try:
             self.products_inventory_status_var.set(f"מקור: קטלוג מוצרים | מסונן: {len(filtered)} מתוך {len(rows)} | שורות מוצגות: {min(len(filtered),3000)}")
+        except Exception:
+            pass
+
+    # === עדכון מלאי: התמדה, היסטוריה ויישום ===
+    def _inv_updates_store_path(self) -> str:
+        try:
+            # נשתמש בשורש העבודה של האפליקציה (שם שמורים שאר ה-json)
+            return os.path.join(os.getcwd(), 'inventory_updates.json')
+        except Exception:
+            return 'inventory_updates.json'
+
+    def _inv_updates_load_store(self) -> dict:
+        import json
+        try:
+            path = self._inv_updates_store_path()
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and 'batches' in data:
+                        return data
+            return {'batches': []}
+        except Exception:
+            return {'batches': []}
+
+    def _inv_updates_save_store(self, data: dict) -> bool:
+        import json
+        try:
+            path = self._inv_updates_store_path()
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data or {'batches': []}, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception:
+            return False
+
+    def _inv_create_apply_updates(self):
+        """אוסף את שורות 'עדכון מלאי' ושומר באצ׳ חדש לקובץ ההיסטוריה, ואז מרענן את המלאי."""
+        tree = getattr(self, 'inv_create_tree', None)
+        if tree is None:
+            return
+        # אסוף פריטים
+        items = []
+        try:
+            for iid in tree.get_children():
+                vals = list(tree.item(iid, 'values') or [])
+                # צורה: name, main_category, size, fabric_type, quantity, location, packaging
+                item = {
+                    'name': (vals[0] if len(vals)>0 else '').strip(),
+                    'main_category': (vals[1] if len(vals)>1 else '').strip(),
+                    'size': (vals[2] if len(vals)>2 else '').strip(),
+                    'fabric_type': (vals[3] if len(vals)>3 else '').strip(),
+                    'quantity': (vals[4] if len(vals)>4 else '').strip(),
+                    'location': (vals[5] if len(vals)>5 else '').strip(),
+                    'packaging': (vals[6] if len(vals)>6 else '').strip(),
+                }
+                if item['name']:
+                    items.append(item)
+        except Exception:
+            items = []
+        # נטפל גם במקרה שאין שורות
+        if not items:
+            try:
+                messagebox.showwarning('עדכון מלאי', 'אין שורות לעדכון')
+            except Exception:
+                pass
+            return
+        # טען/שמור היסטוריה
+        data = self._inv_updates_load_store()
+        from datetime import datetime as _dt
+        batch_id = f"batch_{_dt.now().strftime('%Y%m%d_%H%M%S')}"
+        batch = {'id': batch_id, 'created_at': _dt.now().strftime('%Y-%m-%d %H:%M:%S'), 'items': items}
+        try:
+            data.setdefault('batches', []).append(batch)
+            self._inv_updates_save_store(data)
+            # שמור בזיכרון להפחתת קריאות
+            self._inventory_updates = data
+        except Exception:
+            pass
+        # ניקוי העץ של היצירה לאחר החלה (רשות, שומרות רצף עבודה נקי)
+        try:
+            for iid in list(tree.get_children()):
+                tree.delete(iid)
+        except Exception:
+            pass
+        # ריענון תצוגת המלאי והיסטוריה והודעה למשתמש
+        try:
+            self._refresh_products_inventory_table()
+        except Exception:
+            pass
+        try:
+            self._inv_history_reload()
+        except Exception:
+            pass
+        try:
+            messagebox.showinfo('עדכון מלאי', 'המלאי עודכן בהצלחה')
+        except Exception:
+            pass
+
+    def _inv_history_reload(self):
+        """טוען מחדש את טבלת ההיסטוריה של עדכוני המלאי ואת פרטי הבאצ׳ הנבחר (אם יש)."""
+        data = None
+        try:
+            data = self._inv_updates_load_store()
+            self._inventory_updates = data
+        except Exception:
+            data = {'batches': []}
+        # בנה טבלת באצ׳ים
+        tree = getattr(self, 'inv_updates_batches_tree', None)
+        if tree is not None:
+            try:
+                for iid in list(tree.get_children()):
+                    tree.delete(iid)
+            except Exception:
+                pass
+            try:
+                # סדר יורד לפי תאריך יצירה
+                batches = list((data or {}).get('batches', []))
+                def _parse_dt(b):
+                    from datetime import datetime as _dt
+                    s = (b.get('created_at') or '').strip()
+                    try:
+                        return _dt.strptime(s, '%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        return _dt.min
+                batches.sort(key=_parse_dt, reverse=True)
+                for b in batches:
+                    bid = b.get('id') or ''
+                    cat = b.get('created_at') or ''
+                    cnt = len(b.get('items') or [])
+                    tree.insert('', 'end', values=(bid, cat, cnt), iid=bid)
+            except Exception:
+                pass
+        # נקה פרטים
+        d_tree = getattr(self, 'inv_updates_details_tree', None)
+        if d_tree is not None:
+            try:
+                for iid in list(d_tree.get_children()):
+                    d_tree.delete(iid)
+            except Exception:
+                pass
+
+    def _on_inv_history_select(self, event=None):
+        """בעת בחירת באצ׳ – מציג את פרטי הפריטים שלו."""
+        tree = getattr(self, 'inv_updates_batches_tree', None)
+        d_tree = getattr(self, 'inv_updates_details_tree', None)
+        if tree is None or d_tree is None:
+            return
+        sel = ()
+        try:
+            sel = tree.selection()
+        except Exception:
+            sel = ()
+        if not sel:
+            return
+        bid = sel[0]
+        data = getattr(self, '_inventory_updates', None) or self._inv_updates_load_store()
+        batch = None
+        try:
+            for b in (data or {}).get('batches', []):
+                if (b.get('id') or '') == bid:
+                    batch = b; break
+        except Exception:
+            batch = None
+        # הצג פריטים
+        try:
+            for iid in list(d_tree.get_children()):
+                d_tree.delete(iid)
+        except Exception:
+            pass
+        if not batch:
+            return
+        try:
+            for it in (batch.get('items') or []):
+                d_tree.insert('', 'end', values=(
+                    it.get('name',''), it.get('main_category',''), it.get('size',''), it.get('fabric_type',''), it.get('quantity',''), it.get('location',''), it.get('packaging','')
+                ))
         except Exception:
             pass
 
