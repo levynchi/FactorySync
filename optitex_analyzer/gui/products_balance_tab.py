@@ -101,6 +101,51 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
+        # עמוד חדש: מלאי (קובץ המלאי האחרון)
+        inventory_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(inventory_page, text='מלאי')
+        tk.Label(inventory_page, text='קובץ המלאי האחרון (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
+        inv_bar = tk.Frame(inventory_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(inv_bar, text='📂 בחר קובץ מלאי…', command=self._browse_products_inventory_file, bg='#2980b9', fg='white').pack(side='right', padx=(6,0))
+        tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
+        self.products_inventory_status_var = tk.StringVar(value='אין קובץ מלאי נבחר')
+        tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg='#f7f9fa', anchor='e').pack(side='right', expand=True, fill='x')
+
+        # טבלת מלאי – עמודות נדרשות
+        inv_cols = ('name','main_category','size','fabric_type','quantity','location','packaging')
+        inv_headers = {
+            'name':'שם הדגם',
+            'main_category':'קטגוריה ראשית',
+            'size':'מידה',
+            'fabric_type':'סוג בד',
+            'quantity':'כמות',
+            'location':'מיקום',
+            'packaging':'צורת אריזה'
+        }
+        inv_widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120}
+        inv_table_wrap = tk.Frame(inventory_page, bg='#ffffff', relief='groove', bd=1)
+        inv_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+        self.products_inventory_tree = ttk.Treeview(inv_table_wrap, columns=inv_cols, show='headings', height=18)
+        for c in inv_cols:
+            self.products_inventory_tree.heading(c, text=inv_headers[c])
+            self.products_inventory_tree.column(c, width=inv_widths[c], anchor='center')
+        inv_vs = ttk.Scrollbar(inv_table_wrap, orient='vertical', command=self.products_inventory_tree.yview)
+        self.products_inventory_tree.configure(yscroll=inv_vs.set)
+        self.products_inventory_tree.grid(row=0, column=0, sticky='nsew')
+        inv_vs.grid(row=0, column=1, sticky='ns')
+        inv_table_wrap.grid_rowconfigure(0, weight=1)
+        inv_table_wrap.grid_columnconfigure(0, weight=1)
+
+        # נסה לטעון אוטומטית קובץ מלאי אחרון מהגדרות
+        try:
+            last_inv = ''
+            if hasattr(self, 'settings') and hasattr(self.settings, 'get'):
+                last_inv = self.settings.get('app.last_products_inventory_file', '') or ''
+            self.products_inventory_file = last_inv
+        except Exception:
+            self.products_inventory_file = ''
+        self._refresh_products_inventory_table()
+
         # עמוד חדש: מאזן אביזרי תפירה
         accessories_page = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(accessories_page, text='מאזן אביזרי תפירה')
@@ -1876,5 +1921,138 @@ class ProductsBalanceTabMixin:
                 summary.pack(fill='x', padx=10, pady=(0,10))
             except Exception:
                 pass
+        except Exception:
+            pass
+
+        # === מוצרים: טאב מלאי ===
+    def _browse_products_inventory_file(self):
+        from tkinter import filedialog
+        try:
+            path = filedialog.askopenfilename(title='בחר קובץ מלאי מוצרים', filetypes=[('Excel','*.xlsx;*.xls')])
+        except Exception:
+            path = ''
+        if not path:
+            return
+        self.products_inventory_file = path
+        # שמירה בהגדרות עבור טעינה אוטומטית בפעם הבאה
+        try:
+            if hasattr(self, 'settings') and hasattr(self.settings, 'set'):
+                self.settings.set('app.last_products_inventory_file', path)
+        except Exception:
+            pass
+        self._refresh_products_inventory_table()
+
+    def _refresh_products_inventory_table(self):
+        """טוען את קובץ המלאי האחרון (Excel) ומציג עמודות נבחרות.
+
+        העמודות המבוקשות: שם הדגם, קטגוריה ראשית, מידה, סוג בד, כמות, מיקום, צורת אריזה.
+        השמות בעמודות הקובץ יותאמו אוטומטית לפי מגוון כינויים שכיחים.
+        """
+        tree = getattr(self, 'products_inventory_tree', None)
+        if not tree:
+            return
+        # ניקוי
+        for iid in tree.get_children():
+            tree.delete(iid)
+        path = getattr(self, 'products_inventory_file', '') or ''
+        import os
+        if not path or not os.path.exists(path):
+            try:
+                self.products_inventory_status_var.set('אין קובץ מלאי נבחר')
+            except Exception:
+                pass
+            return
+        # קריאה עם pandas אם יש, אחרת openpyxl
+        cols_needed = {
+            'name': ['שם הדגם', 'שם מוצר', 'מוצר', 'דגם', 'שם הדגם'],
+            'main_category': ['קטגוריה ראשית', 'קטגוריה', 'Main Category'],
+            'size': ['מידה', 'Size'],
+            'fabric_type': ['סוג בד', 'בד', 'Fabric', 'Fabric Type'],
+            'quantity': ['כמות', 'Quantity', 'Qty'],
+            'location': ['מיקום', 'Location'],
+            'packaging': ['צורת אריזה', 'אריזה', 'Packaging']
+        }
+        rows = []
+        used_engine = ''
+        try:
+            import pandas as pd  # type: ignore
+            try:
+                df = pd.read_excel(path)
+                used_engine = 'pandas'
+            except Exception:
+                df = None
+            if df is not None:
+                # בנה מיפוי כותרות -> מפתח יעד
+                cols_map = {}
+                file_cols = [str(c).strip() for c in df.columns]
+                for key, aliases in cols_needed.items():
+                    for a in aliases:
+                        if a in file_cols:
+                            cols_map[key] = a
+                            break
+                # אם חסרות עמודות – לא נעצור, רק ימולאו ריקים
+                for _, row in df.iterrows():
+                    rows.append({
+                        'name': str(row.get(cols_map.get('name',''), '')).strip(),
+                        'main_category': str(row.get(cols_map.get('main_category',''), '')).strip(),
+                        'size': str(row.get(cols_map.get('size',''), '')).strip(),
+                        'fabric_type': str(row.get(cols_map.get('fabric_type',''), '')).strip(),
+                        'quantity': str(row.get(cols_map.get('quantity',''), '')).strip(),
+                        'location': str(row.get(cols_map.get('location',''), '')).strip(),
+                        'packaging': str(row.get(cols_map.get('packaging',''), '')).strip(),
+                    })
+        except Exception:
+            pass
+        if not rows:
+            # ניסיון עם openpyxl (קריאה קלה ללא pandas)
+            try:
+                from openpyxl import load_workbook  # type: ignore
+                wb = load_workbook(path, read_only=True, data_only=True)
+                ws = wb.active
+                header = []
+                for row in ws.iter_rows(min_row=1, max_row=1, values_only=True):
+                    header = [str(v).strip() if v is not None else '' for v in row]
+                # מיפוי כותרות -> מפתח יעד
+                cols_map = {}
+                for key, aliases in cols_needed.items():
+                    for a in aliases:
+                        try:
+                            idx = header.index(a)
+                            cols_map[key] = idx
+                            break
+                        except ValueError:
+                            continue
+                # שורות
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    def val(idx):
+                        try:
+                            v = row[idx]
+                            return '' if v is None else str(v).strip()
+                        except Exception:
+                            return ''
+                    rows.append({
+                        'name': val(cols_map.get('name', -1)),
+                        'main_category': val(cols_map.get('main_category', -1)),
+                        'size': val(cols_map.get('size', -1)),
+                        'fabric_type': val(cols_map.get('fabric_type', -1)),
+                        'quantity': val(cols_map.get('quantity', -1)),
+                        'location': val(cols_map.get('location', -1)),
+                        'packaging': val(cols_map.get('packaging', -1)),
+                    })
+                try:
+                    wb.close()
+                except Exception:
+                    pass
+                used_engine = 'openpyxl'
+            except Exception:
+                rows = []
+        # הצגה
+        for r in rows[:3000]:
+            self.products_inventory_tree.insert('', 'end', values=(
+                r.get('name',''), r.get('main_category',''), r.get('size',''), r.get('fabric_type',''), r.get('quantity',''), r.get('location',''), r.get('packaging','')
+            ))
+        try:
+            base = os.path.basename(path)
+            self.products_inventory_status_var.set(f"מקור: {base} | שורות: {min(len(rows),3000)}{(' (pandas)' if used_engine=='pandas' else ' (openpyxl)') if rows else ''}")
         except Exception:
             pass
