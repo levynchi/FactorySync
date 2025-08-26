@@ -11,6 +11,7 @@ class FabricsInventoryTabMixin:
         tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
         inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
+        unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
         table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
         self.fabrics_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
@@ -37,6 +38,25 @@ class FabricsInventoryTabMixin:
         self.fabrics_logs_tree.grid(row=0,column=0,sticky='nsew'); lsvb.grid(row=0,column=1,sticky='ns')
         logs_frame.grid_columnconfigure(0,weight=1); logs_frame.grid_rowconfigure(0,weight=1)
         self.fabrics_logs_tree.bind('<Button-1>', self._handle_logs_click)
+        # Unbarcoded fabrics UI
+        ub_actions = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_actions.pack(fill='x', padx=6, pady=6)
+        tk.Button(ub_actions, text="➕ הוסף", command=self._ub_add_dialog, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        tk.Button(ub_actions, text="🗑️ מחק נבחר", command=self._ub_delete_selected, bg='#e67e22', fg='white').pack(side='right')
+        ub_frame = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_frame.pack(fill='both', expand=True, padx=6, pady=(0,6))
+        ub_cols = ('id','fabric_type','manufacturer','color','shade','notes')
+        self.ub_tree = ttk.Treeview(ub_frame, columns=ub_cols, show='headings')
+        ub_headers = {'id':'', 'fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
+        ub_widths = {'id':60,'fabric_type':160,'manufacturer':160,'color':100,'shade':80,'notes':240}
+        for c in ub_cols:
+            self.ub_tree.heading(c, text=ub_headers[c])
+            if c == 'id':
+                self.ub_tree.column(c, width=0, minwidth=0, stretch=False)
+            else:
+                self.ub_tree.column(c, width=ub_widths[c], anchor='center')
+        ub_vsb = ttk.Scrollbar(ub_frame, orient='vertical', command=self.ub_tree.yview); self.ub_tree.configure(yscroll=ub_vsb.set)
+        self.ub_tree.grid(row=0,column=0,sticky='nsew'); ub_vsb.grid(row=0,column=1,sticky='ns')
+        ub_frame.grid_columnconfigure(0,weight=1); ub_frame.grid_rowconfigure(0,weight=1)
+        self._populate_unbarcoded_table()
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
         self._populate_fabrics_table(); self._populate_fabrics_logs(); self._update_fabrics_summary()
@@ -73,6 +93,11 @@ class FabricsInventoryTabMixin:
         self._populate_fabrics_table()
         if hasattr(self.data_processor, 'fabrics_import_logs'):
             self.data_processor.fabrics_import_logs = self.data_processor.load_fabrics_import_logs(); self._populate_fabrics_logs()
+        # Refresh unbarcoded list
+        try:
+            self.data_processor.refresh_fabrics_unbarcoded(); self._populate_unbarcoded_table()
+        except Exception:
+            pass
         self._update_fabrics_summary()
 
     def _import_fabrics_csv(self):
@@ -104,3 +129,53 @@ class FabricsInventoryTabMixin:
         result = self.data_processor.delete_fabric_import_log_and_fabrics(log_id)
         if result.get('logs_deleted'):
             self._populate_fabrics_logs(); self._populate_fabrics_table()
+
+    # ===== Unbarcoded fabrics helpers =====
+    def _populate_unbarcoded_table(self):
+        tree = getattr(self, 'ub_tree', None)
+        if not tree: return
+        for item in tree.get_children(): tree.delete(item)
+        rows = getattr(self.data_processor, 'fabrics_unbarcoded', []) or []
+        for r in rows:
+            tree.insert('', 'end', values=(r.get('id',''), r.get('fabric_type',''), r.get('manufacturer',''), r.get('color',''), r.get('shade',''), r.get('notes','')))
+
+    def _ub_add_dialog(self):
+        win = tk.Toplevel(self.root)
+        win.title('הוספת בד ללא ברקוד')
+        form = tk.Frame(win, padx=10, pady=10)
+        form.pack(fill='both', expand=True)
+        labels = ['סוג בד','יצרן הבד','צבע','גוון','הערות']
+        vars_ = [tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar()]
+        for i, lbl in enumerate(labels):
+            tk.Label(form, text=lbl).grid(row=i, column=0, sticky='e', padx=4, pady=4)
+            tk.Entry(form, textvariable=vars_[i], width=30).grid(row=i, column=1, sticky='w', padx=4, pady=4)
+        btns = tk.Frame(form); btns.grid(row=len(labels), column=0, columnspan=2, sticky='e', pady=(8,0))
+        def _do_add():
+            try:
+                new_id = self.data_processor.add_unbarcoded_fabric(vars_[0].get(), vars_[1].get(), vars_[2].get(), vars_[3].get(), vars_[4].get())
+                self._populate_unbarcoded_table()
+                try: messagebox.showinfo('נשמר', f'נוסף (ID: {new_id})')
+                except Exception: pass
+                win.destroy()
+            except Exception as e:
+                messagebox.showerror('שגיאה', str(e))
+        tk.Button(btns, text='שמירה', command=_do_add, bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(btns, text='ביטול', command=win.destroy).pack(side='right')
+
+    def _ub_delete_selected(self):
+        sel = self.ub_tree.selection()
+        if not sel: return
+        item = sel[0]
+        vals = self.ub_tree.item(item, 'values') or []
+        if not vals: return
+        try:
+            rec_id = int(vals[0])
+        except Exception:
+            return
+        try:
+            if not messagebox.askyesno('אישור', f"למחוק רשומה {rec_id}?"):
+                return
+        except Exception:
+            pass
+        if self.data_processor.delete_unbarcoded_fabric(rec_id):
+            self._populate_unbarcoded_table()

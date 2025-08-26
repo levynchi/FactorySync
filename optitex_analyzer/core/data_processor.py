@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json", fabrics_intakes_file: str = "fabrics_intakes.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json", fabrics_intakes_file: str = "fabrics_intakes.json", fabrics_unbarcoded_file: str = "fabrics_unbarcoded.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -20,6 +20,7 @@ class DataProcessor:
 		self.drawings_file = drawings_file
 		self.fabrics_inventory_file = fabrics_inventory_file
 		self.fabrics_imports_file = fabrics_imports_file
+		self.fabrics_unbarcoded_file = fabrics_unbarcoded_file
 		# legacy combined file (לצורך מיגרציה בלבד)
 		self.supplier_receipts_file = supplier_receipts_file
 		# new split files
@@ -65,6 +66,8 @@ class DataProcessor:
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
+		# רשימת בדים ללא ברקוד
+		self.fabrics_unbarcoded = self.load_fabrics_unbarcoded()
 		# טעינת תעודות קליטת בדים
 		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
 		# migration from legacy combined file if needed
@@ -635,6 +638,63 @@ class DataProcessor:
 			return True
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא מלאי בדים: {str(e)}")
+
+	# ===== Fabrics without barcode =====
+	def load_fabrics_unbarcoded(self) -> List[Dict]:
+		"""טעינת רשימת בדים ללא ברקוד"""
+		try:
+			if os.path.exists(self.fabrics_unbarcoded_file):
+				with open(self.fabrics_unbarcoded_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					return data if isinstance(data, list) else []
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת בדים בלי ברקוד: {e}"); return []
+
+	def save_fabrics_unbarcoded(self) -> bool:
+		"""שמירת רשימת בדים ללא ברקוד"""
+		try:
+			with open(self.fabrics_unbarcoded_file, 'w', encoding='utf-8') as f:
+				json.dump(self.fabrics_unbarcoded, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת בדים בלי ברקוד: {e}"); return False
+
+	def refresh_fabrics_unbarcoded(self):
+		self.fabrics_unbarcoded = self.load_fabrics_unbarcoded()
+
+	def add_unbarcoded_fabric(self, fabric_type: str, manufacturer: str, color: str, shade: str, notes: str) -> int:
+		"""הוספת בד ללא ברקוד לרשימה ושמירה. מחזיר ID חדש."""
+		try:
+			new_id = self._next_id(getattr(self, 'fabrics_unbarcoded', []) or [])
+			rec = {
+				'id': new_id,
+				'fabric_type': (fabric_type or '').strip(),
+				'manufacturer': (manufacturer or '').strip(),
+				'color': (color or '').strip(),
+				'shade': (shade or '').strip(),
+				'notes': (notes or '').strip(),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.fabrics_unbarcoded.append(rec)
+			self.save_fabrics_unbarcoded()
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת בד ללא ברקוד: {e}")
+
+	def delete_unbarcoded_fabric(self, rec_id: int) -> bool:
+		"""מחיקת בד ללא ברקוד לפי ID"""
+		before = len(self.fabrics_unbarcoded)
+		try:
+			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if int(r.get('id', -1)) != int(rec_id)]
+			if len(self.fabrics_unbarcoded) != before:
+				self.save_fabrics_unbarcoded(); return True
+			return False
+		except Exception:
+			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if r.get('id') != rec_id]
+			if len(self.fabrics_unbarcoded) != before:
+				self.save_fabrics_unbarcoded(); return True
+			return False
 
 	# ===== Fabrics Import Logs =====
 	def load_fabrics_import_logs(self) -> List[Dict]:
