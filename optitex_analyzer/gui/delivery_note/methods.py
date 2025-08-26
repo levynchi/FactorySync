@@ -198,6 +198,246 @@ class DeliveryNoteMethodsMixin:
         if self.data_processor.delete_fabrics_shipment(rec_id):
             self._fs_refresh_shipments_list()
 
+    def _open_selected_fabrics_shipment_view(self, event=None):
+        """Open a detail window for a fabrics shipment with 'Open in Excel' action."""
+        try:
+            tree = getattr(self, 'fabrics_shipments_tree', None)
+            if not tree:
+                return
+            sel = tree.selection()
+            if not sel:
+                return
+            vals = tree.item(sel[0], 'values')
+            if not vals:
+                return
+            try:
+                rec_id = int(vals[0])
+            except Exception:
+                return
+            # Find the full record
+            self.data_processor.refresh_fabrics_shipments()
+            rec = None
+            for r in (getattr(self.data_processor, 'fabrics_shipments', []) or []):
+                if int(r.get('id', -1)) == rec_id:
+                    rec = r; break
+            if not rec:
+                return
+            # Build view window
+            win = tk.Toplevel(self.notebook)
+            win.title(f"שליחת בדים #{rec.get('id')}")
+            win.geometry('820x560')
+            win.transient(self.notebook.winfo_toplevel())
+
+            header = tk.Frame(win, pady=6)
+            header.pack(fill='x')
+            def _lbl(text):
+                return tk.Label(header, text=text, anchor='w')
+            _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
+            _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
+            _lbl(f"מס׳ בדים (ברקודים): {rec.get('count_barcodes',0)}").grid(row=0,column=2,padx=6,sticky='w')
+
+            body = tk.PanedWindow(win, orient='vertical')
+            body.pack(fill='both', expand=True, padx=8, pady=4)
+
+            # Barcodes list
+            bar_frame = tk.LabelFrame(body, text='ברקודים')
+            body.add(bar_frame, stretch='always')
+            bc_cols = ('barcode',)
+            bc_tree = ttk.Treeview(bar_frame, columns=bc_cols, show='headings', height=10)
+            bc_tree.heading('barcode', text='ברקוד')
+            bc_tree.column('barcode', width=200, anchor='center')
+            for bc in (rec.get('barcodes') or []):
+                bc_tree.insert('', 'end', values=(bc,))
+            bc_tree.pack(fill='both', expand=True, padx=4, pady=4)
+
+            # Packages list
+            pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
+            body.add(pkg_frame, stretch='always')
+            pkg_cols = ('package_type','quantity','driver')
+            pkg_tree = ttk.Treeview(pkg_frame, columns=pkg_cols, show='headings', height=6)
+            pkg_headers = {'package_type':'פריט הובלה','quantity':'כמות','driver':'מוביל'}
+            pkg_widths = {'package_type':140,'quantity':70,'driver':120}
+            for c in pkg_cols:
+                pkg_tree.heading(c, text=pkg_headers[c])
+                pkg_tree.column(c, width=pkg_widths[c], anchor='center')
+            for p in (rec.get('packages') or []):
+                pkg_tree.insert('', 'end', values=(p.get('package_type'), p.get('quantity'), p.get('driver')))
+            pkg_tree.pack(fill='both', expand=True, padx=4, pady=4)
+
+            # Actions
+            btns = tk.Frame(win)
+            btns.pack(fill='x', pady=6, padx=4)
+
+            def _export_fs_to_excel_and_open():
+                try:
+                    from openpyxl import Workbook
+                    from openpyxl.styles import Border, Side, Alignment, Font
+                    try:
+                        from openpyxl.worksheet.page import PageMargins  # type: ignore
+                    except Exception:
+                        PageMargins = None  # type: ignore
+                except Exception as e:
+                    try:
+                        messagebox.showerror('שגיאה', f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
+                    except Exception:
+                        pass
+                    return
+                try:
+                    wb = Workbook(); ws = wb.active; ws.title = 'שליחת בדים'
+                    try:
+                        ws.sheet_view.rightToLeft = True
+                    except Exception:
+                        pass
+                    # Page setup
+                    try: ws.page_setup.orientation = 'portrait'
+                    except Exception: pass
+                    try: ws.page_setup.paperSize = 9
+                    except Exception: pass
+                    try: ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0
+                    except Exception: pass
+                    try:
+                        if PageMargins:
+                            ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.75, bottom=0.75, header=0.3, footer=0.3)
+                    except Exception:
+                        pass
+
+                    # Header
+                    ws.append(['מסמך', f"שליחת בדים #{rec.get('id')}"])
+                    ws.append(['תאריך', rec.get('date')])
+                    ws.append(['מס׳ בדים', rec.get('count_barcodes',0)])
+                    try:
+                        for row in ws.iter_rows(min_row=1, max_row=3, min_col=1, max_col=2):
+                            row[0].font = Font(bold=True, size=12)
+                            row[0].alignment = Alignment(horizontal='right')
+                            row[1].alignment = Alignment(horizontal='right')
+                    except Exception:
+                        pass
+                    ws.append([])
+
+                    # Barcodes table
+                    ws.append(['ברקודים'])
+                    r = ws.max_row
+                    try:
+                        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
+                        tcell = ws.cell(row=r, column=1)
+                        tcell.font = Font(bold=True, size=12)
+                        tcell.alignment = Alignment(horizontal='right')
+                    except Exception:
+                        pass
+                    ws.append(['ברקוד'])
+                    start = ws.max_row + 1
+                    for bc in (rec.get('barcodes') or []):
+                        ws.append([bc])
+                    end = ws.max_row
+                    try:
+                        thin = Side(style='thin', color='000000')
+                        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                        for row in ws.iter_rows(min_row=start-1, max_row=end, min_col=1, max_col=1):
+                            for cell in row:
+                                cell.border = border
+                                if cell.row >= start:
+                                    cell.font = Font(size=11)
+                            try:
+                                row[0].alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                    ws.append([])
+                    # Packages table
+                    ws.append(['חבילות'])
+                    r = ws.max_row
+                    try:
+                        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=3)
+                        tcell = ws.cell(row=r, column=1)
+                        tcell.font = Font(bold=True, size=12)
+                        tcell.alignment = Alignment(horizontal='right')
+                    except Exception:
+                        pass
+                    ws.append(['פריט הובלה', 'כמות', 'מוביל'])
+                    start2 = ws.max_row + 1
+                    for p in (rec.get('packages') or []):
+                        ws.append([p.get('package_type',''), p.get('quantity',''), p.get('driver','')])
+                    end2 = ws.max_row
+                    try:
+                        thin = Side(style='thin', color='000000')
+                        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                        for row in ws.iter_rows(min_row=start2-1, max_row=end2, min_col=1, max_col=3):
+                            for cell in row:
+                                cell.border = border
+                                if cell.row >= start2:
+                                    cell.font = Font(size=11)
+                            try:
+                                row[0].alignment = Alignment(horizontal='right')
+                                row[1].alignment = Alignment(horizontal='center')
+                                row[2].alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                    # Autosize columns
+                    try:
+                        for col in ws.columns:
+                            max_len = 0; col_letter = col[0].column_letter
+                            for cell in col:
+                                val = str(cell.value) if cell.value is not None else ''
+                                if len(val) > max_len: max_len = len(val)
+                            ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
+                    except Exception:
+                        pass
+
+                    # Save to exports folder (subfolder fabrics_shipments)
+                    import os
+                    base_dir = os.path.join(os.getcwd(), 'exports', 'fabrics_shipments')
+                    try:
+                        os.makedirs(base_dir, exist_ok=True)
+                    except Exception:
+                        pass
+                    safe_id = rec.get('id')
+                    safe_date = (rec.get('date') or '').replace('/', '-').replace(':', '-')
+                    fname = f"fabrics_shipment_{safe_id}_{safe_date}.xlsx" if safe_id is not None else f"fabrics_shipment_{safe_date}.xlsx"
+                    out_path = os.path.join(base_dir, fname)
+                    try:
+                        wb.save(out_path)
+                    except PermissionError:
+                        try:
+                            from datetime import datetime as _dt
+                            ts = _dt.now().strftime('%H%M%S')
+                            alt_path = out_path.replace('.xlsx', f'_{ts}.xlsx')
+                            wb.save(alt_path)
+                            out_path = alt_path
+                        except Exception:
+                            try:
+                                messagebox.showerror('שגיאה', 'שמירת קובץ נכשלה (קובץ פתוח?)')
+                            except Exception:
+                                pass
+                            return
+                    except Exception as e:
+                        try:
+                            messagebox.showerror('שגיאה', f'שמירת קובץ נכשלה:\n{e}')
+                        except Exception:
+                            pass
+                        return
+                    try:
+                        os.startfile(out_path)  # type: ignore[attr-defined]
+                    except Exception:
+                        try:
+                            messagebox.showinfo('נשמר', f"הקובץ נשמר ב:\n{out_path}\n(לא הצלחתי לפתוח אוטומטית)")
+                        except Exception:
+                            pass
+                except Exception as e:
+                    try:
+                        messagebox.showerror('שגיאה', str(e))
+                    except Exception:
+                        pass
+
+            tk.Button(btns, text='🖨 פתח באקסל', command=_export_fs_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
+            tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')
+        except Exception:
+            pass
+
     # ---- Helpers (products / variants) ----
     def _refresh_delivery_products_allowed(self, initial: bool = False):
         try:

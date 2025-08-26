@@ -37,5 +37,11 @@ def build_fabrics_send_list_tab(ctx, container: tk.Frame):
 
     btns = tk.Frame(container, bg='#f7f9fa')
     btns.pack(fill='x', padx=10, pady=(0,6))
+    # View button similar to delivery notes list
+    try:
+        tk.Button(btns, text='👁 צפה', command=ctx._open_selected_fabrics_shipment_view, bg='#2c3e50', fg='white').pack(side='right', padx=(0,8))
+        ctx.fabrics_shipments_tree.bind('<Double-1>', ctx._open_selected_fabrics_shipment_view)
+    except Exception:
+        pass
     tk.Button(btns, text='🔄 רענן', command=ctx._fs_refresh_shipments_list, bg='#3498db', fg='white').pack(side='right')
     ctx._fs_refresh_shipments_list()
