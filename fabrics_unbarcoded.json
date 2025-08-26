@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ורוד פוקסיה",
+    "shade": "",
+    "notes": "בד שקיבלנו לפני 4 שנים",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 2,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ורוד פוקסיה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 3,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ורוד פוקסיה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 4,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "שמנת",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 5,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "שמנת",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 6,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "שמנת",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 7,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ירוק מנטה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 8,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ירוק מנטה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 9,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ירוק מנטה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:04:59"
+  },
+  {
+    "id": 10,
+    "fabric_type": "סינגל ג'רזי",
+    "manufacturer": "אקדם",
+    "color": "ירוק מנטה",
+    "shade": "",
+    "notes": "",
+    "created_at": "2025-08-26 13:07:16"
+  }
+]

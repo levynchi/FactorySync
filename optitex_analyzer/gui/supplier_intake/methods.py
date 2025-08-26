@@ -18,8 +18,17 @@ class SupplierIntakeMethodsMixin:
                             if name:
                                 names.append(name)
             names = sorted({n for n in names})
-            if hasattr(self, 'sup_pkg_driver_combo'):
-                self.sup_pkg_driver_combo['values'] = names
+            # החל בערכים גם לטאב קליטת מוצרים וגם לטאב קליטת בדים אם קיימים
+            try:
+                if hasattr(self, 'sup_pkg_driver_combo') and self.sup_pkg_driver_combo is not None:
+                    self.sup_pkg_driver_combo['values'] = names
+            except Exception:
+                pass
+            try:
+                if hasattr(self, 'fi_pkg_driver_combo') and self.fi_pkg_driver_combo is not None:
+                    self.fi_pkg_driver_combo['values'] = names
+            except Exception:
+                pass
         except Exception:
             pass
 
