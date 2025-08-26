@@ -632,8 +632,17 @@ class SupplierIntakeMethodsMixin:
         self._fi_update_summary()
 
     def _fi_update_summary(self):
+        # מציג מספר פריטים בהתאם למצב הפעיל
+        mode = 'barcode'
         try:
-            count = len(self.fi_tree.get_children())
+            mode = (getattr(self, 'fi_mode_var', None).get() or 'barcode') if hasattr(self, 'fi_mode_var') else 'barcode'
+        except Exception:
+            mode = 'barcode'
+        try:
+            if mode == 'no_barcode' and hasattr(self, 'fi_nb_tree') and self.fi_nb_tree:
+                count = len(self.fi_nb_tree.get_children())
+            else:
+                count = len(self.fi_tree.get_children())
         except Exception:
             count = 0
         try:
@@ -644,19 +653,13 @@ class SupplierIntakeMethodsMixin:
     def _fi_save_receipt(self):
         """שומר קליטת בדים: משנה סטטוס לכל ברקוד ל'בדים שנתקבלו בחזרה' ומרענן טבלת מלאי בדים.
         כולל שמירת פריטי הובלה מקטע ההובלה של קליטת בדים."""
-        # אסוף ברקודים
-        barcodes = []
+        # בדוק מצב: לפי ברקוד או ללא ברקוד
+        mode = 'barcode'
         try:
-            for iid in self.fi_tree.get_children():
-                vals = self.fi_tree.item(iid, 'values') or []
-                if vals:
-                    barcodes.append(str(vals[0]))
+            mode = (getattr(self, 'fi_mode_var', None).get() or 'barcode') if hasattr(self, 'fi_mode_var') else 'barcode'
         except Exception:
-            pass
-        if not barcodes:
-            try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
-            except Exception: pass
-            return
+            mode = 'barcode'
+
         # אסוף חבילות (לא חובה)
         packages = []
         try:
@@ -669,6 +672,100 @@ class SupplierIntakeMethodsMixin:
                         packages.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
         except Exception:
             packages = []
+
+        # ספק ותאריך (אופציונלי)
+        supplier = ''
+        date_str = ''
+        try:
+            supplier = (getattr(self, 'supplier_name_var', None).get() or '').strip() if hasattr(self, 'supplier_name_var') else ''
+        except Exception:
+            supplier = ''
+        try:
+            date_str = (getattr(self, 'supplier_date_var', None).get() or '').strip() if hasattr(self, 'supplier_date_var') else ''
+        except Exception:
+            date_str = ''
+
+        # ענף מצב ללא ברקוד
+        if mode == 'no_barcode':
+            # חייבים לפחות שורה אחת בטבלת ללא ברקוד
+            items = []
+            try:
+                for iid in self.fi_nb_tree.get_children():
+                    vals = self.fi_nb_tree.item(iid, 'values') or []
+                    if vals:
+                        items.append({
+                            'fabric_type': vals[0] if len(vals)>0 else '',
+                            'manufacturer': vals[1] if len(vals)>1 else '',
+                            'color': vals[2] if len(vals)>2 else '',
+                            'shade': vals[3] if len(vals)>3 else '',
+                            'notes': vals[4] if len(vals)>4 else '',
+                            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        })
+            except Exception:
+                items = []
+            if not items:
+                try: messagebox.showerror('שגיאה', 'אין שורות במצב ללא ברקוד. הוסף שורות באמצעות "הוסף שורה"')
+                except Exception: pass
+                return
+            # הוסף לכלל מאגר "בדים בלי ברקוד"
+            try:
+                if hasattr(self.data_processor, 'add_unbarcoded_fabric'):
+                    for it in items:
+                        self.data_processor.add_unbarcoded_fabric(
+                            it.get('fabric_type',''), it.get('manufacturer',''), it.get('color',''), it.get('shade',''), it.get('notes','')
+                        )
+            except Exception:
+                pass
+            unbarcoded_items = list(items)
+            new_fi_id = None
+            try:
+                if hasattr(self.data_processor, 'add_fabrics_intake'):
+                    new_fi_id = self.data_processor.add_fabrics_intake([], packages, supplier=supplier, date_str=date_str, unbarcoded_items=unbarcoded_items)
+            except Exception:
+                new_fi_id = None
+            try:
+                if new_fi_id:
+                    messagebox.showinfo('הצלחה', f"נשמרה תעודת קליטת בדים (ID: {new_fi_id}).\nנוספו {len(unbarcoded_items)} פריטים ללא ברקוד לטאב 'בדים בלי ברקוד'")
+                else:
+                    messagebox.showinfo('הצלחה', f"נוספו {len(unbarcoded_items)} פריטים ללא ברקוד לטאב 'בדים בלי ברקוד'")
+            except Exception:
+                pass
+            # נקה שדות וטבלאות, רענון טאב מלאי בדים
+            try:
+                getattr(self, 'fi_nb_type').set('')
+                getattr(self, 'fi_nb_manu').set('')
+                getattr(self, 'fi_nb_color').set('')
+                getattr(self, 'fi_nb_shade').set('')
+                getattr(self, 'fi_nb_notes').set('')
+            except Exception:
+                pass
+            try:
+                for iid in self.fi_nb_tree.get_children():
+                    self.fi_nb_tree.delete(iid)
+            except Exception:
+                pass
+            self._fi_clear_all()
+            self._fi_clear_packages()
+            try:
+                if hasattr(self, '_refresh_fabrics_table'):
+                    self._refresh_fabrics_table()
+            except Exception:
+                pass
+            return
+
+        # מצב ברקוד: אסוף ברקודים
+        barcodes = []
+        try:
+            for iid in self.fi_tree.get_children():
+                vals = self.fi_tree.item(iid, 'values') or []
+                if vals:
+                    barcodes.append(str(vals[0]))
+        except Exception:
+            pass
+        if not barcodes:
+            try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
+            except Exception: pass
+            return
         # עדכן סטטוסים דרך DataProcessor
         updated = 0
         for bc in barcodes:
@@ -681,17 +778,6 @@ class SupplierIntakeMethodsMixin:
         new_fi_id = None
         try:
             if hasattr(self.data_processor, 'add_fabrics_intake'):
-                # ספק ותאריך אופציונליים בעתיד; כרגע ננסה לקחת משדות כלליים אם קיימים
-                supplier = ''
-                date_str = ''
-                try:
-                    supplier = (getattr(self, 'supplier_name_var', None).get() or '').strip() if hasattr(self, 'supplier_name_var') else ''
-                except Exception:
-                    supplier = ''
-                try:
-                    date_str = (getattr(self, 'supplier_date_var', None).get() or '').strip() if hasattr(self, 'supplier_date_var') else ''
-                except Exception:
-                    date_str = ''
                 new_fi_id = self.data_processor.add_fabrics_intake(barcodes, packages, supplier=supplier, date_str=date_str)
         except Exception:
             new_fi_id = None
@@ -751,6 +837,51 @@ class SupplierIntakeMethodsMixin:
             for item in self.fi_packages_tree.get_children(): self.fi_packages_tree.delete(item)
         except Exception:
             pass
+
+    # ===== No-barcode items helpers =====
+    def _fi_nb_add_item(self):
+        """מוסיף שורה לטבלת פריטים ללא ברקוד מתוך השדות העליונים."""
+        try:
+            ft = (getattr(self, 'fi_nb_type', tk.StringVar()).get() or '').strip()
+            manu = (getattr(self, 'fi_nb_manu', tk.StringVar()).get() or '').strip()
+            color = (getattr(self, 'fi_nb_color', tk.StringVar()).get() or '').strip()
+            shade = (getattr(self, 'fi_nb_shade', tk.StringVar()).get() or '').strip()
+            notes = (getattr(self, 'fi_nb_notes', tk.StringVar()).get() or '').strip()
+        except Exception:
+            ft = manu = color = shade = notes = ''
+        if not ft:
+            try: messagebox.showerror('שגיאה', 'חובה למלא ״סוג בד״')
+            except Exception: pass
+            return
+        try:
+            self.fi_nb_tree.insert('', 'end', values=(ft, manu, color, shade, notes))
+        except Exception:
+            pass
+        # נקה חלק מהשדות כדי להאיץ הזנה
+        try:
+            getattr(self, 'fi_nb_color').set('')
+            getattr(self, 'fi_nb_shade').set('')
+            getattr(self, 'fi_nb_notes').set('')
+        except Exception:
+            pass
+        self._fi_update_summary()
+
+    def _fi_nb_remove_selected(self):
+        try:
+            sel = self.fi_nb_tree.selection()
+            for item in sel:
+                self.fi_nb_tree.delete(item)
+        except Exception:
+            pass
+        self._fi_update_summary()
+
+    def _fi_nb_clear_all(self):
+        try:
+            for item in self.fi_nb_tree.get_children():
+                self.fi_nb_tree.delete(item)
+        except Exception:
+            pass
+        self._fi_update_summary()
 
     # ===== Saved Fabrics Intakes list (browse/delete) =====
     def _refresh_fabrics_intakes_list(self):

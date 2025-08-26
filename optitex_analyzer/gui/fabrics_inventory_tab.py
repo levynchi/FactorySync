@@ -12,6 +12,8 @@ class FabricsInventoryTabMixin:
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
         inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
         unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
+
+        # Inventory table
         table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
         self.fabrics_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
@@ -26,6 +28,8 @@ class FabricsInventoryTabMixin:
         for status in ("במלאי","נשלח","נגזר"):
             self._fabric_status_menu.add_command(label=status, command=lambda s=status: self._change_selected_fabric_status(s))
         self.fabrics_tree.bind('<Button-3>', self._on_fabrics_right_click)
+
+        # Logs tab
         logs_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(logs_tab, text="קבצים שעלו")
         logs_frame = tk.Frame(logs_tab, bg='#ffffff'); logs_frame.pack(fill='both', expand=True, padx=5, pady=5)
         log_cols = ('id','file_name','imported_at','records_added','delete')
@@ -38,15 +42,16 @@ class FabricsInventoryTabMixin:
         self.fabrics_logs_tree.grid(row=0,column=0,sticky='nsew'); lsvb.grid(row=0,column=1,sticky='ns')
         logs_frame.grid_columnconfigure(0,weight=1); logs_frame.grid_rowconfigure(0,weight=1)
         self.fabrics_logs_tree.bind('<Button-1>', self._handle_logs_click)
+
         # Unbarcoded fabrics UI
         ub_actions = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_actions.pack(fill='x', padx=6, pady=6)
         tk.Button(ub_actions, text="➕ הוסף", command=self._ub_add_dialog, bg='#27ae60', fg='white').pack(side='right', padx=4)
         tk.Button(ub_actions, text="🗑️ מחק נבחר", command=self._ub_delete_selected, bg='#e67e22', fg='white').pack(side='right')
         ub_frame = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_frame.pack(fill='both', expand=True, padx=6, pady=(0,6))
-        ub_cols = ('id','fabric_type','manufacturer','color','shade','notes')
+        ub_cols = ('id','created_at','fabric_type','manufacturer','color','shade','notes')
         self.ub_tree = ttk.Treeview(ub_frame, columns=ub_cols, show='headings')
-        ub_headers = {'id':'', 'fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
-        ub_widths = {'id':60,'fabric_type':160,'manufacturer':160,'color':100,'shade':80,'notes':240}
+        ub_headers = {'id':'', 'created_at':'תאריך','fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
+        ub_widths = {'id':60,'created_at':140,'fabric_type':160,'manufacturer':160,'color':100,'shade':80,'notes':240}
         for c in ub_cols:
             self.ub_tree.heading(c, text=ub_headers[c])
             if c == 'id':
@@ -57,6 +62,8 @@ class FabricsInventoryTabMixin:
         self.ub_tree.grid(row=0,column=0,sticky='nsew'); ub_vsb.grid(row=0,column=1,sticky='ns')
         ub_frame.grid_columnconfigure(0,weight=1); ub_frame.grid_rowconfigure(0,weight=1)
         self._populate_unbarcoded_table()
+
+        # Footer summary
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
         self._populate_fabrics_table(); self._populate_fabrics_logs(); self._update_fabrics_summary()
@@ -137,7 +144,15 @@ class FabricsInventoryTabMixin:
         for item in tree.get_children(): tree.delete(item)
         rows = getattr(self.data_processor, 'fabrics_unbarcoded', []) or []
         for r in rows:
-            tree.insert('', 'end', values=(r.get('id',''), r.get('fabric_type',''), r.get('manufacturer',''), r.get('color',''), r.get('shade',''), r.get('notes','')))
+            tree.insert('', 'end', values=(
+                r.get('id',''),
+                r.get('created_at',''),
+                r.get('fabric_type',''),
+                r.get('manufacturer',''),
+                r.get('color',''),
+                r.get('shade',''),
+                r.get('notes','')
+            ))
 
     def _ub_add_dialog(self):
         win = tk.Toplevel(self.root)

@@ -76,11 +76,16 @@ class DataProcessor:
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
 
 	# ===== Fabrics Intake Receipts (תעודת קליטת בדים) =====
-	def add_fabrics_intake(self, barcodes: List[str], packages: List[Dict] | None = None, *, supplier: str = '', date_str: str = '') -> int:
-		"""יוצר תיעוד חדש של 'תעודת קליטת בדים' ושומר לקובץ. מחזיר ID חדש."""
+	def add_fabrics_intake(self, barcodes: List[str] | None, packages: List[Dict] | None = None, *, supplier: str = '', date_str: str = '', unbarcoded_items: List[Dict] | None = None) -> int:
+		"""יוצר תיעוד חדש של 'תעודת קליטת בדים' ושומר לקובץ. מחזיר ID חדש.
+
+		ניתן לקלוט לפי ברקודים (barcodes) או ללא ברקוד (unbarcoded_items), או גם וגם. נדרש שלפחות אחד לא יהיה ריק.
+		"""
 		try:
-			if not barcodes:
-				raise ValueError("אין ברקודים לקליטה")
+			barcodes = barcodes or []
+			unbarcoded_items = unbarcoded_items or []
+			if not barcodes and not unbarcoded_items:
+				raise ValueError("אין נתונים לקליטת בדים (ברקודים או רשומות ללא ברקוד)")
 			new_id = self._next_id(getattr(self, 'fabrics_intakes', []) or [])
 			date_v = (date_str or datetime.now().strftime('%Y-%m-%d')).strip()
 			record = {
@@ -89,6 +94,7 @@ class DataProcessor:
 				'supplier': (supplier or '').strip(),
 				'barcodes': list(barcodes),
 				'count_barcodes': len(barcodes),
+				'unbarcoded_items': list(unbarcoded_items),
 				'packages': packages or [],
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}

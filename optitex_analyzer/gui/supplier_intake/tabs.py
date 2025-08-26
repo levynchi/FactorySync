@@ -35,10 +35,43 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
 
     def _build_fabrics_intake_tab(self, container: tk.Frame):
         """UI עבור 'קליטת בדים': סריקת ברקוד, תצוגת נתונים ושמירה לשינוי סטטוס במלאי הבדים."""
-        header = tk.Frame(container, bg='#f7f9fa'); header.pack(fill='x', padx=10, pady=(8,4))
-        tk.Label(header, text='קליטת בדים לפי ברקוד (מנתוני מלאי)', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+        header = tk.Frame(container, bg='#f7f9fa')
+        header.pack(fill='x', padx=10, pady=(8,4))
+        tk.Label(header, text='קליטת בדים', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
 
-        bar = tk.Frame(container, bg='#f7f9fa'); bar.pack(fill='x', padx=10, pady=(0,6))
+        # מצב קליטה: לפי ברקוד או ללא ברקוד
+        mode_frame = tk.Frame(container, bg='#f7f9fa')
+        mode_frame.pack(fill='x', padx=10)
+        self.fi_mode_var = tk.StringVar(value='barcode')
+        ttk.Radiobutton(mode_frame, text='לפי ברקוד', variable=self.fi_mode_var, value='barcode').pack(side='right', padx=(0,10))
+        ttk.Radiobutton(mode_frame, text='ללא ברקוד', variable=self.fi_mode_var, value='no_barcode').pack(side='right')
+
+        # קלט עליון עבור מצב "ללא ברקוד" ליד מתג המצב
+        self.fi_nb_type = tk.StringVar()
+        self.fi_nb_manu = tk.StringVar()
+        self.fi_nb_color = tk.StringVar()
+        self.fi_nb_shade = tk.StringVar()
+        self.fi_nb_notes = tk.StringVar()
+        nb_top = tk.Frame(mode_frame, bg='#f7f9fa')
+        def _mk_top_input(lbl_txt, var):
+            box = tk.Frame(nb_top, bg='#f7f9fa')
+            tk.Label(box, text=lbl_txt+':', bg='#f7f9fa').pack(side='right', padx=(6,2))
+            tk.Entry(box, textvariable=var, width=16).pack(side='right')
+            return box
+        _mk_top_input('סוג בד', self.fi_nb_type).pack(side='right', padx=8)
+        _mk_top_input('יצרן הבד', self.fi_nb_manu).pack(side='right', padx=8)
+        _mk_top_input('צבע', self.fi_nb_color).pack(side='right', padx=8)
+        _mk_top_input('גוון', self.fi_nb_shade).pack(side='right', padx=8)
+        _mk_top_input('הערות', self.fi_nb_notes).pack(side='right', padx=8)
+        tk.Button(nb_top, text='➕ הוסף שורה', command=self._fi_nb_add_item, bg='#27ae60', fg='white').pack(side='left')
+
+        # מסגרת תוכן דינמית מתחת לבורר המצבים ומעל ההובלה
+        content_frame = tk.Frame(container, bg='#f7f9fa')
+        content_frame.pack(fill='both', expand=True)
+
+        # ברקוד + פעולות
+        bar = tk.Frame(content_frame, bg='#f7f9fa')
+        bar.pack(fill='x', padx=10, pady=(0,6))
         tk.Label(bar, text='בר קוד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
         self.fi_barcode_var = tk.StringVar()
         entry = tk.Entry(bar, textvariable=self.fi_barcode_var, width=24)
@@ -51,11 +84,14 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         tk.Button(bar, text='🗑️ הסר נבחר', command=self._fi_remove_selected).pack(side='left', padx=6)
         tk.Button(bar, text='🧹 נקה הכל', command=self._fi_clear_all).pack(side='left')
 
-        # טבלת פריטי בד שנבחרו לקליטה
-        table_wrap = tk.Frame(container, bg='#ffffff', relief='groove', bd=1)
+        # טבלת פריטי בד שנבחרו לקליטה (ברקוד)
+        table_wrap = tk.Frame(content_frame, bg='#ffffff', relief='groove', bd=1)
         table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
-        headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','status':'סטטוס'}
+        headers = {
+            'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע',
+            'design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','status':'סטטוס'
+        }
         widths = {'barcode':140,'fabric_type':140,'color_name':110,'color_no':80,'design_code':110,'width':60,'net_kg':80,'meters':80,'price':80,'location':90,'status':110}
         self.fi_tree = ttk.Treeview(table_wrap, columns=cols, show='headings', height=12)
         for c in cols:
@@ -67,11 +103,63 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         vs.grid(row=0, column=1, sticky='ns')
         table_wrap.grid_rowconfigure(0, weight=1)
         table_wrap.grid_columnconfigure(0, weight=1)
+        self.fi_bar_table_wrap = table_wrap
 
-        # מקטע הובלה (כמו בקלטת מוצרים)
+        # טבלה לפריטים ללא ברקוד + כפתורי פעולה
+        nb_table_wrap = tk.Frame(content_frame, bg='#ffffff', relief='groove', bd=1)
+        nb_cols = ('fabric_type','manufacturer','color','shade','notes')
+        nb_headers = {'fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
+        nb_widths = {'fabric_type':160,'manufacturer':140,'color':100,'shade':80,'notes':220}
+        self.fi_nb_tree = ttk.Treeview(nb_table_wrap, columns=nb_cols, show='headings', height=10)
+        for c in nb_cols:
+            self.fi_nb_tree.heading(c, text=nb_headers[c])
+            self.fi_nb_tree.column(c, width=nb_widths[c], anchor='center')
+        nb_vs = ttk.Scrollbar(nb_table_wrap, orient='vertical', command=self.fi_nb_tree.yview)
+        self.fi_nb_tree.configure(yscroll=nb_vs.set)
+        self.fi_nb_tree.grid(row=0, column=0, sticky='nsew')
+        nb_vs.grid(row=0, column=1, sticky='ns')
+        nb_table_wrap.grid_rowconfigure(0, weight=1)
+        nb_table_wrap.grid_columnconfigure(0, weight=1)
+        self.fi_nb_table_wrap = nb_table_wrap
+
+        nb_actions = tk.Frame(content_frame, bg='#f7f9fa')
+        tk.Button(nb_actions, text='🗑️ הסר נבחר', command=self._fi_nb_remove_selected).pack(side='right', padx=6)
+        tk.Button(nb_actions, text='🧹 נקה הכל', command=self._fi_nb_clear_all).pack(side='right')
+        self.fi_nb_actions = nb_actions
+
+        # פונקציית הצגה/הסתרה לפי מצב
+        def _toggle_mode(*_):
+            m = self.fi_mode_var.get()
+            # הסתר הכל
+            for w in (bar, nb_top, self.fi_bar_table_wrap, self.fi_nb_table_wrap, self.fi_nb_actions):
+                try:
+                    w.pack_forget()
+                except Exception:
+                    try:
+                        w.grid_forget()
+                    except Exception:
+                        pass
+            # הצג לפי מצב
+            if m == 'barcode':
+                bar.pack(fill='x', padx=10, pady=(0,6))
+                self.fi_bar_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+            else:
+                nb_top.pack(side='right', padx=10)
+                self.fi_nb_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+                self.fi_nb_actions.pack(fill='x', padx=10, pady=(0,6))
+            try:
+                self._fi_update_summary()
+            except Exception:
+                pass
+        try:
+            self.fi_mode_var.trace_add('write', lambda *_: _toggle_mode())
+        except Exception:
+            pass
+        _toggle_mode()
+
+        # מקטע הובלה (כמו בקלטת מוצרים) - תמיד בתחתית לפני כפתור שמירה
         pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
         pkg_frame.pack(fill='x', padx=10, pady=(0,6))
-        # וודא רשימת חבילות קיימת
         if not hasattr(self, '_fi_packages'):
             self._fi_packages = []
         self.fi_pkg_type_var = tk.StringVar(value='בד')
@@ -86,7 +174,6 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         self.fi_pkg_driver_combo = ttk.Combobox(pkg_frame, textvariable=self.fi_pkg_driver_var, width=16, state='readonly')
         self.fi_pkg_driver_combo.grid(row=0,column=5,sticky='w',padx=4,pady=2)
         try:
-            # יעדכן גם את הקומבו של קליטת בדים אם המיקסין תומך
             self._refresh_driver_names_for_intake()
         except Exception:
             pass
@@ -102,7 +189,9 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         self.fi_packages_tree.column('driver', width=110, anchor='center')
         self.fi_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
 
-        actions = tk.Frame(container, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,8))
+        # פעולת שמירה + סיכום
+        actions = tk.Frame(container, bg='#f7f9fa')
+        actions.pack(fill='x', padx=10, pady=(0,8))
         tk.Button(actions, text='💾 שמור קליטת בדים', command=self._fi_save_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
         self.fi_summary_var = tk.StringVar(value='0 בדים')
         tk.Label(container, textvariable=self.fi_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
