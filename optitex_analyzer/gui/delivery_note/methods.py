@@ -21,12 +21,182 @@ class DeliveryNoteMethodsMixin:
             names = sorted({n for n in names})
             if hasattr(self, 'pkg_driver_combo'):
                 self.pkg_driver_combo['values'] = names
+            if hasattr(self, 'fs_pkg_driver_combo'):
+                self.fs_pkg_driver_combo['values'] = names
         except Exception:
             pass
 
         # Internal state lists
         self._delivery_lines = []
         self._packages = []
+
+        # State for fabrics shipment sub-tab
+        self._fs_lines = []  # list of inventory records selected for shipment
+        self._fs_packages = []
+
+    # ===== Fabrics Shipment (שליחת בדים) handlers =====
+    def _fs_add_fabric_by_barcode(self):
+        try:
+            barcode = (self.fs_barcode_var.get() or '').strip()
+            if not barcode:
+                return
+            inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
+            match = None
+            for r in inv:
+                if str(r.get('barcode')) == str(barcode):
+                    match = r; break
+            if not match:
+                try: messagebox.showwarning('לא נמצא', 'ברקוד לא נמצא במלאי הבדים')
+                except Exception: pass
+                return
+            # Append to table
+            vals = (
+                match.get('barcode',''), match.get('fabric_type',''), match.get('color_name',''),
+                match.get('color_no',''), match.get('design_code',''), match.get('width',''),
+                f"{match.get('net_kg',0):.2f}", f"{match.get('meters',0):.2f}", f"{match.get('price',0):.2f}",
+                match.get('location',''), match.get('status','במלאי')
+            )
+            self.fs_tree.insert('', 'end', values=vals)
+            self.fs_barcode_var.set('')
+            self._fs_update_summary()
+        except Exception:
+            pass
+
+    def _fs_remove_selected(self):
+        try:
+            for it in self.fs_tree.selection():
+                self.fs_tree.delete(it)
+            self._fs_update_summary()
+        except Exception:
+            pass
+
+    def _fs_clear_all(self):
+        try:
+            for it in self.fs_tree.get_children():
+                self.fs_tree.delete(it)
+            self._fs_update_summary()
+        except Exception:
+            pass
+
+    def _fs_update_summary(self):
+        try:
+            count = len(self.fs_tree.get_children())
+            if hasattr(self, 'fs_summary_var'):
+                self.fs_summary_var.set(f"{count} בדים")
+        except Exception:
+            pass
+
+    def _fs_collect_packages(self):
+        # collect from fs_packages_tree to list of dicts
+        pkgs = []
+        try:
+            for it in self.fs_packages_tree.get_children():
+                t, q, d = self.fs_packages_tree.item(it, 'values') or ('', '', '')
+                if t:
+                    pkgs.append({'package_type': t, 'quantity': q, 'driver': d})
+        except Exception:
+            pass
+        return pkgs
+
+    def _fs_save_shipment(self):
+        try:
+            # collect barcodes from table
+            barcodes = []
+            for it in self.fs_tree.get_children():
+                vals = self.fs_tree.item(it, 'values') or []
+                if vals:
+                    barcodes.append(str(vals[0]))
+            if not barcodes:
+                try: messagebox.showwarning('אין נתונים', 'לא נוספו בדים לשליחה')
+                except Exception: pass
+                return
+            packages = self._fs_collect_packages()
+            new_id = self.data_processor.add_fabrics_shipment(barcodes, packages)
+            # Optionally update status of shipped fabrics
+            for bc in barcodes:
+                try:
+                    self.data_processor.update_fabric_status(bc, 'נשלח')
+                except Exception:
+                    pass
+            try: messagebox.showinfo('נשמר', f'תעודת שליחת בדים נשמרה (ID: {new_id})')
+            except Exception: pass
+            # clear UI
+            self._fs_clear_all(); self._fs_clear_packages(); self._fs_refresh_shipments_list()
+        except Exception as e:
+            try: messagebox.showerror('שגיאה', str(e))
+            except Exception: pass
+
+    # Transport helpers (fs)
+    def _fs_add_package_line(self):
+        try:
+            pkg_type = (self.fs_pkg_type_var.get() or '').strip()
+            qty = (self.fs_pkg_qty_var.get() or '').strip()
+            driver = (self.fs_pkg_driver_var.get() or '').strip()
+            if not pkg_type:
+                return
+            self.fs_packages_tree.insert('', 'end', values=(pkg_type, qty, driver))
+            self.fs_pkg_qty_var.set('')
+        except Exception:
+            pass
+
+    def _fs_delete_selected_package(self):
+        try:
+            sel = self.fs_packages_tree.selection()
+            for item in sel:
+                self.fs_packages_tree.delete(item)
+        except Exception:
+            pass
+
+    def _fs_clear_packages(self):
+        try:
+            for item in self.fs_packages_tree.get_children():
+                self.fs_packages_tree.delete(item)
+        except Exception:
+            pass
+
+    # Saved shipments list handlers
+    def _fs_refresh_shipments_list(self):
+        try:
+            self.data_processor.refresh_fabrics_shipments()
+            tree = getattr(self, 'fabrics_shipments_tree', None)
+            if not tree:
+                return
+            for it in tree.get_children():
+                tree.delete(it)
+            rows = getattr(self.data_processor, 'fabrics_shipments', []) or []
+            for r in rows:
+                pkg_summary = ', '.join([f"{p.get('package_type','')}×{p.get('quantity','')} ({p.get('driver','')})" for p in (r.get('packages') or [])])
+                tree.insert('', 'end', values=(r.get('id',''), r.get('date',''), r.get('count_barcodes',0), pkg_summary, '🗑'))
+        except Exception:
+            pass
+
+    def _fs_on_click_shipments(self, event):
+        tree = getattr(self, 'fabrics_shipments_tree', None)
+        if not tree:
+            return
+        region = tree.identify('region', event.x, event.y)
+        if region != 'cell':
+            return
+        col = tree.identify_column(event.x)
+        if col != '#5':
+            return
+        item_id = tree.identify_row(event.y)
+        if not item_id:
+            return
+        values = tree.item(item_id, 'values')
+        if not values:
+            return
+        try:
+            rec_id = int(values[0])
+        except Exception:
+            return
+        try:
+            if not messagebox.askyesno('אישור', f"למחוק תעודת שליחת בדים {rec_id}?"):
+                return
+        except Exception:
+            pass
+        if self.data_processor.delete_fabrics_shipment(rec_id):
+            self._fs_refresh_shipments_list()
 
     # ---- Helpers (products / variants) ----
     def _refresh_delivery_products_allowed(self, initial: bool = False):
