@@ -14,13 +14,16 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         entry_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
         list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
         fabrics_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        fabrics_list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
         inner_nb.add(entry_wrapper, text="קליטה")
         inner_nb.add(list_wrapper, text="קליטות שמורות")
         inner_nb.add(fabrics_wrapper, text="קליטת בדים")
+        inner_nb.add(fabrics_list_wrapper, text="קליטות בדים שמורות")
 
         self._build_supplier_entry_tab(entry_wrapper)
         self._build_supplier_list_tab(list_wrapper)
         self._build_fabrics_intake_tab(fabrics_wrapper)
+        self._build_fabrics_list_tab(fabrics_list_wrapper)
 
     def _build_supplier_entry_tab(self, container: tk.Frame):
         from .entry_tab import build_entry_tab
@@ -103,3 +106,42 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         tk.Button(actions, text='💾 שמור קליטת בדים', command=self._fi_save_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
         self.fi_summary_var = tk.StringVar(value='0 בדים')
         tk.Label(container, textvariable=self.fi_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+
+    def _build_fabrics_list_tab(self, container: tk.Frame):
+        header = tk.Frame(container, bg='#f7f9fa')
+        header.pack(fill='x', padx=10, pady=(8,4))
+        tk.Label(header, text='קליטות בדים שמורות', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+
+        cols = ('id','date','supplier','count','packages','delete')
+        # עוטפים את הטבלה במסגרת פנימית כדי להשתמש ב-grid בפנים, בעוד שה-container משתמש ב-pack
+        table_wrap = tk.Frame(container, bg='#ffffff')
+        table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+
+        self.fabrics_intakes_tree = ttk.Treeview(table_wrap, columns=cols, show='headings')
+        for col, txt, w in (
+            ('id','ID',60),
+            ('date','תאריך',110),
+            ('supplier','ספק',180),
+            ('count','מס׳ ברקודים',100),
+            ('packages','הובלה',160),
+            ('delete','מחיקה',70),
+        ):
+            self.fabrics_intakes_tree.heading(col, text=txt)
+            self.fabrics_intakes_tree.column(col, width=w, anchor='center')
+
+        vs = ttk.Scrollbar(table_wrap, orient='vertical', command=self.fabrics_intakes_tree.yview)
+        self.fabrics_intakes_tree.configure(yscroll=vs.set)
+        self.fabrics_intakes_tree.grid(row=0, column=0, sticky='nsew')
+        vs.grid(row=0, column=1, sticky='ns')
+        table_wrap.grid_columnconfigure(0, weight=1)
+        table_wrap.grid_rowconfigure(0, weight=1)
+
+        try:
+            self.fabrics_intakes_tree.bind('<Button-1>', lambda e: self._on_click_fabrics_intakes(e))
+        except Exception:
+            pass
+
+        btns = tk.Frame(container, bg='#f7f9fa')
+        btns.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(btns, text='🔄 רענן', command=self._refresh_fabrics_intakes_list, bg='#3498db', fg='white').pack(side='right')
+        self._refresh_fabrics_intakes_list()

@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json", fabrics_intakes_file: str = "fabrics_intakes.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -25,6 +25,8 @@ class DataProcessor:
 		# new split files
 		self.supplier_intakes_file = supplier_intakes_file
 		self.delivery_notes_file = delivery_notes_file
+		# קובץ תיעוד 'תעודת קליטת בדים'
+		self.fabrics_intakes_file = fabrics_intakes_file
 		self.products_catalog_file = products_catalog_file
 		self.sewing_accessories_file = sewing_accessories_file
 		self.categories_file = categories_file
@@ -63,10 +65,55 @@ class DataProcessor:
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
+		# טעינת תעודות קליטת בדים
+		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
 		# migration from legacy combined file if needed
 		self._migrate_legacy_supplier_receipts()
 		# combined view (backward compatibility for old UI code)
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
+
+	# ===== Fabrics Intake Receipts (תעודת קליטת בדים) =====
+	def add_fabrics_intake(self, barcodes: List[str], packages: List[Dict] | None = None, *, supplier: str = '', date_str: str = '') -> int:
+		"""יוצר תיעוד חדש של 'תעודת קליטת בדים' ושומר לקובץ. מחזיר ID חדש."""
+		try:
+			if not barcodes:
+				raise ValueError("אין ברקודים לקליטה")
+			new_id = self._next_id(getattr(self, 'fabrics_intakes', []) or [])
+			date_v = (date_str or datetime.now().strftime('%Y-%m-%d')).strip()
+			record = {
+				'id': new_id,
+				'date': date_v,
+				'supplier': (supplier or '').strip(),
+				'barcodes': list(barcodes),
+				'count_barcodes': len(barcodes),
+				'packages': packages or [],
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.fabrics_intakes.append(record)
+			self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת תעודת קליטת בדים: {e}")
+
+	def delete_fabrics_intake(self, rec_id: int) -> bool:
+		"""מחיקת תעודת קליטת בדים לפי ID. מחזיר True אם נמחקה."""
+		before = len(getattr(self, 'fabrics_intakes', []) or [])
+		try:
+			self.fabrics_intakes = [r for r in self.fabrics_intakes if int(r.get('id', -1)) != int(rec_id)]
+			if len(self.fabrics_intakes) != before:
+				self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
+				return True
+			return False
+		except Exception:
+			self.fabrics_intakes = [r for r in self.fabrics_intakes if (r.get('id') != rec_id)]
+			if len(self.fabrics_intakes) != before:
+				self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
+				return True
+			return False
+
+	def refresh_fabrics_intakes(self):
+		"""רענון תעודות קליטת בדים מהדיסק"""
+		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""

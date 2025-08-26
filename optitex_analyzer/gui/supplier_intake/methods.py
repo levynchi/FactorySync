@@ -677,14 +677,30 @@ class SupplierIntakeMethodsMixin:
                     updated += 1
             except Exception:
                 pass
-        # אופציונלי: כתוב לוג קליטת בדים
+        # צור גם מסמך "תעודת קליטת בדים" עם מספר מזהה
+        new_fi_id = None
         try:
-            if hasattr(self.data_processor, 'add_fabrics_intake_log'):
-                self.data_processor.add_fabrics_intake_log({'barcodes': barcodes, 'packages': packages, 'created_at': datetime.now().isoformat(timespec='seconds')})
+            if hasattr(self.data_processor, 'add_fabrics_intake'):
+                # ספק ותאריך אופציונליים בעתיד; כרגע ננסה לקחת משדות כלליים אם קיימים
+                supplier = ''
+                date_str = ''
+                try:
+                    supplier = (getattr(self, 'supplier_name_var', None).get() or '').strip() if hasattr(self, 'supplier_name_var') else ''
+                except Exception:
+                    supplier = ''
+                try:
+                    date_str = (getattr(self, 'supplier_date_var', None).get() or '').strip() if hasattr(self, 'supplier_date_var') else ''
+                except Exception:
+                    date_str = ''
+                new_fi_id = self.data_processor.add_fabrics_intake(barcodes, packages, supplier=supplier, date_str=date_str)
         except Exception:
-            pass
+            new_fi_id = None
+        # משוב למשתמש
         try:
-            messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
+            if new_fi_id:
+                messagebox.showinfo('הצלחה', f"נשמרה תעודת קליטת בדים (ID: {new_fi_id}).\nעודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
+            else:
+                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
         except Exception:
             pass
         # נקה את הטבלה ורענן טאב מלאי בדים אם קיים
@@ -733,5 +749,68 @@ class SupplierIntakeMethodsMixin:
         try:
             self._fi_packages = []
             for item in self.fi_packages_tree.get_children(): self.fi_packages_tree.delete(item)
+        except Exception:
+            pass
+
+    # ===== Saved Fabrics Intakes list (browse/delete) =====
+    def _refresh_fabrics_intakes_list(self):
+        try:
+            if hasattr(self.data_processor, 'refresh_fabrics_intakes'):
+                self.data_processor.refresh_fabrics_intakes()
+            records = getattr(self.data_processor, 'fabrics_intakes', []) or []
+        except Exception:
+            records = []
+        tree = getattr(self, 'fabrics_intakes_tree', None)
+        if not tree:
+            return
+        try:
+            for iid in tree.get_children():
+                tree.delete(iid)
+        except Exception:
+            pass
+        for rec in records:
+            try:
+                pkg_summary = ', '.join(f"{p.get('package_type')}:{p.get('quantity')}" for p in rec.get('packages', [])[:4])
+                if len(rec.get('packages', [])) > 4:
+                    pkg_summary += ' ...'
+            except Exception:
+                pkg_summary = ''
+            tree.insert('', 'end', values=(
+                rec.get('id',''), rec.get('date',''), rec.get('supplier',''), rec.get('count_barcodes',0), pkg_summary, '🗑'
+            ))
+
+    def _on_click_fabrics_intakes(self, event):
+        tree = getattr(self, 'fabrics_intakes_tree', None)
+        if not tree:
+            return
+        region = tree.identify('region', event.x, event.y)
+        if region != 'cell':
+            return
+        col = tree.identify_column(event.x)
+        # delete column is #6
+        if col != '#6':
+            return
+        row_id = tree.identify_row(event.y)
+        if not row_id:
+            return
+        values = tree.item(row_id, 'values') or []
+        if not values:
+            return
+        try:
+            rec_id = int(values[0])
+        except Exception:
+            return
+        try:
+            if not messagebox.askyesno('אישור', f"למחוק קליטת בדים ID {rec_id}?"):
+                return
+        except Exception:
+            pass
+        try:
+            if hasattr(self.data_processor, 'delete_fabrics_intake') and self.data_processor.delete_fabrics_intake(rec_id):
+                tree.delete(row_id)
+                try:
+                    messagebox.showinfo('נמחק', f"תעודת קליטת בדים {rec_id} נמחקה")
+                except Exception:
+                    pass
         except Exception:
             pass
