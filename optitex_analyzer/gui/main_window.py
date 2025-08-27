@@ -101,9 +101,9 @@ class MainWindow(
         # Create each tab from its mixin
     # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
     # Returned (cut) drawings now embedded inside 'מנהל ציורים' tab
-        # Business details tab
+        # Software management tab (contains 'פרטי עסק' and 'גיבויים')
         try:
-            self._create_business_details_tab()
+            self._create_software_management_tab()
         except Exception:
             pass
         self._create_fabrics_inventory_tab()

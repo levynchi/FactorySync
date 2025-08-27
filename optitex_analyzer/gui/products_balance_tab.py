@@ -2514,10 +2514,17 @@ class ProductsBalanceTabMixin:
         except Exception:
             updates_data = None
         # נחשב מצב סופי לכל מפתח לפי כרונולוגיה: מתחילים מכמות הבסיס בקטלוג, ואז מעבדים באצוות לפי created_at
+        # המפתח כולל גם קטגורית בד כדי למנוע דריסה בין "טריקו לבן" ו"טריקו מודפס" וכו׳
         base_qty_map = {}
         base_pkg_map = {}
         for r in rows:
-            key = (r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location',''))
+            key = (
+                r.get('name',''),
+                r.get('size',''),
+                r.get('fabric_category',''),
+                r.get('fabric_type',''),
+                r.get('location','')
+            )
             qv = r.get('quantity','')
             try:
                 base_qty_map[key] = float(str(qv).replace(',', '')) if str(qv).strip() != '' else 0.0
@@ -2541,6 +2548,7 @@ class ProductsBalanceTabMixin:
                         key = (
                             (it.get('name') or '').strip(),
                             (it.get('size') or '').strip(),
+                            (it.get('fabric_category') or '').strip(),
                             (it.get('fabric_type') or '').strip(),
                             (it.get('location') or '').strip()
                         )
@@ -2563,21 +2571,40 @@ class ProductsBalanceTabMixin:
         try:
             # עדכן שורות קיימות
             for r in rows:
-                key_same_loc = (r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location',''))
+                key_same_loc = (
+                    r.get('name',''),
+                    r.get('size',''),
+                    r.get('fabric_category',''),
+                    r.get('fabric_type',''),
+                    r.get('location','')
+                )
                 if key_same_loc in base_qty_map:
                     q = base_qty_map[key_same_loc]
                     r['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
                 if key_same_loc in base_pkg_map and base_pkg_map[key_same_loc]:
                     r['packaging'] = base_pkg_map[key_same_loc]
 
-            # הוסף שורות עבור מיקומים שנוצרו רק מעדכונים
-            existing_keys = set((r.get('name',''), r.get('size',''), r.get('fabric_type',''), r.get('location','')) for r in rows)
+            # הוסף שורות עבור מיקומים/קטגוריות שנוצרו רק מעדכונים
+            existing_keys = set(
+                (
+                    r.get('name',''),
+                    r.get('size',''),
+                    r.get('fabric_category',''),
+                    r.get('fabric_type',''),
+                    r.get('location','')
+                )
+                for r in rows
+            )
             for key, q in base_qty_map.items():
                 if key not in existing_keys:
-                    n, s, ft, loc = key
-                    base0 = next((x for x in rows if x['name']==n and x['size']==s and x['fabric_type']==ft), None)
+                    n, s, fc, ft, loc = key
+                    # ננסה למצוא שורת בסיס עם אותה קטגורית בד; אם אין – ניקח תואם לפי name+size+fabric_type
+                    base0 = next((x for x in rows if x['name']==n and x['size']==s and x.get('fabric_category','')==fc and x['fabric_type']==ft), None)
+                    if base0 is None:
+                        base0 = next((x for x in rows if x['name']==n and x['size']==s and x['fabric_type']==ft), None)
                     if base0 is not None:
                         newr = dict(base0)
+                        newr['fabric_category'] = fc
                         newr['location'] = loc
                         newr['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
                         if base_pkg_map.get(key):
