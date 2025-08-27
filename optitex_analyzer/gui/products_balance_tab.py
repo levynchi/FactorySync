@@ -5,6 +5,8 @@ import calendar as _cal
 
 import os
 
+import re
+
 class ProductsBalanceTabMixin:
     """Mixin לטאב 'מאזן מוצרים ופריטים'.
 
@@ -154,18 +156,28 @@ class ProductsBalanceTabMixin:
         self.products_inventory_status_var = tk.StringVar(value='מקור: קטלוג מוצרים')
         tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg='#f7f9fa', anchor='e').pack(side='right', expand=True, fill='x')
 
-        # טבלת מלאי – עמודות נדרשות
-        inv_cols = ('name','main_category','size','fabric_type','quantity','location','packaging')
+        # טבלת מלאי – עמודות נדרשות (הוספנו 'fabric_category')
+        inv_cols = ('name','main_category','size','fabric_category','fabric_type','quantity','location','packaging')
         inv_headers = {
             'name':'שם הדגם',
             'main_category':'קטגוריה ראשית',
             'size':'מידה',
+            'fabric_category':'קטגורית בד',
             'fabric_type':'סוג בד',
             'quantity':'כמות',
             'location':'מיקום',
             'packaging':'צורת אריזה'
         }
-        inv_widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120}
+        inv_widths = {
+            'name':240,
+            'main_category':130,
+            'size':90,
+            'fabric_category':140,
+            'fabric_type':160,
+            'quantity':90,
+            'location':120,
+            'packaging':120
+        }
         inv_table_wrap = tk.Frame(inv_view_page, bg='#ffffff', relief='groove', bd=1)
         inv_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         self.products_inventory_tree = ttk.Treeview(inv_table_wrap, columns=inv_cols, show='headings', height=18)
@@ -225,19 +237,25 @@ class ProductsBalanceTabMixin:
         self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24, justify='right')
         self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='כמות:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
-        self.inv_create_qty_var = tk.StringVar(value='0')
-        tk.Entry(form, textvariable=self.inv_create_qty_var, width=10, justify='right').grid(row=1, column=3, padx=4, pady=2, sticky='e')
+        # קטגורית בד (נמשכת מהקטלוג עבור שם הדגם)
+        tk.Label(form, text='קטגורית בד:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
+        self.inv_create_fabric_cat_var = tk.StringVar()
+        self.inv_create_fabric_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_cat_var, width=20, state='readonly', justify='right')
+        self.inv_create_fabric_cat_cb.grid(row=1, column=3, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='כמות:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
+        self.inv_create_qty_var = tk.StringVar(value='0')
+        tk.Entry(form, textvariable=self.inv_create_qty_var, width=10, justify='right').grid(row=1, column=1, padx=4, pady=2, sticky='e')
+
+        tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=2, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_location_var = tk.StringVar()
         self.inv_create_location_cb = ttk.Combobox(form, textvariable=self.inv_create_location_var, width=16, justify='right')
-        self.inv_create_location_cb.grid(row=1, column=1, padx=4, pady=2, sticky='e')
+        self.inv_create_location_cb.grid(row=2, column=5, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=2, column=6, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=2, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_packaging_var = tk.StringVar()
         self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16, justify='right')
-        self.inv_create_packaging_cb.grid(row=2, column=5, padx=4, pady=2, sticky='e')
+        self.inv_create_packaging_cb.grid(row=2, column=3, padx=4, pady=2, sticky='e')
 
         actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
@@ -2418,7 +2436,7 @@ class ProductsBalanceTabMixin:
     def _refresh_products_inventory_table(self):
         """מציג מלאי עדכני מתוך קטלוג המוצרים (ללא קובץ חיצוני).
 
-        העמודות: שם הדגם, קטגוריה ראשית, מידה, סוג בד, כמות, מיקום, צורת אריזה.
+        העמודות: שם הדגם, קטגוריה ראשית, מידה, קטגורית בד, סוג בד, כמות, מיקום, צורת אריזה.
         מאחר והקטלוג לא כולל כמות/מיקום/אריזה – שדות אלה יוצגו ריקים כברירת מחדל.
         """
         tree = getattr(self, 'products_inventory_tree', None)
@@ -2435,7 +2453,7 @@ class ProductsBalanceTabMixin:
                 tree.delete(iid)
         except Exception:
             pass
-    # שליפת נתונים מהקטלוג
+        # שליפת נתונים מהקטלוג
         rows = []
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
@@ -2467,10 +2485,18 @@ class ProductsBalanceTabMixin:
                         mc = 'בגדים'
                 except Exception:
                     mc = 'בגדים'
+                # קביעת קטגורית בד עבור הרשומה: מהשורה ואם חסר – לפי majority בקטלוג
+                try:
+                    fcat_val = (rec.get('fabric_category') or '').strip()
+                    if not fcat_val:
+                        fcat_val = self._get_product_attrs(name, (rec.get('size') or '').strip(), True)[3]
+                except Exception:
+                    fcat_val = ''
                 rows.append({
                     'name': name,
                     'main_category': mc,
                     'size': (rec.get('size') or '').strip(),
+                    'fabric_category': fcat_val,
                     'fabric_type': (rec.get('fabric_type') or '').strip(),
                     'quantity': '',
                     'location': '',
@@ -2603,7 +2629,14 @@ class ProductsBalanceTabMixin:
         try:
             for r in filtered[:3000]:
                 tree.insert('', 'end', values=(
-                    r.get('name',''), r.get('main_category',''), r.get('size',''), r.get('fabric_type',''), r.get('quantity',''), r.get('location',''), r.get('packaging','')
+                    r.get('name',''),
+                    r.get('main_category',''),
+                    r.get('size',''),
+                    r.get('fabric_category',''),
+                    r.get('fabric_type',''),
+                    r.get('quantity',''),
+                    r.get('location',''),
+                    r.get('packaging','')
                 ))
         except Exception:
             pass
@@ -2654,15 +2687,16 @@ class ProductsBalanceTabMixin:
         try:
             for iid in tree.get_children():
                 vals = list(tree.item(iid, 'values') or [])
-                # צורה: name, main_category, size, fabric_type, quantity, location, packaging
+                # צורה: name, main_category, size, fabric_category, fabric_type, quantity, location, packaging
                 item = {
                     'name': (vals[0] if len(vals)>0 else '').strip(),
                     'main_category': (vals[1] if len(vals)>1 else '').strip(),
                     'size': (vals[2] if len(vals)>2 else '').strip(),
-                    'fabric_type': (vals[3] if len(vals)>3 else '').strip(),
-                    'quantity': (vals[4] if len(vals)>4 else '').strip(),
-                    'location': (vals[5] if len(vals)>5 else '').strip(),
-                    'packaging': (vals[6] if len(vals)>6 else '').strip(),
+                    'fabric_category': (vals[3] if len(vals)>3 else '').strip(),
+                    'fabric_type': (vals[4] if len(vals)>4 else '').strip(),
+                    'quantity': (vals[5] if len(vals)>5 else '').strip(),
+                    'location': (vals[6] if len(vals)>6 else '').strip(),
+                    'packaging': (vals[7] if len(vals)>7 else '').strip(),
                 }
                 if item['name']:
                     items.append(item)
@@ -2805,6 +2839,7 @@ class ProductsBalanceTabMixin:
         """בעת בחירת שם דגם – ננסה למלא קטגוריה ראשית ולהציע מידות/סוגי בד מהקטלוג."""
         name = (self.inv_create_name_var.get() or '').strip()
         sizes = set(); fabrics = set(); main_cat = ''
+        fabric_cats = set()
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
             for rec in catalog:
@@ -2817,6 +2852,17 @@ class ProductsBalanceTabMixin:
                     f = (rec.get('fabric_type') or '').strip()
                     if f:
                         fabrics.add(f)
+                    # קטגורית בד – יתכנו מספר ערכים מופרדים בפסיקים/לוכסנים/תווים נפוצים
+                    fc_raw = (rec.get('fabric_category') or '').strip()
+                    if fc_raw:
+                        # פצל לערכים בודדים
+                        tokens = []
+                        for part in re.split(r'[,/|;]+', fc_raw):
+                            t = (part or '').strip()
+                            if t:
+                                tokens.append(t)
+                        for t in tokens:
+                            fabric_cats.add(t)
         except Exception:
             pass
         try:
@@ -2841,22 +2887,32 @@ class ProductsBalanceTabMixin:
         try:
             self.inv_create_size_cb['values'] = sorted(sizes)
             self.inv_create_fabric_cb['values'] = sorted(fabrics)
+            # קטגורית בד – מהקטלוג של המוצר
+            self.inv_create_fabric_cat_cb['values'] = sorted(fabric_cats) if fabric_cats else []
+            # אם יש ערך יחיד – בחר אוטומטית
+            if fabric_cats and len(fabric_cats) == 1:
+                self.inv_create_fabric_cat_var.set(next(iter(fabric_cats)))
+            elif not fabric_cats:
+                self.inv_create_fabric_cat_var.set('')
         except Exception:
             pass
 
     def _inv_create_add_row(self):
         name = (self.inv_create_name_var.get() or '').strip()
         if not name:
-            try: messagebox.showwarning('יצירת מלאי', 'בחר שם דגם')
-            except Exception: pass
+            try:
+                messagebox.showwarning('יצירת מלאי', 'בחר שם דגם')
+            except Exception:
+                pass
             return
         size = (self.inv_create_size_var.get() or '').strip()
         fabric = (self.inv_create_fabric_var.get() or '').strip()
+        fabric_cat = (self.inv_create_fabric_cat_var.get() or '').strip()
         qty = (self.inv_create_qty_var.get() or '').strip()
         location = (self.inv_create_location_var.get() or '').strip()
         packaging = (self.inv_create_packaging_var.get() or '').strip()
         main_cat = (self.inv_create_main_cat_var.get() or '').strip()
-        self.inv_create_tree.insert('', 'end', values=(name, main_cat, size, fabric, qty, location, packaging))
+        self.inv_create_tree.insert('', 'end', values=(name, main_cat, size, fabric_cat, fabric, qty, location, packaging))
 
     def _inv_create_delete_selected(self):
         tree = getattr(self, 'inv_create_tree', None)
@@ -2885,7 +2941,7 @@ class ProductsBalanceTabMixin:
                 rows.append(tuple(tree.item(iid, 'values') or []))
         except Exception:
             pass
-        headers = ['שם הדגם','קטגוריה ראשית','מידה','סוג בד','כמות','מיקום','צורת אריזה']
+        headers = ['שם הדגם','קטגוריה ראשית','מידה','קטגורית בד','סוג בד','כמות','מיקום','צורת אריזה']
         from tkinter import filedialog
         from datetime import datetime as _dt
         default_name = f"קובץ_מלאי_חדש_{_dt.now().strftime('%Y-%m-%d')}.xlsx"
@@ -2910,8 +2966,14 @@ class ProductsBalanceTabMixin:
                     return s
             for r in rows:
                 out = [
-                    r[0] if len(r)>0 else '', r[1] if len(r)>1 else '', r[2] if len(r)>2 else '', r[3] if len(r)>3 else '',
-                    to_num(r[4] if len(r)>4 else ''), r[5] if len(r)>5 else '', r[6] if len(r)>6 else ''
+                    r[0] if len(r)>0 else '',  # name
+                    r[1] if len(r)>1 else '',  # main_category
+                    r[2] if len(r)>2 else '',  # size
+                    r[3] if len(r)>3 else '',  # fabric_category
+                    r[4] if len(r)>4 else '',  # fabric_type
+                    to_num(r[5] if len(r)>5 else ''),  # quantity
+                    r[6] if len(r)>6 else '',  # location
+                    r[7] if len(r)>7 else ''   # packaging
                 ]
                 ws.append(out)
             wb.save(save_path)
@@ -2934,8 +2996,8 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         # כותרות מתוך הטבלה
-        cols = ('name','main_category','size','fabric_type','quantity','location','packaging')
-        headers = ['שם הדגם','קטגוריה ראשית','מידה','סוג בד','כמות','מיקום','צורת אריזה']
+        cols = ('name','main_category','size','fabric_category','fabric_type','quantity','location','packaging')
+        headers = ['שם הדגם','קטגוריה ראשית','מידה','קטגורית בד','סוג בד','כמות','מיקום','צורת אריזה']
         # דיאלוג שמירה
         from tkinter import filedialog
         from datetime import datetime as _dt
@@ -2968,7 +3030,16 @@ class ProductsBalanceTabMixin:
                 except Exception:
                     return s
             for r in rows:
-                out = [r[0] if len(r)>0 else '', r[1] if len(r)>1 else '', r[2] if len(r)>2 else '', r[3] if len(r)>3 else '', to_num(r[4] if len(r)>4 else ''), r[5] if len(r)>5 else '', r[6] if len(r)>6 else '']
+                out = [
+                    r[0] if len(r)>0 else '',  # name
+                    r[1] if len(r)>1 else '',  # main_category
+                    r[2] if len(r)>2 else '',  # size
+                    r[3] if len(r)>3 else '',  # fabric_category
+                    r[4] if len(r)>4 else '',  # fabric_type
+                    to_num(r[5] if len(r)>5 else ''),  # quantity
+                    r[6] if len(r)>6 else '',  # location
+                    r[7] if len(r)>7 else ''   # packaging
+                ]
                 ws.append(out)
             wb.save(save_path)
             try:

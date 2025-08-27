@@ -813,12 +813,15 @@ class ProductsCatalogMethodsMixin:
         # category_raw may be comma-separated multi-select; validate all
         category_tokens = [s.strip() for s in category_raw.split(',') if s.strip()]
         if not category_tokens:
-            messagebox.showerror("שגיאה", "חובה לבחור תת קטגוריה (טאב תת קטגוריות)")
-            return
+                messagebox.showerror("שגיאה", "חובה לבחור תת קטגוריה (טאב תת קטגוריות)")
+                return
         for ct in category_tokens:
             if ct not in valid_categories:
                 messagebox.showerror("שגיאה", f"תת קטגוריה '{ct}' לא קיימת. הוסף בטאב 'תת קטגוריות' ובחר שוב")
                 return
+        # Normalize the category field as a single comma-joined string so a product with
+        # multiple subcategories remains one product (not split per subcategory)
+        category_value = ",".join(category_tokens)
         sizes_raw = self.prod_size_var.get().strip()
         ftypes_raw = self.prod_fabric_type_var.get().strip()
         fcolors_raw = self.prod_fabric_color_var.get().strip()
@@ -858,7 +861,9 @@ class ProductsCatalogMethodsMixin:
         size_tokens = [_normalize_size(s) for s in size_tokens]
 
         from itertools import product
-        combos = list(product(category_tokens, size_tokens, ft_tokens, fc_tokens, pn_tokens)) or [( '', '', '', '', '' )]
+        # Build combinations only across size / fabric type / color / print.
+        # Category stays as the full comma-joined list (category_value).
+        combos = list(product(size_tokens, ft_tokens, fc_tokens, pn_tokens)) or [( '', '', '', '' )]
 
         existing = set()
         try:
@@ -868,31 +873,31 @@ class ProductsCatalogMethodsMixin:
             existing = set()
 
         if len(combos) == 1:
-            only_cat, only_sz, only_ft, only_fc, only_pn = combos[0]
-            single_key = (name, only_cat, only_sz, only_ft, only_fc, only_pn)
+            only_sz, only_ft, only_fc, only_pn = combos[0]
+            single_key = (name, category_value, only_sz, only_ft, only_fc, only_pn)
             if single_key in existing:
                 messagebox.showinfo(
                     "כפילות",
             "המוצר עם הנתונים הללו כבר קיים במערכת:\n"
-            f"שם: {name}\nתת קטגוריה: {only_cat or '-'}\nמידה: {only_sz or '-'}\nסוג בד: {only_ft or '-'}\nצבע בד: {only_fc or '-'}\nשם פרינט: {only_pn or '-'}"
+            f"שם: {name}\nתת קטגוריה: {category_value or '-'}\nמידה: {only_sz or '-'}\nסוג בד: {only_ft or '-'}\nצבע בד: {only_fc or '-'}\nשם פרינט: {only_pn or '-'}"
                 )
                 return
 
         added = 0
         try:
-            for cat, sz, ft, fc, pn in combos:
-                key = (name, cat, sz, ft, fc, pn)
+            for sz, ft, fc, pn in combos:
+                key = (name, category_value, sz, ft, fc, pn)
                 if key in existing:
                     continue
                 new_id = self.data_processor.add_product_catalog_entry(
-                    name, sz, ft, fc, pn, cat, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw
+                    name, sz, ft, fc, pn, category_value, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw
                 )
                 existing.add(key)
                 added += 1
                 fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
                 main_category_value = self.prod_main_category_var.get().strip() or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
-                    new_id, name, main_category_value, cat, sz, ft, fc, pn, fabric_category_value,
+                    new_id, name, main_category_value, category_value, sz, ft, fc, pn, fabric_category_value,
                     ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
