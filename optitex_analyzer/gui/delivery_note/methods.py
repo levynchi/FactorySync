@@ -21,8 +21,6 @@ class DeliveryNoteMethodsMixin:
             names = sorted({n for n in names})
             if hasattr(self, 'pkg_driver_combo'):
                 self.pkg_driver_combo['values'] = names
-            if hasattr(self, 'fs_pkg_driver_combo'):
-                self.fs_pkg_driver_combo['values'] = names
         except Exception:
             pass
 
@@ -30,431 +28,11 @@ class DeliveryNoteMethodsMixin:
         self._delivery_lines = []
         self._packages = []
 
-        # State for fabrics shipment sub-tab
-        self._fs_lines = []  # list of inventory records selected for shipment
-        self._fs_packages = []
-
-    # ===== Fabrics Shipment (שליחת בדים) handlers =====
-    def _fs_add_fabric_by_barcode(self):
-        try:
-            barcode = (self.fs_barcode_var.get() or '').strip()
-            if not barcode:
-                return
-            inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
-            match = None
-            for r in inv:
-                if str(r.get('barcode')) == str(barcode):
-                    match = r; break
-            if not match:
-                try: messagebox.showwarning('לא נמצא', 'ברקוד לא נמצא במלאי הבדים')
-                except Exception: pass
-                return
-            # Append to table
-            vals = (
-                match.get('barcode',''), match.get('fabric_type',''), match.get('color_name',''),
-                match.get('color_no',''), match.get('design_code',''), match.get('width',''),
-                f"{match.get('net_kg',0):.2f}", f"{match.get('meters',0):.2f}", f"{match.get('price',0):.2f}",
-                match.get('location',''), match.get('status','במלאי')
-            )
-            self.fs_tree.insert('', 'end', values=vals)
-            self.fs_barcode_var.set('')
-            self._fs_update_summary()
-        except Exception:
-            pass
-
-    def _fs_remove_selected(self):
-        try:
-            for it in self.fs_tree.selection():
-                self.fs_tree.delete(it)
-            self._fs_update_summary()
-        except Exception:
-            pass
-
-    def _fs_clear_all(self):
-        try:
-            for it in self.fs_tree.get_children():
-                self.fs_tree.delete(it)
-            self._fs_update_summary()
-        except Exception:
-            pass
-
-    def _fs_update_summary(self):
-        try:
-            count = len(self.fs_tree.get_children())
-            if hasattr(self, 'fs_summary_var'):
-                self.fs_summary_var.set(f"{count} בדים")
-        except Exception:
-            pass
-
-    def _fs_collect_packages(self):
-        # collect from fs_packages_tree to list of dicts
-        pkgs = []
-        try:
-            for it in self.fs_packages_tree.get_children():
-                t, q, d = self.fs_packages_tree.item(it, 'values') or ('', '', '')
-                if t:
-                    pkgs.append({'package_type': t, 'quantity': q, 'driver': d})
-        except Exception:
-            pass
-        return pkgs
-
-    def _fs_save_shipment(self):
-        try:
-            # collect barcodes from table
-            barcodes = []
-            for it in self.fs_tree.get_children():
-                vals = self.fs_tree.item(it, 'values') or []
-                if vals:
-                    barcodes.append(str(vals[0]))
-            if not barcodes:
-                try: messagebox.showwarning('אין נתונים', 'לא נוספו בדים לשליחה')
-                except Exception: pass
-                return
-            packages = self._fs_collect_packages()
-            new_id = self.data_processor.add_fabrics_shipment(barcodes, packages)
-            # Optionally update status of shipped fabrics
-            for bc in barcodes:
-                try:
-                    self.data_processor.update_fabric_status(bc, 'נשלח')
-                except Exception:
-                    pass
-            try: messagebox.showinfo('נשמר', f'תעודת שליחת בדים נשמרה (ID: {new_id})')
-            except Exception: pass
-            # clear UI
-            self._fs_clear_all(); self._fs_clear_packages(); self._fs_refresh_shipments_list()
-        except Exception as e:
-            try: messagebox.showerror('שגיאה', str(e))
-            except Exception: pass
-
-    # Transport helpers (fs)
-    def _fs_add_package_line(self):
-        try:
-            pkg_type = (self.fs_pkg_type_var.get() or '').strip()
-            qty = (self.fs_pkg_qty_var.get() or '').strip()
-            driver = (self.fs_pkg_driver_var.get() or '').strip()
-            if not pkg_type:
-                return
-            self.fs_packages_tree.insert('', 'end', values=(pkg_type, qty, driver))
-            self.fs_pkg_qty_var.set('')
-        except Exception:
-            pass
-
-    def _fs_delete_selected_package(self):
-        try:
-            sel = self.fs_packages_tree.selection()
-            for item in sel:
-                self.fs_packages_tree.delete(item)
-        except Exception:
-            pass
-
-    def _fs_clear_packages(self):
-        try:
-            for item in self.fs_packages_tree.get_children():
-                self.fs_packages_tree.delete(item)
-        except Exception:
-            pass
-
-    # Saved shipments list handlers
-    def _fs_refresh_shipments_list(self):
-        try:
-            self.data_processor.refresh_fabrics_shipments()
-            tree = getattr(self, 'fabrics_shipments_tree', None)
-            if not tree:
-                return
-            for it in tree.get_children():
-                tree.delete(it)
-            rows = getattr(self.data_processor, 'fabrics_shipments', []) or []
-            for r in rows:
-                pkg_summary = ', '.join([f"{p.get('package_type','')}×{p.get('quantity','')} ({p.get('driver','')})" for p in (r.get('packages') or [])])
-                tree.insert('', 'end', values=(r.get('id',''), r.get('date',''), r.get('count_barcodes',0), pkg_summary, '🗑'))
-        except Exception:
-            pass
-
-    def _fs_on_click_shipments(self, event):
-        tree = getattr(self, 'fabrics_shipments_tree', None)
-        if not tree:
-            return
-        region = tree.identify('region', event.x, event.y)
-        if region != 'cell':
-            return
-        col = tree.identify_column(event.x)
-        if col != '#5':
-            return
-        item_id = tree.identify_row(event.y)
-        if not item_id:
-            return
-        values = tree.item(item_id, 'values')
-        if not values:
-            return
-        try:
-            rec_id = int(values[0])
-        except Exception:
-            return
-        try:
-            if not messagebox.askyesno('אישור', f"למחוק תעודת שליחת בדים {rec_id}?"):
-                return
-        except Exception:
-            pass
-        if self.data_processor.delete_fabrics_shipment(rec_id):
-            self._fs_refresh_shipments_list()
-
-    def _open_selected_fabrics_shipment_view(self, event=None):
-        """Open a detail window for a fabrics shipment with 'Open in Excel' action."""
-        try:
-            tree = getattr(self, 'fabrics_shipments_tree', None)
-            if not tree:
-                return
-            sel = tree.selection()
-            if not sel:
-                return
-            vals = tree.item(sel[0], 'values')
-            if not vals:
-                return
-            try:
-                rec_id = int(vals[0])
-            except Exception:
-                return
-            # Find the full record
-            self.data_processor.refresh_fabrics_shipments()
-            rec = None
-            for r in (getattr(self.data_processor, 'fabrics_shipments', []) or []):
-                if int(r.get('id', -1)) == rec_id:
-                    rec = r; break
-            if not rec:
-                return
-            # Build view window
-            win = tk.Toplevel(self.notebook)
-            win.title(f"שליחת בדים #{rec.get('id')}")
-            win.geometry('820x560')
-            win.transient(self.notebook.winfo_toplevel())
-
-            header = tk.Frame(win, pady=6)
-            header.pack(fill='x')
-            def _lbl(text):
-                return tk.Label(header, text=text, anchor='w')
-            _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
-            _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
-            _lbl(f"מס׳ בדים (ברקודים): {rec.get('count_barcodes',0)}").grid(row=0,column=2,padx=6,sticky='w')
-
-            body = tk.PanedWindow(win, orient='vertical')
-            body.pack(fill='both', expand=True, padx=8, pady=4)
-
-            # Barcodes list
-            bar_frame = tk.LabelFrame(body, text='ברקודים')
-            body.add(bar_frame, stretch='always')
-            bc_cols = ('barcode',)
-            bc_tree = ttk.Treeview(bar_frame, columns=bc_cols, show='headings', height=10)
-            bc_tree.heading('barcode', text='ברקוד')
-            bc_tree.column('barcode', width=200, anchor='center')
-            for bc in (rec.get('barcodes') or []):
-                bc_tree.insert('', 'end', values=(bc,))
-            bc_tree.pack(fill='both', expand=True, padx=4, pady=4)
-
-            # Packages list
-            pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
-            body.add(pkg_frame, stretch='always')
-            pkg_cols = ('package_type','quantity','driver')
-            pkg_tree = ttk.Treeview(pkg_frame, columns=pkg_cols, show='headings', height=6)
-            pkg_headers = {'package_type':'פריט הובלה','quantity':'כמות','driver':'מוביל'}
-            pkg_widths = {'package_type':140,'quantity':70,'driver':120}
-            for c in pkg_cols:
-                pkg_tree.heading(c, text=pkg_headers[c])
-                pkg_tree.column(c, width=pkg_widths[c], anchor='center')
-            for p in (rec.get('packages') or []):
-                pkg_tree.insert('', 'end', values=(p.get('package_type'), p.get('quantity'), p.get('driver')))
-            pkg_tree.pack(fill='both', expand=True, padx=4, pady=4)
-
-            # Actions
-            btns = tk.Frame(win)
-            btns.pack(fill='x', pady=6, padx=4)
-
-            def _export_fs_to_excel_and_open():
-                try:
-                    from openpyxl import Workbook
-                    from openpyxl.styles import Border, Side, Alignment, Font
-                    try:
-                        from openpyxl.worksheet.page import PageMargins  # type: ignore
-                    except Exception:
-                        PageMargins = None  # type: ignore
-                except Exception as e:
-                    try:
-                        messagebox.showerror('שגיאה', f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
-                    except Exception:
-                        pass
-                    return
-                try:
-                    wb = Workbook(); ws = wb.active; ws.title = 'שליחת בדים'
-                    try:
-                        ws.sheet_view.rightToLeft = True
-                    except Exception:
-                        pass
-                    # Page setup
-                    try: ws.page_setup.orientation = 'portrait'
-                    except Exception: pass
-                    try: ws.page_setup.paperSize = 9
-                    except Exception: pass
-                    try: ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0
-                    except Exception: pass
-                    try:
-                        if PageMargins:
-                            ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.75, bottom=0.75, header=0.3, footer=0.3)
-                    except Exception:
-                        pass
-
-                    # Header
-                    ws.append(['מסמך', f"שליחת בדים #{rec.get('id')}"])
-                    ws.append(['תאריך', rec.get('date')])
-                    ws.append(['מס׳ בדים', rec.get('count_barcodes',0)])
-                    try:
-                        for row in ws.iter_rows(min_row=1, max_row=3, min_col=1, max_col=2):
-                            row[0].font = Font(bold=True, size=12)
-                            row[0].alignment = Alignment(horizontal='right')
-                            row[1].alignment = Alignment(horizontal='right')
-                    except Exception:
-                        pass
-                    ws.append([])
-
-                    # Barcodes table
-                    ws.append(['ברקודים'])
-                    r = ws.max_row
-                    try:
-                        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-                        tcell = ws.cell(row=r, column=1)
-                        tcell.font = Font(bold=True, size=12)
-                        tcell.alignment = Alignment(horizontal='right')
-                    except Exception:
-                        pass
-                    ws.append(['ברקוד'])
-                    start = ws.max_row + 1
-                    for bc in (rec.get('barcodes') or []):
-                        ws.append([bc])
-                    end = ws.max_row
-                    try:
-                        thin = Side(style='thin', color='000000')
-                        border = Border(left=thin, right=thin, top=thin, bottom=thin)
-                        for row in ws.iter_rows(min_row=start-1, max_row=end, min_col=1, max_col=1):
-                            for cell in row:
-                                cell.border = border
-                                if cell.row >= start:
-                                    cell.font = Font(size=11)
-                            try:
-                                row[0].alignment = Alignment(horizontal='right')
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
-
-                    ws.append([])
-                    # Packages table
-                    ws.append(['חבילות'])
-                    r = ws.max_row
-                    try:
-                        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=3)
-                        tcell = ws.cell(row=r, column=1)
-                        tcell.font = Font(bold=True, size=12)
-                        tcell.alignment = Alignment(horizontal='right')
-                    except Exception:
-                        pass
-                    ws.append(['פריט הובלה', 'כמות', 'מוביל'])
-                    start2 = ws.max_row + 1
-                    for p in (rec.get('packages') or []):
-                        ws.append([p.get('package_type',''), p.get('quantity',''), p.get('driver','')])
-                    end2 = ws.max_row
-                    try:
-                        thin = Side(style='thin', color='000000')
-                        border = Border(left=thin, right=thin, top=thin, bottom=thin)
-                        for row in ws.iter_rows(min_row=start2-1, max_row=end2, min_col=1, max_col=3):
-                            for cell in row:
-                                cell.border = border
-                                if cell.row >= start2:
-                                    cell.font = Font(size=11)
-                            try:
-                                row[0].alignment = Alignment(horizontal='right')
-                                row[1].alignment = Alignment(horizontal='center')
-                                row[2].alignment = Alignment(horizontal='right')
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
-
-                    # Autosize columns
-                    try:
-                        for col in ws.columns:
-                            max_len = 0; col_letter = col[0].column_letter
-                            for cell in col:
-                                val = str(cell.value) if cell.value is not None else ''
-                                if len(val) > max_len: max_len = len(val)
-                            ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
-                    except Exception:
-                        pass
-
-                    # Save to exports folder (subfolder fabrics_shipments)
-                    import os
-                    base_dir = os.path.join(os.getcwd(), 'exports', 'fabrics_shipments')
-                    try:
-                        os.makedirs(base_dir, exist_ok=True)
-                    except Exception:
-                        pass
-                    safe_id = rec.get('id')
-                    safe_date = (rec.get('date') or '').replace('/', '-').replace(':', '-')
-                    fname = f"fabrics_shipment_{safe_id}_{safe_date}.xlsx" if safe_id is not None else f"fabrics_shipment_{safe_date}.xlsx"
-                    out_path = os.path.join(base_dir, fname)
-                    try:
-                        wb.save(out_path)
-                    except PermissionError:
-                        try:
-                            from datetime import datetime as _dt
-                            ts = _dt.now().strftime('%H%M%S')
-                            alt_path = out_path.replace('.xlsx', f'_{ts}.xlsx')
-                            wb.save(alt_path)
-                            out_path = alt_path
-                        except Exception:
-                            try:
-                                messagebox.showerror('שגיאה', 'שמירת קובץ נכשלה (קובץ פתוח?)')
-                            except Exception:
-                                pass
-                            return
-                    except Exception as e:
-                        try:
-                            messagebox.showerror('שגיאה', f'שמירת קובץ נכשלה:\n{e}')
-                        except Exception:
-                            pass
-                        return
-                    try:
-                        os.startfile(out_path)  # type: ignore[attr-defined]
-                    except Exception:
-                        try:
-                            messagebox.showinfo('נשמר', f"הקובץ נשמר ב:\n{out_path}\n(לא הצלחתי לפתוח אוטומטית)")
-                        except Exception:
-                            pass
-                except Exception as e:
-                    try:
-                        messagebox.showerror('שגיאה', str(e))
-                    except Exception:
-                        pass
-
-            tk.Button(btns, text='🖨 פתח באקסל', command=_export_fs_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
-            tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')
-        except Exception:
-            pass
-
     # ---- Helpers (products / variants) ----
     def _refresh_delivery_products_allowed(self, initial: bool = False):
         try:
             catalog = getattr(self.data_processor, 'products_catalog', []) or []
-            # Optional filtering by selected main category using product_model_names list
-            selected_mc = ''
-            try:
-                if hasattr(self, 'dn_main_category_var'):
-                    selected_mc = (self.dn_main_category_var.get() or '').strip()
-            except Exception:
-                selected_mc = ''
-            if selected_mc:
-                model_names = getattr(self.data_processor, 'product_model_names', []) or []
-                allowed_models = { (m.get('name') or '').strip() for m in model_names if (m.get('main_category') or 'בגדים') == selected_mc and (m.get('name') or '').strip() }
-                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if (rec.get('name') or '').strip() in allowed_models })
-            else:
-                names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
+            names = sorted({ (rec.get('name') or '').strip() for rec in catalog if rec.get('name') })
             self._delivery_products_allowed = names
             self._delivery_products_allowed_full = list(names)
             if hasattr(self, 'dn_product_combo'):
@@ -462,10 +40,8 @@ class DeliveryNoteMethodsMixin:
                     cur = self.dn_product_var.get()
                     self.dn_product_combo['values'] = self._delivery_products_allowed_full
                     if cur and cur not in self._delivery_products_allowed_full:
-                        # Clear selection if it no longer valid under current main category
                         self.dn_product_var.set('')
-                except Exception:
-                    pass
+                except Exception: pass
         except Exception:
             self._delivery_products_allowed = []
             self._delivery_products_allowed_full = []
@@ -576,132 +152,16 @@ class DeliveryNoteMethodsMixin:
             else:
                 # fallback: blank
                 self.dn_fabric_category_var.set('')
-
-            # Also auto-fill print name from best-matching variant if user hasn't picked one yet
-            try:
-                if hasattr(self, 'dn_print_name_var'):
-                    # Only if 'print_name' is enabled for the selected main category
-                    mc = ''
-                    try:
-                        mc = (self.dn_main_category_var.get() or '').strip() if hasattr(self, 'dn_main_category_var') else ''
-                    except Exception:
-                        mc = ''
-                    allow_print = False
-                    try:
-                        if mc:
-                            mcs = getattr(self.data_processor, 'main_categories', []) or []
-                            for c in mcs:
-                                if (c.get('name') or '').strip() == mc:
-                                    fields = (c.get('fields') or [])
-                                    # Optional resolver API
-                                    if (not fields) and hasattr(self.data_processor, 'get_main_category_fields'):
-                                        try:
-                                            fields = self.data_processor.get_main_category_fields(c.get('id')) or []
-                                        except Exception:
-                                            fields = []
-                                    allow_print = 'print_name' in (fields or [])
-                                    break
-                    except Exception:
-                        allow_print = False
-                    if allow_print:
-                        cur_pn = (self.dn_print_name_var.get() or '').strip()
-                        cand_pn = ((best or {}).get('print_name') or '').strip()
-                        if cand_pn and not cur_pn:
-                            # Ensure combobox (if exists) contains the candidate
-                            if hasattr(self, 'dn_print_name_combo'):
-                                try:
-                                    vals = list(self.dn_print_name_combo['values'] or [])
-                                    if cand_pn not in vals:
-                                        vals.append(cand_pn)
-                                        seen = set(); vals = [x for x in vals if not (x in seen or seen.add(x))]
-                                        self.dn_print_name_combo['values'] = vals
-                                except Exception:
-                                    pass
-                            self.dn_print_name_var.set(cand_pn)
-                    else:
-                        # Ensure it stays empty when print_name not relevant
-                        try:
-                            self.dn_print_name_var.set('')
-                        except Exception:
-                            pass
-            except Exception:
-                pass
         except Exception:
             try:
                 self.dn_fabric_category_var.set('')
             except Exception:
                 pass
 
-    def _refresh_delivery_print_name_options(self):
-        """Refresh available print names optionally filtered by selected main category when product doesn’t constrain them."""
-        try:
-            product = (self.dn_product_var.get() or '').strip()
-            names = []
-            if product:
-                catalog = getattr(self.data_processor, 'products_catalog', []) or []
-                for rec in catalog:
-                    if (rec.get('name') or '').strip() == product:
-                        pn = (rec.get('print_name') or '').strip()
-                        if pn:
-                            names.append(pn)
-                names = sorted({n for n in names})
-            if not names:
-                selected_mc = ''
-                try:
-                    if hasattr(self, 'dn_main_category_var'):
-                        selected_mc = (self.dn_main_category_var.get() or '').strip()
-                except Exception:
-                    selected_mc = ''
-                plist = getattr(self.data_processor, 'product_print_names', []) or []
-                if selected_mc:
-                    names = [ (r.get('name') or '') for r in plist if r.get('name') and (r.get('main_category') or 'בגדים') == selected_mc ]
-                else:
-                    names = [ (r.get('name') or '') for r in plist if r.get('name') ]
-        except Exception:
-            names = []
-        # If a print-name combobox exists (future-proof), set it
-        try:
-            if hasattr(self, 'dn_print_name_combo'):
-                self.dn_print_name_combo['values'] = names
-        except Exception:
-            pass
-
     # ---- Lines ops ----
     def _add_delivery_line(self):
         product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()
-        fabric_type = self.dn_fabric_type_var.get().strip(); fabric_color = self.dn_fabric_color_var.get().strip()
-        # Respect main category: only take print_name if the field exists for this category
-        try:
-            mc = (self.dn_main_category_var.get() or '').strip() if hasattr(self, 'dn_main_category_var') else ''
-        except Exception:
-            mc = ''
-        allow_print = False
-        allow_barcode = False
-        try:
-            if mc:
-                mcs = getattr(self.data_processor, 'main_categories', []) or []
-                for c in mcs:
-                    if (c.get('name') or '').strip() == mc:
-                        fields = (c.get('fields') or [])
-                        if (not fields) and hasattr(self.data_processor, 'get_main_category_fields'):
-                            try:
-                                fields = self.data_processor.get_main_category_fields(c.get('id')) or []
-                            except Exception:
-                                fields = []
-                        allow_print = 'print_name' in (fields or [])
-                        allow_barcode = 'barcode' in (fields or [])
-                        break
-        except Exception:
-            allow_print = False
-            allow_barcode = False
-        raw_print = (self.dn_print_name_var.get() or '').strip()
-        print_name = raw_print if allow_print else ''
-        raw_barcode = ''
-        try:
-            raw_barcode = (self.dn_barcode_var.get() or '').strip()
-        except Exception:
-            raw_barcode = ''
-        barcode = raw_barcode if allow_barcode else ''
+        fabric_type = self.dn_fabric_type_var.get().strip(); fabric_color = self.dn_fabric_color_var.get().strip(); print_name = self.dn_print_name_var.get().strip() or 'חלק'
         fabric_category = getattr(self, 'dn_fabric_category_var', None)
         fabric_category = fabric_category.get().strip() if fabric_category else ''
         if not product or not qty_raw:
@@ -712,35 +172,16 @@ class DeliveryNoteMethodsMixin:
             qty = int(qty_raw); assert qty > 0
         except Exception:
             messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
-        # Respect main category for sub_category as well
         category = getattr(self, 'dn_category_var', None)
         category = category.get().strip() if category else ''
-        try:
-            mc_fields = []
-            mc = (self.dn_main_category_var.get() or '').strip() if hasattr(self, 'dn_main_category_var') else ''
-            if mc:
-                for c in getattr(self.data_processor, 'main_categories', []) or []:
-                    if (c.get('name') or '').strip() == mc:
-                        mc_fields = (c.get('fields') or [])
-                        if (not mc_fields) and hasattr(self.data_processor, 'get_main_category_fields'):
-                            try:
-                                mc_fields = self.data_processor.get_main_category_fields(c.get('id')) or []
-                            except Exception:
-                                mc_fields = []
-                        break
-            if 'sub_category' not in (mc_fields or []):
-                category = ''
-        except Exception:
-            pass
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'barcode': barcode, 'category': category, 'quantity': qty, 'note': note}
+        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
         self._delivery_lines.append(line)
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,quantity,note
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,qty,note))
+        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
+        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
+        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
         self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
-        try:
-            self.dn_product_combo['values'] = self._delivery_products_allowed_full
-        except Exception:
-            pass
+        try: self.dn_product_combo['values'] = self._delivery_products_allowed_full
+        except Exception: pass
         self._update_delivery_summary()
 
     def _delete_delivery_selected(self):
@@ -797,22 +238,11 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             pass
         try:
-            # Extra fields from entry header
-            arrival_date = ''
-            supplier_doc_number = ''
-            try:
-                arrival_date = (getattr(self, 'dn_arrival_date_var', None).get() or '').strip() if hasattr(self, 'dn_arrival_date_var') else ''
-            except Exception:
-                arrival_date = ''
-            try:
-                supplier_doc_number = (getattr(self, 'dn_supplier_doc_number_var', None).get() or '').strip() if hasattr(self, 'dn_supplier_doc_number_var') else ''
-            except Exception:
-                supplier_doc_number = ''
             # שימוש בשיטה החדשה לאחר פיצול הקבצים (עם נפילה אחורה)
             if hasattr(self.data_processor, 'add_delivery_note'):
-                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
+                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages)
             else:
-                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note', arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
             self._clear_packages()
@@ -919,19 +349,15 @@ class DeliveryNoteMethodsMixin:
             # שורות מוצרים
             lines_frame = tk.LabelFrame(body, text='שורות מוצרים')
             body.add(lines_frame, stretch='always')
-            # Include barcode column for categories like Fabrics; remains empty otherwise
-            lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','quantity','note')
+            lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
             lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=8)
-            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','barcode':'בר קוד','quantity':'כמות','note':'הערה'}
-            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'barcode':110,'quantity':60,'note':160}
+            headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
+            widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'quantity':60,'note':160}
             for c in lines_cols:
                 lines_tree.heading(c, text=headers_map[c])
                 lines_tree.column(c, width=widths_map[c], anchor='center')
             for line in rec.get('lines', []) or []:
-                lines_tree.insert('', 'end', values=(
-                    line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'),
-                    line.get('fabric_category',''), line.get('print_name'), line.get('barcode',''), line.get('quantity'), line.get('note')
-                ))
+                lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')))
             lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
             # חבילות הובלה
             pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
@@ -959,10 +385,6 @@ class DeliveryNoteMethodsMixin:
                         from openpyxl.worksheet.page import PageMargins  # type: ignore
                     except Exception:
                         PageMargins = None  # type: ignore
-                    try:
-                        from openpyxl.drawing.image import Image as XLImage  # type: ignore
-                    except Exception:
-                        XLImage = None  # type: ignore
                 except Exception as e:
                     try:
                         messagebox.showerror("שגיאה", f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
@@ -994,11 +416,10 @@ class DeliveryNoteMethodsMixin:
                         pass
                     try:
                         if PageMargins:
-                            # Excel Narrow preset: Top/Bottom 1.91 cm (~0.75"), Left/Right 0.64 cm (~0.25"), Header/Footer 0.76 cm (~0.3")
-                            ws.page_margins = PageMargins(left=0.25, right=0.25, top=0.75, bottom=0.75, header=0.3, footer=0.3)
+                            ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
                     except Exception:
                         pass
-                    # Business header (from settings): Business Name + VAT/Type line + optional logo
+                    # Business header (from settings): Business Name + VAT/Type line
                     try:
                         s = getattr(self, 'settings', None)
                         def _sget(k, default=""):
@@ -1009,12 +430,40 @@ class DeliveryNoteMethodsMixin:
                         biz_name = _sget('business.name')
                         biz_type = _sget('business.type')
                         biz_vat  = _sget('business.vat_id')
-                        biz_logo = _sget('business.logo_path')
                     except Exception:
-                        biz_name = biz_type = biz_vat = biz_logo = ""
-                    # Defer logo insertion until after columns are autosized; remember path and desired height
-                    pending_logo_path = biz_logo if (biz_logo and os.path.exists(biz_logo)) else ""
-                    desired_header_height_in = 48.75 / 25.4  # ≈1.92 inches
+                        biz_name = biz_type = biz_vat = ""
+                    # Insert styled business header if available
+                    try:
+                        last_col = 4  # we use 4 columns in the table below
+                        if biz_name:
+                            ws.append([biz_name])
+                            r = ws.max_row
+                            try:
+                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                            except Exception:
+                                pass
+                            try:
+                                ws.cell(row=r, column=1).font = Font(size=16, bold=True)
+                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                        if (biz_type or biz_vat):
+                            line = f"{(biz_type or '').strip()} {(biz_vat or '').strip()}".strip()
+                            ws.append([line])
+                            r = ws.max_row
+                            try:
+                                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                            except Exception:
+                                pass
+                            try:
+                                ws.cell(row=r, column=1).font = Font(size=12)
+                                ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
+                            except Exception:
+                                pass
+                        if biz_name or biz_vat or biz_type:
+                            ws.append([])  # spacing
+                    except Exception:
+                        pass
 
                     # Document info header (keys and values)
                     doc_info_start = ws.max_row + 1
@@ -1171,48 +620,6 @@ class DeliveryNoteMethodsMixin:
                             ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
                     except Exception:
                         pass
-                    # Insert the logo banner at the very top, sized to the full printable A4 width (independent of column widths)
-                    try:
-                        if XLImage and pending_logo_path:
-                            # Compute physical printable width of A4 and use it directly
-                            try:
-                                A4_WIDTH_INCH = 8.27
-                                lm = float(getattr(ws.page_margins, 'left', 0.25) or 0.25)
-                                rm = float(getattr(ws.page_margins, 'right', 0.25) or 0.25)
-                                printable_inch = max(4.0, A4_WIDTH_INCH - lm - rm)
-                                # Safety pad so the banner never touches printable edge and won't be clipped
-                                safety_in = 0.35
-                                if printable_inch > safety_in:
-                                    printable_inch -= safety_in
-                                total_px = int(printable_inch * 96.0)
-                            except Exception:
-                                total_px = int(8.0 * 96.0)
-                            # Prepare image
-                            img_obj = XLImage(pending_logo_path)
-                            img_obj.width = max(200, int(total_px))
-                            img_obj.height = int(desired_header_height_in * 96.0)
-                            # Insert two rows at top so banner sits above all content
-                            try:
-                                ws.insert_rows(1, amount=2)
-                            except Exception:
-                                pass
-                            try:
-                                img_obj.anchor = 'A1'
-                            except Exception:
-                                pass
-                            ws.add_image(img_obj)
-                            # Set row 1 height to banner height in points (1in = 72pt)
-                            try:
-                                ws.row_dimensions[1].height = desired_header_height_in * 72.0
-                            except Exception:
-                                pass
-                            # Keep a small spacer row
-                            try:
-                                ws.row_dimensions[2].height = 6
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
                     # Save to exports folder
                     base_dir = os.path.join(os.getcwd(), 'exports', 'delivery_notes')
                     try:
@@ -1266,3 +673,355 @@ class DeliveryNoteMethodsMixin:
                 messagebox.showerror("שגיאה", str(e))
             except Exception:
                 pass
+
+    # ===== Fabrics Send (שליחת בדים) =====
+    def _fs_add_fabric_by_barcode(self):
+        """Add fabric record by barcode into the shipment list (from fabrics inventory)."""
+        try:
+            barcode = (getattr(self, 'fs_barcode_var', None).get() or '').strip()
+        except Exception:
+            barcode = ''
+        if not barcode:
+            return
+        # find in inventory
+        try:
+            records = getattr(self.data_processor, 'fabrics_inventory', []) or []
+        except Exception:
+            records = []
+        rec = next((r for r in records if str(r.get('barcode') or '').strip() == barcode), None)
+        if not rec:
+            try: messagebox.showwarning('לא נמצא', 'ברקוד זה לא נמצא במלאי הבדים')
+            except Exception: pass
+            return
+        # prevent duplicates in current table
+        try:
+            for iid in self.fs_tree.get_children():
+                vals = self.fs_tree.item(iid, 'values') or []
+                if vals and str(vals[0]) == barcode:
+                    try: messagebox.showinfo('מידע', 'ברקוד זה כבר ברשימה')
+                    except Exception: pass
+                    return
+        except Exception:
+            pass
+        values = (
+            rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''),
+            rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')
+        )
+        try:
+            self.fs_tree.insert('', 'end', values=values)
+            self.fs_barcode_var.set('')
+        except Exception:
+            pass
+        self._fs_update_summary()
+
+    def _fs_remove_selected(self):
+        try:
+            sel = self.fs_tree.selection()
+            for item in sel:
+                self.fs_tree.delete(item)
+        except Exception:
+            pass
+        self._fs_update_summary()
+
+    def _fs_clear_all(self):
+        try:
+            for item in self.fs_tree.get_children():
+                self.fs_tree.delete(item)
+        except Exception:
+            pass
+        self._fs_update_summary()
+
+    def _fs_update_summary(self):
+        try:
+            count = len(self.fs_tree.get_children())
+        except Exception:
+            count = 0
+        try:
+            self.fs_summary_var.set(f"{count} בדים")
+        except Exception:
+            pass
+
+    # Packages helpers for fabrics send
+    def _fs_add_package_line(self):
+        ptype = (getattr(self, 'fs_pkg_type_var', None).get() or '').strip()
+        qty_raw = (getattr(self, 'fs_pkg_qty_var', None).get() or '').strip()
+        driver = (getattr(self, 'fs_pkg_driver_var', None).get() or '').strip()
+        if not ptype or not qty_raw:
+            try: messagebox.showerror('שגיאה', 'יש לבחור פריט הובלה ולהזין כמות')
+            except Exception: pass
+            return
+        try:
+            qty = int(qty_raw); assert qty > 0
+        except Exception:
+            try: messagebox.showerror('שגיאה', 'כמות חייבת להיות מספר חיובי')
+            except Exception: pass
+            return
+        try:
+            self._fs_packages.append({'package_type': ptype, 'quantity': qty, 'driver': driver})
+        except Exception:
+            self._fs_packages = [{'package_type': ptype, 'quantity': qty, 'driver': driver}]
+        try:
+            self.fs_packages_tree.insert('', 'end', values=(ptype, qty, driver))
+            self.fs_pkg_qty_var.set('')
+        except Exception:
+            pass
+
+    def _fs_delete_selected_package(self):
+        try:
+            sel = self.fs_packages_tree.selection()
+            all_items = self.fs_packages_tree.get_children()
+            indices = [all_items.index(i) for i in sel]
+            for i in sel:
+                self.fs_packages_tree.delete(i)
+            for idx in sorted(indices, reverse=True):
+                if 0 <= idx < len(self._fs_packages):
+                    del self._fs_packages[idx]
+        except Exception:
+            pass
+
+    def _fs_clear_packages(self):
+        try:
+            self._fs_packages = []
+        except Exception:
+            pass
+        try:
+            for i in self.fs_packages_tree.get_children():
+                self.fs_packages_tree.delete(i)
+        except Exception:
+            pass
+
+    def _fs_save_shipment(self):
+        """Save fabrics shipment: set status to 'נשלח' for barcodes and persist a shipment doc."""
+        # collect barcodes from table
+        barcodes = []
+        try:
+            for iid in self.fs_tree.get_children():
+                vals = self.fs_tree.item(iid, 'values') or []
+                if vals:
+                    barcodes.append(str(vals[0]))
+        except Exception:
+            pass
+        if not barcodes:
+            try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
+            except Exception: pass
+            return
+        # packages
+        packages = []
+        try:
+            for iid in self.fs_packages_tree.get_children():
+                vals = self.fs_packages_tree.item(iid, 'values') or []
+                if vals:
+                    try:
+                        packages.append({'package_type': vals[0], 'quantity': int(vals[1]), 'driver': vals[2] if len(vals) > 2 else ''})
+                    except Exception:
+                        packages.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
+        except Exception:
+            packages = []
+        # status update for each barcode
+        updated = 0
+        for bc in barcodes:
+            try:
+                if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'נשלח'):
+                    updated += 1
+            except Exception:
+                pass
+        # persist shipment in data processor
+        new_id = None
+        try:
+            if hasattr(self.data_processor, 'add_fabrics_shipment'):
+                # We can compute simple summary from the first row if available
+                ft = cn = cno = ''
+                net_kg = meters = 0
+                try:
+                    first_vals = self.fs_tree.item(self.fs_tree.get_children()[0], 'values') or []
+                    ft = first_vals[1] if len(first_vals) > 1 else ''
+                    cn = first_vals[2] if len(first_vals) > 2 else ''
+                    cno = first_vals[3] if len(first_vals) > 3 else ''
+                except Exception:
+                    pass
+                # sum net_kg/meters
+                try:
+                    for iid in self.fs_tree.get_children():
+                        vals = self.fs_tree.item(iid, 'values') or []
+                        if len(vals) >= 9:
+                            try:
+                                net_kg += float(str(vals[6]).replace(',', '.'))
+                            except Exception:
+                                pass
+                            try:
+                                meters += float(str(vals[7]).replace(',', '.'))
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                # date: reuse delivery note date if present
+                date_str = ''
+                try:
+                    date_str = (getattr(self, 'dn_date_var', None).get() or '').strip()
+                except Exception:
+                    date_str = ''
+                new_id = self.data_processor.add_fabrics_shipment(barcodes, packages, date_str=date_str, fabric_type=ft, color_name=cn, color_no=cno, net_kg=net_kg, meters=meters)
+        except Exception:
+            new_id = None
+        try:
+            if new_id:
+                messagebox.showinfo('הצלחה', f"נשמרה שליחת בדים (ID: {new_id}).\nעודכנו {updated} בדים לסטטוס 'נשלח'")
+            else:
+                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'נשלח'")
+        except Exception:
+            pass
+        # clear UI and refresh inventory tab if available
+        self._fs_clear_all(); self._fs_clear_packages()
+        try:
+            if hasattr(self, '_refresh_fabrics_table'):
+                self._refresh_fabrics_table()
+        except Exception:
+            pass
+        try:
+            self._fs_refresh_shipments_list()
+        except Exception:
+            pass
+
+    # Saved shipments list helpers (browse/delete/open)
+    def _fs_refresh_shipments_list(self):
+        try:
+            if hasattr(self.data_processor, 'refresh_fabrics_shipments'):
+                self.data_processor.refresh_fabrics_shipments()
+            records = getattr(self.data_processor, 'fabrics_shipments', []) or []
+        except Exception:
+            records = []
+        tree = getattr(self, 'fabrics_shipments_tree', None)
+        if not tree:
+            return
+        try:
+            for iid in tree.get_children():
+                tree.delete(iid)
+        except Exception:
+            pass
+        for rec in records:
+            tree.insert('', 'end', values=(
+                rec.get('id',''), rec.get('date',''), rec.get('count_barcodes',0), '🗑'
+            ))
+
+    def _fs_on_click_shipments(self, event):
+        tree = getattr(self, 'fabrics_shipments_tree', None)
+        if not tree:
+            return
+        region = tree.identify('region', event.x, event.y)
+        if region != 'cell':
+            return
+        col = tree.identify_column(event.x)
+        # delete column is now #4 after simplifying columns
+        if col != '#4':
+            return
+        row_id = tree.identify_row(event.y)
+        if not row_id:
+            return
+        values = tree.item(row_id, 'values') or []
+        if not values:
+            return
+        try:
+            rec_id = int(values[0])
+        except Exception:
+            return
+        try:
+            if not messagebox.askyesno('אישור', f"למחוק שליחת בדים ID {rec_id}?"):
+                return
+        except Exception:
+            pass
+        try:
+            if hasattr(self.data_processor, 'delete_fabrics_shipment') and self.data_processor.delete_fabrics_shipment(rec_id):
+                tree.delete(row_id)
+                try:
+                    messagebox.showinfo('נמחק', f"שליחת בדים {rec_id} נמחקה")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _open_selected_fabrics_shipment_view(self, event=None):
+        tree = getattr(self, 'fabrics_shipments_tree', None)
+        if not tree:
+            return
+        sel = tree.selection()
+        if not sel:
+            return
+        vals = tree.item(sel[0], 'values') or []
+        if not vals:
+            return
+        try:
+            ship_id = int(vals[0])
+        except Exception:
+            return
+        # find full record
+        try:
+            rec = next((r for r in getattr(self.data_processor, 'fabrics_shipments', []) if int(r.get('id',-1)) == ship_id), None)
+        except Exception:
+            rec = None
+        if not rec:
+            try: messagebox.showerror('שגיאה', 'רשומה לא נמצאה')
+            except Exception: pass
+            return
+        # Open a view window with meta + per-barcode details from inventory
+        win = tk.Toplevel(self.notebook)
+        win.title(f"שליחת בדים #{ship_id}")
+        win.geometry('720x520')
+        header = tk.Frame(win, pady=6)
+        header.pack(fill='x')
+        def _lbl(t):
+            return tk.Label(header, text=t, font=('Arial',10,'bold'))
+        _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
+        _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
+        # table of barcode details
+        body = tk.Frame(win)
+        body.pack(fill='both', expand=True, padx=8, pady=6)
+        cols = ('barcode','fabric_type','color','net_kg','meters')
+        tree2 = ttk.Treeview(body, columns=cols, show='headings', height=16)
+        tree2.heading('barcode', text='ברקוד')
+        tree2.heading('fabric_type', text='סוג בד')
+        tree2.heading('color', text='צבע')
+        tree2.heading('net_kg', text='ק"ג נטו')
+        tree2.heading('meters', text='מטרים')
+        tree2.column('barcode', width=160, anchor='center')
+        tree2.column('fabric_type', width=140, anchor='center')
+        tree2.column('color', width=120, anchor='center')
+        tree2.column('net_kg', width=90, anchor='center')
+        tree2.column('meters', width=90, anchor='center')
+        vs = ttk.Scrollbar(body, orient='vertical', command=tree2.yview)
+        tree2.configure(yscroll=vs.set)
+        tree2.grid(row=0, column=0, sticky='nsew'); vs.grid(row=0, column=1, sticky='ns')
+        body.grid_columnconfigure(0, weight=1); body.grid_rowconfigure(0, weight=1)
+        # map barcode -> inventory record for details
+        inventory = []
+        try:
+            inventory = getattr(self.data_processor, 'fabrics_inventory', []) or []
+        except Exception:
+            inventory = []
+        inv_map = {}
+        try:
+            inv_map = { str(r.get('barcode','')).strip(): r for r in inventory }
+        except Exception:
+            inv_map = {}
+        for bc in rec.get('barcodes', []) or []:
+            r = inv_map.get(str(bc).strip()) or {}
+            color = (r.get('color_name','') or '')
+            if r.get('color_no'):
+                color = f"{color} {r.get('color_no')}".strip()
+            try:
+                nk = f"{float(r.get('net_kg',0)):.2f}"
+            except Exception:
+                nk = r.get('net_kg',0)
+            try:
+                mt = f"{float(r.get('meters',0)):.2f}"
+            except Exception:
+                mt = r.get('meters',0)
+            tree2.insert('', 'end', values=(
+                bc,
+                r.get('fabric_type',''),
+                color,
+                nk,
+                mt
+            ))
+        btns = tk.Frame(win)
+        btns.pack(fill='x', pady=6)
+        tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')

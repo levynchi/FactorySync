@@ -15,7 +15,6 @@ from .suppliers_tab import SuppliersTabMixin
 from .shipments_tab import ShipmentsTabMixin
 from .products_balance_tab import ProductsBalanceTabMixin
 from .business_details_tab import BusinessDetailsTabMixin
-from .stickers_tab import StickersTabMixin
 
 
 class MainWindow(
@@ -30,7 +29,6 @@ class MainWindow(
     ShipmentsTabMixin,
     ProductsBalanceTabMixin,
     BusinessDetailsTabMixin,
-    StickersTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -103,9 +101,9 @@ class MainWindow(
         # Create each tab from its mixin
     # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
     # Returned (cut) drawings now embedded inside 'מנהל ציורים' tab
-        # Software management parent tab (contains Business Details)
+        # Business details tab
         try:
-            self._create_software_management_tab()
+            self._create_business_details_tab()
         except Exception:
             pass
         self._create_fabrics_inventory_tab()
@@ -121,11 +119,6 @@ class MainWindow(
         self._create_products_catalog_tab()
         self._create_drawings_manager_tab()
         self._create_suppliers_tab()
-        # Stickers tab
-        try:
-            self._create_stickers_tab()
-        except Exception:
-            pass
         # Shipments summary tab
         try:
             self._create_shipments_tab()
@@ -139,12 +132,6 @@ class MainWindow(
                 messagebox.showerror("שגיאה", f"טעינת טאב 'מאזן מוצרים ופריטים' נכשלה: {e}")
             except Exception:
                 pass
-
-        # Apply per-tab colors on the main notebook
-        try:
-            self._apply_tab_colors()
-        except Exception:
-            pass
 
         # ----- Footer / Status -----
         self._create_status_bar()
@@ -254,51 +241,6 @@ class MainWindow(
             self.root.update()
     
     # clear handled in mixin
-
-    def _apply_tab_colors(self):
-        """Assign a distinct background/accent color to each top-level tab in the main notebook."""
-        try:
-            style = ttk.Style(self.root)
-            try:
-                # Use a theme that allows background customization
-                style.theme_use('clam')
-            except Exception:
-                pass
-
-            palette = [
-                '#fef3c7',  # amber-100
-                '#e0f2fe',  # sky-100
-                '#e9d5ff',  # violet-200
-                '#dcfce7',  # green-100
-                '#ffe4e6',  # rose-100
-                '#ede9fe',  # indigo-100
-                '#f5d0fe',  # fuchsia-200
-                '#d1fae5',  # emerald-100
-                '#fee2e2',  # red-100
-                '#e2e8f0',  # slate-200
-            ]
-
-            for i, tab_id in enumerate(self.notebook.tabs()):
-                color = palette[i % len(palette)]
-                # Color the tab's root frame
-                try:
-                    tab_frame = self.root.nametowidget(tab_id)
-                    tab_frame.configure(bg=color)
-                except Exception:
-                    continue
-                # Add a thin header bar as an accent
-                try:
-                    children = tab_frame.winfo_children()
-                    header = tk.Frame(tab_frame, bg=color, height=6)
-                    if children:
-                        header.pack(side='top', fill='x', before=children[0])
-                    else:
-                        header.pack(side='top', fill='x')
-                    header.pack_propagate(False)
-                except Exception:
-                    pass
-        except Exception:
-            pass
     
     # clear_all handled in mixin
     # ---- Suppliers helpers shared for tabs ----

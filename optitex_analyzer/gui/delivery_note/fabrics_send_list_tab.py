@@ -8,20 +8,23 @@ def build_fabrics_send_list_tab(ctx, container: tk.Frame):
     header.pack(fill='x', padx=10, pady=(8,4))
     tk.Label(header, text='שליחות בדים שמורות', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
 
-    cols = ('id','date','count','packages','delete')
+    # Minimal columns per request: ID (internal), Date, Count of rolls, Delete
+    cols = (
+        'id','date','count','delete'
+    )
     table_wrap = tk.Frame(container, bg='#ffffff')
     table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
 
     ctx.fabrics_shipments_tree = ttk.Treeview(table_wrap, columns=cols, show='headings')
     for col, txt, w in (
         ('id','ID',60),
-        ('date','תאריך',110),
-        ('count','מס׳ ברקודים',100),
-        ('packages','הובלה',160),
-        ('delete','מחיקה',70),
+        ('date','תאריך',140),
+        ('count','מס׳ גלילים',120),
+        ('delete','מחיקה',80),
     ):
         ctx.fabrics_shipments_tree.heading(col, text=txt)
-        ctx.fabrics_shipments_tree.column(col, width=w, anchor='center')
+        anchor = 'center'
+        ctx.fabrics_shipments_tree.column(col, width=w, anchor=anchor)
 
     vs = ttk.Scrollbar(table_wrap, orient='vertical', command=ctx.fabrics_shipments_tree.yview)
     ctx.fabrics_shipments_tree.configure(yscroll=vs.set)

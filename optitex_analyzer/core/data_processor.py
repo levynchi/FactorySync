@@ -11,7 +11,7 @@ from typing import Dict, List, Any
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
-	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json", fabrics_intakes_file: str = "fabrics_intakes.json", fabrics_unbarcoded_file: str = "fabrics_unbarcoded.json", fabrics_shipments_file: str = "fabrics_shipments.json"):
+	def __init__(self, drawings_file: str = "drawings_data.json", fabrics_inventory_file: str = "fabrics_inventory.json", fabrics_imports_file: str = "fabrics_import_logs.json", supplier_receipts_file: str = "supplier_receipts.json", products_catalog_file: str = "products_catalog.json", suppliers_file: str = "suppliers.json", supplier_intakes_file: str = "supplier_intakes.json", delivery_notes_file: str = "delivery_notes.json", sewing_accessories_file: str = "sewing_accessories.json", categories_file: str = "categories.json", product_sizes_file: str = "product_sizes.json", fabric_types_file: str = "fabric_types.json", fabric_colors_file: str = "fabric_colors.json", print_names_file: str = "print_names.json", fabric_categories_file: str = "fabric_categories.json", model_names_file: str = "model_names.json", main_categories_file: str = "main_categories.json"):
 		"""
 		שימו לב: בעבר השתמשנו בקובץ אחד (supplier_receipts.json) עבור שני סוגי הרשומות
 		(supplier_intake / delivery_note). כעת הם מופרדים לשני קבצים: supplier_intakes.json ו‑delivery_notes.json.
@@ -20,15 +20,11 @@ class DataProcessor:
 		self.drawings_file = drawings_file
 		self.fabrics_inventory_file = fabrics_inventory_file
 		self.fabrics_imports_file = fabrics_imports_file
-		self.fabrics_unbarcoded_file = fabrics_unbarcoded_file
 		# legacy combined file (לצורך מיגרציה בלבד)
 		self.supplier_receipts_file = supplier_receipts_file
 		# new split files
 		self.supplier_intakes_file = supplier_intakes_file
 		self.delivery_notes_file = delivery_notes_file
-		# קבצי תיעוד 'תעודת קליטת בדים' ו'תעודת שליחת בדים'
-		self.fabrics_intakes_file = fabrics_intakes_file
-		self.fabrics_shipments_file = fabrics_shipments_file
 		self.products_catalog_file = products_catalog_file
 		self.sewing_accessories_file = sewing_accessories_file
 		self.categories_file = categories_file
@@ -58,116 +54,17 @@ class DataProcessor:
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
 		self.product_model_names = self.load_model_names()
-		# Ensure all attribute records have a main_category (default 'בגדים')
-		try:
-			self._ensure_main_category_on_attributes()
-		except Exception:
-			pass
 		self.suppliers = self.load_suppliers()
+		# Fabrics shipments (שליחת בדים)
+		self.fabrics_shipments_file = 'fabrics_shipments.json'
+		self.fabrics_shipments = self._load_json_list(self.fabrics_shipments_file)
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
-		# רשימת בדים ללא ברקוד
-		self.fabrics_unbarcoded = self.load_fabrics_unbarcoded()
-		# טעינת תעודות קליטת/שליחת בדים
-		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
-		self.fabrics_shipments = self._load_json_list(self.fabrics_shipments_file)
 		# migration from legacy combined file if needed
 		self._migrate_legacy_supplier_receipts()
 		# combined view (backward compatibility for old UI code)
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
-
-	# ===== Fabrics Intake Receipts (תעודת קליטת בדים) =====
-	def add_fabrics_intake(self, barcodes: List[str] | None, packages: List[Dict] | None = None, *, supplier: str = '', date_str: str = '', unbarcoded_items: List[Dict] | None = None) -> int:
-		"""יוצר תיעוד חדש של 'תעודת קליטת בדים' ושומר לקובץ. מחזיר ID חדש.
-
-		ניתן לקלוט לפי ברקודים (barcodes) או ללא ברקוד (unbarcoded_items), או גם וגם. נדרש שלפחות אחד לא יהיה ריק.
-		"""
-		try:
-			barcodes = barcodes or []
-			unbarcoded_items = unbarcoded_items or []
-			if not barcodes and not unbarcoded_items:
-				raise ValueError("אין נתונים לקליטת בדים (ברקודים או רשומות ללא ברקוד)")
-			new_id = self._next_id(getattr(self, 'fabrics_intakes', []) or [])
-			date_v = (date_str or datetime.now().strftime('%Y-%m-%d')).strip()
-			record = {
-				'id': new_id,
-				'date': date_v,
-				'supplier': (supplier or '').strip(),
-				'barcodes': list(barcodes),
-				'count_barcodes': len(barcodes),
-				'unbarcoded_items': list(unbarcoded_items),
-				'packages': packages or [],
-				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-			}
-			self.fabrics_intakes.append(record)
-			self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
-			return new_id
-		except Exception as e:
-			raise Exception(f"שגיאה בהוספת תעודת קליטת בדים: {e}")
-
-	def delete_fabrics_intake(self, rec_id: int) -> bool:
-		"""מחיקת תעודת קליטת בדים לפי ID. מחזיר True אם נמחקה."""
-		before = len(getattr(self, 'fabrics_intakes', []) or [])
-		try:
-			self.fabrics_intakes = [r for r in self.fabrics_intakes if int(r.get('id', -1)) != int(rec_id)]
-			if len(self.fabrics_intakes) != before:
-				self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
-				return True
-			return False
-		except Exception:
-			self.fabrics_intakes = [r for r in self.fabrics_intakes if (r.get('id') != rec_id)]
-			if len(self.fabrics_intakes) != before:
-				self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
-				return True
-			return False
-
-	def refresh_fabrics_intakes(self):
-		"""רענון תעודות קליטת בדים מהדיסק"""
-		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
-
-	# ===== Fabrics Shipments (תעודת שליחת בדים) =====
-	def add_fabrics_shipment(self, barcodes: List[str] | None, packages: List[Dict] | None = None, *, date_str: str = '') -> int:
-		"""יוצר תיעוד חדש של 'תעודת שליחת בדים' ושומר לקובץ. מחזיר ID חדש."""
-		try:
-			barcodes = barcodes or []
-			if not barcodes:
-				raise ValueError("אין ברקודים לשליחת בדים")
-			new_id = self._next_id(getattr(self, 'fabrics_shipments', []) or [])
-			date_v = (date_str or datetime.now().strftime('%Y-%m-%d')).strip()
-			record = {
-				'id': new_id,
-				'date': date_v,
-				'barcodes': list(barcodes),
-				'count_barcodes': len(barcodes),
-				'packages': packages or [],
-				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-			}
-			self.fabrics_shipments.append(record)
-			self._save_json_list(self.fabrics_shipments_file, self.fabrics_shipments)
-			return new_id
-		except Exception as e:
-			raise Exception(f"שגיאה בהוספת תעודת שליחת בדים: {e}")
-
-	def delete_fabrics_shipment(self, rec_id: int) -> bool:
-		"""מחיקת תעודת שליחת בדים לפי ID. מחזיר True אם נמחקה."""
-		before = len(getattr(self, 'fabrics_shipments', []) or [])
-		try:
-			self.fabrics_shipments = [r for r in self.fabrics_shipments if int(r.get('id', -1)) != int(rec_id)]
-			if len(self.fabrics_shipments) != before:
-				self._save_json_list(self.fabrics_shipments_file, self.fabrics_shipments)
-				return True
-			return False
-		except Exception:
-			self.fabrics_shipments = [r for r in self.fabrics_shipments if (r.get('id') != rec_id)]
-			if len(self.fabrics_shipments) != before:
-				self._save_json_list(self.fabrics_shipments_file, self.fabrics_shipments)
-				return True
-			return False
-
-	def refresh_fabrics_shipments(self):
-		"""רענון תעודות שליחת בדים מהדיסק"""
-		self.fabrics_shipments = self._load_json_list(self.fabrics_shipments_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -291,16 +188,16 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה במיגרציית קליטות ספק: {e}")
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake", *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
 		"""שכבת תאימות – מפנה לפונקציה המתאימה לפי receipt_kind."""
 		if receipt_kind == 'delivery_note':
-			return self.add_delivery_note(supplier, date_str, lines, packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
-		return self.add_supplier_intake(supplier, date_str, lines, packages, arrival_date=arrival_date, supplier_doc_number=supplier_doc_number)
+			return self.add_delivery_note(supplier, date_str, lines, packages)
+		return self.add_supplier_intake(supplier, date_str, lines, packages)
 
 	def _next_id(self, records: List[Dict]) -> int:
 		return max([r.get('id', 0) for r in records], default=0) + 1
 
-	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
+	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -314,8 +211,6 @@ class DataProcessor:
 				'total_quantity': total_quantity,
 				'packages': packages or [],
 				'receipt_kind': 'supplier_intake',
-				'arrival_date': arrival_date or "",
-				'supplier_doc_number': supplier_doc_number or "",
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.supplier_intakes.append(record)
@@ -325,7 +220,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת קליטת ספק: {e}")
 
-	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, *, arrival_date: str = "", supplier_doc_number: str = "") -> int:
+	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -339,8 +234,6 @@ class DataProcessor:
 				'total_quantity': total_quantity,
 				'packages': packages or [],
 				'receipt_kind': 'delivery_note',
-				'arrival_date': arrival_date or "",
-				'supplier_doc_number': supplier_doc_number or "",
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.delivery_notes.append(record)
@@ -352,6 +245,63 @@ class DataProcessor:
 
 	def _rebuild_combined_receipts(self):
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
+
+	# ===== Fabrics Shipments (שליחת בדים) =====
+	def refresh_fabrics_shipments(self):
+		"""Reload fabrics shipments from disk."""
+		try:
+			self.fabrics_shipments = self._load_json_list(self.fabrics_shipments_file)
+		except Exception:
+			self.fabrics_shipments = []
+
+	def add_fabrics_shipment(self, barcodes: list[str], packages: list[dict] | None = None, date_str: str = '', fabric_type: str = '', color_name: str = '', color_no: str = '', net_kg: float | int | str = 0, meters: float | int | str = 0) -> int:
+		"""Create a fabrics shipment document and return its new ID.
+
+		barcodes: list of barcode strings included in this shipment
+		packages: list of {'package_type','quantity','driver'} dicts
+		date_str: optional date string; defaults to today if empty
+		fabric_type/color_name/color_no/net_kg/meters: optional summary fields
+		"""
+		try:
+			if not barcodes:
+				raise ValueError("אין ברקודים לשמירה")
+			new_id = max([r.get('id', 0) for r in self.fabrics_shipments], default=0) + 1
+			def _to_float(x):
+				try:
+					if x in (None, ''): return 0.0
+					return float(str(x).replace(',', '.'))
+				except Exception:
+					return 0.0
+			rec = {
+				'id': new_id,
+				'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+				'barcodes': list(barcodes),
+				'count_barcodes': len(barcodes),
+				'packages': packages or [],
+				'fabric_type': (fabric_type or ''),
+				'color_name': (color_name or ''),
+				'color_no': (color_no or ''),
+				'net_kg': _to_float(net_kg),
+				'meters': _to_float(meters),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.fabrics_shipments.append(rec)
+			self._save_json_list(self.fabrics_shipments_file, self.fabrics_shipments)
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת שליחת בדים: {e}")
+
+	def delete_fabrics_shipment(self, shipment_id: int) -> bool:
+		"""Delete a fabrics shipment by ID."""
+		before = len(self.fabrics_shipments)
+		try:
+			self.fabrics_shipments = [r for r in self.fabrics_shipments if int(r.get('id', -1)) != int(shipment_id)]
+		except Exception:
+			self.fabrics_shipments = [r for r in self.fabrics_shipments if (r.get('id') != shipment_id)]
+		if len(self.fabrics_shipments) != before:
+			self._save_json_list(self.fabrics_shipments_file, self.fabrics_shipments)
+			return True
+		return False
 
 	def delete_supplier_intake(self, receipt_id: int) -> bool:
 		"""מוחק קליטת ספק (supplier_intake) לפי ID. מחזיר True אם נמחקה רשומה."""
@@ -690,63 +640,6 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא מלאי בדים: {str(e)}")
 
-	# ===== Fabrics without barcode =====
-	def load_fabrics_unbarcoded(self) -> List[Dict]:
-		"""טעינת רשימת בדים ללא ברקוד"""
-		try:
-			if os.path.exists(self.fabrics_unbarcoded_file):
-				with open(self.fabrics_unbarcoded_file, 'r', encoding='utf-8') as f:
-					data = json.load(f)
-					return data if isinstance(data, list) else []
-			return []
-		except Exception as e:
-			print(f"שגיאה בטעינת בדים בלי ברקוד: {e}"); return []
-
-	def save_fabrics_unbarcoded(self) -> bool:
-		"""שמירת רשימת בדים ללא ברקוד"""
-		try:
-			with open(self.fabrics_unbarcoded_file, 'w', encoding='utf-8') as f:
-				json.dump(self.fabrics_unbarcoded, f, indent=2, ensure_ascii=False)
-			return True
-		except Exception as e:
-			print(f"שגיאה בשמירת בדים בלי ברקוד: {e}"); return False
-
-	def refresh_fabrics_unbarcoded(self):
-		self.fabrics_unbarcoded = self.load_fabrics_unbarcoded()
-
-	def add_unbarcoded_fabric(self, fabric_type: str, manufacturer: str, color: str, shade: str, notes: str) -> int:
-		"""הוספת בד ללא ברקוד לרשימה ושמירה. מחזיר ID חדש."""
-		try:
-			new_id = self._next_id(getattr(self, 'fabrics_unbarcoded', []) or [])
-			rec = {
-				'id': new_id,
-				'fabric_type': (fabric_type or '').strip(),
-				'manufacturer': (manufacturer or '').strip(),
-				'color': (color or '').strip(),
-				'shade': (shade or '').strip(),
-				'notes': (notes or '').strip(),
-				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-			}
-			self.fabrics_unbarcoded.append(rec)
-			self.save_fabrics_unbarcoded()
-			return new_id
-		except Exception as e:
-			raise Exception(f"שגיאה בהוספת בד ללא ברקוד: {e}")
-
-	def delete_unbarcoded_fabric(self, rec_id: int) -> bool:
-		"""מחיקת בד ללא ברקוד לפי ID"""
-		before = len(self.fabrics_unbarcoded)
-		try:
-			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if int(r.get('id', -1)) != int(rec_id)]
-			if len(self.fabrics_unbarcoded) != before:
-				self.save_fabrics_unbarcoded(); return True
-			return False
-		except Exception:
-			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if r.get('id') != rec_id]
-			if len(self.fabrics_unbarcoded) != before:
-				self.save_fabrics_unbarcoded(); return True
-			return False
-
 	# ===== Fabrics Import Logs =====
 	def load_fabrics_import_logs(self) -> List[Dict]:
 		"""טעינת לוג ייבוא קבצי מלאי בדים"""
@@ -866,8 +759,7 @@ class DataProcessor:
 			return False
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
-								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '',
-								 barcode: str = '', main_category: str = '', unit_type: str = '', zipper_qty: int | str = 0) -> int:
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '') -> int:
 		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
 
 		:param name: שם מוצר (חובה)
@@ -879,7 +771,6 @@ class DataProcessor:
 		:param ticks_qty: כמות טיקטקים (אופציונלי, מספר שלם)
 		:param elastic_qty: כמות גומי (אופציונלי, מספר שלם)
 		:param ribbon_qty: כמות סרט (אופציונלי, מספר שלם)
-		:param zipper_qty: כמות רוכסן (אופציונלי, מספר שלם)
 		"""
 		try:
 			if not name:
@@ -893,7 +784,6 @@ class DataProcessor:
 			ticks_i = _to_int(ticks_qty)
 			elastic_i = _to_int(elastic_qty)
 			ribbon_i = _to_int(ribbon_qty)
-			zipper_i = _to_int(zipper_qty)
 			new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
 			record = {
 				'id': new_id,
@@ -904,13 +794,9 @@ class DataProcessor:
 				'print_name': print_name.strip(),
 				'category': (category or '').strip(),
 				'fabric_category': (fabric_category or '').strip(),
-				'barcode': (barcode or '').strip(),
-				'main_category': (main_category or '').strip(),
-				'unit_type': (unit_type or '').strip(),
 				'ticks_qty': ticks_i,
 				'elastic_qty': elastic_i,
 				'ribbon_qty': ribbon_i,
-				'zipper_qty': zipper_i,
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.products_catalog.append(record)
@@ -936,17 +822,16 @@ class DataProcessor:
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודות החדשות
+			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category'
 			columns = [
-				'id','name','main_category','category','size','fabric_type','fabric_color','fabric_category',
-				'print_name','barcode','unit_type','ticks_qty','elastic_qty','ribbon_qty','zipper_qty','created_at'
+				'id','name','category','size','fabric_type','fabric_color','fabric_category',
+				'print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'
 			]
 			rows = []
 			for rec in self.products_catalog:
 				rows.append({
 					'id': rec.get('id'),
 					'name': rec.get('name',''),
-					'main_category': rec.get('main_category',''),
 					'category': rec.get('category',''),
 					'size': rec.get('size',''),
 					'fabric_type': rec.get('fabric_type',''),
@@ -954,12 +839,9 @@ class DataProcessor:
 					# ברירת מחדל: "בלי קטגוריה" אם חסר
 					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
 					'print_name': rec.get('print_name',''),
-					'barcode': rec.get('barcode',''),
-					'unit_type': rec.get('unit_type',''),
 					'ticks_qty': rec.get('ticks_qty', 0),
 					'elastic_qty': rec.get('elastic_qty', 0),
 					'ribbon_qty': rec.get('ribbon_qty', 0),
-					'zipper_qty': rec.get('zipper_qty', 0),
 					'created_at': rec.get('created_at','')
 				})
 			df = pd.DataFrame(rows, columns=columns)
@@ -979,8 +861,8 @@ class DataProcessor:
 			if not os.path.exists(file_path):
 				raise Exception("קובץ לא נמצא")
 			df = pd.read_excel(file_path)
-			# נוודא קיום עמודות נדרשות (תמיכה לאחור: barcode/main_category/unit_type לא חובה)
-			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','zipper_qty','created_at'}
+			# נוודא קיום עמודות נדרשות
+			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'}
 			cols = {str(c).strip() for c in df.columns}
 			missing = required - cols
 			if missing:
@@ -1022,13 +904,9 @@ class DataProcessor:
 					# ננרמל 'בלי קטגוריה' לריק	
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
-					barcode = str(row.get('barcode') or '').strip() if 'barcode' in cols else ''
-					main_cat = str(row.get('main_category') or '').strip() if 'main_category' in cols else ''
-					unit_type = str(row.get('unit_type') or '').strip() if 'unit_type' in cols else ''
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
-					zipper = _to_int(row.get('zipper_qty'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -1043,13 +921,9 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
-						'barcode': barcode,
-						'main_category': main_cat,
-						'unit_type': unit_type,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
-						'zipper_qty': zipper,
 						'created_at': created_str
 					}
 					self.products_catalog.append(rec)
@@ -1068,13 +942,9 @@ class DataProcessor:
 					fcat = (str(row.get('fabric_category') or '').strip())
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
-					barcode = str(row.get('barcode') or '').strip() if 'barcode' in cols else ''
-					main_cat = str(row.get('main_category') or '').strip() if 'main_category' in cols else ''
-					unit_type = str(row.get('unit_type') or '').strip() if 'unit_type' in cols else ''
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
-					zipper = _to_int(row.get('zipper_qty'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -1089,13 +959,9 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
-						'barcode': barcode,
-						'main_category': main_cat,
-						'unit_type': unit_type,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
-						'zipper_qty': zipper,
 						'created_at': created_str
 					}
 					self.products_catalog.append(rec)
@@ -1329,7 +1195,7 @@ class DataProcessor:
 	def save_model_names(self):
 		return self._save_simple_list(self.model_names_file, self.product_model_names)
 
-	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str, extra: dict | None = None) -> int:
+	def _add_to_simple_list(self, data_list: list[dict], save_func, name: str) -> int:
 		if not name:
 			raise Exception("חובה להזין שם")
 		for rec in data_list:
@@ -1337,11 +1203,6 @@ class DataProcessor:
 				raise Exception("פריט כבר קיים")
 		new_id = max([r.get('id',0) for r in data_list], default=0) + 1
 		rec = {'id': new_id, 'name': name.strip(), 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-		try:
-			if extra and isinstance(extra, dict):
-				rec.update(extra)
-		except Exception:
-			pass
 		data_list.append(rec)
 		save_func(); return new_id
 
@@ -1352,95 +1213,38 @@ class DataProcessor:
 			save_func(); return True
 		return False
 
-	def add_product_size(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_sizes, self.save_product_sizes, name, {'main_category': (main_category or '').strip()})
+	def add_product_size(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_sizes, self.save_product_sizes, name)
 
 	def delete_product_size(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_sizes, self.save_product_sizes, rec_id)
 
-	def add_fabric_type_item(self, name: str, main_category: str | list[str] = '') -> int:
-		"""Add fabric type; supports single or multiple main categories.
-		- main_category: str or list[str]. If list, will be saved under 'main_categories' and 'main_category' (first) for compatibility.
-		"""
-		extra: dict = {}
-		mcs: list[str] = []
-		try:
-			if isinstance(main_category, list):
-				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
-			elif isinstance(main_category, str):
-				s = (main_category or '').strip()
-				# support comma-separated input
-				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
-			else:
-				mcs = []
-		except Exception:
-			mcs = []
-		if mcs:
-			extra['main_categories'] = mcs
-			extra['main_category'] = mcs[0]
-		else:
-			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
-		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name, extra)
+	def add_fabric_type_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_fabric_types, self.save_fabric_types, name)
 
 	def delete_fabric_type_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_types, self.save_fabric_types, rec_id)
 
-	def add_fabric_color_item(self, name: str, main_category: str | list[str] = '') -> int:
-		"""Add fabric color; supports single or multiple main categories."""
-		extra: dict = {}
-		mcs: list[str] = []
-		try:
-			if isinstance(main_category, list):
-				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
-			elif isinstance(main_category, str):
-				s = (main_category or '').strip()
-				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
-			else:
-				mcs = []
-		except Exception:
-			mcs = []
-		if mcs:
-			extra['main_categories'] = mcs
-			extra['main_category'] = mcs[0]
-		else:
-			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
-		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name, extra)
+	def add_fabric_color_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_fabric_colors, self.save_fabric_colors, name)
 
 	def delete_fabric_color_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_colors, self.save_fabric_colors, rec_id)
 
-	def add_print_name_item(self, name: str, main_category: str | list[str] = '') -> int:
-		"""Add print name; supports single or multiple main categories."""
-		extra: dict = {}
-		mcs: list[str] = []
-		try:
-			if isinstance(main_category, list):
-				mcs = [ (m or '').strip() for m in main_category if (m or '').strip() ]
-			elif isinstance(main_category, str):
-				s = (main_category or '').strip()
-				mcs = [t.strip() for t in s.split(',') if t.strip()] if s else []
-			else:
-				mcs = []
-		except Exception:
-			mcs = []
-		if mcs:
-			extra['main_categories'] = mcs
-			extra['main_category'] = mcs[0]
-		else:
-			extra['main_category'] = (main_category or '').strip() if isinstance(main_category, str) else ''
-		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name, extra)
+	def add_print_name_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_print_names, self.save_print_names, name)
 
 	def delete_print_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_print_names, self.save_print_names, rec_id)
 
-	def add_fabric_category_item(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_fabric_categories, self.save_fabric_categories, name, {'main_category': (main_category or '').strip()})
+	def add_fabric_category_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_fabric_categories, self.save_fabric_categories, name)
 
 	def delete_fabric_category_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_categories, self.save_fabric_categories, rec_id)
 
-	def add_model_name_item(self, name: str, main_category: str = '') -> int:
-		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name, {'main_category': (main_category or '').strip()})
+	def add_model_name_item(self, name: str) -> int:
+		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name)
 
 	def delete_model_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_model_names, self.save_model_names, rec_id)
@@ -1452,182 +1256,4 @@ class DataProcessor:
 		self.product_print_names = self.load_print_names()
 		self.product_fabric_categories = self.load_fabric_categories()
 		self.product_model_names = self.load_model_names()
-		try:
-			self._ensure_main_category_on_attributes()
-		except Exception:
-			pass
-
-	def _ensure_main_category_on_attributes(self, default: str = 'בגדים'):
-		"""Ensure each attribute record has 'main_category' and optional 'main_categories'.
-		- If neither present, default to provided value.
-		- If only 'main_category' present, mirror into 'main_categories' list.
-		- If 'main_category' contains a comma-separated list (legacy data), split into list and
-		  set the first token as the primary.
-		- If 'main_categories' exists but contains a single string with commas (bad import),
-		  split that string into a proper list and set the first as primary.
-		"""
-		changed = False
-		for lst, saver in [
-			(self.product_sizes, self.save_product_sizes),
-			(self.product_fabric_types, self.save_fabric_types),
-			(self.product_fabric_colors, self.save_fabric_colors),
-			(self.product_print_names, self.save_print_names),
-			(self.product_fabric_categories, self.save_fabric_categories),
-			(self.product_model_names, self.save_model_names),
-		]:
-			try:
-				for rec in lst:
-					mc = (rec.get('main_category') or '').strip()
-					mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else []
-					# If main_categories exists but is a single comma-joined string in a list, fix it
-					if mcs and isinstance(mcs, list) and len(mcs) == 1 and isinstance(mcs[0], str) and (',' in mcs[0]):
-						parts = [t.strip() for t in mcs[0].split(',') if t and t.strip()]
-						if parts:
-							rec['main_categories'] = parts
-							rec['main_category'] = parts[0]
-							changed = True
-					if not mc and not mcs:
-						rec['main_category'] = default
-						rec['main_categories'] = [default]
-						changed = True
-					elif mc and not mcs:
-						# Normalize legacy comma-separated primary into list
-						parts = [t.strip() for t in mc.split(',') if t and t.strip()]
-						if parts:
-							rec['main_categories'] = parts
-							rec['main_category'] = parts[0]
-						else:
-							rec['main_categories'] = [mc]
-						changed = True
-			except Exception:
-				pass
-		if changed:
-			# Save each list via its saver to persist defaults
-			try: self.save_product_sizes()
-			except Exception: pass
-			try: self.save_fabric_types()
-			except Exception: pass
-			try: self.save_fabric_colors()
-			except Exception: pass
-			try: self.save_print_names()
-			except Exception: pass
-			try: self.save_fabric_categories()
-			except Exception: pass
-			try: self.save_model_names()
-			except Exception: pass
-
-	# ===== Attribute export/import (Excel) =====
-	def _export_attr_list(self, items: list[dict], file_path: str) -> bool:
-		"""Export attribute list to Excel with one category column: id,name,main_category,created_at.
-		- If multiple categories exist, they are joined by commas into main_category for user editing.
-		"""
-		try:
-			rows = []
-			for rec in items or []:
-				mcs = rec.get('main_categories') if isinstance(rec.get('main_categories'), list) else None
-				mc = (rec.get('main_category') or '').strip()
-				if not mcs and mc:
-					mcs = [mc]
-				rows.append({
-					'id': rec.get('id'),
-					'name': rec.get('name', ''),
-					'main_category': ','.join(mcs) if mcs else '',
-					'created_at': rec.get('created_at',''),
-				})
-			df = pd.DataFrame(rows, columns=['id','name','main_category','created_at'])
-			df.to_excel(file_path, index=False)
-			return True
-		except Exception as e:
-			raise Exception(f"שגיאה בייצוא אקסל: {e}")
-
-	def _import_attr_list(self, file_path: str, mode: str, target_list: list[dict], save_func, add_func, supports_multi_mc: bool = False) -> dict:
-		"""Import attribute list from Excel. If overwrite, replace list; else append unique by 'name'.
-		- supports_multi_mc: when True, will pass list of categories to add_func; otherwise single string.
-		"""
-		try:
-			if not os.path.exists(file_path):
-				raise Exception("קובץ לא נמצא")
-			df = pd.read_excel(file_path)
-			cols = {str(c).strip() for c in df.columns}
-			if 'name' not in cols:
-				raise Exception("עמודת 'name' חסרה בקובץ")
-			imported = 0; skipped = 0
-			if mode == 'overwrite':
-				target_list.clear()
-				save_func()
-				existing = set()
-			else:
-				existing = { (rec.get('name') or '').strip() for rec in (target_list or []) }
-			for _, row in df.iterrows():
-				name = str(row.get('name') or '').strip()
-				if not name:
-					continue
-				if name in existing:
-					skipped += 1; continue
-				# categories
-				mcs = []
-				try:
-					if 'main_categories' in cols:
-						val = row.get('main_categories')
-						s = '' if val is None else str(val)
-						mcs = [t.strip() for t in s.split(',') if t and t.strip()]
-					if (not mcs) and 'main_category' in cols:
-						mc_val = row.get('main_category')
-						s = '' if mc_val is None else str(mc_val)
-						# When multi-category is supported, split comma-separated values from single column
-						if supports_multi_mc:
-							mcs = [t.strip() for t in s.split(',') if t and t.strip()]
-						else:
-							mc = s.strip()
-							if mc: mcs = [mc]
-				except Exception:
-					mcs = []
-				try:
-					if supports_multi_mc:
-						add_func(name, main_category=(mcs or ''))
-					else:
-						mc = mcs[0] if mcs else ''
-						add_func(name, main_category=mc)
-					imported += 1
-					existing.add(name)
-				except Exception:
-					skipped += 1
-			save_func(); return {'imported': imported, 'skipped_duplicates': skipped, 'overwritten': (mode=='overwrite')}
-		except Exception as e:
-			raise Exception(f"שגיאה בייבוא אקסל: {e}")
-
-	# Sizes
-	def export_sizes_to_excel(self, file_path: str) -> bool:
-		return self._export_attr_list(self.product_sizes, file_path)
-
-	def import_sizes_from_excel(self, file_path: str, mode: str = 'append') -> dict:
-		return self._import_attr_list(file_path, mode, self.product_sizes, self.save_product_sizes, self.add_product_size, supports_multi_mc=False)
-
-	# Fabric Types
-	def export_fabric_types_to_excel(self, file_path: str) -> bool:
-		return self._export_attr_list(self.product_fabric_types, file_path)
-
-	def import_fabric_types_from_excel(self, file_path: str, mode: str = 'append') -> dict:
-		return self._import_attr_list(file_path, mode, self.product_fabric_types, self.save_fabric_types, self.add_fabric_type_item, supports_multi_mc=True)
-
-	# Fabric Colors
-	def export_fabric_colors_to_excel(self, file_path: str) -> bool:
-		return self._export_attr_list(self.product_fabric_colors, file_path)
-
-	def import_fabric_colors_from_excel(self, file_path: str, mode: str = 'append') -> dict:
-		return self._import_attr_list(file_path, mode, self.product_fabric_colors, self.save_fabric_colors, self.add_fabric_color_item, supports_multi_mc=True)
-
-	# Print Names
-	def export_print_names_to_excel(self, file_path: str) -> bool:
-		return self._export_attr_list(self.product_print_names, file_path)
-
-	def import_print_names_from_excel(self, file_path: str, mode: str = 'append') -> dict:
-		return self._import_attr_list(file_path, mode, self.product_print_names, self.save_print_names, self.add_print_name_item, supports_multi_mc=True)
-
-	# Model Names
-	def export_model_names_to_excel(self, file_path: str) -> bool:
-		return self._export_attr_list(self.product_model_names, file_path)
-
-	def import_model_names_from_excel(self, file_path: str, mode: str = 'append') -> dict:
-		return self._import_attr_list(file_path, mode, self.product_model_names, self.save_model_names, self.add_model_name_item, supports_multi_mc=False)
 
