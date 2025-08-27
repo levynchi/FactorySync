@@ -399,7 +399,7 @@ class DeliveryNoteMethodsMixin:
                         ws.sheet_view.rightToLeft = True
                     except Exception:
                         pass
-                    # Page setup: A4 portrait, fit to width
+                    # Page setup: A4 portrait, fit to width (center on page for print)
                     try:
                         ws.page_setup.orientation = 'portrait'
                     except Exception:
@@ -415,11 +415,16 @@ class DeliveryNoteMethodsMixin:
                     except Exception:
                         pass
                     try:
+                        ws.print_options.horizontalCentered = True
+                        ws.print_options.verticalCentered = False
+                    except Exception:
+                        pass
+                    try:
                         if PageMargins:
                             ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
                     except Exception:
                         pass
-                    # Business header (from settings): Business Name + VAT/Type line
+                    # Business header (from settings): Prefer Logo image; fallback to Business Name + VAT/Type line
                     try:
                         s = getattr(self, 'settings', None)
                         def _sget(k, default=""):
@@ -430,12 +435,40 @@ class DeliveryNoteMethodsMixin:
                         biz_name = _sget('business.name')
                         biz_type = _sget('business.type')
                         biz_vat  = _sget('business.vat_id')
+                        logo_path = _sget('business.logo_path')
                     except Exception:
-                        biz_name = biz_type = biz_vat = ""
+                        biz_name = biz_type = biz_vat = logo_path = ""
                     # Insert styled business header if available
                     try:
                         last_col = 4  # we use 4 columns in the table below
-                        if biz_name:
+                        inserted_logo = False
+                        # Try to place logo image if path configured
+                        try:
+                            from openpyxl.drawing.image import Image as XLImage  # type: ignore
+                            if logo_path and os.path.exists(logo_path):
+                                img = XLImage(logo_path)
+                                # Optionally scale down if very large
+                                try:
+                                    if getattr(img, 'width', 0) and img.width > 480:
+                                        ratio = 480.0 / float(img.width)
+                                        img.width = int(img.width * ratio)
+                                        img.height = int(img.height * ratio)
+                                except Exception:
+                                    pass
+                                ws.add_image(img, 'A1')
+                                # Ensure enough top space so image won't collide with rows below
+                                try:
+                                    # Set generous header height; if image is large, we still ensure spacing
+                                    ws.row_dimensions[1].height = max(120, getattr(img, 'height', 120))
+                                except Exception:
+                                    ws.row_dimensions[1].height = 120
+                                # Add spacing rows under the image
+                                ws.append([]); ws.append([])
+                                inserted_logo = True
+                        except Exception:
+                            inserted_logo = False
+                        # If no logo, fallback to biz name line
+                        if not inserted_logo and biz_name:
                             ws.append([biz_name])
                             r = ws.max_row
                             try:
@@ -447,6 +480,7 @@ class DeliveryNoteMethodsMixin:
                                 ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
+                        # Regardless, include type/VAT line under header if present
                         if (biz_type or biz_vat):
                             line = f"{(biz_type or '').strip()} {(biz_vat or '').strip()}".strip()
                             ws.append([line])
@@ -460,7 +494,7 @@ class DeliveryNoteMethodsMixin:
                                 ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
-                        if biz_name or biz_vat or biz_type:
+                        if inserted_logo or biz_name or biz_vat or biz_type:
                             ws.append([])  # spacing
                     except Exception:
                         pass
@@ -1024,4 +1058,170 @@ class DeliveryNoteMethodsMixin:
             ))
         btns = tk.Frame(win)
         btns.pack(fill='x', pady=6)
+        # Export to Excel (similar to delivery notes view)
+        def _export_fs_to_excel_and_open():
+            try:
+                from openpyxl import Workbook
+                from openpyxl.styles import Border, Side, Alignment, Font
+                try:
+                    from openpyxl.worksheet.page import PageMargins  # type: ignore
+                except Exception:
+                    PageMargins = None  # type: ignore
+            except Exception as e:
+                try:
+                    messagebox.showerror('שגיאה', f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
+                except Exception:
+                    pass
+                return
+            try:
+                wb = Workbook(); ws = wb.active; ws.title = 'שליחת בדים'
+                try:
+                    ws.sheet_view.rightToLeft = True
+                except Exception:
+                    pass
+                # Page setup
+                try: ws.page_setup.orientation = 'portrait'
+                except Exception: pass
+                try: ws.page_setup.paperSize = 9
+                except Exception: pass
+                try: ws.page_setup.fitToWidth = 1; ws.page_setup.fitToHeight = 0
+                except Exception: pass
+                try:
+                    ws.print_options.horizontalCentered = True
+                    ws.print_options.verticalCentered = False
+                except Exception:
+                    pass
+                try:
+                    if PageMargins:
+                        ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+                except Exception:
+                    pass
+                # Header
+                try:
+                    s = getattr(self, 'settings', None)
+                    def _sget(k, default=""):
+                        try:
+                            return (s.get(k, default) if s else default) or ""
+                        except Exception:
+                            return ""
+                    biz_name = _sget('business.name')
+                except Exception:
+                    biz_name = ''
+                last_col = 5
+                if biz_name:
+                    ws.append([biz_name]); r = ws.max_row
+                    try: ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
+                    except Exception: pass
+                    try:
+                        ws.cell(row=r, column=1).font = Font(size=16, bold=True)
+                        ws.cell(row=r, column=1).alignment = Alignment(horizontal='center')
+                    except Exception: pass
+                    ws.append([])
+                # Doc info
+                ws.append(["מסמך", f"שליחת בדים #{rec.get('id')}"])
+                # Date as text
+                ws.append(["תאריך", rec.get('date','')])
+                try:
+                    for row in ws.iter_rows(min_row=ws.max_row-1, max_row=ws.max_row, min_col=1, max_col=2):
+                        row[0].font = Font(bold=True, size=12)
+                        row[0].alignment = Alignment(horizontal='right')
+                        row[1].alignment = Alignment(horizontal='right')
+                except Exception:
+                    pass
+                ws.append([])
+                # Table header
+                headers = ["ברקוד","סוג בד","צבע","ק\"ג נטו","מטרים"]
+                ws.append(headers)
+                header_row = ws.max_row
+                # Inventory map
+                try:
+                    inventory = getattr(self.data_processor, 'fabrics_inventory', []) or []
+                    inv_map = { str(r.get('barcode','')).strip(): r for r in inventory }
+                except Exception:
+                    inv_map = {}
+                total_kg = 0.0; total_m = 0.0
+                for bc in rec.get('barcodes', []) or []:
+                    r = inv_map.get(str(bc).strip()) or {}
+                    color = (r.get('color_name','') or '')
+                    if r.get('color_no'):
+                        color = f"{color} {r.get('color_no')}".strip()
+                    try:
+                        nk = float(str(r.get('net_kg',0)).replace(',', '.'))
+                    except Exception:
+                        nk = 0.0
+                    try:
+                        mt = float(str(r.get('meters',0)).replace(',', '.'))
+                    except Exception:
+                        mt = 0.0
+                    total_kg += nk; total_m += mt
+                    ws.append([bc, r.get('fabric_type',''), color, nk, mt])
+                # Totals row
+                ws.append([None, None, 'סה"כ', total_kg, total_m])
+                total_row = ws.max_row
+                # Style
+                try:
+                    thin = Side(style='thin', color='000000')
+                    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                    for cell in ws[header_row]:
+                        cell.font = Font(bold=True, size=12)
+                        cell.alignment = Alignment(horizontal='center')
+                    for row in ws.iter_rows(min_row=header_row, max_row=total_row, min_col=1, max_col=5):
+                        for cell in row:
+                            cell.border = border
+                            if cell.column <= 3:
+                                cell.alignment = Alignment(horizontal='right')
+                            else:
+                                cell.alignment = Alignment(horizontal='center')
+                    # Bold totals label and numbers
+                    ws.cell(row=total_row, column=3).font = Font(bold=True)
+                    ws.cell(row=total_row, column=4).font = Font(bold=True)
+                    ws.cell(row=total_row, column=5).font = Font(bold=True)
+                except Exception:
+                    pass
+                # Autosize
+                try:
+                    for col in ws.columns:
+                        max_len = 0; col_letter = col[0].column_letter
+                        for cell in col:
+                            try:
+                                val = str(cell.value) if cell.value is not None else ""
+                                if len(val) > max_len: max_len = len(val)
+                            except Exception:
+                                pass
+                        ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
+                except Exception:
+                    pass
+                # Save
+                base_dir = os.path.join(os.getcwd(), 'exports', 'fabrics_shipments')
+                try: os.makedirs(base_dir, exist_ok=True)
+                except Exception: pass
+                safe_id = rec.get('id'); safe_date = (rec.get('date') or '').replace('/', '-').replace(':', '-')
+                fname = f"fabrics_shipment_{safe_id}_{safe_date}.xlsx" if safe_id is not None else f"fabrics_shipment_{safe_date}.xlsx"
+                out_path = os.path.join(base_dir, fname)
+                try:
+                    wb.save(out_path)
+                except PermissionError as e:
+                    try:
+                        ts = datetime.now().strftime('%H%M%S')
+                        alt_path = out_path.replace('.xlsx', f'_{ts}.xlsx')
+                        wb.save(alt_path)
+                        out_path = alt_path
+                    except Exception:
+                        try: messagebox.showerror('שגיאה', f"שמירת קובץ נכשלה (קובץ פתוח?):\n{e}")
+                        except Exception: pass
+                        return
+                except Exception as e:
+                    try: messagebox.showerror('שגיאה', f"שמירת קובץ נכשלה:\n{e}")
+                    except Exception: pass
+                    return
+                try:
+                    os.startfile(out_path)  # type: ignore[attr-defined]
+                except Exception:
+                    try: messagebox.showinfo('נשמר', f"הקובץ נשמר ב:\n{out_path}\n(לא הצלחתי לפתוח אוטומטית)")
+                    except Exception: pass
+            except Exception as e:
+                try: messagebox.showerror('שגיאה', str(e))
+                except Exception: pass
+
+        tk.Button(btns, text='🖨 פתח באקסל', command=_export_fs_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
         tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')
