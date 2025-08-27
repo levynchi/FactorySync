@@ -112,5 +112,24 @@
       }
     ],
     "created_at": "2025-08-26 13:07:16"
+  },
+  {
+    "id": 3,
+    "date": "2025-08-27",
+    "supplier": "",
+    "barcodes": [],
+    "count_barcodes": 0,
+    "unbarcoded_items": [
+      {
+        "fabric_type": "ררא",
+        "manufacturer": "'קרא'ק",
+        "color": "'קא'ק",
+        "shade": "",
+        "notes": "נסיון",
+        "created_at": "2025-08-27 14:38:48"
+      }
+    ],
+    "packages": [],
+    "created_at": "2025-08-27 14:38:48"
   }
 ]

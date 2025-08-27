@@ -58,6 +58,11 @@ class DataProcessor:
 		# Fabrics shipments (שליחת בדים)
 		self.fabrics_shipments_file = 'fabrics_shipments.json'
 		self.fabrics_shipments = self._load_json_list(self.fabrics_shipments_file)
+		# Fabrics intakes (קליטת בדים) + Unbarcoded fabrics
+		self.fabrics_intakes_file = 'fabrics_intakes.json'
+		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
+		self.fabrics_unbarcoded_file = 'fabrics_unbarcoded.json'
+		self.fabrics_unbarcoded = self._load_json_list(self.fabrics_unbarcoded_file)
 		# load split receipts (may be empty on first run)
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
@@ -336,6 +341,87 @@ class DataProcessor:
 		self.supplier_intakes = self._load_json_list(self.supplier_intakes_file)
 		self.delivery_notes = self._load_json_list(self.delivery_notes_file)
 		self._rebuild_combined_receipts()
+
+	# ===== Fabrics Intakes (קליטת בדים) =====
+	def refresh_fabrics_intakes(self):
+		"""Reload fabrics intakes list from disk."""
+		self.fabrics_intakes = self._load_json_list(self.fabrics_intakes_file)
+
+	def add_fabrics_intake(self, barcodes: list[str] | None = None, packages: list[dict] | None = None, supplier: str = '', date_str: str = '', unbarcoded_items: list[dict] | None = None) -> int:
+		"""Save a Fabrics Intake document and return its new ID.
+
+		Fields stored match fabrics_intakes.json schema used by the UI list tab.
+		"""
+		try:
+			barcodes = list(barcodes or [])
+			packages = list(packages or [])
+			unbarcoded_items = list(unbarcoded_items or [])
+			new_id = max([r.get('id', 0) for r in self.fabrics_intakes], default=0) + 1
+			rec = {
+				'id': new_id,
+				'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+				'supplier': supplier or '',
+				'barcodes': barcodes,
+				'count_barcodes': len(barcodes),
+				'unbarcoded_items': unbarcoded_items if unbarcoded_items else [],
+				'packages': packages,
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			self.fabrics_intakes.append(rec)
+			self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת קליטת בדים: {e}")
+
+	def delete_fabrics_intake(self, rec_id: int) -> bool:
+		"""Delete a fabrics intake by ID."""
+		before = len(self.fabrics_intakes)
+		try:
+			self.fabrics_intakes = [r for r in self.fabrics_intakes if int(r.get('id', -1)) != int(rec_id)]
+		except Exception:
+			self.fabrics_intakes = [r for r in self.fabrics_intakes if (r.get('id') != rec_id)]
+		if len(self.fabrics_intakes) != before:
+			self._save_json_list(self.fabrics_intakes_file, self.fabrics_intakes)
+			return True
+		return False
+
+	# ===== Unbarcoded Fabrics (בדים בלי ברקוד) =====
+	def refresh_fabrics_unbarcoded(self):
+		"""Reload unbarcoded fabrics from disk."""
+		self.fabrics_unbarcoded = self._load_json_list(self.fabrics_unbarcoded_file)
+
+	def add_unbarcoded_fabric(self, fabric_type: str, manufacturer: str = '', color: str = '', shade: str = '', notes: str = '') -> int:
+		"""Add a single unbarcoded fabric row and return its ID."""
+		try:
+			if not (fabric_type or '').strip():
+				raise Exception("חובה לציין 'סוג בד'")
+			new_id = max([r.get('id', 0) for r in self.fabrics_unbarcoded], default=0) + 1
+			rec = {
+				'id': new_id,
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+				'fabric_type': (fabric_type or '').strip(),
+				'manufacturer': (manufacturer or '').strip(),
+				'color': (color or '').strip(),
+				'shade': (shade or '').strip(),
+				'notes': (notes or '').strip()
+			}
+			self.fabrics_unbarcoded.append(rec)
+			self._save_json_list(self.fabrics_unbarcoded_file, self.fabrics_unbarcoded)
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת בד ללא ברקוד: {e}")
+
+	def delete_unbarcoded_fabric(self, rec_id: int) -> bool:
+		"""Delete unbarcoded fabric by ID."""
+		before = len(self.fabrics_unbarcoded)
+		try:
+			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if int(r.get('id', -1)) != int(rec_id)]
+		except Exception:
+			self.fabrics_unbarcoded = [r for r in self.fabrics_unbarcoded if (r.get('id') != rec_id)]
+		if len(self.fabrics_unbarcoded) != before:
+			self._save_json_list(self.fabrics_unbarcoded_file, self.fabrics_unbarcoded)
+			return True
+		return False
     
 	# (הוסר) פעולות על ציורים חוזרים – get/refresh/add/delete
     

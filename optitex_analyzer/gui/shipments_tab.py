@@ -147,8 +147,15 @@ class ShipmentsTabMixin:
             # לוודא טעינה עדכנית מהדיסק
             if hasattr(self.data_processor, 'refresh_supplier_receipts'):
                 self.data_processor.refresh_supplier_receipts()
+            # טען גם קליטות בדים
+            try:
+                if hasattr(self.data_processor, 'refresh_fabrics_intakes'):
+                    self.data_processor.refresh_fabrics_intakes()
+            except Exception:
+                pass
             supplier_intakes = getattr(self.data_processor, 'supplier_intakes', [])
             delivery_notes = getattr(self.data_processor, 'delivery_notes', [])
+            fabrics_intakes = getattr(self.data_processor, 'fabrics_intakes', [])
             # קריאה לקובץ מורשת ישן במידת הצורך (תאימות לאחור)
             legacy = []
             try:
@@ -180,7 +187,7 @@ class ShipmentsTabMixin:
                         rows.append({
                             'rec_id': rec_id,
                             'receipt_kind': receipt_kind,
-                            'kind': 'קליטה' if receipt_kind == 'supplier_intake' else 'הובלה' if receipt_kind == 'delivery_note' else receipt_kind,
+                            'kind': 'קליטה' if receipt_kind == 'supplier_intake' else ('הובלה' if receipt_kind == 'delivery_note' else ('קליטת בדים' if receipt_kind == 'fabrics_intake' else receipt_kind)),
                             'date': date_str,
                             'sort_dt': sort_dt,
                             'pkg_index': idx,
@@ -190,6 +197,7 @@ class ShipmentsTabMixin:
                         })
             collect(supplier_intakes, 'supplier_intake')
             collect(delivery_notes, 'delivery_note')
+            collect(fabrics_intakes, 'fabrics_intake')
             # הוספת נתוני מורשת שאינם קיימים כבר ברשימות החדשות
             try:
                 existing_keys = {( 'supplier_intake', r.get('id') ) for r in supplier_intakes}
@@ -249,10 +257,11 @@ class ShipmentsTabMixin:
         # קביעת receipt_kind
         receipt_kind = (meta or {}).get('receipt_kind')
         if not receipt_kind:
-            receipt_kind = 'supplier_intake' if kind_display == 'קליטה' else 'delivery_note' if kind_display == 'הובלה' else ''
+            receipt_kind = 'supplier_intake' if kind_display == 'קליטה' else ('delivery_note' if kind_display == 'הובלה' else ('fabrics_intake' if kind_display == 'קליטת בדים' else ''))
         if receipt_kind not in ('supplier_intake', 'delivery_note'):
-            messagebox.showerror('שגיאה', 'לא ניתן לזהות את סוג הרשומה של שורת ההובלה')
-            return
+            if receipt_kind != 'fabrics_intake':
+                messagebox.showerror('שגיאה', 'לא ניתן לזהות את סוג הרשומה של שורת ההובלה')
+                return
         # המרה ל-int בטוח ל-id והכמות
         try:
             rec_id = int(rec_id_val)
@@ -267,7 +276,12 @@ class ShipmentsTabMixin:
             except Exception:
                 qty_val = None
         # מציאת הרשומה במקור
-        records = getattr(self.data_processor, 'supplier_intakes' if receipt_kind == 'supplier_intake' else 'delivery_notes', [])
+        if receipt_kind == 'supplier_intake':
+            records = getattr(self.data_processor, 'supplier_intakes', [])
+        elif receipt_kind == 'delivery_note':
+            records = getattr(self.data_processor, 'delivery_notes', [])
+        else:
+            records = getattr(self.data_processor, 'fabrics_intakes', [])
         target_idx = None
         target_rec = None
         for i, r in enumerate(records):
@@ -306,10 +320,18 @@ class ShipmentsTabMixin:
             # שמירה לקובץ המתאים
             if receipt_kind == 'supplier_intake':
                 save_ok = self.data_processor._save_json_list(self.data_processor.supplier_intakes_file, records)
-            else:
+            elif receipt_kind == 'delivery_note':
                 save_ok = self.data_processor._save_json_list(self.data_processor.delivery_notes_file, records)
+            else:
+                save_ok = self.data_processor._save_json_list(self.data_processor.fabrics_intakes_file, records)
             if save_ok and hasattr(self.data_processor, '_rebuild_combined_receipts'):
                 self.data_processor._rebuild_combined_receipts()
+            # רענון קליטות בדים במידת הצורך
+            try:
+                if receipt_kind == 'fabrics_intake' and hasattr(self.data_processor, 'refresh_fabrics_intakes'):
+                    self.data_processor.refresh_fabrics_intakes()
+            except Exception:
+                pass
             # ריענון טבלה
             self._refresh_shipments_table()
         except Exception as e:

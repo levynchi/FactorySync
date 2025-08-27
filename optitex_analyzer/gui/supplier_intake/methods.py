@@ -760,6 +760,15 @@ class SupplierIntakeMethodsMixin:
                     self._refresh_fabrics_table()
             except Exception:
                 pass
+            # Refresh saved fabrics intakes list and shipments summary
+            try:
+                self._refresh_fabrics_intakes_list()
+            except Exception:
+                pass
+            try:
+                self._notify_new_receipt_saved()
+            except Exception:
+                pass
             return
 
         # מצב ברקוד: אסוף ברקודים
@@ -804,6 +813,15 @@ class SupplierIntakeMethodsMixin:
         try:
             if hasattr(self, '_refresh_fabrics_table'):
                 self._refresh_fabrics_table()
+        except Exception:
+            pass
+        # Refresh saved fabrics intakes list and shipments summary
+        try:
+            self._refresh_fabrics_intakes_list()
+        except Exception:
+            pass
+        try:
+            self._notify_new_receipt_saved()
         except Exception:
             pass
 
