@@ -247,7 +247,7 @@ class ShipmentsTabMixin:
         try:
             rec_id_val = values[0]
             kind_display = values[1]
-            date_str = values[2]
+            # date_str not used; keep values[2] for index consistency only
             package_type = values[3]
             quantity_display = values[4]
             driver_display = values[5] if len(values) > 5 else ''
@@ -282,11 +282,9 @@ class ShipmentsTabMixin:
             records = getattr(self.data_processor, 'delivery_notes', [])
         else:
             records = getattr(self.data_processor, 'fabrics_intakes', [])
-        target_idx = None
         target_rec = None
         for i, r in enumerate(records):
             if str(r.get('id')) == str(rec_id):
-                target_idx = i
                 target_rec = r
                 break
         if target_rec is None:
