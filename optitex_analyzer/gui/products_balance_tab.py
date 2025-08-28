@@ -321,6 +321,20 @@ class ProductsBalanceTabMixin:
         self.inv_updates_details_tree.grid(row=1, column=0, sticky='nsew')
         vs_hist.grid(row=1, column=1, sticky='ns')
 
+        # רענון אוטומטי: בכל מעבר לטאב "היסטוריית עדכונים" נטען מחדש את הרשימה
+        try:
+            def _on_inv_nb_tab_changed(e):
+                try:
+                    nb = e.widget
+                    sel = nb.select()
+                    if sel and nb.nametowidget(sel) is inv_hist_page:
+                        self._inv_history_reload()
+                except Exception:
+                    pass
+            inv_nb.bind('<<NotebookTabChanged>>', _on_inv_nb_tab_changed)
+        except Exception:
+            pass
+
         # תת-טאב ניהול: צורות אריזה
         pkg_page = tk.Frame(inv_nb, bg='#f7f9fa')
         inv_nb.add(pkg_page, text='צורות אריזה')

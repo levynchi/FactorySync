@@ -39,7 +39,11 @@ class BusinessDetailsTabMixin:
         self.bd_logo_path = tk.StringVar()
         self._business_logo_img = None  # keep reference
 
-        # layout: two columns (form on right, logo on left)
+        # track controls to enable/disable
+        self._bd_entries = []
+        self._bd_controls_to_toggle = []
+
+    # layout: two columns (form on right, logo on left)
         form = tk.Frame(body, bg="#f7f9fa")
         form.pack(side="right", fill="both", expand=True)
 
@@ -52,6 +56,7 @@ class BusinessDetailsTabMixin:
             lbl.grid(row=row, column=1, sticky="e", padx=(8, 4), pady=4)
             ent = tk.Entry(form, textvariable=var, width=width, justify="right")
             ent.grid(row=row, column=0, sticky="we", padx=(0, 4), pady=4)
+            self._bd_entries.append(ent)
             return ent
 
         form.grid_columnconfigure(0, weight=1)
@@ -61,6 +66,7 @@ class BusinessDetailsTabMixin:
         tk.Label(form, text="סוג עוסק:", bg="#f7f9fa").grid(row=r, column=1, sticky="e", padx=(8, 4), pady=4)
         type_combo = ttk.Combobox(form, textvariable=self.bd_business_type, values=["עוסק מורשה", "חברה בע""מ", "שותפות", "אחר"], state="readonly", width=14)
         type_combo.grid(row=r, column=0, sticky="w", padx=(0, 4), pady=4)
+        self._bd_controls_to_toggle.append(type_combo)
         r += 1
         add_row(r, "מס' עוסק/ח.פ:", self.bd_vat_id); r += 1
         add_row(r, "כתובת:", self.bd_address); r += 1
@@ -74,8 +80,13 @@ class BusinessDetailsTabMixin:
         # Buttons
         btns = tk.Frame(form, bg="#f7f9fa")
         btns.grid(row=r, column=0, columnspan=2, sticky="we", pady=(8, 4))
-        tk.Button(btns, text="💾 שמור", bg="#27ae60", fg="white", command=self._bd_save).pack(side="right", padx=(8, 0))
-        tk.Button(btns, text="איפוס", command=self._bd_load_from_settings).pack(side="right")
+        self.bd_save_btn = tk.Button(btns, text="💾 שמור", bg="#27ae60", fg="white", command=self._bd_save)
+        self.bd_save_btn.pack(side="right", padx=(8, 0))
+        self.bd_reset_btn = tk.Button(btns, text="איפוס", command=self._bd_load_from_settings)
+        self.bd_reset_btn.pack(side="right")
+        # Unlock editing button (always enabled)
+        self.bd_unlock_btn = tk.Button(btns, text="פתח לשינוי פרטי העסק", command=self._bd_prompt_enable_editing)
+        self.bd_unlock_btn.pack(side="left")
 
         # Logo area
         tk.Label(logo_frame, text="לוגו העסק", font=("Arial", 12, "bold"), bg="#eef3f7").pack(padx=10, pady=(10, 6))
@@ -84,16 +95,53 @@ class BusinessDetailsTabMixin:
 
         pick_row = tk.Frame(logo_frame, bg="#eef3f7")
         pick_row.pack(fill="x", padx=10, pady=(0, 10))
-        tk.Button(pick_row, text="בחר לוגו…", command=self._bd_pick_logo).pack(side="right")
-        tk.Button(pick_row, text="הסר", command=self._bd_clear_logo).pack(side="right", padx=(6, 0))
+        self.bd_pick_logo_btn = tk.Button(pick_row, text="בחר לוגו…", command=self._bd_pick_logo)
+        self.bd_pick_logo_btn.pack(side="right")
+        self.bd_clear_logo_btn = tk.Button(pick_row, text="הסר", command=self._bd_clear_logo)
+        self.bd_clear_logo_btn.pack(side="right", padx=(6, 0))
 
         path_row = tk.Frame(logo_frame, bg="#eef3f7")
         path_row.pack(fill="x", padx=10, pady=(0, 12))
         tk.Label(path_row, text="נתיב:", bg="#eef3f7").pack(side="right")
-        tk.Entry(path_row, textvariable=self.bd_logo_path, width=34, justify="right").pack(side="right", padx=(6, 0))
+        self.bd_logo_entry = tk.Entry(path_row, textvariable=self.bd_logo_path, width=34, justify="right")
+        self.bd_logo_entry.pack(side="right", padx=(6, 0))
+        self._bd_entries.append(self.bd_logo_entry)
+        # also toggle logo buttons
+        self._bd_controls_to_toggle.extend([self.bd_pick_logo_btn, self.bd_clear_logo_btn, self.bd_save_btn, self.bd_reset_btn])
 
         # Load values
         self._bd_load_from_settings()
+        # Lock editing by default
+        self._bd_set_editable(False)
+
+    def _bd_set_editable(self, enabled: bool):
+        """Enable/disable editing of Business Details fields and related buttons."""
+        # Entries (tk.Entry)
+        for ent in getattr(self, '_bd_entries', []):
+            try:
+                if enabled:
+                    ent.configure(state='normal')
+                else:
+                    ent.configure(state='disabled', disabledbackground='#e9ecef', disabledforeground='#7a7a7a')
+            except Exception:
+                pass
+        # Combo + buttons
+        for w in getattr(self, '_bd_controls_to_toggle', []):
+            try:
+                if isinstance(w, ttk.Combobox):
+                    w.configure(state=('readonly' if enabled else 'disabled'))
+                else:
+                    w.configure(state=('normal' if enabled else 'disabled'))
+            except Exception:
+                pass
+
+    def _bd_prompt_enable_editing(self):
+        try:
+            if messagebox.askyesno("אישור", "האם אתה רוצה לשנות את פרטי העסק?"):
+                self._bd_set_editable(True)
+        except Exception:
+            # Fallback: enable without prompt if messagebox fails
+            self._bd_set_editable(True)
 
     def _create_software_management_tab(self):
         """Create a parent tab 'ניהול תוכנה' and place 'פרטי עסק' as a sub-tab within it."""
@@ -471,6 +519,11 @@ class BusinessDetailsTabMixin:
         try:
             if ok:
                 messagebox.showinfo("נשמר", "פרטי העסק נשמרו" )
+                # After saving, return fields to locked (read-only) state
+                try:
+                    self._bd_set_editable(False)
+                except Exception:
+                    pass
             else:
                 messagebox.showerror("שגיאה", "שמירת פרטי העסק נכשלה")
         except Exception:
