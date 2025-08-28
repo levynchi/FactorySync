@@ -15,6 +15,42 @@ class FabricsInventoryTabMixin:
         inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
         unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
 
+        # Filter bar for inventory
+        filter_frame = tk.Frame(inventory_tab, bg='#ffffff'); filter_frame.pack(fill='x', padx=5, pady=(6,0))
+        # Variables
+        self.fabrics_filter_type_var = tk.StringVar(value='')
+        self.fabrics_filter_color_var = tk.StringVar(value='')
+        self.fabrics_filter_location_var = tk.StringVar(value='')
+        self.fabrics_filter_status_var = tk.StringVar(value='')
+        # Widgets (placed right-to-left)
+        tk.Label(filter_frame, text='סטטוס:', bg='#ffffff').pack(side='right', padx=(6,2))
+        self.fabrics_filter_status_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_status_var, state='readonly', width=14, values=('', 'במלאי','נשלח','נגזר'))
+        self.fabrics_filter_status_cb.pack(side='right', padx=(0,10))
+
+        tk.Label(filter_frame, text='מיקום:', bg='#ffffff').pack(side='right', padx=(6,2))
+        self.fabrics_filter_location_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_location_var, width=18)
+        self.fabrics_filter_location_cb.pack(side='right', padx=(0,10))
+
+        tk.Label(filter_frame, text='צבע:', bg='#ffffff').pack(side='right', padx=(6,2))
+        self.fabrics_filter_color_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_color_var, width=18)
+        self.fabrics_filter_color_cb.pack(side='right', padx=(0,10))
+
+        tk.Label(filter_frame, text='סוג בד:', bg='#ffffff').pack(side='right', padx=(6,2))
+        self.fabrics_filter_type_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_type_var, width=20, state='readonly')
+        self.fabrics_filter_type_cb.pack(side='right', padx=(0,10))
+
+        # Actions
+        tk.Button(filter_frame, text='נקה', command=lambda: self._clear_fabrics_filters()).pack(side='left', padx=(0,6))
+        tk.Button(filter_frame, text='החל סינון', command=lambda: self._apply_fabrics_filters()).pack(side='left')
+        self.fabrics_filter_info_var = tk.StringVar(value='')
+        tk.Label(filter_frame, textvariable=self.fabrics_filter_info_var, bg='#ffffff', fg='#7f8c8d').pack(side='left', padx=10)
+
+        # Bind quick-apply
+        self.fabrics_filter_status_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
+        self.fabrics_filter_type_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
+        self.fabrics_filter_color_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
+        self.fabrics_filter_location_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
+
         # Inventory table
         table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
@@ -68,6 +104,11 @@ class FabricsInventoryTabMixin:
         # Footer summary
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
+        # Initialize filters list values, then populate
+        try:
+            self._refresh_fabric_filter_values()
+        except Exception:
+            pass
         self._populate_fabrics_table(); self._populate_fabrics_logs(); self._update_fabrics_summary()
 
     def _export_fabrics_template_excel(self):
@@ -132,10 +173,71 @@ class FabricsInventoryTabMixin:
             except Exception:
                 pass
 
-    def _populate_fabrics_table(self):
+    def _populate_fabrics_table(self, records=None):
+        # Decide records based on filters if not provided
+        if records is None:
+            base = list(getattr(self.data_processor, 'fabrics_inventory', []) or [])
+            if self._has_active_fabrics_filters():
+                records = self._filter_fabrics(base)
+            else:
+                records = base[-1000:]
+        # Render
         for item in self.fabrics_tree.get_children(): self.fabrics_tree.delete(item)
-        for rec in self.data_processor.fabrics_inventory[-1000:]:
+        for rec in records:
             self.fabrics_tree.insert('', 'end', values=(rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''), rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')))
+        # Update quick info
+        try:
+            total = len(records)
+            self.fabrics_filter_info_var.set(f"תוצאות: {total}" if self._has_active_fabrics_filters() else '')
+        except Exception:
+            pass
+
+    def _has_active_fabrics_filters(self):
+        return any([
+            (self.fabrics_filter_type_var.get() or '').strip(),
+            (self.fabrics_filter_color_var.get() or '').strip(),
+            (self.fabrics_filter_location_var.get() or '').strip(),
+            (self.fabrics_filter_status_var.get() or '').strip(),
+        ])
+
+    def _filter_fabrics(self, records):
+        t = (self.fabrics_filter_type_var.get() or '').strip()
+        c = (self.fabrics_filter_color_var.get() or '').strip()
+        loc = (self.fabrics_filter_location_var.get() or '').strip()
+        st = (self.fabrics_filter_status_var.get() or '').strip()
+        def match(rec):
+            if t and (rec.get('fabric_type','') != t):
+                return False
+            if st and (rec.get('status','במלאי') != st):
+                return False
+            if c and (c.lower() not in (rec.get('color_name','') or '').lower()):
+                return False
+            if loc and (loc.lower() not in (rec.get('location','') or '').lower()):
+                return False
+            return True
+        return [r for r in records if match(r)]
+
+    def _apply_fabrics_filters(self):
+        self._populate_fabrics_table()
+
+    def _clear_fabrics_filters(self):
+        self.fabrics_filter_type_var.set(''); self.fabrics_filter_color_var.set(''); self.fabrics_filter_location_var.set(''); self.fabrics_filter_status_var.set('')
+        self._populate_fabrics_table()
+
+    def _refresh_fabric_filter_values(self):
+        inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
+        # Unique values for comboboxes
+        types = sorted({(r.get('fabric_type') or '').strip() for r in inv if (r.get('fabric_type') or '').strip()})
+        colors = sorted({(r.get('color_name') or '').strip() for r in inv if (r.get('color_name') or '').strip()})
+        locs = sorted({(r.get('location') or '').strip() for r in inv if (r.get('location') or '').strip()})
+        # Preserve selections if still valid
+        cur_t, cur_c, cur_l = self.fabrics_filter_type_var.get(), self.fabrics_filter_color_var.get(), self.fabrics_filter_location_var.get()
+        self.fabrics_filter_type_cb['values'] = [''] + types
+        self.fabrics_filter_color_cb['values'] = [''] + colors
+        self.fabrics_filter_location_cb['values'] = [''] + locs
+        if cur_t not in self.fabrics_filter_type_cb['values']: self.fabrics_filter_type_var.set('')
+        if cur_c not in self.fabrics_filter_color_cb['values']: self.fabrics_filter_color_var.set('')
+        if cur_l not in self.fabrics_filter_location_cb['values']: self.fabrics_filter_location_var.set('')
 
     def _on_fabrics_right_click(self, event):
         row_id = self.fabrics_tree.identify_row(event.y)
@@ -161,6 +263,10 @@ class FabricsInventoryTabMixin:
 
     def _refresh_fabrics_table(self):
         self.data_processor.fabrics_inventory = self.data_processor.load_fabrics_inventory()
+        try:
+            self._refresh_fabric_filter_values()
+        except Exception:
+            pass
         self._populate_fabrics_table()
         if hasattr(self.data_processor, 'fabrics_import_logs'):
             self.data_processor.fabrics_import_logs = self.data_processor.load_fabrics_import_logs(); self._populate_fabrics_logs()
