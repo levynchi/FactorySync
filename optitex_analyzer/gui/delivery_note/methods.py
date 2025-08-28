@@ -1067,6 +1067,15 @@ class DeliveryNoteMethodsMixin:
                     from openpyxl.worksheet.page import PageMargins  # type: ignore
                 except Exception:
                     PageMargins = None  # type: ignore
+                try:
+                    from openpyxl.utils import get_column_letter  # type: ignore
+                except Exception:
+                    def get_column_letter(c):
+                        return 'A'
+                try:
+                    from openpyxl.drawing.image import Image as XLImage  # type: ignore
+                except Exception:
+                    XLImage = None  # type: ignore
             except Exception as e:
                 try:
                     messagebox.showerror('שגיאה', f"נדרש openpyxl לצורך יצוא לאקסל:\n{e}")
@@ -1096,26 +1105,22 @@ class DeliveryNoteMethodsMixin:
                         ws.page_margins = PageMargins(left=0.5, right=0.5, top=0.5, bottom=0.5)
                 except Exception:
                     pass
-                # Header
+                # Header (logo from Business Details). We'll place it later after autosize to fit full width.
+                logo_path = ''
+                has_logo = False
                 try:
                     s = getattr(self, 'settings', None)
-                    def _sget(k, default=""):
-                        try:
-                            return (s.get(k, default) if s else default) or ""
-                        except Exception:
-                            return ""
-                    biz_name = _sget('business.name')
+                    if s:
+                        lp = (s.get('business.logo_path', '') or '').strip()
+                        if lp and os.path.exists(lp):
+                            logo_path = lp
+                            has_logo = True
                 except Exception:
-                    biz_name = ''
-                last_col = 5
-                if biz_name:
-                    ws.append([biz_name]); r = ws.max_row
-                    try: ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=last_col)
-                    except Exception: pass
-                    try:
-                        ws.cell(row=r, column=1).font = Font(size=16, bold=True)
-                        ws.cell(row=r, column=1).alignment = Alignment(horizontal='center')
-                    except Exception: pass
+                    logo_path = ''
+                    has_logo = False
+                # Pre-add spacing so details start below the future logo area
+                if has_logo:
+                    ws.append([])
                     ws.append([])
                 # Doc info
                 ws.append(["מסמך", f"שליחת בדים #{rec.get('id')}"])
@@ -1191,6 +1196,38 @@ class DeliveryNoteMethodsMixin:
                         ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
                 except Exception:
                     pass
+                # Now place the logo sized to the full sheet width (A4 fit width)
+                if XLImage and has_logo and logo_path:
+                    try:
+                        img = XLImage(logo_path)
+                        # Approximate total pixel width across used columns (1..5)
+                        def col_width_to_px(w: float) -> int:
+                            try:
+                                return int((float(w) + 0.75) * 7)
+                            except Exception:
+                                return 64
+                        total_px = 0
+                        for c in range(1, 6):
+                            w = ws.column_dimensions[get_column_letter(c)].width
+                            if w is None:
+                                w = 10
+                            total_px += col_width_to_px(w)
+                        # Scale image to full width
+                        if getattr(img, 'width', None):
+                            ratio = float(total_px) / float(max(1, img.width))
+                            img.width = int(img.width * ratio)
+                            if getattr(img, 'height', None):
+                                img.height = int(img.height * ratio)
+                        ws.add_image(img, 'A1')
+                        # Set row 1 height roughly to image height (convert px->points ~ *0.75)
+                        try:
+                            h_px = getattr(img, 'height', None)
+                            if h_px:
+                                ws.row_dimensions[1].height = float(h_px) * 0.75
+                        except Exception:
+                            pass
+                    except Exception:
+                        pass
                 # Save
                 base_dir = os.path.join(os.getcwd(), 'exports', 'fabrics_shipments')
                 try: os.makedirs(base_dir, exist_ok=True)
