@@ -6,7 +6,9 @@ class FabricsInventoryTabMixin:
     def _create_fabrics_inventory_tab(self):
         tab = tk.Frame(self.notebook, bg='#f7f9fa'); self.notebook.add(tab, text="מלאי בדים")
         tk.Label(tab, text="מלאי בדים", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        # Action bar
         actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=15, pady=5)
+        tk.Button(actions, text="⬇️ הורד תבנית אקסל למשלוח", command=self._export_fabrics_template_excel, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg='#2980b9', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
@@ -67,6 +69,68 @@ class FabricsInventoryTabMixin:
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
         tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
         self._populate_fabrics_table(); self._populate_fabrics_logs(); self._update_fabrics_summary()
+
+    def _export_fabrics_template_excel(self):
+        """יוצר קובץ Excel ריק עם כותרות בסדר שהיבוא (CSV) מצפה לו."""
+        # סדר ושמות העמודות כפי שהפונקציה import_fabrics_csv מצפה להם
+        headers = [
+            'BARCODE NO',
+            'סוג בד',
+            'COLOR NAME',
+            'COLOR NO',
+            'Desen Kodu',
+            'WIDTH',
+            'GR',
+            'NET KG',
+            'GROSS KG',
+            'METER',
+            'PRICE',
+            'TOTAL',
+            'location',
+            'Last Modified',
+            'מטרה',
+        ]
+        # בחירת נתיב שמירה
+        from tkinter import filedialog, messagebox
+        default_name = 'fabrics_shipment_template.xlsx'
+        path = filedialog.asksaveasfilename(title='שמירת תבנית משלוח בדים', defaultextension='.xlsx', initialfile=default_name, filetypes=[('Excel','*.xlsx')])
+        if not path:
+            return
+        try:
+            # יצירת קובץ Excel עם הכותרות בלבד
+            from openpyxl import Workbook  # type: ignore
+            from openpyxl.styles import Font, Alignment  # type: ignore
+            from openpyxl.utils import get_column_letter  # type: ignore
+            wb = Workbook()
+            ws = wb.active
+            ws.title = 'Shipment'
+            try:
+                # תצוגת RTL כדי להקל על הזנה בעברית
+                ws.sheet_view.rightToLeft = True
+            except Exception:
+                pass
+            # כתיבת כותרות בשורה הראשונה
+            for col_idx, name in enumerate(headers, start=1):
+                c = ws.cell(row=1, column=col_idx, value=name)
+                c.font = Font(bold=True)
+                c.alignment = Alignment(horizontal='center')
+                # רוחב עמודה אוטומטי בסיסי לפי אורך הטקסט
+                try:
+                    ws.column_dimensions[get_column_letter(col_idx)].width = max(12, min(28, len(name) + 4))
+                except Exception:
+                    pass
+            # שורת עזרה אופציונלית (לא חובה)
+            ws.cell(row=2, column=1, value='')
+            wb.save(path)
+            try:
+                messagebox.showinfo('נוצר קובץ', f'הקובץ נשמר בהצלחה:\n{path}\n\nהערה: ליבוא בתוכנה יש לשמור/להמיר את הקובץ ל-CSV עם אותן כותרות.')
+            except Exception:
+                pass
+        except Exception as e:
+            try:
+                messagebox.showerror('שגיאה', f'כשל ביצירת תבנית: {e}')
+            except Exception:
+                pass
 
     def _populate_fabrics_table(self):
         for item in self.fabrics_tree.get_children(): self.fabrics_tree.delete(item)
