@@ -807,21 +807,15 @@ class ProductsCatalogMethodsMixin:
             return
         category_raw = self.prod_category_var.get().strip()
         valid_categories = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
-        if not category_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור תת קטגוריה (טאב תת קטגוריות)")
-            return
-        # category_raw may be comma-separated multi-select; validate all
-        category_tokens = [s.strip() for s in category_raw.split(',') if s.strip()]
-        if not category_tokens:
-                messagebox.showerror("שגיאה", "חובה לבחור תת קטגוריה (טאב תת קטגוריות)")
-                return
-        for ct in category_tokens:
-            if ct not in valid_categories:
-                messagebox.showerror("שגיאה", f"תת קטגוריה '{ct}' לא קיימת. הוסף בטאב 'תת קטגוריות' ובחר שוב")
-                return
-        # Normalize the category field as a single comma-joined string so a product with
-        # multiple subcategories remains one product (not split per subcategory)
-        category_value = ",".join(category_tokens)
+        # category_raw may be comma-separated multi-select; validate only if provided
+        category_tokens = [s.strip() for s in category_raw.split(',') if s.strip()] if category_raw else []
+        if category_tokens:
+            for ct in category_tokens:
+                if ct not in valid_categories:
+                    messagebox.showerror("שגיאה", f"תת קטגוריה '{ct}' לא קיימת. הוסף בטאב 'תת קטגוריות' ובחר שוב")
+                    return
+        # Normalize the category field as a single comma-joined string; allow empty (optional)
+        category_value = ",".join(category_tokens) if category_tokens else ''
         sizes_raw = self.prod_size_var.get().strip()
         ftypes_raw = self.prod_fabric_type_var.get().strip()
         fcolors_raw = self.prod_fabric_color_var.get().strip()
