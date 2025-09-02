@@ -9,8 +9,10 @@ class FabricsInventoryTabMixin:
         # Action bar
         actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=15, pady=5)
         tk.Button(actions, text="⬇️ הורד תבנית אקסל למשלוח", command=self._export_fabrics_template_excel, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="📤 ייצא נתוני מלאי", command=self._export_current_fabrics_to_excel, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg='#2980b9', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
         inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
         unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
@@ -53,10 +55,10 @@ class FabricsInventoryTabMixin:
 
         # Inventory table
         table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
-        cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
+        cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','intake_date','status')
         self.fabrics_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','status':'סטטוס'}
-        widths = {'barcode':120,'fabric_type':140,'color_name':110,'color_no':80,'design_code':110,'width':60,'net_kg':80,'meters':80,'price':80,'location':90,'status':80}
+        headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','intake_date':'תאריך קליטה','status':'סטטוס'}
+        widths = {'barcode':120,'fabric_type':140,'color_name':110,'color_no':80,'design_code':110,'width':60,'net_kg':80,'meters':80,'price':80,'location':90,'intake_date':120,'status':80}
         for c in cols:
             self.fabrics_tree.heading(c, text=headers[c]); self.fabrics_tree.column(c, width=widths[c], anchor='center')
         vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.fabrics_tree.yview); self.fabrics_tree.configure(yscroll=vsb.set)
@@ -183,8 +185,84 @@ class FabricsInventoryTabMixin:
                 records = base[-1000:]
         # Render
         for item in self.fabrics_tree.get_children(): self.fabrics_tree.delete(item)
+        # map import_log_id to imported_at
+        try:
+            logs = getattr(self.data_processor, 'fabrics_import_logs', None)
+            if logs is None:
+                logs = self.data_processor.load_fabrics_import_logs()
+        except Exception:
+            logs = []
+        try:
+            log_date_map = { int(r.get('id')): (r.get('imported_at') or '') for r in logs if isinstance(r.get('id'), int) }
+        except Exception:
+            log_date_map = {}
         for rec in records:
-            self.fabrics_tree.insert('', 'end', values=(rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''), rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')))
+            intake_dt = ''
+            try:
+                ilid = rec.get('import_log_id')
+                if ilid is not None and str(ilid).isdigit():
+                    intake_dt = log_date_map.get(int(ilid), '') or ''
+            except Exception:
+                intake_dt = ''
+            if not intake_dt:
+                intake_dt = rec.get('last_modified','') or rec.get('Last Modified','') or ''
+            self.fabrics_tree.insert('', 'end', values=(
+                rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''), rec.get('width',''),
+                f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), intake_dt, rec.get('status','במלאי')
+            ))
+
+    def _export_current_fabrics_to_excel(self):
+        """ייצוא נתוני מלאי (כפי שמופיעים בטבלה, כולל תאריך קליטה) לאקסל."""
+        base = list(getattr(self.data_processor, 'fabrics_inventory', []) or [])
+        records = self._filter_fabrics(base) if self._has_active_fabrics_filters() else base
+        try:
+            logs = getattr(self.data_processor, 'fabrics_import_logs', None)
+            if logs is None:
+                logs = self.data_processor.load_fabrics_import_logs()
+        except Exception:
+            logs = []
+        try:
+            log_date_map = { int(r.get('id')): (r.get('imported_at') or '') for r in logs if isinstance(r.get('id'), int) }
+        except Exception:
+            log_date_map = {}
+        path = filedialog.asksaveasfilename(title='ייצוא נתוני מלאי', defaultextension='.xlsx', initialfile='fabrics_inventory.xlsx', filetypes=[('Excel','*.xlsx')])
+        if not path:
+            return
+        try:
+            from openpyxl import Workbook  # type: ignore
+            from openpyxl.styles import Font, Alignment  # type: ignore
+            wb = Workbook(); ws = wb.active; ws.title = 'מלאי בדים'
+            try:
+                ws.sheet_view.rightToLeft = True
+            except Exception:
+                pass
+            headers = ['ברקוד','סוג בד','צבע','מס׳ צבע','Desen Kodu','רוחב','ק"ג נטו','מטרים','מחיר','מיקום','תאריך קליטה','סטטוס']
+            for j, h in enumerate(headers, start=1):
+                c = ws.cell(row=1, column=j, value=h)
+                c.font = Font(bold=True); c.alignment = Alignment(horizontal='center')
+            r_index = 2
+            for rec in records:
+                intake_dt = ''
+                try:
+                    ilid = rec.get('import_log_id')
+                    if ilid is not None and str(ilid).isdigit():
+                        intake_dt = log_date_map.get(int(ilid), '') or ''
+                except Exception:
+                    intake_dt = ''
+                if not intake_dt:
+                    intake_dt = rec.get('last_modified','') or rec.get('Last Modified','') or ''
+                row = [
+                    rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''), rec.get('width',''),
+                    float(rec.get('net_kg',0) or 0), float(rec.get('meters',0) or 0), float(rec.get('price',0) or 0), rec.get('location',''), intake_dt, rec.get('status','במלאי')
+                ]
+                for j, v in enumerate(row, start=1): ws.cell(row=r_index, column=j, value=v)
+                r_index += 1
+            wb.save(path)
+            try: messagebox.showinfo('נשמר', f'הקובץ נשמר בהצלחה:\n{path}')
+            except Exception: pass
+        except Exception as e:
+            try: messagebox.showerror('שגיאה', f'כשל ביצוא המלאי: {e}')
+            except Exception: pass
         # Update quick info
         try:
             total = len(records)
