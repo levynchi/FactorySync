@@ -17,6 +17,11 @@ class OptitexFileAnalyzer:
         # Marker meta
         self.marker_width = None
         self.marker_length = None
+        # Exceptions: style files that should NOT be treated as tubular even if layout reports Tubular
+        self._tubular_exceptions = {
+            # exact base filename match (case-insensitive compare will be used)
+            '200 baby leggings close.pds'
+        }
         
     def load_products_mapping(self, products_file: str) -> bool:
         """טעינת מיפוי מוצרים מקובץ Excel"""
@@ -117,6 +122,11 @@ class OptitexFileAnalyzer:
                 if pd.notna(row.iloc[0]) and row.iloc[0] == 'Style File Name:':
                     if pd.notna(row.iloc[2]):
                         current_file_name = os.path.basename(row.iloc[2])
+                        # If this style file is in the exceptions list, do NOT apply tubular split
+                        if current_file_name and isinstance(current_file_name, str):
+                            if current_file_name.strip().lower() in self._tubular_exceptions:
+                                # Force non-tubular behavior for this analysis
+                                self.is_tubular = False
                         product_name = self.product_mapping.get(current_file_name)
                 
                 # חיפוש טבלת מידות
