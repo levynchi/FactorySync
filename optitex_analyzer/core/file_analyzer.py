@@ -47,7 +47,7 @@ class OptitexFileAnalyzer:
             self.marker_width = None
             self.marker_length = None
             
-            # בדיקת Tubular
+            # בדיקת Tubular (ברמת הקובץ)
             self.is_tubular = False
             if handle_tubular:
                 self.is_tubular = self._check_tubular_layout(df)
@@ -55,6 +55,7 @@ class OptitexFileAnalyzer:
             # חיפוש נתונים
             self.results = []
             current_file_name = None
+            current_style_tubular = self.is_tubular  # ברירת מחדל: כמו רמת הקובץ
             product_name = None
             
             for i, row in df.iterrows():
@@ -122,18 +123,18 @@ class OptitexFileAnalyzer:
                 if pd.notna(row.iloc[0]) and row.iloc[0] == 'Style File Name:':
                     if pd.notna(row.iloc[2]):
                         current_file_name = os.path.basename(row.iloc[2])
-                        # If this style file is in the exceptions list, do NOT apply tubular split
+                        # קבע טיפול Tubular ברמת ה-Style: אם בקובץ Tubular אך ה-Style חריג, בטל חלוקה רק עבור Style זה
+                        current_style_tubular = self.is_tubular
                         if current_file_name and isinstance(current_file_name, str):
                             if current_file_name.strip().lower() in self._tubular_exceptions:
-                                # Force non-tubular behavior for this analysis
-                                self.is_tubular = False
+                                current_style_tubular = False
                         product_name = self.product_mapping.get(current_file_name)
-                
+
                 # חיפוש טבלת מידות
                 elif (pd.notna(row.iloc[0]) and row.iloc[0] == 'Size name' and 
                       pd.notna(row.iloc[1]) and row.iloc[1] == 'Order' and product_name):
-                    
-                    self._process_sizes_table(df, i, product_name, only_positive)
+                    # עיבוד טבלת מידות עם אינדיקציה האם לחלק ב-2 עבור Style זה
+                    self._process_sizes_table(df, i, product_name, only_positive, apply_tubular=current_style_tubular)
             
             return self.results
             
@@ -149,7 +150,7 @@ class OptitexFileAnalyzer:
         return False
     
     def _process_sizes_table(self, df: pd.DataFrame, start_index: int, 
-                           product_name: str, only_positive: bool):
+                           product_name: str, only_positive: bool, apply_tubular: bool):
         """עיבוד טבלת מידות"""
         j = start_index + 1
         
@@ -165,7 +166,7 @@ class OptitexFileAnalyzer:
             if size_name not in ['Style File Name:', 'Size name']:
                 # טיפול ב-Tubular
                 original_quantity = quantity
-                if self.is_tubular and quantity > 0:
+                if apply_tubular and quantity > 0:
                     quantity = quantity / 2
                     quantity = int(quantity) if quantity == int(quantity) else round(quantity, 1)
                 
@@ -175,8 +176,8 @@ class OptitexFileAnalyzer:
                         'שם המוצר': product_name,
                         'מידה': size_name,
                         'כמות': quantity,
-                        'כמות מקורית': original_quantity if self.is_tubular else quantity,
-                        'הערה': 'חולק ב-2 (Tubular)' if self.is_tubular and original_quantity > 0 else 'רגיל'
+                        'כמות מקורית': original_quantity if apply_tubular else quantity,
+                        'הערה': 'חולק ב-2 (Tubular)' if apply_tubular and original_quantity > 0 else 'רגיל'
                     })
             elif size_name in ['Style File Name:', 'Size name']:
                 break

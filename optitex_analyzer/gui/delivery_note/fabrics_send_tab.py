@@ -72,6 +72,11 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
         ctx._refresh_driver_names_for_delivery()
     except Exception:
         pass
+    # Open dropdown on click for convenience
+    try:
+        ctx.fs_pkg_driver_combo.bind('<Button-1>', lambda e: ctx.fs_pkg_driver_combo.event_generate('<Down>'))
+    except Exception:
+        pass
     tk.Button(pkg_frame, text="➕ הוסף", command=ctx._fs_add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
     tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._fs_delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
     tk.Button(pkg_frame, text="❌ נקה", command=ctx._fs_clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)

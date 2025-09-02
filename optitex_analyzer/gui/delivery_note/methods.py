@@ -19,8 +19,11 @@ class DeliveryNoteMethodsMixin:
                             if name:
                                 names.append(name)
             names = sorted({n for n in names})
+            # Update driver comboboxes across tabs if present
             if hasattr(self, 'pkg_driver_combo'):
                 self.pkg_driver_combo['values'] = names
+            if hasattr(self, 'fs_pkg_driver_combo'):
+                self.fs_pkg_driver_combo['values'] = names
         except Exception:
             pass
 
@@ -1005,6 +1008,15 @@ class DeliveryNoteMethodsMixin:
                         packages.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
         except Exception:
             packages = []
+        # If no driver is provided in any package, warn and confirm proceed
+        try:
+            has_driver = any((p.get('driver') or '').strip() for p in packages)
+            if not has_driver:
+                proceed = messagebox.askyesno('אישור', 'לא הוזן שם מוביל. האם לשמור בלי מוביל?')
+                if not proceed:
+                    return
+        except Exception:
+            pass
         # status+location update for each barcode (bulk for efficiency)
         updated = 0
         try:
