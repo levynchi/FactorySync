@@ -281,6 +281,14 @@ class MainWindow(
                     self.balance_supplier_var.set('')
             except Exception:
                 pass
+        # Fabrics send supplier combo
+        if hasattr(self, 'fs_supplier_combo'):
+            try:
+                self.fs_supplier_combo['values'] = names
+                if getattr(self, 'fs_supplier_var', None) and self.fs_supplier_var.get() and self.fs_supplier_var.get() not in names:
+                    self.fs_supplier_var.set('')
+            except Exception:
+                pass
 
     def _notify_suppliers_changed(self):
         """קריאה לאחר שינוי ברשימת הספקים לעדכון קומבואים."""

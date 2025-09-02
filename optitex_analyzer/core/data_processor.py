@@ -259,13 +259,14 @@ class DataProcessor:
 		except Exception:
 			self.fabrics_shipments = []
 
-	def add_fabrics_shipment(self, barcodes: list[str], packages: list[dict] | None = None, date_str: str = '', fabric_type: str = '', color_name: str = '', color_no: str = '', net_kg: float | int | str = 0, meters: float | int | str = 0) -> int:
+	def add_fabrics_shipment(self, barcodes: list[str], packages: list[dict] | None = None, date_str: str = '', fabric_type: str = '', color_name: str = '', color_no: str = '', net_kg: float | int | str = 0, meters: float | int | str = 0, supplier: str = '') -> int:
 		"""Create a fabrics shipment document and return its new ID.
 
 		barcodes: list of barcode strings included in this shipment
 		packages: list of {'package_type','quantity','driver'} dicts
 		date_str: optional date string; defaults to today if empty
 		fabric_type/color_name/color_no/net_kg/meters: optional summary fields
+		supplier: optional supplier name the fabrics are being sent to
 		"""
 		try:
 			if not barcodes:
@@ -288,6 +289,7 @@ class DataProcessor:
 				'color_no': (color_no or ''),
 				'net_kg': _to_float(net_kg),
 				'meters': _to_float(meters),
+				'supplier': supplier or '',
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.fabrics_shipments.append(rec)
@@ -818,6 +820,42 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה בעדכון סטטוס: {e}")
 			return False
+
+	def bulk_update_fabrics(self, updates: list[dict]) -> int:
+		"""עדכון מרובה של בדים לפי ברקודים.
+
+		updates: [{'barcode': str, 'status': optional str, 'location': optional str}, ...]
+		מחזיר מספר רשומות שעודכנו בפועל.
+		"""
+		try:
+			if not updates:
+				return 0
+			upd_map = {}
+			for u in updates:
+				bc = str((u or {}).get('barcode', '')).strip()
+				if not bc:
+					continue
+				upd_map[bc] = {'status': u.get('status'), 'location': u.get('location')}
+			changed = 0
+			for rec in self.fabrics_inventory:
+				bc = str(rec.get('barcode', '')).strip()
+				if not bc or bc not in upd_map:
+					continue
+				info = upd_map[bc]
+				before = (rec.get('status'), rec.get('location'))
+				if info.get('status') is not None:
+					rec['status'] = info['status']
+				if info.get('location') is not None:
+					rec['location'] = info['location']
+				after = (rec.get('status'), rec.get('location'))
+				if after != before:
+					changed += 1
+			if changed:
+				self.save_fabrics_inventory()
+			return changed
+		except Exception as e:
+			print(f"שגיאה בעדכון מרובה של בדים: {e}")
+			return 0
 
 	# ===== Products Catalog (New) =====
 	def load_products_catalog(self) -> List[Dict]:

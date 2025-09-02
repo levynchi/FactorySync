@@ -7,6 +7,18 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     header = tk.Frame(container, bg='#f7f9fa'); header.pack(fill='x', padx=10, pady=(8,4))
     tk.Label(header, text='שליחת בדים', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
 
+    # Supplier selection (required)
+    sup_bar = tk.Frame(container, bg='#f7f9fa'); sup_bar.pack(fill='x', padx=10, pady=(0,4))
+    tk.Label(sup_bar, text='ספק יעד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+    ctx.fs_supplier_var = tk.StringVar()
+    ctx.fs_supplier_combo = ttk.Combobox(sup_bar, textvariable=ctx.fs_supplier_var, state='readonly', width=30)
+    try:
+        if hasattr(ctx, '_get_supplier_names'):
+            ctx.fs_supplier_combo['values'] = ctx._get_supplier_names()
+    except Exception:
+        pass
+    ctx.fs_supplier_combo.pack(side='right')
+
     # Barcode scan bar
     bar = tk.Frame(container, bg='#f7f9fa'); bar.pack(fill='x', padx=10, pady=(0,6))
     tk.Label(bar, text='בר קוד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
@@ -74,4 +86,19 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     actions = tk.Frame(container, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,8))
     tk.Button(actions, text='💾 שמור שליחת בדים', command=ctx._fs_save_shipment, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
     ctx.fs_summary_var = tk.StringVar(value='0 בדים')
-    tk.Label(container, textvariable=ctx.fs_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+    ctx.fs_supplier_summary_var = tk.StringVar(value='ספק: -')
+    status_bar = tk.Frame(container)
+    status_bar.pack(fill='x', side='bottom')
+    tk.Label(status_bar, textvariable=ctx.fs_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='left', expand=True)
+    tk.Label(status_bar, textvariable=ctx.fs_supplier_summary_var, bg='#2c3e50', fg='white', anchor='e', padx=10).pack(fill='x', side='right')
+    # Update supplier summary on change
+    try:
+        def _on_sup_change(event=None):
+            try:
+                name = (ctx.fs_supplier_var.get() or '').strip() or '-'
+                ctx.fs_supplier_summary_var.set(f"ספק: {name}")
+            except Exception:
+                pass
+        ctx.fs_supplier_combo.bind('<<ComboboxSelected>>', _on_sup_change)
+    except Exception:
+        pass

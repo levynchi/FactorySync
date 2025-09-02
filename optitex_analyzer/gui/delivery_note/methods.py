@@ -839,6 +839,21 @@ class DeliveryNoteMethodsMixin:
             try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
             except Exception: pass
             return
+        # Require supplier selection
+        try:
+            supplier = (getattr(self, 'fs_supplier_var', None).get() or '').strip()
+        except Exception:
+            supplier = ''
+        valid_suppliers = []
+        try:
+            if hasattr(self, '_get_supplier_names'):
+                valid_suppliers = self._get_supplier_names() or []
+        except Exception:
+            valid_suppliers = []
+        if not supplier or (valid_suppliers and supplier not in valid_suppliers):
+            try: messagebox.showerror('שגיאה', 'יש לבחור ספק יעד מהרשימה לפני שמירה')
+            except Exception: pass
+            return
         # packages
         packages = []
         try:
@@ -851,14 +866,32 @@ class DeliveryNoteMethodsMixin:
                         packages.append({'package_type': vals[0], 'quantity': vals[1], 'driver': vals[2] if len(vals) > 2 else ''})
         except Exception:
             packages = []
-        # status update for each barcode
+        # status+location update for each barcode (bulk for efficiency)
         updated = 0
-        for bc in barcodes:
-            try:
-                if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'נשלח'):
-                    updated += 1
-            except Exception:
-                pass
+        try:
+            updates = [{'barcode': bc, 'status': 'נשלח', 'location': supplier} for bc in barcodes]
+            if hasattr(self.data_processor, 'bulk_update_fabrics'):
+                updated = self.data_processor.bulk_update_fabrics(updates)
+            else:
+                # fallback per item
+                for bc in barcodes:
+                    try:
+                        if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'נשלח'):
+                            # also try to set location field directly
+                            try:
+                                inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
+                                for r in inv:
+                                    if str(r.get('barcode')) == str(bc):
+                                        r['location'] = supplier
+                                        break
+                                self.data_processor.save_fabrics_inventory()
+                            except Exception:
+                                pass
+                            updated += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # persist shipment in data processor
         new_id = None
         try:
@@ -894,18 +927,25 @@ class DeliveryNoteMethodsMixin:
                     date_str = (getattr(self, 'dn_date_var', None).get() or '').strip()
                 except Exception:
                     date_str = ''
-                new_id = self.data_processor.add_fabrics_shipment(barcodes, packages, date_str=date_str, fabric_type=ft, color_name=cn, color_no=cno, net_kg=net_kg, meters=meters)
+                new_id = self.data_processor.add_fabrics_shipment(barcodes, packages, date_str=date_str, fabric_type=ft, color_name=cn, color_no=cno, net_kg=net_kg, meters=meters, supplier=supplier)
         except Exception:
             new_id = None
         try:
             if new_id:
-                messagebox.showinfo('הצלחה', f"נשמרה שליחת בדים (ID: {new_id}).\nעודכנו {updated} בדים לסטטוס 'נשלח'")
+                messagebox.showinfo('הצלחה', f"נשמרה שליחת בדים (ID: {new_id}) לספק '{supplier}'.\nעודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}")
             else:
-                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'נשלח'")
+                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}")
         except Exception:
             pass
         # clear UI and refresh inventory tab if available
         self._fs_clear_all(); self._fs_clear_packages()
+        try:
+            if hasattr(self, 'fs_supplier_var'):
+                self.fs_supplier_var.set('')
+                if hasattr(self, 'fs_supplier_summary_var'):
+                    self.fs_supplier_summary_var.set('ספק: -')
+        except Exception:
+            pass
         try:
             if hasattr(self, '_refresh_fabrics_table'):
                 self._refresh_fabrics_table()
@@ -1006,6 +1046,7 @@ class DeliveryNoteMethodsMixin:
             return tk.Label(header, text=t, font=('Arial',10,'bold'))
         _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
         _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
+        _lbl(f"ספק: {rec.get('supplier','')}").grid(row=0,column=2,padx=6,sticky='w')
         # table of barcode details
         body = tk.Frame(win)
         body.pack(fill='both', expand=True, padx=8, pady=6)
@@ -1126,8 +1167,9 @@ class DeliveryNoteMethodsMixin:
                 ws.append(["מסמך", f"שליחת בדים #{rec.get('id')}"])
                 # Date as text
                 ws.append(["תאריך", rec.get('date','')])
+                ws.append(["ספק", rec.get('supplier','')])
                 try:
-                    for row in ws.iter_rows(min_row=ws.max_row-1, max_row=ws.max_row, min_col=1, max_col=2):
+                    for row in ws.iter_rows(min_row=ws.max_row-2, max_row=ws.max_row, min_col=1, max_col=2):
                         row[0].font = Font(bold=True, size=12)
                         row[0].alignment = Alignment(horizontal='right')
                         row[1].alignment = Alignment(horizontal='right')
