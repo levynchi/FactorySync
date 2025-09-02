@@ -30,7 +30,8 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     except Exception:
         pass
     tk.Button(bar, text='➕ הוסף', command=ctx._fs_add_fabric_by_barcode, bg='#27ae60', fg='white').pack(side='right', padx=6)
-    tk.Button(bar, text='🗑️ הסר נבחר', command=ctx._fs_remove_selected).pack(side='left', padx=6)
+    tk.Button(bar, text='� ייבוא ברקודים', command=ctx._fs_import_barcodes_from_file, bg='#16a085', fg='white').pack(side='right', padx=6)
+    tk.Button(bar, text='�🗑️ הסר נבחר', command=ctx._fs_remove_selected).pack(side='left', padx=6)
     tk.Button(bar, text='🧹 נקה הכל', command=ctx._fs_clear_all).pack(side='left')
 
     # Table of selected fabrics to ship

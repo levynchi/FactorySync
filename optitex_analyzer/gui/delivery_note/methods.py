@@ -709,6 +709,145 @@ class DeliveryNoteMethodsMixin:
                 pass
 
     # ===== Fabrics Send (שליחת בדים) =====
+    def _fs_import_barcodes_from_file(self):
+        """Import barcodes from a CSV or Excel file and add valid ones to the send list.
+        Supported:
+        - CSV: one barcode per line, or in a column named 'barcode' (case-insensitive).
+        - Excel (.xlsx): first sheet, one column with barcodes (any header), or a column named 'barcode'.
+        Duplicates (already in list) are skipped. Invalid/not-found barcodes are reported at the end.
+        """
+        try:
+            from tkinter import filedialog
+            path = filedialog.askopenfilename(title='בחר קובץ ברקודים', filetypes=[('Excel/CSV','*.xlsx;*.csv'),('Excel','*.xlsx'),('CSV','*.csv'),('All files','*.*')])
+        except Exception:
+            path = ''
+        if not path:
+            return
+        import os
+        ext = os.path.splitext(path)[1].lower()
+        barcodes = []
+        # Read file
+        try:
+            if ext == '.csv':
+                import csv
+                with open(path, 'r', encoding='utf-8-sig') as f:
+                    rdr = csv.reader(f)
+                    rows = list(rdr)
+                if not rows:
+                    rows = []
+                # Try header-based
+                if rows and any('barcode' in (c or '').strip().lower() for c in rows[0]):
+                    header = [ (c or '').strip().lower() for c in rows[0] ]
+                    try:
+                        idx = header.index('barcode')
+                        for r in rows[1:]:
+                            if idx < len(r):
+                                bc = (r[idx] or '').strip()
+                                if bc:
+                                    barcodes.append(bc)
+                    except Exception:
+                        pass
+                # Fallback: single column or first cell per row
+                if not barcodes:
+                    for r in rows:
+                        if not r: continue
+                        bc = (r[0] or '').strip()
+                        if bc:
+                            barcodes.append(bc)
+            elif ext == '.xlsx':
+                try:
+                    from openpyxl import load_workbook  # type: ignore
+                except Exception as e:
+                    try: messagebox.showerror('שגיאה', f"נדרש openpyxl לקריאת אקסל: {e}")
+                    except Exception: pass
+                    return
+                wb = load_workbook(path, read_only=True, data_only=True)
+                ws = wb.active
+                # Try to detect header row
+                header = None
+                for i, row in enumerate(ws.iter_rows(values_only=True), start=1):
+                    values = [ (str(c) if c is not None else '').strip() for c in row ]
+                    if not any(values):
+                        continue
+                    if header is None and any('barcode' == v.lower() for v in values):
+                        header = [ v.lower() for v in values ]
+                        try:
+                            idx = header.index('barcode')
+                        except Exception:
+                            idx = None
+                        continue
+                    if header is not None:
+                        # header already detected, take value at 'barcode' column
+                        try:
+                            if idx is not None and idx < len(values):
+                                bc = values[idx]
+                                if bc:
+                                    barcodes.append(bc)
+                                continue
+                        except Exception:
+                            pass
+                    # Fallback: take first non-empty cell
+                    first = next((v for v in values if v), '')
+                    if first:
+                        barcodes.append(first)
+            else:
+                try: messagebox.showerror('שגיאה', 'סוג קובץ לא נתמך. נא לבחור CSV או XLSX')
+                except Exception: pass
+                return
+        except Exception as e:
+            try: messagebox.showerror('שגיאה', f'קריאת הקובץ נכשלה: {e}')
+            except Exception: pass
+            return
+        # Normalize barcodes
+        barcodes = [ str(b).strip() for b in barcodes if str(b).strip() ]
+        if not barcodes:
+            try: messagebox.showwarning('מידע', 'לא נמצאו ברקודים בקובץ')
+            except Exception: pass
+            return
+        # Build fast lookup from inventory
+        try:
+            records = getattr(self.data_processor, 'fabrics_inventory', []) or []
+        except Exception:
+            records = []
+        index = { str(r.get('barcode')).strip(): r for r in records if str(r.get('barcode') or '').strip() }
+        # Current list to prevent duplicates
+        current = set()
+        try:
+            for iid in self.fs_tree.get_children():
+                vals = self.fs_tree.item(iid, 'values') or []
+                if vals:
+                    current.add(str(vals[0]))
+        except Exception:
+            pass
+        added = 0
+        invalid = []
+        for bc in barcodes:
+            if bc in current:
+                continue
+            rec = index.get(bc)
+            if not rec:
+                invalid.append(bc)
+                continue
+            values = (
+                rec.get('barcode',''), rec.get('fabric_type',''), rec.get('color_name',''), rec.get('color_no',''), rec.get('design_code',''),
+                rec.get('width',''), f"{rec.get('net_kg',0):.2f}", f"{rec.get('meters',0):.2f}", f"{rec.get('price',0):.2f}", rec.get('location',''), rec.get('status','במלאי')
+            )
+            try:
+                self.fs_tree.insert('', 'end', values=values)
+                added += 1
+            except Exception:
+                pass
+        self._fs_update_summary()
+        # Report result
+        try:
+            msg = f"נוספו {added} ברקודים"
+            if invalid:
+                # Limit preview to first 20 for usability
+                preview = ', '.join(invalid[:20]) + (" ..." if len(invalid) > 20 else '')
+                msg += f"\nלא נמצאו במלאי: {len(invalid)}\n{preview}"
+            messagebox.showinfo('ייבוא ברקודים', msg)
+        except Exception:
+            pass
     def _fs_add_fabric_by_barcode(self):
         """Add fabric record by barcode into the shipment list (from fabrics inventory)."""
         try:
