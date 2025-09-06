@@ -445,7 +445,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא ל-Excel: {str(e)}")
     
-	def add_to_local_table(self, results: List[Dict], file_name: str = "", fabric_type: str = "", recipient_supplier: str = "") -> int:
+	def add_to_local_table(self, results: List[Dict], file_name: str = "", fabric_type: str = "", recipient_supplier: str = "", estimated_layers: int = 200) -> int:
 		"""הוספה לטבלה המקומית"""
 		try:
 			# יצירת ID חדש
@@ -469,6 +469,9 @@ class DataProcessor:
 				record['נמען'] = recipient_supplier
 				# עמודה לוגית לנוחות סינון עתידי
 				record['נשלח לספק'] = True
+			
+			# הוספת כמות שכבות משוערת
+			record['כמות שכבות משוערת'] = estimated_layers
             
 			# קיבוץ לפי מוצרים
 			df = pd.DataFrame(results)

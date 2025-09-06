@@ -12,6 +12,32 @@ class DrawingsManagerTabMixin:
     moved here to organize the feature under its own package.
     """
 
+    def _format_products_details(self, products):
+        """עיצוב פירוט דגמים ומידות בפורמט המבוקש"""
+        if not products:
+            return ""
+        
+        formatted_parts = []
+        for product in products:
+            product_name = product.get('שם המוצר', '')
+            if not product_name:
+                continue
+                
+            # איסוף כל המידות למוצר זה
+            size_parts = []
+            for size_info in product.get('מידות', []):
+                size = size_info.get('מידה', '')
+                quantity = size_info.get('כמות', 0)
+                if size and quantity > 0:
+                    # הוספת LTR mark לפני המספרים כדי להבטיח הצגה נכונה
+                    size_parts.append(f"[\u202D{size}X{int(quantity)}\u202C]")
+            
+            if size_parts:
+                formatted_parts.append(f"{''.join(size_parts)}{product_name}")
+        
+        # הוספת RLM בתחילת המחרוזת כולה כדי להבטיח קריאה נכונה מימין לשמאל
+        return RLM + "".join(formatted_parts)
+
     # === Helpers: context menu for text inputs ===
     def _attach_paste_menu(self, widget: tk.Widget):
         """Attach a simple right-click menu with a Paste action to a text-capable widget (e.g., Entry).
@@ -68,10 +94,10 @@ class DrawingsManagerTabMixin:
 
         table_frame = tk.Frame(table_page, bg='#ffffff')
         table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        cols = ("id", "file_name", "created_at", "products", "total_quantity", "sent_to_supplier", "status", "excel")
+        cols = ("id", "file_name", "created_at", "products", "total_quantity", "estimated_layers", "products_details", "sent_to_supplier", "status", "excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id": "ID", "file_name": "שם הקובץ", "created_at": "תאריך יצירה", "products": "מוצרים", "total_quantity": "סך כמויות", "sent_to_supplier": "נשלח לספק", "status": "סטטוס", "excel": "Excel"}
-        widths = {"id": 70, "file_name": 260, "created_at": 140, "products": 80, "total_quantity": 90, "sent_to_supplier": 100, "status": 90, "excel": 60}
+        headers = {"id": "ID", "file_name": "שם הקובץ", "created_at": "תאריך יצירה", "products": "מוצרים", "total_quantity": "סך כמויות", "estimated_layers": "שכבות משוערת", "products_details": "פירוט דגמים ומידות", "sent_to_supplier": "נשלח לספק", "status": "סטטוס", "excel": "Excel"}
+        widths = {"id": 70, "file_name": 260, "created_at": 140, "products": 80, "total_quantity": 90, "estimated_layers": 100, "products_details": 300, "sent_to_supplier": 100, "status": 90, "excel": 60}
         for c in cols:
             self.drawings_tree.heading(c, text=headers[c])
             self.drawings_tree.column(c, width=widths[c], anchor='center')
@@ -334,12 +360,16 @@ class DrawingsManagerTabMixin:
                 sent_display = supplier_name
             else:
                 sent_display = 'כן' if sent_flag is True else ('לא' if sent_flag is False else '')
+            estimated_layers = record.get('כמות שכבות משוערת', '—')
+            products_details = self._format_products_details(record.get('מוצרים', []))
             self.drawings_tree.insert('', 'end', values=(
                 record.get('id',''),
                 record.get('שם הקובץ',''),
                 created_date_only,
                 products_count,
                 f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
+                estimated_layers,
+                products_details,
                 sent_display,
                 record.get('status','נשלח'),
                 "📄"  # excel icon
@@ -547,8 +577,9 @@ class DrawingsManagerTabMixin:
             meta_date = raw_dt.split()[0] if isinstance(raw_dt, str) and raw_dt else raw_dt
             meta.append(['תאריך יצירה', meta_date])
             meta.append(['סוג בד', record.get('סוג בד','')])
+            meta.append(['כמות שכבות משוערת', record.get('כמות שכבות משוערת','—')])
             meta.append(['סטטוס', record.get('status','')])
-            for row in meta.iter_rows(min_row=1, max_row=5, min_col=1, max_col=2):
+            for row in meta.iter_rows(min_row=1, max_row=6, min_col=1, max_col=2):
                 for cell in row:
                     if cell.column == 1:
                         cell.font = Font(bold=True, size=16)
@@ -664,6 +695,8 @@ class DrawingsManagerTabMixin:
             base_txt += f"\nסוג בד: {record.get('סוג בד')}"
         if 'נמען' in record:
             base_txt += f"\nנמען (ספק): {record.get('נמען')}"
+        if 'כמות שכבות משוערת' in record:
+            base_txt += f"\nכמות שכבות משוערת: {record.get('כמות שכבות משוערת')}"
         status_val = record.get('status','')
         base_txt += f"\nסטטוס: {status_val}"
         tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)

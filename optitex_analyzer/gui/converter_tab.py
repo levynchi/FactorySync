@@ -68,6 +68,14 @@ class ConverterTabMixin:
         self.recipient_supplier_combo.pack(side='left', padx=5)
         # כפתור רענון שמות ספקים
         tk.Button(supplier_frame, text="↺", width=3, command=self._refresh_converter_suppliers, bg='#3498db', fg='white').pack(side='left', padx=2)
+        
+        # כמות שכבות משוערת
+        layers_frame = tk.Frame(options_frame); layers_frame.pack(fill='x', pady=5)
+        tk.Label(layers_frame, text="כמות שכבות משוערת:", font=('Arial',10,'bold'), width=15, anchor='w').pack(side='left')
+        self.estimated_layers_var = tk.StringVar(value='200')
+        self.estimated_layers_entry = tk.Entry(layers_frame, textvariable=self.estimated_layers_var, width=10, font=('Arial', 10))
+        self.estimated_layers_entry.pack(side='left', padx=5)
+        tk.Label(layers_frame, text="(ברירת מחדל: 200)", font=('Arial', 9), fg='#666666').pack(side='left', padx=5)
         try:
             # אתחול ראשוני
             self._refresh_converter_suppliers()
@@ -102,6 +110,9 @@ class ConverterTabMixin:
         info_frame = tk.Frame(results_frame, bg='#f7f9fa'); info_frame.pack(fill='x', pady=(0,6))
         self.analysis_info_var = tk.StringVar(value="הרץ ניתוח להצגת נתוני הציור (Tubular, סוג בד, קובץ וכו')")
         tk.Label(info_frame, textvariable=self.analysis_info_var, anchor='e', justify='right', bg='#f7f9fa', fg='#2c3e50', font=('Arial',10,'bold')).pack(fill='x')
+        # שורת מידע מודגשת למידות הציור (רוחב/אורך) כדי שיהיו ברורות לעין
+        self.marker_info_var = tk.StringVar(value="")
+        tk.Label(info_frame, textvariable=self.marker_info_var, anchor='e', justify='right', bg='#eef9ff', fg='#2c3e50', font=('Arial',11,'bold')).pack(fill='x', pady=(4,0))
         # --- Results table ---
         table_container = tk.Frame(results_frame)
         table_container.pack(fill='both', expand=True)
@@ -200,21 +211,40 @@ class ConverterTabMixin:
         file_name = os.path.basename(self.rib_file) if getattr(self,'rib_file','') else '—'
         tubular_txt = 'Tubular (חולק ב-2)' if summary.get('is_tubular') else 'רגיל'
         info = f"סוג בד: {fabric_type} | Layout: {tubular_txt} | קובץ: {file_name} | מוצרים: {summary.get('unique_products')} | מידות: {summary.get('unique_sizes')} | רשומות: {summary.get('total_records')} | סך כמות: {summary.get('total_quantity'): .1f}"
-        # הוספת Marker Width/Length אם קיימים
+        # הוספת נתוני מידות ציור (Marker) אם קיימים
         mw = summary.get('marker_width')
         ml = summary.get('marker_length')
         extra_marker = []
         if mw is not None:
-            extra_marker.append(f"Marker Width: {mw:.2f}")
+            extra_marker.append(f"רוחב ציור: {mw:.2f}")
         if ml is not None:
-            extra_marker.append(f"Marker Length: {ml:.2f}")
+            extra_marker.append(f"אורך ציור: {ml:.2f}")
         if extra_marker:
             info += " | " + " | ".join(extra_marker)
         self.analysis_info_var.set(info)
+        # הצגה מודגשת בשורה נפרדת עם יחידות ס"מ כדי למנוע בלבול
+        try:
+            if hasattr(self, 'marker_info_var'):
+                if (mw is not None) or (ml is not None):
+                    parts = []
+                    if ml is not None:
+                        parts.append(f"אורך ציור: {ml:.2f} ס\"מ")
+                    if mw is not None:
+                        parts.append(f"רוחב ציור: {mw:.2f} ס\"מ")
+                    self.marker_info_var.set(" | ".join(parts))
+                else:
+                    self.marker_info_var.set("")
+        except Exception:
+            pass
         # Minimal log section
         self._log_message("=== סיכום ניתוח ===")
         if summary.get('is_tubular'):
             self._log_message("(Tubular) הכמויות בטבלה הן לאחר חלוקה ב-2")
+        # רישום ביומן גם של מידות הציור
+        if mw is not None:
+            self._log_message(f"רוחב ציור: {mw:.2f}")
+        if ml is not None:
+            self._log_message(f"אורך ציור: {ml:.2f}")
 
     # Export & Local Table
     def _save_excel(self):
@@ -247,7 +277,21 @@ class ConverterTabMixin:
             if not recipient:
                 messagebox.showwarning("אזהרה", "יש לבחור נמען (ספק) לפני ההוספה לטבלה המקומית")
                 return
-            record_id = self.data_processor.add_to_local_table(self.current_results, self.rib_file, fabric_type=fabric_type, recipient_supplier=recipient)
+            # קבלת כמות שכבות משוערת
+            try:
+                estimated_layers = int(self.estimated_layers_var.get())
+                if estimated_layers <= 0:
+                    estimated_layers = 200  # ברירת מחדל
+            except (ValueError, AttributeError):
+                estimated_layers = 200  # ברירת מחדל
+            
+            record_id = self.data_processor.add_to_local_table(
+                self.current_results, 
+                self.rib_file, 
+                fabric_type=fabric_type, 
+                recipient_supplier=recipient,
+                estimated_layers=estimated_layers
+            )
             # שמירת הנמען (אם יש יכולת ב- data_processor בעתיד; לעת עתה נשמור בלוג בלבד)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")
             self._log_message(f"ID רשומה חדשה: {record_id}")
@@ -257,6 +301,7 @@ class ConverterTabMixin:
             self._log_message(f"סך כמויות: {total_quantity}")
             if recipient:
                 self._log_message(f"נמען (ספק): {recipient}")
+            self._log_message(f"כמות שכבות משוערת: {estimated_layers}")
             self._update_status("נוסף לטבלה המקומית")
             # Refresh drawings manager tab if exists
             if hasattr(self, '_refresh_drawings_tree'):
