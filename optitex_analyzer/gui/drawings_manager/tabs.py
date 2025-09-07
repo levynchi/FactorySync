@@ -481,8 +481,8 @@ class DrawingsManagerTabMixin:
             # גליון RTL
             try: ws.sheet_view.rightToLeft = True
             except Exception: pass
-            # הוספת שורות מידע מעל הטבלה: נזיז 3 שורות כדי לפנות מקום ל-A1, A2/B2, B3
-            ws.insert_rows(1, amount=3)  # headers יעברו לשורה 4
+            # הוספת שורות מידע מעל הטבלה: נזיז 7 שורות כדי לפנות מקום ללוגו ומידע עסקי
+            ws.insert_rows(1, amount=7)  # headers יעברו לשורה 8
             max_col = ws.max_column
             raw_dt = record.get('תאריך יצירה','')
             # שמירת תאריך בלבד ללא זמן; אם כולל זמן נחתוך ברווח הראשון
@@ -495,38 +495,52 @@ class DrawingsManagerTabMixin:
                     formatted_date = raw_dt
             # שם העסק מתוך טאב "פרטי עסק"
             business_name = ''
+            logo_path = ''
             try:
                 s = getattr(self, 'settings', None)
                 if s:
                     business_name = s.get('business.name', '') or ''
+                    logo_path = s.get('business.logo_path', '') or ''
             except Exception:
                 business_name = ''
-            # A1: שם העסק (ממורכז וממוזג על פני כל העמודות הקיימות)
-            if business_name:
-                ws.cell(row=1, column=1, value=business_name)
-            # מזג בין A1 ועד העמודה האחרונה בהדר (לפחות C)
+                logo_path = ''
+            
+            # A1: לוגו העסק בלבד (ללא שם עסק) - מוגבל עד שורה 5
+            try:
+                from openpyxl.drawing.image import Image as XLImage
+                if logo_path and os.path.exists(logo_path):
+                    # הוספת לוגו בלבד
+                    img = XLImage(logo_path)
+                    # התאמת גודל הלוגו - מוגבל בדיוק לשורות 1-5
+                    img.width = 564  # רוחב מופחת ב-6% (600 * 0.94)
+                    img.height = 200  # גובה חזר למקור
+                    # הוספת הלוגו לתא A1
+                    ws.add_image(img, 'A1')
+                    # הגדלת גובה השורות 1-5 כדי להכיל את הלוגו בדיוק
+                    for row in range(1, 6):
+                        ws.row_dimensions[row].height = 40  # 40 פיקסלים לכל שורה = 200 סה"כ
+            except Exception:
+                pass  # אם יש בעיה עם הלוגו, לא נוסיף כלום לתא A1
+            
+            # מזג בין A1 ועד העמודה האחרונה בהדר (לפחות C) - מיזוג שורות 1-5
             try:
                 last_col_letter = ws.cell(row=1, column=max_col).column_letter
-                ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
+                ws.merge_cells(start_row=1, start_column=1, end_row=5, end_column=max_col)
             except Exception:
                 last_col_letter = 'C'
-            # עיצוב שורת כותרת העסק
-            title_font = Font(bold=True, size=16)
-            title_cell = ws.cell(row=1, column=1)
-            title_cell.font = title_font
-            title_cell.alignment = Alignment(horizontal='center', vertical='center')
 
-            # A2: ציור מספר, B2: סוג בד
-            ws.cell(row=2, column=1, value=f"ציור מספר: {record.get('id','')}")
-            ws.cell(row=2, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
+            # העברת כל המידע העסקי לשורה 6
+            # A6: ציור מספר, B6: סוג בד
+            ws.cell(row=6, column=1, value=f"ציור מספר: {record.get('id','')}")
+            ws.cell(row=6, column=2, value=f"סוג בד: {record.get('סוג בד','')}")
 
-            # B3: תאריך יצירה עם הטקסט המלא
+            # B7: תאריך יצירה עם הטקסט המלא
             if formatted_date:
-                ws.cell(row=3, column=2, value=f"תאריך יצירה: {formatted_date}")
+                ws.cell(row=7, column=2, value=f"תאריך יצירה: {formatted_date}")
 
-            # עיצוב גודל כמו הכותרות (16) לשורות 2-3
+            # עיצוב גודל כמו הכותרות (16) לשורות 6-7
             meta_font = Font(size=16)
-            for (r, c) in [(2,1), (2,2), (3,2)]:
+            for (r, c) in [(6,1), (6,2), (7,2)]:
                 try:
                     cell = ws.cell(row=r, column=c)
                     if cell.value is not None:
@@ -535,37 +549,48 @@ class DrawingsManagerTabMixin:
                 except Exception:
                     pass
 
-            header_row_index = 4
+            header_row_index = 8
             header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
             header_font = Font(bold=True, size=16)
             base_font = Font(size=16)
-            for cell in ws[header_row_index]:
-                cell.font = header_font
-                cell.alignment = Alignment(horizontal='center', vertical='center')
-                cell.fill = header_fill
-            # יישור וגבולות לכל התאים + חישוב רוחב עמודה (מרכז לכל התאים)
+            
+            # יישור וגבולות לכל התאים + רוחב עמודות אוטומטי
             thin = Side(border_style='thin', color='000000')
-            # נכלול גם את שורות המטא-דאטה (rows 1-3) בחישוב רוחב
-            col_max = {}
-            for col in range(1, ws.max_column+1):
-                header_len = len(str(ws.cell(row=header_row_index, column=col).value or ''))
-                meta_len_1 = len(str(ws.cell(row=1, column=col).value or ''))
-                meta_len_2 = len(str(ws.cell(row=2, column=col).value or ''))
-                meta_len_3 = len(str(ws.cell(row=3, column=col).value or ''))
-                col_max[col] = max(header_len, meta_len_1, meta_len_2, meta_len_3)
-            for r in range(header_row_index+1, ws.max_row+1):
+            
+            # יישור וגבולות לכל התאים
+            for r in range(header_row_index, ws.max_row+1):
                 for c in range(1, ws.max_column+1):
                     cell = ws.cell(row=r, column=c)
-                    cell.font = base_font
-                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    if r == header_row_index:
+                        # כותרות
+                        cell.font = header_font
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                        cell.fill = header_fill
+                    else:
+                        # נתונים
+                        cell.font = base_font
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
                     cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
-                    val_len = len(str(cell.value)) if cell.value is not None else 0
-                    if val_len > col_max[c]:
-                        col_max[c] = val_len
-            # התאמת רוחב עמודות (המרה גסה: תווים * 1.2 + מרווח)
+            
+            # רוחב עמודות אוטומטי - חישוב ידני
             for c in range(1, ws.max_column+1):
-                width = min(80, col_max[c]*1.2 + 2)
-                ws.column_dimensions[ws.cell(row=header_row_index, column=c).column_letter].width = width
+                col_letter = ws.cell(row=header_row_index, column=c).column_letter
+                max_length = 0
+                
+                # בדיקת אורך התוכן בכל התאים בעמודה
+                for r in range(1, ws.max_row+1):
+                    cell_value = ws.cell(row=r, column=c).value
+                    if cell_value:
+                        # חישוב אורך התוכן (תווים עבריים נחשבים כפול)
+                        cell_length = len(str(cell_value))
+                        # הוספת מרווח נוסף לתווים עבריים
+                        if any('\u0590' <= char <= '\u05FF' for char in str(cell_value)):
+                            cell_length = int(cell_length * 1.5)
+                        max_length = max(max_length, cell_length)
+                
+                # הגדרת רוחב העמודה (מינימום 10, מקסימום 50)
+                column_width = max(10, min(50, max_length + 2))
+                ws.column_dimensions[col_letter].width = column_width
             # Optional metadata sheet
             meta = wb.create_sheet('פרטי ציור')
             try: meta.sheet_view.rightToLeft = True
