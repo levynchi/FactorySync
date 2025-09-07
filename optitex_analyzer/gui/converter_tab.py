@@ -40,16 +40,35 @@ class ConverterTabMixin:
         tk.Button(rib_frame, text="📁 בחר קובץ", command=self._select_rib_file, bg='#3498db', fg='white', font=('Arial', 9, 'bold'), width=12).pack(side="right")
 
     def _create_options_section(self):
-        options_frame = ttk.LabelFrame(self.root, text="אפשרויות", padding=15)
-        options_frame.pack(fill="x", padx=20, pady=10)
-        processing_frame = tk.Frame(options_frame); processing_frame.pack(fill="x", pady=5)
+        options_frame = ttk.LabelFrame(self.root, text="אפשרויות", padding=10)
+        options_frame.pack(fill="x", padx=20, pady=5)
+        
+        # יצירת עמודות - 3 עמודות
+        columns_frame = tk.Frame(options_frame)
+        columns_frame.pack(fill="x")
+        
+        # עמודה ראשונה
+        col1 = tk.Frame(columns_frame)
+        col1.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        
+        # עמודה שנייה  
+        col2 = tk.Frame(columns_frame)
+        col2.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        
+        # עמודה שלישית
+        col3 = tk.Frame(columns_frame)
+        col3.pack(side="left", fill="both", expand=True)
+        
+        # עמודה 1: עיבוד וסוג בד
+        processing_frame = tk.Frame(col1); processing_frame.pack(fill="x", pady=2)
         self.tubular_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(processing_frame, text="טיפול אוטומטי ב-Layout Tubular (חלוקה ב-2)", variable=self.tubular_var, font=('Arial', 10)).pack(anchor="w")
+        tk.Checkbutton(processing_frame, text="טיפול אוטומטי ב-Layout Tubular (חלוקה ב-2)", variable=self.tubular_var, font=('Arial', 9)).pack(anchor="w")
         self.only_positive_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(processing_frame, text="הצג רק מידות עם כמות גדולה מ-0", variable=self.only_positive_var, font=('Arial', 10)).pack(anchor="w")
+        tk.Checkbutton(processing_frame, text="הצג רק מידות עם כמות גדולה מ-0", variable=self.only_positive_var, font=('Arial', 9)).pack(anchor="w")
+        
         # Fabric type selection
-        fabric_type_frame = tk.Frame(options_frame); fabric_type_frame.pack(fill="x", pady=5)
-        tk.Label(fabric_type_frame, text="סוג בד:", font=('Arial', 10, 'bold'), width=15, anchor='w').pack(side='left')
+        fabric_type_frame = tk.Frame(col1); fabric_type_frame.pack(fill="x", pady=2)
+        tk.Label(fabric_type_frame, text="סוג בד:", font=('Arial', 9, 'bold'), width=12, anchor='w').pack(side='left')
         self.fabric_type_options = ["בחר סוג בד", "פלנל לבן", "טריקו לבן", "פלנל מודפס", "טריקו מודפס"]
         self.fabric_type_var = tk.StringVar(value=self.fabric_type_options[0])
         self.fabric_type_combo = ttk.Combobox(
@@ -57,25 +76,42 @@ class ConverterTabMixin:
             textvariable=self.fabric_type_var,
             values=self.fabric_type_options,
             state='readonly',
-            width=20
+            width=15
         )
         self.fabric_type_combo.pack(side='left', padx=5)
-        # Supplier recipient selection (למי נשלח הציור)
-        supplier_frame = tk.Frame(options_frame); supplier_frame.pack(fill='x', pady=5)
-        tk.Label(supplier_frame, text="נמען (ספק):", font=('Arial',10,'bold'), width=15, anchor='w').pack(side='left')
+        
+        # עמודה 2: ספק ושכבות
+        supplier_frame = tk.Frame(col2); supplier_frame.pack(fill="x", pady=2)
+        tk.Label(supplier_frame, text="נמען (ספק):", font=('Arial',9,'bold'), width=12, anchor='w').pack(side='left')
         self.recipient_supplier_var = tk.StringVar()
-        self.recipient_supplier_combo = ttk.Combobox(supplier_frame, textvariable=self.recipient_supplier_var, state='readonly', width=30)
+        self.recipient_supplier_combo = ttk.Combobox(supplier_frame, textvariable=self.recipient_supplier_var, state='readonly', width=20)
         self.recipient_supplier_combo.pack(side='left', padx=5)
-        # כפתור רענון שמות ספקים
-        tk.Button(supplier_frame, text="↺", width=3, command=self._refresh_converter_suppliers, bg='#3498db', fg='white').pack(side='left', padx=2)
+        tk.Button(supplier_frame, text="↺", width=2, command=self._refresh_converter_suppliers, bg='#3498db', fg='white').pack(side='left', padx=2)
         
         # כמות שכבות משוערת
-        layers_frame = tk.Frame(options_frame); layers_frame.pack(fill='x', pady=5)
-        tk.Label(layers_frame, text="כמות שכבות משוערת:", font=('Arial',10,'bold'), width=15, anchor='w').pack(side='left')
+        layers_frame = tk.Frame(col2); layers_frame.pack(fill="x", pady=2)
+        tk.Label(layers_frame, text="כמות שכבות:", font=('Arial',9,'bold'), width=12, anchor='w').pack(side='left')
         self.estimated_layers_var = tk.StringVar(value='200')
-        self.estimated_layers_entry = tk.Entry(layers_frame, textvariable=self.estimated_layers_var, width=10, font=('Arial', 10))
+        self.estimated_layers_entry = tk.Entry(layers_frame, textvariable=self.estimated_layers_var, width=8, font=('Arial', 9))
         self.estimated_layers_entry.pack(side='left', padx=5)
-        tk.Label(layers_frame, text="(ברירת מחדל: 200)", font=('Arial', 9), fg='#666666').pack(side='left', padx=5)
+        tk.Label(layers_frame, text="(ברירת מחדל: 200)", font=('Arial', 8), fg='#666666').pack(side='left', padx=2)
+        
+        # עמודה 3: משקלים
+        # משקל בד למטר
+        fabric_weight_frame = tk.Frame(col3); fabric_weight_frame.pack(fill="x", pady=2)
+        tk.Label(fabric_weight_frame, text="משקל למטר:", font=('Arial',9,'bold'), width=12, anchor='w').pack(side='left')
+        self.fabric_weight_per_meter_var = tk.StringVar(value='400')
+        self.fabric_weight_per_meter_entry = tk.Entry(fabric_weight_frame, textvariable=self.fabric_weight_per_meter_var, width=8, font=('Arial', 9))
+        self.fabric_weight_per_meter_entry.pack(side='left', padx=5)
+        tk.Label(fabric_weight_frame, text="גרם", font=('Arial', 8), fg='#666666').pack(side='left', padx=2)
+        
+        # משקל כולל (יוצג אחרי ניתוח)
+        total_weight_frame = tk.Frame(col3); total_weight_frame.pack(fill="x", pady=2)
+        tk.Label(total_weight_frame, text="משקל כולל:", font=('Arial',9,'bold'), width=12, anchor='w').pack(side='left')
+        self.total_fabric_weight_var = tk.StringVar(value='לא מחושב')
+        self.total_fabric_weight_label = tk.Label(total_weight_frame, textvariable=self.total_fabric_weight_var, font=('Arial', 9, 'bold'), fg='#2c3e50', bg='#ecf0f1', relief='sunken', width=12, anchor='w', padx=3)
+        self.total_fabric_weight_label.pack(side='left', padx=5)
+        tk.Label(total_weight_frame, text="ק\"ג", font=('Arial', 8), fg='#666666').pack(side='left', padx=2)
         try:
             # אתחול ראשוני
             self._refresh_converter_suppliers()
@@ -88,15 +124,15 @@ class ConverterTabMixin:
             pass
 
     def _create_action_buttons(self):
-        buttons_frame = tk.Frame(self.root, bg='#f0f0f0'); buttons_frame.pack(fill="x", padx=20, pady=15)
-        row1 = tk.Frame(buttons_frame, bg='#f0f0f0'); row1.pack(fill="x", pady=5)
-        tk.Button(row1, text="🔍 נתח קבצים", command=self._analyze_files, bg='#27ae60', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
-        tk.Button(row1, text="💾 שמור כ-Excel", command=self._save_excel, bg='#e67e22', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="left", padx=5)
-        tk.Button(row1, text="️ נקה הכל", command=self._clear_all, bg='#e74c3c', fg='white', font=('Arial', 11, 'bold'), height=2, width=15).pack(side="right", padx=5)
+        buttons_frame = tk.Frame(self.root, bg='#f0f0f0'); buttons_frame.pack(fill="x", padx=20, pady=8)
+        row1 = tk.Frame(buttons_frame, bg='#f0f0f0'); row1.pack(fill="x", pady=3)
+        tk.Button(row1, text="🔍 נתח קבצים", command=self._analyze_files, bg='#27ae60', fg='white', font=('Arial', 10, 'bold'), height=1, width=15).pack(side="left", padx=3)
+        tk.Button(row1, text="💾 שמור כ-Excel", command=self._save_excel, bg='#e67e22', fg='white', font=('Arial', 10, 'bold'), height=1, width=15).pack(side="left", padx=3)
+        tk.Button(row1, text="️ נקה הכל", command=self._clear_all, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold'), height=1, width=15).pack(side="right", padx=3)
         # Row 2: add to local drawings table (disabled until recipient selected)
-        row2 = tk.Frame(buttons_frame, bg='#f0f0f0'); row2.pack(fill='x', pady=(0,5))
-        self.add_to_local_btn = tk.Button(row2, text="➕ הוסף לטבלה מקומית", command=self._add_to_local_table, bg='#2980b9', fg='white', font=('Arial', 11, 'bold'), height=2, width=20, state='disabled')
-        self.add_to_local_btn.pack(side='left', padx=5)
+        row2 = tk.Frame(buttons_frame, bg='#f0f0f0'); row2.pack(fill='x', pady=(0,3))
+        self.add_to_local_btn = tk.Button(row2, text="➕ הוסף לטבלה מקומית", command=self._add_to_local_table, bg='#2980b9', fg='white', font=('Arial', 10, 'bold'), height=1, width=20, state='disabled')
+        self.add_to_local_btn.pack(side='left', padx=3)
         # נסה לעדכן את מצב הכפתור לפי בחירת הנמען (אם כבר נטען קומבובוקס)
         try:
             self._update_add_local_button_state()
@@ -115,21 +151,39 @@ class ConverterTabMixin:
         tk.Label(info_frame, textvariable=self.marker_info_var, anchor='e', justify='right', bg='#eef9ff', fg='#2c3e50', font=('Arial',11,'bold')).pack(fill='x', pady=(4,0))
         # --- Results table ---
         table_container = tk.Frame(results_frame)
-        table_container.pack(fill='both', expand=True)
+        table_container.pack(fill='both', expand=True, pady=(5,0))
+        
+        # Create frame for treeview and scrollbar
+        tree_frame = tk.Frame(table_container)
+        tree_frame.pack(fill='both', expand=True)
+        
         cols = ('model','size','quantity')  # order right->left visually in RTL
-        self.results_tree = ttk.Treeview(table_container, columns=cols, show='headings', height=14)
+        self.results_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=22)
         headers = {'model':'דגם','size':'מידה','quantity':'כמות'}
         widths = {'model':200,'size':90,'quantity':90}
         for c in cols:
             self.results_tree.heading(c, text=headers[c])
             # align right for Hebrew readability
             self.results_tree.column(c, width=widths[c], anchor='e', stretch=False)
-        vs = ttk.Scrollbar(table_container, orient='vertical', command=self.results_tree.yview)
+        
+        # Vertical scrollbar
+        vs = ttk.Scrollbar(tree_frame, orient='vertical', command=self.results_tree.yview)
         self.results_tree.configure(yscroll=vs.set)
-        self.results_tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns')
-        table_container.grid_rowconfigure(0,weight=1); table_container.grid_columnconfigure(0,weight=1)
+        
+        # Horizontal scrollbar
+        hs = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.results_tree.xview)
+        self.results_tree.configure(xscroll=hs.set)
+        
+        # Grid layout with proper weights
+        self.results_tree.grid(row=0, column=0, sticky='nsew')
+        vs.grid(row=0, column=1, sticky='ns')
+        hs.grid(row=1, column=0, sticky='ew')
+        
+        # Configure grid weights
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
         # --- Log area (small) to preserve existing _log_message usage ---
-        self.results_text = scrolledtext.ScrolledText(results_frame, height=6, font=('Consolas', 10), wrap=tk.WORD, bg='#f0f3f5', fg='#2c3e50')
+        self.results_text = scrolledtext.ScrolledText(results_frame, height=3, font=('Consolas', 9), wrap=tk.WORD, bg='#f0f3f5', fg='#2c3e50')
         self.results_text.pack(fill='x', expand=False, pady=(8,0))
 
     # File Selection
@@ -181,6 +235,7 @@ class ConverterTabMixin:
                     self._log_message(f"   {file_name} → {product_name}")
             self._display_detailed_results()
             self._display_statistics(summary)
+            self._calculate_total_fabric_weight(summary)
             self._update_status("הניתוח הושלם בהצלחה!")
         except Exception as e:
             error_msg = f"❌ שגיאה בניתוח: {str(e)}"
@@ -245,6 +300,53 @@ class ConverterTabMixin:
             self._log_message(f"רוחב ציור: {mw:.2f}")
         if ml is not None:
             self._log_message(f"אורך ציור: {ml:.2f}")
+
+    def _calculate_total_fabric_weight(self, summary):
+        """חישוב משקל בד כולל על בסיס אורך הציור, משקל למטר וכמות שכבות."""
+        try:
+            # קבלת משקל בד למטר
+            try:
+                weight_per_meter = float(self.fabric_weight_per_meter_var.get())
+            except (ValueError, AttributeError):
+                weight_per_meter = 400.0  # ברירת מחדל
+            
+            # קבלת אורך הציור
+            marker_length = summary.get('marker_length')
+            if marker_length is None:
+                self.total_fabric_weight_var.set('אורך לא זמין')
+                return
+            
+            # קבלת כמות שכבות
+            try:
+                estimated_layers = int(self.estimated_layers_var.get())
+                if estimated_layers <= 0:
+                    estimated_layers = 200  # ברירת מחדל
+            except (ValueError, AttributeError):
+                estimated_layers = 200  # ברירת מחדל
+            
+            # חישוב המשקל הכולל
+            # משקל כולל = משקל למטר × אורך לשכבה × מספר שכבות
+            # אורך לשכבה = אורך הציור (בס"מ) / 100 (להמרה למטר)
+            length_per_layer_meters = marker_length / 100.0
+            total_weight_grams = weight_per_meter * length_per_layer_meters * estimated_layers
+            
+            # המרה לק"ג
+            total_weight_kg = total_weight_grams / 1000.0
+            
+            # הצגת התוצאה
+            self.total_fabric_weight_var.set(f"{total_weight_kg:.2f}")
+            
+            # הוספה ללוג
+            self._log_message(f"\n📏 חישוב משקל בד:")
+            self._log_message(f"   משקל למטר: {weight_per_meter} גרם")
+            self._log_message(f"   אורך ציור: {marker_length:.2f} ס\"מ")
+            self._log_message(f"   אורך לשכבה: {length_per_layer_meters:.2f} מטר")
+            self._log_message(f"   כמות שכבות: {estimated_layers}")
+            self._log_message(f"   משקל כולל: {total_weight_kg:.2f} ק\"ג")
+            
+        except Exception as e:
+            self.total_fabric_weight_var.set('שגיאה בחישוב')
+            self._log_message(f"❌ שגיאה בחישוב משקל: {str(e)}")
 
     # Export & Local Table
     def _save_excel(self):
@@ -357,6 +459,9 @@ class ConverterTabMixin:
                 pass
         if hasattr(self, 'results_text'):
             self.results_text.delete(1.0, tk.END)
+        # Clear total weight calculation
+        if hasattr(self, 'total_fabric_weight_var'):
+            self.total_fabric_weight_var.set('לא מחושב')
 
     def _clear_all(self):
         self.rib_file = ""; self.current_results = []
