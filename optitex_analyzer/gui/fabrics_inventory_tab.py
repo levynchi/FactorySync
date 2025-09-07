@@ -297,10 +297,12 @@ class FabricsInventoryTabMixin:
 
     def _apply_fabrics_filters(self):
         self._populate_fabrics_table()
+        self._update_fabrics_summary()
 
     def _clear_fabrics_filters(self):
         self.fabrics_filter_type_var.set(''); self.fabrics_filter_color_var.set(''); self.fabrics_filter_location_var.set(''); self.fabrics_filter_status_var.set('')
         self._populate_fabrics_table()
+        self._update_fabrics_summary()
 
     def _refresh_fabric_filter_values(self):
         inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
@@ -336,8 +338,23 @@ class FabricsInventoryTabMixin:
             values[-1] = new_status; self.fabrics_tree.item(sel[0], values=values)
 
     def _update_fabrics_summary(self):
-        summary = self.data_processor.get_fabrics_summary()
-        self.fabrics_summary_var.set(f"סה\"כ רשומות: {summary['total_records']} | מטרים: {summary['total_meters']:.2f} | ק\"ג נטו: {summary['total_net_kg']:.2f}")
+        # קבלת נתונים לפי סינון אם יש
+        base = list(getattr(self.data_processor, 'fabrics_inventory', []) or [])
+        if self._has_active_fabrics_filters():
+            records = self._filter_fabrics(base)
+        else:
+            records = base
+        
+        # חישוב סיכום לפי הנתונים המסוננים
+        total_records = len(records)
+        total_meters = sum(float(rec.get('meters', 0) or 0) for rec in records)
+        total_net_kg = sum(float(rec.get('net_kg', 0) or 0) for rec in records)
+        
+        # הצגת סיכום עם אינדיקציה אם יש סינון פעיל
+        if self._has_active_fabrics_filters():
+            self.fabrics_summary_var.set(f"תוצאות מסוננות: {total_records} | מטרים: {total_meters:.2f} | ק\"ג נטו: {total_net_kg:.2f}")
+        else:
+            self.fabrics_summary_var.set(f"סה\"כ רשומות: {total_records} | מטרים: {total_meters:.2f} | ק\"ג נטו: {total_net_kg:.2f}")
 
     def _refresh_fabrics_table(self):
         self.data_processor.fabrics_inventory = self.data_processor.load_fabrics_inventory()
