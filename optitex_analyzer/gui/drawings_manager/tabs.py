@@ -481,8 +481,8 @@ class DrawingsManagerTabMixin:
             # גליון RTL
             try: ws.sheet_view.rightToLeft = True
             except Exception: pass
-            # הוספת שורות מידע מעל הטבלה: נזיז 7 שורות כדי לפנות מקום ללוגו ומידע עסקי
-            ws.insert_rows(1, amount=7)  # headers יעברו לשורה 8
+            # הוספת שורות מידע מעל הטבלה: נזיז 8 שורות כדי לפנות מקום ללוגו ומידע עסקי
+            ws.insert_rows(1, amount=8)  # headers יעברו לשורה 9
             max_col = ws.max_column
             raw_dt = record.get('תאריך יצירה','')
             # שמירת תאריך בלבד ללא זמן; אם כולל זמן נחתוך ברווח הראשון
@@ -538,9 +538,27 @@ class DrawingsManagerTabMixin:
             if formatted_date:
                 ws.cell(row=7, column=2, value=f"תאריך יצירה: {formatted_date}")
 
-            # עיצוב גודל כמו הכותרות (16) לשורות 6-7
+            # A7: כמות השכבות המשוערת
+            layers_count = record.get('שכבות', '') or record.get('כמות שכבות משוערת', '')
+            if layers_count:
+                ws.cell(row=7, column=1, value=f"כמות שכבות: {layers_count}")
+
+            # שורה 8: אורך ורוחב הציור
+            drawing_length = record.get('אורך ציור', '')
+            drawing_width = record.get('רוחב ציור', '')
+            if drawing_length:
+                # המרת סנטימטרים למטרים
+                try:
+                    length_meters = float(drawing_length) / 100
+                    ws.cell(row=8, column=1, value=f"אורך ציור: {length_meters:.2f} מטרים")
+                except (ValueError, TypeError):
+                    ws.cell(row=8, column=1, value=f"אורך ציור: {drawing_length} ס\"מ")
+            if drawing_width:
+                ws.cell(row=8, column=2, value=f"רוחב ציור: {drawing_width} ס\"מ")
+
+            # עיצוב גודל כמו הכותרות (16) לשורות 6-8
             meta_font = Font(size=16)
-            for (r, c) in [(6,1), (6,2), (7,2)]:
+            for (r, c) in [(6,1), (6,2), (7,1), (7,2), (8,1), (8,2)]:
                 try:
                     cell = ws.cell(row=r, column=c)
                     if cell.value is not None:
@@ -549,7 +567,7 @@ class DrawingsManagerTabMixin:
                 except Exception:
                     pass
 
-            header_row_index = 8
+            header_row_index = 9
             header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
             header_font = Font(bold=True, size=16)
             base_font = Font(size=16)

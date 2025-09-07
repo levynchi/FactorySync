@@ -271,19 +271,23 @@ class ConverterTabMixin:
         ml = summary.get('marker_length')
         extra_marker = []
         if mw is not None:
-            extra_marker.append(f"רוחב ציור: {mw:.2f}")
+            extra_marker.append(f"רוחב ציור: {mw:.2f} ס\"מ")
         if ml is not None:
-            extra_marker.append(f"אורך ציור: {ml:.2f}")
+            # המרת סנטימטרים למטרים
+            ml_meters = ml / 100
+            extra_marker.append(f"אורך ציור: {ml_meters:.2f} מטרים")
         if extra_marker:
             info += " | " + " | ".join(extra_marker)
         self.analysis_info_var.set(info)
-        # הצגה מודגשת בשורה נפרדת עם יחידות ס"מ כדי למנוע בלבול
+        # הצגה מודגשת בשורה נפרדת עם יחידות מתאימות
         try:
             if hasattr(self, 'marker_info_var'):
                 if (mw is not None) or (ml is not None):
                     parts = []
                     if ml is not None:
-                        parts.append(f"אורך ציור: {ml:.2f} ס\"מ")
+                        # המרת סנטימטרים למטרים
+                        ml_meters = ml / 100
+                        parts.append(f"אורך ציור: {ml_meters:.2f} מטרים")
                     if mw is not None:
                         parts.append(f"רוחב ציור: {mw:.2f} ס\"מ")
                     self.marker_info_var.set(" | ".join(parts))
@@ -297,9 +301,11 @@ class ConverterTabMixin:
             self._log_message("(Tubular) הכמויות בטבלה הן לאחר חלוקה ב-2")
         # רישום ביומן גם של מידות הציור
         if mw is not None:
-            self._log_message(f"רוחב ציור: {mw:.2f}")
+            self._log_message(f"רוחב ציור: {mw:.2f} ס\"מ")
         if ml is not None:
-            self._log_message(f"אורך ציור: {ml:.2f}")
+            # המרת סנטימטרים למטרים
+            ml_meters = ml / 100
+            self._log_message(f"אורך ציור: {ml_meters:.2f} מטרים")
 
     def _calculate_total_fabric_weight(self, summary):
         """חישוב משקל בד כולל על בסיס אורך הציור, משקל למטר וכמות שכבות."""
@@ -387,12 +393,22 @@ class ConverterTabMixin:
             except (ValueError, AttributeError):
                 estimated_layers = 200  # ברירת מחדל
             
+            # קבלת נתוני מידות ציור מהניתוח
+            marker_width = None
+            marker_length = None
+            if hasattr(self.file_analyzer, 'marker_width'):
+                marker_width = self.file_analyzer.marker_width
+            if hasattr(self.file_analyzer, 'marker_length'):
+                marker_length = self.file_analyzer.marker_length
+            
             record_id = self.data_processor.add_to_local_table(
                 self.current_results, 
                 self.rib_file, 
                 fabric_type=fabric_type, 
                 recipient_supplier=recipient,
-                estimated_layers=estimated_layers
+                estimated_layers=estimated_layers,
+                marker_width=marker_width,
+                marker_length=marker_length
             )
             # שמירת הנמען (אם יש יכולת ב- data_processor בעתיד; לעת עתה נשמור בלוג בלבד)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")
