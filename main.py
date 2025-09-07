@@ -67,6 +67,19 @@ def main():
             )
             return
         
+        # סינכרון נתונים בפתיחה (אם מופעל)
+        print("🔄 בודק סינכרון נתונים...")
+        try:
+            from sync_data import GitSyncManager
+            sync_manager = GitSyncManager()
+            if sync_manager.is_auto_sync_enabled():
+                print("📥 מסנכרן נתונים...")
+                sync_manager.sync_data()
+            else:
+                print("ℹ️  סינכרון אוטומטי מושבת")
+        except Exception as e:
+            print(f"⚠️  שגיאה בסינכרון: {e}")
+        
         # יצירת החלון הראשי
         print("🖼️  יוצר ממשק המשתמש...")
         try:
@@ -88,6 +101,19 @@ def main():
                     settings_manager.set("app.window_size", window_geometry)
                     settings_manager.save_config()
                     print("✅ הגדרות נשמרו בהצלחה")
+                    
+                    # סינכרון נתונים בסגירה (אם מופעל)
+                    print("🔄 מסנכרן נתונים לפני סגירה...")
+                    try:
+                        from sync_data import GitSyncManager
+                        sync_manager = GitSyncManager()
+                        if sync_manager.is_auto_sync_enabled():
+                            sync_manager.sync_data()
+                        else:
+                            print("ℹ️  סינכרון אוטומטי מושבת")
+                    except Exception as sync_ex:
+                        print(f"⚠️  שגיאה בסינכרון: {sync_ex}")
+                        
                 except Exception as ex:
                     print(f"⚠️  שגיאה בשמירת הגדרות: {ex}")
                 finally:

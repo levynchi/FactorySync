@@ -19,6 +19,12 @@ class SettingsManager:
                 "window_size": "800x600",
                 "auto_load_products": True,
                 "products_file": "קובץ מוצרים.xlsx"
+            },
+            "git": {
+                "auto_sync_enabled": False,
+                "repo_url": "",
+                "branch": "main",
+                "last_sync": ""
             }
         }
         print("✅ הגדרות ברירת מחדל נקבעו")

@@ -160,6 +160,9 @@ class BusinessDetailsTabMixin:
 
         # Backups sub-tab
         self._create_backups_tab(inner_nb)
+        
+        # GitHub sub-tab
+        self._create_github_tab(inner_nb)
 
     # ---- Backups Tab ----
     def _create_backups_tab(self, inner_nb: ttk.Notebook):
@@ -528,3 +531,139 @@ class BusinessDetailsTabMixin:
                 messagebox.showerror("שגיאה", "שמירת פרטי העסק נכשלה")
         except Exception:
             pass
+
+    # ---- GitHub Tab ----
+    def _create_github_tab(self, inner_nb: ttk.Notebook):
+        """יצירת טאב GitHub לניהול סינכרון נתונים"""
+        tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        inner_nb.add(tab, text="GitHub")
+        
+        title = tk.Label(tab, text="סינכרון נתונים עם GitHub", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        title.pack(pady=(10, 6))
+        
+        body = tk.Frame(tab, bg="#f7f9fa")
+        body.pack(fill="both", expand=True, padx=12, pady=8)
+        
+        # הגדרות סינכרון
+        settings_frame = tk.LabelFrame(body, text="הגדרות סינכרון", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        settings_frame.pack(fill="x", pady=(0, 10))
+        
+        # סינכרון אוטומטי
+        auto_sync_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        auto_sync_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.git_auto_sync_var = tk.BooleanVar()
+        self.git_auto_sync_var.set(self.settings.get("git.auto_sync_enabled", False))
+        
+        auto_sync_cb = tk.Checkbutton(
+            auto_sync_frame, 
+            text="הפעל סינכרון אוטומטי", 
+            variable=self.git_auto_sync_var,
+            command=self._toggle_auto_sync,
+            bg="#f7f9fa",
+            font=("Arial", 11)
+        )
+        auto_sync_cb.pack(side="right")
+        
+        # URL מאגר
+        url_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        url_frame.pack(fill="x", padx=10, pady=5)
+        
+        tk.Label(url_frame, text="URL מאגר:", bg="#f7f9fa", font=("Arial", 11)).pack(side="right", padx=(0, 5))
+        self.git_repo_url_var = tk.StringVar()
+        self.git_repo_url_var.set(self.settings.get("git.repo_url", ""))
+        url_entry = tk.Entry(url_frame, textvariable=self.git_repo_url_var, width=50, font=("Arial", 10))
+        url_entry.pack(side="right", fill="x", expand=True)
+        
+        # ענף
+        branch_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        branch_frame.pack(fill="x", padx=10, pady=5)
+        
+        tk.Label(branch_frame, text="ענף:", bg="#f7f9fa", font=("Arial", 11)).pack(side="right", padx=(0, 5))
+        self.git_branch_var = tk.StringVar()
+        self.git_branch_var.set(self.settings.get("git.branch", "main"))
+        branch_entry = tk.Entry(branch_frame, textvariable=self.git_branch_var, width=20, font=("Arial", 10))
+        branch_entry.pack(side="right")
+        
+        # כפתורי פעולה
+        actions_frame = tk.LabelFrame(body, text="פעולות", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        actions_frame.pack(fill="x", pady=(0, 10))
+        
+        buttons_frame = tk.Frame(actions_frame, bg="#f7f9fa")
+        buttons_frame.pack(fill="x", padx=10, pady=5)
+        
+        tk.Button(buttons_frame, text="שמור הגדרות", bg="#27ae60", fg="white", command=self._save_git_settings, font=("Arial", 10)).pack(side="right", padx=(5, 0))
+        tk.Button(buttons_frame, text="סטטוס", bg="#3498db", fg="white", command=self._check_git_status, font=("Arial", 10)).pack(side="right", padx=(5, 0))
+        tk.Button(buttons_frame, text="סינכרון עכשיו", bg="#e74c3c", fg="white", command=self._sync_now, font=("Arial", 10)).pack(side="right", padx=(5, 0))
+        
+        # סטטוס
+        status_frame = tk.LabelFrame(body, text="סטטוס", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        status_frame.pack(fill="both", expand=True)
+        
+        self.git_status_text = tk.Text(status_frame, height=8, width=70, font=("Consolas", 9), bg="#2c3e50", fg="#ecf0f1")
+        self.git_status_text.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # טעינת סטטוס ראשוני
+        self._check_git_status()
+    
+    def _toggle_auto_sync(self):
+        """הפעלה/כיבוי של סינכרון אוטומטי"""
+        enabled = self.git_auto_sync_var.get()
+        self.settings.set("git.auto_sync_enabled", enabled)
+        
+        status_text = "מופעל" if enabled else "מושבת"
+        self._update_status(f"סינכרון אוטומטי {status_text}")
+    
+    def _save_git_settings(self):
+        """שמירת הגדרות Git"""
+        try:
+            self.settings.set("git.repo_url", self.git_repo_url_var.get())
+            self.settings.set("git.branch", self.git_branch_var.get())
+            self.settings.set("git.auto_sync_enabled", self.git_auto_sync_var.get())
+            
+            self._update_status("הגדרות Git נשמרו בהצלחה")
+        except Exception as e:
+            self._update_status(f"שגיאה בשמירת הגדרות: {e}")
+    
+    def _check_git_status(self):
+        """בדיקת סטטוס Git"""
+        try:
+            import subprocess
+            import os
+            
+            # בדיקת סטטוס Git
+            result = subprocess.run(["python", "sync_data.py", "--status"], 
+                                  capture_output=True, text=True, cwd=os.getcwd())
+            
+            if result.returncode == 0:
+                self._update_status(result.stdout)
+            else:
+                self._update_status(f"שגיאה בבדיקת סטטוס: {result.stderr}")
+                
+        except Exception as e:
+            self._update_status(f"שגיאה בבדיקת סטטוס Git: {e}")
+    
+    def _sync_now(self):
+        """סינכרון מיידי"""
+        try:
+            import subprocess
+            import os
+            
+            self._update_status("מתחיל סינכרון...")
+            
+            result = subprocess.run(["python", "sync_data.py", "--force"], 
+                                  capture_output=True, text=True, cwd=os.getcwd())
+            
+            if result.returncode == 0:
+                self._update_status(result.stdout)
+            else:
+                self._update_status(f"שגיאה בסינכרון: {result.stderr}")
+                
+        except Exception as e:
+            self._update_status(f"שגיאה בסינכרון: {e}")
+    
+    def _update_status(self, message):
+        """עדכון הודעת סטטוס"""
+        self.git_status_text.delete(1.0, tk.END)
+        self.git_status_text.insert(tk.END, message)
+        self.git_status_text.see(tk.END)
