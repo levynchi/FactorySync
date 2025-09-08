@@ -1,4 +1,4 @@
-import tkinter as tk
+/import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 class FabricsInventoryTabMixin:
@@ -24,20 +24,25 @@ class FabricsInventoryTabMixin:
         self.fabrics_filter_color_var = tk.StringVar(value='')
         self.fabrics_filter_location_var = tk.StringVar(value='')
         self.fabrics_filter_status_var = tk.StringVar(value='')
+        self.fabrics_filter_intake_date_var = tk.StringVar(value='')
         # Widgets (placed right-to-left)
-        tk.Label(filter_frame, text='סטטוס:', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':סטטוס', bg='#ffffff').pack(side='right', padx=(6,2))
         self.fabrics_filter_status_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_status_var, state='readonly', width=14, values=('', 'במלאי','נשלח','נגזר'))
         self.fabrics_filter_status_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text='מיקום:', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':תאריך קליטה', bg='#ffffff').pack(side='right', padx=(6,2))
+        self.fabrics_filter_intake_date_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_intake_date_var, state='readonly', width=16)
+        self.fabrics_filter_intake_date_cb.pack(side='right', padx=(0,10))
+
+        tk.Label(filter_frame, text=':מיקום', bg='#ffffff').pack(side='right', padx=(6,2))
         self.fabrics_filter_location_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_location_var, width=18)
         self.fabrics_filter_location_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text='צבע:', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':צבע', bg='#ffffff').pack(side='right', padx=(6,2))
         self.fabrics_filter_color_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_color_var, width=18)
         self.fabrics_filter_color_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text='סוג בד:', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':סוג בד', bg='#ffffff').pack(side='right', padx=(6,2))
         self.fabrics_filter_type_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_type_var, width=20, state='readonly')
         self.fabrics_filter_type_cb.pack(side='right', padx=(0,10))
 
@@ -52,6 +57,7 @@ class FabricsInventoryTabMixin:
         self.fabrics_filter_type_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
         self.fabrics_filter_color_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
         self.fabrics_filter_location_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
+        self.fabrics_filter_intake_date_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
 
         # Inventory table
         table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
@@ -276,6 +282,7 @@ class FabricsInventoryTabMixin:
             (self.fabrics_filter_color_var.get() or '').strip(),
             (self.fabrics_filter_location_var.get() or '').strip(),
             (self.fabrics_filter_status_var.get() or '').strip(),
+            (self.fabrics_filter_intake_date_var.get() or '').strip(),
         ])
 
     def _filter_fabrics(self, records):
@@ -283,6 +290,20 @@ class FabricsInventoryTabMixin:
         c = (self.fabrics_filter_color_var.get() or '').strip()
         loc = (self.fabrics_filter_location_var.get() or '').strip()
         st = (self.fabrics_filter_status_var.get() or '').strip()
+        intake_date = (self.fabrics_filter_intake_date_var.get() or '').strip()
+        
+        # Get intake date mapping
+        try:
+            logs = getattr(self.data_processor, 'fabrics_import_logs', None)
+            if logs is None:
+                logs = self.data_processor.load_fabrics_import_logs()
+        except Exception:
+            logs = []
+        try:
+            log_date_map = { int(r.get('id')): (r.get('imported_at') or '') for r in logs if isinstance(r.get('id'), int) }
+        except Exception:
+            log_date_map = {}
+        
         def match(rec):
             if t and (rec.get('fabric_type','') != t):
                 return False
@@ -292,6 +313,26 @@ class FabricsInventoryTabMixin:
                 return False
             if loc and (loc.lower() not in (rec.get('location','') or '').lower()):
                 return False
+            if intake_date:
+                # Get the intake date for this record
+                rec_intake_date = ''
+                try:
+                    ilid = rec.get('import_log_id')
+                    if ilid is not None and str(ilid).isdigit():
+                        rec_intake_date = log_date_map.get(int(ilid), '') or ''
+                except Exception:
+                    pass
+                if not rec_intake_date:
+                    rec_intake_date = rec.get('last_modified','') or rec.get('Last Modified','') or ''
+                
+                # Compare dates (only the date part, not time)
+                if rec_intake_date:
+                    rec_date = rec_intake_date.split(' ')[0] if ' ' in rec_intake_date else rec_intake_date
+                    filter_date = intake_date.split(' ')[0] if ' ' in intake_date else intake_date
+                    if rec_date != filter_date:
+                        return False
+                else:
+                    return False
             return True
         return [r for r in records if match(r)]
 
@@ -300,7 +341,7 @@ class FabricsInventoryTabMixin:
         self._update_fabrics_summary()
 
     def _clear_fabrics_filters(self):
-        self.fabrics_filter_type_var.set(''); self.fabrics_filter_color_var.set(''); self.fabrics_filter_location_var.set(''); self.fabrics_filter_status_var.set('')
+        self.fabrics_filter_type_var.set(''); self.fabrics_filter_color_var.set(''); self.fabrics_filter_location_var.set(''); self.fabrics_filter_status_var.set(''); self.fabrics_filter_intake_date_var.set('')
         self._populate_fabrics_table()
         self._update_fabrics_summary()
 
@@ -310,14 +351,45 @@ class FabricsInventoryTabMixin:
         types = sorted({(r.get('fabric_type') or '').strip() for r in inv if (r.get('fabric_type') or '').strip()})
         colors = sorted({(r.get('color_name') or '').strip() for r in inv if (r.get('color_name') or '').strip()})
         locs = sorted({(r.get('location') or '').strip() for r in inv if (r.get('location') or '').strip()})
+        
+        # Get unique intake dates
+        try:
+            logs = getattr(self.data_processor, 'fabrics_import_logs', None)
+            if logs is None:
+                logs = self.data_processor.load_fabrics_import_logs()
+        except Exception:
+            logs = []
+        try:
+            log_date_map = { int(r.get('id')): (r.get('imported_at') or '') for r in logs if isinstance(r.get('id'), int) }
+        except Exception:
+            log_date_map = {}
+        
+        # Collect all intake dates
+        intake_dates = set()
+        for rec in inv:
+            try:
+                ilid = rec.get('import_log_id')
+                if ilid is not None and str(ilid).isdigit():
+                    intake_date = log_date_map.get(int(ilid), '') or ''
+                    if intake_date:
+                        # Extract just the date part
+                        date_part = intake_date.split(' ')[0] if ' ' in intake_date else intake_date
+                        intake_dates.add(date_part)
+            except Exception:
+                pass
+        
+        intake_dates = sorted(list(intake_dates))
+        
         # Preserve selections if still valid
-        cur_t, cur_c, cur_l = self.fabrics_filter_type_var.get(), self.fabrics_filter_color_var.get(), self.fabrics_filter_location_var.get()
+        cur_t, cur_c, cur_l, cur_d = self.fabrics_filter_type_var.get(), self.fabrics_filter_color_var.get(), self.fabrics_filter_location_var.get(), self.fabrics_filter_intake_date_var.get()
         self.fabrics_filter_type_cb['values'] = [''] + types
         self.fabrics_filter_color_cb['values'] = [''] + colors
         self.fabrics_filter_location_cb['values'] = [''] + locs
+        self.fabrics_filter_intake_date_cb['values'] = [''] + intake_dates
         if cur_t not in self.fabrics_filter_type_cb['values']: self.fabrics_filter_type_var.set('')
         if cur_c not in self.fabrics_filter_color_cb['values']: self.fabrics_filter_color_var.set('')
         if cur_l not in self.fabrics_filter_location_cb['values']: self.fabrics_filter_location_var.set('')
+        if cur_d not in self.fabrics_filter_intake_date_cb['values']: self.fabrics_filter_intake_date_var.set('')
 
     def _on_fabrics_right_click(self, event):
         row_id = self.fabrics_tree.identify_row(event.y)
