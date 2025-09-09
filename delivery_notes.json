@@ -146,5 +146,49 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2025-08-31 13:16:45"
+  },
+  {
+    "id": 8,
+    "supplier": "עולה",
+    "date": "2025-09-09",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 164,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 164,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 328,
+        "note": ""
+      }
+    ],
+    "total_quantity": 656,
+    "packages": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2025-09-09 12:47:52"
   }
 ]

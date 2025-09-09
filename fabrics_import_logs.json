@@ -5,5 +5,19 @@
     "full_path": "C:\\Users\\levyn\\Downloads\\28.08.25 AKDEM AFTER TEMPLATE.csv",
     "records_added": 19,
     "imported_at": "2025-08-28 09:39:36"
+  },
+  {
+    "id": 2,
+    "file_name": "akdem 07.09.20251.csv",
+    "full_path": "C:\\Users\\levyn\\OneDrive\\שולחן העבודה\\akdem 07.09.20251.csv",
+    "records_added": 218,
+    "imported_at": "2025-09-07 15:09:23"
+  },
+  {
+    "id": 3,
+    "file_name": "3 barcodes.csv",
+    "full_path": "C:\\Users\\levyn\\Downloads\\3 barcodes.csv",
+    "records_added": 3,
+    "imported_at": "2025-09-09 09:43:37"
   }
 ]

@@ -16,6 +16,7 @@ from .shipments_tab import ShipmentsTabMixin
 from .products_balance_tab import ProductsBalanceTabMixin
 from .business_details_tab import BusinessDetailsTabMixin
 from .formulas_tab import FormulasTabMixin
+from .shipping_costs_tab import ShippingCostsTabMixin
 
 
 class MainWindow(
@@ -31,6 +32,7 @@ class MainWindow(
     ProductsBalanceTabMixin,
     BusinessDetailsTabMixin,
     FormulasTabMixin,
+    ShippingCostsTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -140,6 +142,14 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'נוסחאות וחישובים' נכשלה: {e}")
+            except Exception:
+                pass
+        # Shipping costs and fabrics tab
+        try:
+            self._create_shipping_costs_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'עלויות משלוחים ובדים' נכשלה: {e}")
             except Exception:
                 pass
 

@@ -1,0 +1,425 @@
+warning: in the working copy of 'optitex_analyzer/gui/fabrics_inventory_tab.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/drawings_data.json b/drawings_data.json[m
+[1mindex a301ab3..fb81d76 100644[m
+[1m--- a/drawings_data.json[m
+[1m+++ b/drawings_data.json[m
+[36m@@ -324,5 +324,50 @@[m
+     "כמות שכבות משוערת": 90,[m
+     "רוחב ציור": 87.0,[m
+     "אורך ציור": 349.16041564941406[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "id": 11,[m
+[32m+[m[32m    "שם הקובץ": "moshe winter",[m
+[32m+[m[32m    "תאריך יצירה": "2025-09-08 09:45:47",[m
+[32m+[m[32m    "מוצרים": [[m
+[32m+[m[32m      {[m
+[32m+[m[32m        "שם המוצר": "בגד גוף ש.א",[m
+[32m+[m[32m        "מידות": [[m
+[32m+[m[32m          {[m
+[32m+[m[32m            "מידה": "18m-24m",[m
+[32m+[m[32m            "כמות": 2,[m
+[32m+[m[32m            "הערה": "חולק ב-2 (Tubular)"[m
+[32m+[m[32m          },[m
+[32m+[m[32m          {[m
+[32m+[m[32m            "מידה": "3m-6m",[m
+[32m+[m[32m            "כמות": 1,[m
+[32m+[m[32m            "הערה": "חולק ב-2 (Tubular)"[m
+[32m+[m[32m          },[m
+[32m+[m[32m          {[m
+[32m+[m[32m            "מידה": "6m-12m",[m
+[32m+[m[32m            "כמות": 1,[m
+[32m+[m[32m            "הערה": "חולק ב-2 (Tubular)"[m
+[32m+[m[32m          }[m
+[32m+[m[32m        ][m
+[32m+[m[32m      },[m
+[32m+[m[32m      {[m
+[32m+[m[32m        "שם המוצר": "חזיה טיק טק",[m
+[32m+[m[32m        "מידות": [[m
+[32m+[m[32m          {[m
+[32m+[m[32m            "מידה": "0-3m",[m
+[32m+[m[32m            "כמות": 1,[m
+[32m+[m[32m            "הערה": "חולק ב-2 (Tubular)"[m
+[32m+[m[32m          }[m
+[32m+[m[32m        ][m
+[32m+[m[32m      }[m
+[32m+[m[32m    ],[m
+[32m+[m[32m    "סך כמויות": 5,[m
+[32m+[m[32m    "status": "נשלח",[m
+[32m+[m[32m    "סוג בד": "פלנל לבן",[m
+[32m+[m[32m    "נמען": "אריה",[m
+[32m+[m[32m    "נשלח לספק": true,[m
+[32m+[m[32m    "כמות שכבות משוערת": 180,[m
+[32m+[m[32m    "רוחב ציור": 83.0,[m
+[32m+[m[32m    "אורך ציור": 220.95699863057723[m
+   }[m
+ ][m
+\ No newline at end of file[m
+[1mdiff --git a/fabrics_import_logs.json b/fabrics_import_logs.json[m
+[1mindex d758187..8c6a7ad 100644[m
+[1m--- a/fabrics_import_logs.json[m
+[1m+++ b/fabrics_import_logs.json[m
+[36m@@ -5,5 +5,12 @@[m
+     "full_path": "C:\\Users\\levyn\\Downloads\\28.08.25 AKDEM AFTER TEMPLATE.csv",[m
+     "records_added": 19,[m
+     "imported_at": "2025-08-28 09:39:36"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "id": 2,[m
+[32m+[m[32m    "file_name": "akdem 07.09.20251.csv",[m
+[32m+[m[32m    "full_path": "C:\\Users\\levyn\\OneDrive\\שולחן העבודה\\akdem 07.09.20251.csv",[m
+[32m+[m[32m    "records_added": 218,[m
+[32m+[m[32m    "imported_at": "2025-09-07 15:09:23"[m
+   }[m
+ ][m
+\ No newline at end of file[m
+[1mdiff --git a/fabrics_inventory.json b/fabrics_inventory.json[m
+[1mindex 0238447..852aa7f 100644[m
+[1m--- a/fabrics_inventory.json[m
+[1m+++ b/fabrics_inventory.json[m
+[36m@@ -359,5 +359,4147 @@[m
+     "purpose": "",[m
+     "import_log_id": 1,[m
+     "status": "נשלח"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113392",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 16.7,[m
+[32m+[m[32m    "gross_kg": 17.05,[m
+[32m+[m[32m    "meters": 55.19,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 111.89,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113389",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 17.65,[m
+[32m+[m[32m    "gross_kg": 18.0,[m
+[32m+[m[32m    "meters": 58.33,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 118.26,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113387",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 20.6,[m
+[32m+[m[32m    "gross_kg": 20.95,[m
+[32m+[m[32m    "meters": 68.08,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 138.02,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113385",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 16.5,[m
+[32m+[m[32m    "gross_kg": 16.85,[m
+[32m+[m[32m    "meters": 54.53,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 110.55,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113382",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 20.65,[m
+[32m+[m[32m    "gross_kg": 21.0,[m
+[32m+[m[32m    "meters": 68.24,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 138.36,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113379",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 19.3,[m
+[32m+[m[32m    "gross_kg": 19.65,[m
+[32m+[m[32m    "meters": 63.78,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 129.31,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113358",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 17.35,[m
+[32m+[m[32m    "gross_kg": 17.7,[m
+[32m+[m[32m    "meters": 57.99,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 116.25,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113351",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 19.8,[m
+[32m+[m[32m    "gross_kg": 20.15,[m
+[32m+[m[32m    "meters": 66.18,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 132.66,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25113347",[m
+[32m+[m[32m    "fabric_type": "RIB",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "85",[m
+[32m+[m[32m    "gr": "180",[m
+[32m+[m[32m    "net_kg": 17.35,[m
+[32m+[m[32m    "gross_kg": 17.7,[m
+[32m+[m[32m    "meters": 57.99,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 116.25,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112869",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 19.1,[m
+[32m+[m[32m    "gross_kg": 19.45,[m
+[32m+[m[32m    "meters": 51.19,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 127.97,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112866",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 16.25,[m
+[32m+[m[32m    "gross_kg": 16.6,[m
+[32m+[m[32m    "meters": 43.55,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 108.88,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112862",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 26.2,[m
+[32m+[m[32m    "gross_kg": 26.55,[m
+[32m+[m[32m    "meters": 70.22,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 175.54,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112861",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 22.95,[m
+[32m+[m[32m    "gross_kg": 23.3,[m
+[32m+[m[32m    "meters": 61.51,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 153.77,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112860",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 22.75,[m
+[32m+[m[32m    "gross_kg": 23.1,[m
+[32m+[m[32m    "meters": 60.98,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 152.43,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112854",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 21.45,[m
+[32m+[m[32m    "gross_kg": 21.8,[m
+[32m+[m[32m    "meters": 57.49,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 143.72,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112848",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 21.15,[m
+[32m+[m[32m    "gross_kg": 21.5,[m
+[32m+[m[32m    "meters": 56.69,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 141.71,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112843",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 20.75,[m
+[32m+[m[32m    "gross_kg": 21.1,[m
+[32m+[m[32m    "meters": 55.62,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 139.03,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    "barcode": "25112839",[m
+[32m+[m[32m    "fabric_type": "INTERLOCK",[m
+[32m+[m[32m    "color_name": "לבן",[m
+[32m+[m[32m    "color_no": "110257",[m
+[32m+[m[32m    "design_code": "חלק",[m
+[32m+[m[32m    "width": "88",[m
+[32m+[m[32m    "gr": "220",[m
+[32m+[m[32m    "net_kg": 21.5,[m
+[32m+[m[32m    "gross_kg": 21.85,[m
+[32m+[m[32m    "meters": 57.63,[m
+[32m+[m[32m    "price": 6.7,[m
+[32m+[m[32m    "total": 144.05,[m
+[32m+[m[32m    "location": "",[m
+[32m+[m[32m    "last_modified": "",[m
+[32m+[m[32m    "purpose": "",[m
+[32m+[m[32m    "import_log_id": 2,[m
+[32m+[m[32m    "status": "במלאי"[
