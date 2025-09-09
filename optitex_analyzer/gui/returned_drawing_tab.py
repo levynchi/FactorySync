@@ -49,7 +49,29 @@ class ReturnedDrawingTabMixin:
         self.return_layers_var = tk.StringVar()
         tk.Entry(form, textvariable=self.return_layers_var, width=10).grid(row=1, column=3, pady=4, sticky='w')
 
-        tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=2, column=0, columnspan=4, pady=(6,2), sticky='w')
+        # Row 2 - פירוט מוצרים מהציור
+        tk.Label(form, text="פירוט מוצרים:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=2, column=0, pady=4, sticky='w')
+        
+        # טבלת פירוט מוצרים
+        details_frame = ttk.LabelFrame(container, text="פירוט מוצרים מהציור", padding=8)
+        details_frame.pack(fill='x', padx=8, pady=4)
+        
+        # עמודות לטבלת פירוט
+        detail_cols = ('product_name', 'size', 'quantity', 'note')
+        detail_headers = {'product_name': 'דגם', 'size': 'מידה', 'quantity': 'כמות', 'note': 'הערה'}
+        detail_widths = {'product_name': 200, 'size': 80, 'quantity': 60, 'note': 100}
+        
+        self.drawing_details_tree = ttk.Treeview(details_frame, columns=detail_cols, show='headings', height=6)
+        for c in detail_cols:
+            self.drawing_details_tree.heading(c, text=detail_headers[c])
+            self.drawing_details_tree.column(c, width=detail_widths[c], anchor='center')
+        
+        detail_vs = ttk.Scrollbar(details_frame, orient='vertical', command=self.drawing_details_tree.yview)
+        self.drawing_details_tree.configure(yscroll=detail_vs.set)
+        self.drawing_details_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
+        detail_vs.pack(side='right', fill='y', pady=4)
+
+        tk.Label(form, text="סרוק ברקודים (Enter מוסיף)").grid(row=3, column=0, columnspan=4, pady=(6,2), sticky='w')
 
         scan_frame = ttk.LabelFrame(container, text="ברקודים שנסרקו (בד שנחתך)", padding=8)
         scan_frame.pack(fill='both', expand=True, padx=8, pady=4)
@@ -125,12 +147,22 @@ class ReturnedDrawingTabMixin:
                         self._update_return_supplier_display()
                     except Exception:
                         pass
+                    # עדכון פירוט המוצרים
+                    try:
+                        self._update_drawing_details()
+                    except Exception:
+                        pass
                 try: self.return_drawing_id_combo.unbind('<<ComboboxSelected>>')
                 except Exception: pass
                 self.return_drawing_id_combo.bind('<<ComboboxSelected>>', _on_selected)
             # עדכון ראשוני של הספק אם כבר נבחר ID
             try:
                 self._update_return_supplier_display()
+            except Exception:
+                pass
+            # עדכון ראשוני של פירוט המוצרים
+            try:
+                self._update_drawing_details()
             except Exception:
                 pass
         except Exception:
@@ -250,6 +282,52 @@ class ReturnedDrawingTabMixin:
             supplier = self._get_supplier_for_drawing_id(did) if did else ""
             if hasattr(self, 'return_supplier_display_var'):
                 self.return_supplier_display_var.set(supplier)
+        except Exception:
+            pass
+
+    def _update_drawing_details(self):
+        """עדכון טבלת פירוט המוצרים לפי הציור הנבחר."""
+        try:
+            # ניקוי הטבלה הקיימת
+            if hasattr(self, 'drawing_details_tree'):
+                for item in self.drawing_details_tree.get_children():
+                    self.drawing_details_tree.delete(item)
+            
+            # קבלת ID הציור
+            sel = self.return_drawing_id_var.get()
+            if ' - ' in sel:
+                drawing_id = sel.split(' - ', 1)[0].strip()
+            else:
+                drawing_id = sel.strip()
+            
+            if not drawing_id:
+                return
+            
+            # חיפוש הציור בנתונים
+            drawing_data = getattr(self.data_processor, 'drawings_data', []) or []
+            drawing_record = None
+            for record in drawing_data:
+                if str(record.get('id')) == str(drawing_id):
+                    drawing_record = record
+                    break
+            
+            if not drawing_record:
+                return
+            
+            # הוספת המוצרים לטבלה
+            products = drawing_record.get('מוצרים', [])
+            for product in products:
+                product_name = product.get('שם המוצר', '')
+                sizes = product.get('מידות', [])
+                
+                for size_info in sizes:
+                    size = size_info.get('מידה', '')
+                    quantity = size_info.get('כמות', 0)
+                    note = size_info.get('הערה', '')
+                    
+                    self.drawing_details_tree.insert('', 'end', values=(
+                        product_name, size, quantity, note
+                    ))
         except Exception:
             pass
 
