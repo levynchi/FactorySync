@@ -15,6 +15,7 @@ from .suppliers_tab import SuppliersTabMixin
 from .shipments_tab import ShipmentsTabMixin
 from .products_balance_tab import ProductsBalanceTabMixin
 from .business_details_tab import BusinessDetailsTabMixin
+from .formulas_tab import FormulasTabMixin
 
 
 class MainWindow(
@@ -29,6 +30,7 @@ class MainWindow(
     ShipmentsTabMixin,
     ProductsBalanceTabMixin,
     BusinessDetailsTabMixin,
+    FormulasTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -130,6 +132,14 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'מאזן מוצרים ופריטים' נכשלה: {e}")
+            except Exception:
+                pass
+        # Formulas and calculations tab
+        try:
+            self._create_formulas_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'נוסחאות וחישובים' נכשלה: {e}")
             except Exception:
                 pass
 
