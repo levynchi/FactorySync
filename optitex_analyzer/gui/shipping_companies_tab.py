@@ -166,6 +166,10 @@ class ShippingCompaniesTabMixin:
             # Save to file
             self._save_shipping_companies_data()
             
+            # Refresh shipping costs combobox if it exists
+            if hasattr(self, 'refresh_shipping_companies_combobox'):
+                self.refresh_shipping_companies_combobox()
+            
             # Clear inputs
             self._clear_shipping_company_inputs()
             
@@ -202,6 +206,10 @@ class ShippingCompaniesTabMixin:
             # Save to file
             self._save_shipping_companies_data()
             
+            # Refresh shipping costs combobox if it exists
+            if hasattr(self, 'refresh_shipping_companies_combobox'):
+                self.refresh_shipping_companies_combobox()
+            
             # Clear inputs
             self._clear_shipping_company_inputs()
             
@@ -222,6 +230,11 @@ class ShippingCompaniesTabMixin:
             if messagebox.askyesno("אישור מחיקה", "האם אתה בטוח שברצונך למחוק את החברה הנבחרת?"):
                 self.shipping_companies_tree.delete(selected_item[0])
                 self._save_shipping_companies_data()
+                
+                # Refresh shipping costs combobox if it exists
+                if hasattr(self, 'refresh_shipping_companies_combobox'):
+                    self.refresh_shipping_companies_combobox()
+                
                 self._clear_shipping_company_inputs()
                 messagebox.showinfo("הצלחה", "החברה נמחקה בהצלחה")
             

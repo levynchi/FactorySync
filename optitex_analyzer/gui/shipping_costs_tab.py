@@ -47,7 +47,8 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         # Row 1 - Name and Date
         tk.Label(input_frame, text="שם:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.shipping_name_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.shipping_name_var, width=20, font=('Arial', 10)).grid(row=0, column=1, padx=5, pady=5)
+        self.shipping_name_combo = ttk.Combobox(input_frame, textvariable=self.shipping_name_var, width=18, font=('Arial', 10), state='readonly')
+        self.shipping_name_combo.grid(row=0, column=1, padx=5, pady=5)
         
         tk.Label(input_frame, text="תאריך משלוח:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
         self.shipping_date_var = tk.StringVar(value=datetime.now().strftime('%d/%m/%Y'))
@@ -62,37 +63,38 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         self.total_weight_var = tk.StringVar()
         tk.Entry(input_frame, textvariable=self.total_weight_var, width=15, font=('Arial', 10)).grid(row=1, column=3, padx=5, pady=5)
         
-        # Row 3 - Fabric cost and Quantity
-        tk.Label(input_frame, text="עלות בד לק״ג:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
-        self.fabric_cost_per_kg_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.fabric_cost_per_kg_var, width=20, font=('Arial', 10)).grid(row=2, column=1, padx=5, pady=5)
-        
-        tk.Label(input_frame, text="כמות גלילים:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        # Row 3 - Quantity and Product Price in USD
+        tk.Label(input_frame, text="כמות גלילים:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.rolls_quantity_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=('Arial', 10)).grid(row=2, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=('Arial', 10)).grid(row=2, column=1, padx=5, pady=5)
+        
+        tk.Label(input_frame, text="מחיר סחורה בדולר:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        self.product_price_usd_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.product_price_usd_var, width=15, font=('Arial', 10)).grid(row=2, column=3, padx=5, pady=5)
+        
+        # Row 3 - USD Exchange Rate
+        tk.Label(input_frame, text="שער הדולר:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        self.usd_rate_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.usd_rate_var, width=15, font=('Arial', 10)).grid(row=3, column=1, padx=5, pady=5)
         
         # Row 4 - Shipping costs
-        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=5)
         self.final_shipping_cost_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=('Arial', 10)).grid(row=3, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=('Arial', 10)).grid(row=4, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="משלוח פנימי:", font=('Arial', 10, 'bold')).grid(row=3, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="משלוח פנימי:", font=('Arial', 10, 'bold')).grid(row=4, column=2, sticky='w', padx=5, pady=5)
         self.domestic_shipping_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=('Arial', 10)).grid(row=3, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=('Arial', 10)).grid(row=4, column=3, padx=5, pady=5)
         
-        # Row 5 - Documents
-        tk.Label(input_frame, text="מסמכים לשילוח:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=5)
-        self.documents_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.documents_var, width=50, font=('Arial', 10)).grid(row=4, column=1, columnspan=3, padx=5, pady=5)
         
-        # Row 6 - Packing List Upload
+        # Row 5 - Packing List Upload
         tk.Label(input_frame, text="PACKING LIST:", font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky='w', padx=5, pady=5)
         self.packing_list_var = tk.StringVar()
         tk.Entry(input_frame, textvariable=self.packing_list_var, width=30, font=('Arial', 10), state='readonly').grid(row=5, column=1, padx=5, pady=5)
         tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_packing_list_file, bg='#3498db', fg='white', font=('Arial', 9)).grid(row=5, column=2, padx=5, pady=5)
         tk.Button(input_frame, text="🗑 נקה", command=self._clear_packing_list, bg='#e74c3c', fg='white', font=('Arial', 9)).grid(row=5, column=3, padx=5, pady=5)
         
-        # Row 7 - Payment Request Upload
+        # Row 6 - Payment Request Upload
         tk.Label(input_frame, text="דרישת תשלום:", font=('Arial', 10, 'bold')).grid(row=6, column=0, sticky='w', padx=5, pady=5)
         self.payment_request_var = tk.StringVar()
         tk.Entry(input_frame, textvariable=self.payment_request_var, width=30, font=('Arial', 10), state='readonly').grid(row=6, column=1, padx=5, pady=5)
@@ -137,27 +139,47 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         table_frame = ttk.LabelFrame(container, text="רשימת משלוחים", padding=10)
         table_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
+        # Add title above table
+        title_label = tk.Label(
+            table_frame, 
+            text="מחירים ללא המע״מ של ישראל", 
+            font=('Arial', 12, 'bold'), 
+            bg='#f7f9fa', 
+            fg='#2c3e50'
+        )
+        title_label.pack(pady=(0, 10))
+        
+        # Add sorting button
+        sort_frame = tk.Frame(table_frame)
+        sort_frame.pack(fill='x', pady=(0, 10))
+        tk.Button(
+            sort_frame,
+            text="📅 מיין לפי תאריך (חדש למעלה)",
+            command=self._sort_shipping_table_by_date,
+            bg='#3498db',
+            fg='white',
+            font=('Arial', 9, 'bold')
+        ).pack(side='right')
+        
         # Treeview for data display
-        columns = ('name', 'date', 'cub', 'total_weight', 'fabric_cost_per_kg', 'rolls_quantity', 
+        columns = ('name', 'date', 'cub', 'total_weight', 'rolls_quantity', 'product_price_usd', 'usd_rate',
                   'final_shipping_cost', 'domestic_shipping', 'final_cost_incl_domestic', 
-                  'total_price_per_kg', 'total_price_per_cubic', 'fabric_shipping_cost_percent', 'documents', 'packing_list', 'payment_request')
+                  'total_price_per_kg', 'total_price_per_cubic', 'fabric_shipping_cost_percent')
         
         headers = {
             'name': 'שם',
             'date': 'תאריך משלוח',
             'cub': 'Cub',
             'total_weight': 'משקל כולל',
-            'fabric_cost_per_kg': 'עלות בד לק״ג',
             'rolls_quantity': 'כמות גלילים',
-            'final_shipping_cost': 'עלות משלוח סופית (ללא מע״מ)',
+            'product_price_usd': 'מחיר סחורה בדולר',
+            'usd_rate': 'שער הדולר',
+            'final_shipping_cost': 'עלות משלוח סופית',
             'domestic_shipping': 'משלוח פנימי',
             'final_cost_incl_domestic': 'עלות סופית כולל משלוח פנימי',
-            'total_price_per_kg': 'מחיר כולל לק״ג',
-            'total_price_per_cubic': 'מחיר כולל למטר מעוקב (ללא מע״מ)',
-            'fabric_shipping_cost_percent': 'אחוז עלות משלוח בד',
-            'documents': 'מסמכים לשילוח',
-            'packing_list': 'PACKING LIST',
-            'payment_request': 'דרישת תשלום'
+            'total_price_per_kg': 'עלות משלוח לק״ג',
+            'total_price_per_cubic': 'מחיר כולל למטר מעוקב',
+            'fabric_shipping_cost_percent': 'אחוז עלות משלוח בד'
         }
         
         self.shipping_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
@@ -180,11 +202,17 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         # Bind double-click to open files
         self.shipping_tree.bind('<Double-1>', self._on_row_double_click)
         
+        # Load shipping companies for combobox
+        self._load_shipping_companies_for_combobox()
+        
         # Load existing data
         self._load_shipping_data()
         
         # Load CSV data if exists
         self._load_csv_data()
+        
+        # Sort table by date after loading all data
+        self._sort_shipping_table_by_date()
     
     def _add_shipping_record(self):
         """Add a new shipping record."""
@@ -194,11 +222,11 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             date = self.shipping_date_var.get().strip()
             cub = self.cub_var.get().strip()
             total_weight = self.total_weight_var.get().strip()
-            fabric_cost_per_kg = self.fabric_cost_per_kg_var.get().strip()
             rolls_quantity = self.rolls_quantity_var.get().strip()
+            product_price_usd = self.product_price_usd_var.get().strip()
+            usd_rate = self.usd_rate_var.get().strip()
             final_shipping_cost = self.final_shipping_cost_var.get().strip()
             domestic_shipping = self.domestic_shipping_var.get().strip()
-            documents = self.documents_var.get().strip()
             packing_list_file = self.packing_list_var.get().strip()
             payment_request_file = self.payment_request_var.get().strip()
             
@@ -210,8 +238,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             # Convert to numbers for calculations
             cub_val = float(cub) if cub else 0
             total_weight_val = float(total_weight) if total_weight else 0
-            fabric_cost_per_kg_val = float(fabric_cost_per_kg) if fabric_cost_per_kg else 0
             rolls_quantity_val = int(rolls_quantity) if rolls_quantity else 0
+            product_price_usd_val = float(product_price_usd) if product_price_usd else 0
+            usd_rate_val = float(usd_rate) if usd_rate else 0
             final_shipping_cost_val = float(final_shipping_cost) if final_shipping_cost else 0
             domestic_shipping_val = float(domestic_shipping) if domestic_shipping else 0
             
@@ -228,8 +257,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             else:
                 total_price_per_cubic = 0
             
-            if fabric_cost_per_kg_val > 0 and total_price_per_kg > 0:
-                fabric_shipping_cost_percent = (total_price_per_kg / fabric_cost_per_kg_val) * 100
+            # Calculate fabric shipping cost percentage (simplified without fabric cost per kg)
+            if total_price_per_kg > 0:
+                fabric_shipping_cost_percent = 100  # Default to 100% since we don't have fabric cost
             else:
                 fabric_shipping_cost_percent = 0
             
@@ -239,31 +269,34 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                 'date': date,
                 'cub': cub_val,
                 'total_weight': total_weight_val,
-                'fabric_cost_per_kg': fabric_cost_per_kg_val,
                 'rolls_quantity': rolls_quantity_val,
+                'product_price_usd': product_price_usd_val,
+                'usd_rate': usd_rate_val,
                 'final_shipping_cost': final_shipping_cost_val,
                 'domestic_shipping': domestic_shipping_val,
                 'final_cost_incl_domestic': final_cost_incl_domestic,
                 'total_price_per_kg': total_price_per_kg,
                 'total_price_per_cubic': total_price_per_cubic,
                 'fabric_shipping_cost_percent': fabric_shipping_cost_percent,
-                'documents': documents,
                 'packing_list': packing_list_file,
                 'payment_request': payment_request_file
             }
             
             # Add to treeview
             values = (
-                name, date, f"{cub_val:.2f}", f"{total_weight_val:.1f}", f"{fabric_cost_per_kg_val:.2f}",
-                str(rolls_quantity_val), f"{final_shipping_cost_val:.0f}", f"{domestic_shipping_val:.0f}",
+                name, date, f"{cub_val:.2f}", f"{total_weight_val:.1f}",
+                str(rolls_quantity_val), f"{product_price_usd_val:.2f}", f"{usd_rate_val:.2f}", f"{final_shipping_cost_val:.0f}", f"{domestic_shipping_val:.0f}",
                 f"{final_cost_incl_domestic:.0f}", f"{total_price_per_kg:.2f}", f"{total_price_per_cubic:.0f}",
-                f"{fabric_shipping_cost_percent:.0f}%", documents, packing_list_file, payment_request_file
+                f"{fabric_shipping_cost_percent:.0f}%"
             )
             
             self.shipping_tree.insert('', 'end', values=values)
             
             # Save to file
             self._save_shipping_data()
+            
+            # Sort table by date
+            self._sort_shipping_table_by_date()
             
             # Clear inputs
             self._clear_shipping_inputs()
@@ -277,15 +310,19 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
     
     def _clear_shipping_inputs(self):
         """Clear all input fields."""
-        self.shipping_name_var.set("")
+        # Don't clear the shipping name combobox, just reset to first option
+        if hasattr(self, 'shipping_name_combo') and self.shipping_name_combo['values']:
+            self.shipping_name_combo.set(self.shipping_name_combo['values'][0])
+        else:
+            self.shipping_name_var.set("")
         self.shipping_date_var.set(datetime.now().strftime('%d/%m/%Y'))
         self.cub_var.set("")
         self.total_weight_var.set("")
-        self.fabric_cost_per_kg_var.set("")
         self.rolls_quantity_var.set("")
+        self.product_price_usd_var.set("")
+        self.usd_rate_var.set("")
         self.final_shipping_cost_var.set("")
         self.domestic_shipping_var.set("")
-        self.documents_var.set("")
         self.packing_list_var.set("")
         self.payment_request_var.set("")
     
@@ -303,17 +340,15 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                         record.get('date', ''),
                         f"{record.get('cub', 0):.2f}",
                         f"{record.get('total_weight', 0):.1f}",
-                        f"{record.get('fabric_cost_per_kg', 0):.2f}",
                         str(record.get('rolls_quantity', 0)),
+                        f"{record.get('product_price_usd', 0):.2f}",
+                        f"{record.get('usd_rate', 0):.2f}",
                         f"{record.get('final_shipping_cost', 0):.0f}",
                         f"{record.get('domestic_shipping', 0):.0f}",
                         f"{record.get('final_cost_incl_domestic', 0):.0f}",
                         f"{record.get('total_price_per_kg', 0):.2f}",
                         f"{record.get('total_price_per_cubic', 0):.0f}",
-                        f"{record.get('fabric_shipping_cost_percent', 0):.0f}%",
-                        record.get('documents', ''),
-                        record.get('packing_list', ''),
-                        record.get('payment_request', '')
+                        f"{record.get('fabric_shipping_cost_percent', 0):.0f}%"
                     )
                     self.shipping_tree.insert('', 'end', values=values)
         except Exception as e:
@@ -335,7 +370,6 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                         date = row.get('תאריך משלוח', '').strip()
                         cub = row.get('Cub', '').strip()
                         total_weight = row.get('Total weight', '').strip()
-                        fabric_cost_per_kg = row.get('fabric cost per 1 kg', '').strip()
                         rolls_quantity = row.get('כמות גלילים', '').strip()
                         final_shipping_cost = row.get('Final shipping cost excluding VAT', '').strip()
                         domestic_shipping = row.get('Domestic shipping', '').strip()
@@ -354,7 +388,6 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                         try:
                             cub_val = float(cub) if cub else 0
                             total_weight_val = float(total_weight) if total_weight else 0
-                            fabric_cost_per_kg_val = float(fabric_cost_per_kg) if fabric_cost_per_kg else 0
                             rolls_quantity_val = int(rolls_quantity) if rolls_quantity else 0
                             final_shipping_cost_val = float(final_shipping_cost) if final_shipping_cost else 0
                             domestic_shipping_val = float(domestic_shipping) if domestic_shipping else 0
@@ -372,17 +405,15 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                             date,
                             f"{cub_val:.2f}",
                             f"{total_weight_val:.1f}",
-                            f"{fabric_cost_per_kg_val:.2f}",
                             str(rolls_quantity_val),
+                            "0.00",  # Default value for product_price_usd in CSV data
+                            "0.00",  # Default value for usd_rate in CSV data
                             f"{final_shipping_cost_val:.0f}",
                             f"{domestic_shipping_val:.0f}",
                             f"{final_cost_incl_domestic_val:.0f}",
                             f"{total_price_per_kg_val:.2f}",
                             f"{total_price_per_cubic_val:.0f}",
-                            f"{fabric_shipping_cost_percent_val:.0f}%",
-                            documents,
-                            '',  # Empty packing list for CSV data
-                            ''   # Empty payment request for CSV data
+                            f"{fabric_shipping_cost_percent_val:.0f}%"
                         )
                         
                         self.shipping_tree.insert('', 'end', values=values)
@@ -403,17 +434,16 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                     'date': values[1],
                     'cub': float(values[2]) if values[2] else 0,
                     'total_weight': float(values[3]) if values[3] else 0,
-                    'fabric_cost_per_kg': float(values[4]) if values[4] else 0,
-                    'rolls_quantity': int(values[5]) if values[5] else 0,
+                    'rolls_quantity': int(values[4]) if values[4] else 0,
+                    'product_price_usd': float(values[5]) if values[5] else 0,
                     'final_shipping_cost': float(values[6]) if values[6] else 0,
                     'domestic_shipping': float(values[7]) if values[7] else 0,
                     'final_cost_incl_domestic': float(values[8]) if values[8] else 0,
                     'total_price_per_kg': float(values[9]) if values[9] else 0,
                     'total_price_per_cubic': float(values[10]) if values[10] else 0,
                     'fabric_shipping_cost_percent': float(values[11].replace('%', '')) if values[11] else 0,
-                    'documents': values[12],
-                    'packing_list': values[13] if len(values) > 13 else '',
-                    'payment_request': values[14] if len(values) > 14 else ''
+                    'packing_list': '',  # Hidden from display but kept in data
+                    'payment_request': ''  # Hidden from display but kept in data
                 }
                 data.append(record)
             
@@ -433,9 +463,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             ws.title = "עלויות משלוחים ובדים"
             
             # Headers
-            headers = ['שם', 'תאריך משלוח', 'Cub', 'משקל כולל', 'עלות בד לק״ג', 'כמות גלילים',
-                      'עלות משלוח סופית (ללא מע״מ)', 'משלוח פנימי', 'עלות סופית כולל משלוח פנימי',
-                      'מחיר כולל לק״ג', 'מחיר כולל למטר מעוקב (ללא מע״מ)', 'אחוז עלות משלוח בד', 'מסמכים לשילוח', 'PACKING LIST', 'דרישת תשלום']
+            headers = ['שם', 'תאריך משלוח', 'Cub', 'משקל כולל', 'כמות גלילים', 'מחיר סחורה בדולר', 'שער הדולר',
+                      'עלות משלוח סופית', 'משלוח פנימי', 'עלות סופית כולל משלוח פנימי',
+                      'עלות משלוח לק״ג', 'מחיר כולל למטר מעוקב', 'אחוז עלות משלוח בד']
             
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=1, column=col, value=header)
@@ -529,11 +559,33 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         
         # Get the values of the selected row
         values = self.shipping_tree.item(item, 'values')
-        if len(values) < 15:  # Need at least 15 columns
+        if len(values) < 13:  # Need at least 13 columns
             return
         
-        packing_list_file = values[13] if len(values) > 13 else ""
-        payment_request_file = values[14] if len(values) > 14 else ""
+        # Get packing list and payment request from the record data (not from display)
+        # We need to get these from the saved data since they're not displayed
+        packing_list_file = ""
+        payment_request_file = ""
+        
+        # Try to get from the record data
+        try:
+            # Get the record ID or name to find the full record
+            record_name = values[0] if values else ""
+            if record_name:
+                # Load the full record from file to get the hidden fields
+                data_file = "shipping_costs.json"
+                if os.path.exists(data_file):
+                    with open(data_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # Find the matching record
+                    for record in data:
+                        if record.get('name') == record_name:
+                            packing_list_file = record.get('packing_list', '')
+                            payment_request_file = record.get('payment_request', '')
+                            break
+        except Exception:
+            pass
         
         # Check which files exist and ask user which one to open
         files_to_open = []
@@ -545,7 +597,10 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             files_to_open.append(("דרישת תשלום", payment_request_file, "payment_requests"))
         
         if not files_to_open:
-            messagebox.showinfo("מידע", "אין קבצים לשורה זו")
+            try:
+                messagebox.showinfo("מידע", "אין קבצים לשורה זו")
+            except Exception:
+                pass
             return
         
         if len(files_to_open) == 1:
@@ -641,6 +696,73 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         """Clear the selected payment request file."""
         self.payment_request_var.set("")
     
+    def _load_shipping_companies_for_combobox(self):
+        """Load shipping companies data for the combobox."""
+        try:
+            data_file = "shipping_companies.json"
+            if os.path.exists(data_file):
+                with open(data_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Extract company names
+                company_names = [record.get('company_name', '') for record in data if record.get('company_name')]
+                
+                # Update combobox values
+                self.shipping_name_combo['values'] = company_names
+                
+                # Set default value if there are companies
+                if company_names:
+                    self.shipping_name_combo.set(company_names[0])
+        except Exception as e:
+            print(f"Error loading shipping companies for combobox: {e}")
+            # Set empty values if loading fails
+            self.shipping_name_combo['values'] = []
+    
+    def refresh_shipping_companies_combobox(self):
+        """Refresh the shipping companies combobox with updated data."""
+        self._load_shipping_companies_for_combobox()
+    
+    def _sort_shipping_table_by_date(self):
+        """Sort the shipping table by date (newest first)."""
+        try:
+            # Get all items from the tree
+            items = []
+            for item in self.shipping_tree.get_children():
+                values = self.shipping_tree.item(item)['values']
+                if values and len(values) > 1:  # Make sure we have at least name and date
+                    date_str = values[1]  # Date is in column 1
+                    items.append((item, values, date_str))
+            
+            # Sort by date (newest first)
+            def parse_date(date_str):
+                try:
+                    # Handle different date formats
+                    if '/' in date_str:
+                        # Format: DD/MM/YYYY
+                        day, month, year = date_str.split('/')
+                        return datetime(int(year), int(month), int(day))
+                    elif '-' in date_str:
+                        # Format: YYYY-MM-DD
+                        year, month, day = date_str.split('-')
+                        return datetime(int(year), int(month), int(day))
+                    else:
+                        # If we can't parse, put it at the end
+                        return datetime.min
+                except:
+                    return datetime.min
+            
+            items.sort(key=lambda x: parse_date(x[2]), reverse=True)
+            
+            # Clear the tree and re-insert sorted items
+            for item in self.shipping_tree.get_children():
+                self.shipping_tree.delete(item)
+            
+            for item, values, date_str in items:
+                self.shipping_tree.insert('', 'end', values=values)
+                
+        except Exception as e:
+            print(f"Error sorting shipping table: {e}")
+    
     def _on_payment_request_double_click(self, event):
         """Handle double-click on payment request column to open file."""
         # Get the item that was clicked
@@ -650,10 +772,28 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         
         # Get the values of the selected row
         values = self.shipping_tree.item(item, 'values')
-        if len(values) < 15:  # payment_request is the last column (index 14)
+        if len(values) < 13:  # Need at least 13 columns
             return
         
-        payment_request_file = values[14]
+        # Get payment request from the record data (not from display)
+        payment_request_file = ""
+        try:
+            # Get the record ID or name to find the full record
+            record_name = values[0] if values else ""
+            if record_name:
+                # Load the full record from file to get the hidden fields
+                data_file = "shipping_costs.json"
+                if os.path.exists(data_file):
+                    with open(data_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # Find the matching record
+                    for record in data:
+                        if record.get('name') == record_name:
+                            payment_request_file = record.get('payment_request', '')
+                            break
+        except Exception:
+            pass
         if not payment_request_file or payment_request_file.strip() == "":
             messagebox.showinfo("מידע", "אין קובץ דרישת תשלום לשורה זו")
             return
