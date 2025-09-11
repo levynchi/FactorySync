@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import json
 import os
+import subprocess
 from .shipping_companies_tab import ShippingCompaniesTabMixin
 
 class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
@@ -292,8 +293,8 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             
             self.shipping_tree.insert('', 'end', values=values)
             
-            # Save to file
-            self._save_shipping_data()
+            # Save the new record directly to file
+            self._save_new_record_to_file(record)
             
             # Sort table by date
             self._sort_shipping_table_by_date()
@@ -326,376 +327,7 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         self.packing_list_var.set("")
         self.payment_request_var.set("")
     
-    def _load_shipping_data(self):
-        """Load shipping data from file."""
-        try:
-            data_file = "shipping_costs.json"
-            if os.path.exists(data_file):
-                with open(data_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                for record in data:
-                    values = (
-                        record.get('name', ''),
-                        record.get('date', ''),
-                        f"{record.get('cub', 0):.2f}",
-                        f"{record.get('total_weight', 0):.1f}",
-                        str(record.get('rolls_quantity', 0)),
-                        f"{record.get('product_price_usd', 0):.2f}",
-                        f"{record.get('usd_rate', 0):.2f}",
-                        f"{record.get('final_shipping_cost', 0):.0f}",
-                        f"{record.get('domestic_shipping', 0):.0f}",
-                        f"{record.get('final_cost_incl_domestic', 0):.0f}",
-                        f"{record.get('total_price_per_kg', 0):.2f}",
-                        f"{record.get('total_price_per_cubic', 0):.0f}",
-                        f"{record.get('fabric_shipping_cost_percent', 0):.0f}%"
-                    )
-                    self.shipping_tree.insert('', 'end', values=values)
-        except Exception as e:
-            print(f"Error loading shipping data: {e}")
-    
-    def _load_csv_data(self):
-        """Load shipping data from CSV file."""
-        try:
-            csv_file = "עלויות של משלוחים ובדים-Grid view.csv"
-            if os.path.exists(csv_file):
-                import csv
-                
-                with open(csv_file, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    
-                    for row in reader:
-                        # Extract data from CSV row - handle BOM in first column
-                        name = row.get('\ufeffName', row.get('Name', '')).strip()
-                        date = row.get('תאריך משלוח', '').strip()
-                        cub = row.get('Cub', '').strip()
-                        total_weight = row.get('Total weight', '').strip()
-                        rolls_quantity = row.get('כמות גלילים', '').strip()
-                        final_shipping_cost = row.get('Final shipping cost excluding VAT', '').strip()
-                        domestic_shipping = row.get('Domestic shipping', '').strip()
-                        final_cost_incl_domestic = row.get('Final cost incl. domestic shipping', '').strip()
-                        total_price_per_kg = row.get('total price per 1 kg', '').strip()
-                        total_price_per_cubic = row.get('Total price per cubic meter excluding VAT', '').strip()
-                        fabric_shipping_cost_percent = row.get('Fabric shipping cost % to be added.', '').strip()
-                        documents = row.get('מסמכים לשילוח', '').strip()
-                        
-                        
-                        # Skip empty rows
-                        if not name and not date:
-                            continue
-                        
-                        # Convert values to appropriate types
-                        try:
-                            cub_val = float(cub) if cub else 0
-                            total_weight_val = float(total_weight) if total_weight else 0
-                            rolls_quantity_val = int(rolls_quantity) if rolls_quantity else 0
-                            final_shipping_cost_val = float(final_shipping_cost) if final_shipping_cost else 0
-                            domestic_shipping_val = float(domestic_shipping) if domestic_shipping else 0
-                            final_cost_incl_domestic_val = float(final_cost_incl_domestic) if final_cost_incl_domestic else 0
-                            total_price_per_kg_val = float(total_price_per_kg) if total_price_per_kg else 0
-                            total_price_per_cubic_val = float(total_price_per_cubic) if total_price_per_cubic else 0
-                            fabric_shipping_cost_percent_val = float(fabric_shipping_cost_percent.replace('%', '')) if fabric_shipping_cost_percent else 0
-                        except ValueError:
-                            # Skip rows with invalid data
-                            continue
-                        
-                        # Add to treeview
-                        values = (
-                            name,
-                            date,
-                            f"{cub_val:.2f}",
-                            f"{total_weight_val:.1f}",
-                            str(rolls_quantity_val),
-                            "0.00",  # Default value for product_price_usd in CSV data
-                            "0.00",  # Default value for usd_rate in CSV data
-                            f"{final_shipping_cost_val:.0f}",
-                            f"{domestic_shipping_val:.0f}",
-                            f"{final_cost_incl_domestic_val:.0f}",
-                            f"{total_price_per_kg_val:.2f}",
-                            f"{total_price_per_cubic_val:.0f}",
-                            f"{fabric_shipping_cost_percent_val:.0f}%"
-                        )
-                        
-                        self.shipping_tree.insert('', 'end', values=values)
-                
-                print(f"Loaded {len(self.shipping_tree.get_children())} records from CSV file")
-                
-        except Exception as e:
-            print(f"Error loading CSV data: {e}")
-    
-    def _save_shipping_data(self):
-        """Save shipping data to file."""
-        try:
-            data = []
-            for item in self.shipping_tree.get_children():
-                values = self.shipping_tree.item(item)['values']
-                record = {
-                    'name': values[0],
-                    'date': values[1],
-                    'cub': float(values[2]) if values[2] else 0,
-                    'total_weight': float(values[3]) if values[3] else 0,
-                    'rolls_quantity': int(values[4]) if values[4] else 0,
-                    'product_price_usd': float(values[5]) if values[5] else 0,
-                    'final_shipping_cost': float(values[6]) if values[6] else 0,
-                    'domestic_shipping': float(values[7]) if values[7] else 0,
-                    'final_cost_incl_domestic': float(values[8]) if values[8] else 0,
-                    'total_price_per_kg': float(values[9]) if values[9] else 0,
-                    'total_price_per_cubic': float(values[10]) if values[10] else 0,
-                    'fabric_shipping_cost_percent': float(values[11].replace('%', '')) if values[11] else 0,
-                    'packing_list': '',  # Hidden from display but kept in data
-                    'payment_request': ''  # Hidden from display but kept in data
-                }
-                data.append(record)
-            
-            with open("shipping_costs.json", 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"Error saving shipping data: {e}")
-    
-    def _export_to_excel(self):
-        """Export shipping data to Excel."""
-        try:
-            from openpyxl import Workbook
-            from openpyxl.styles import Font, Alignment
-            
-            wb = Workbook()
-            ws = wb.active
-            ws.title = "עלויות משלוחים ובדים"
-            
-            # Headers
-            headers = ['שם', 'תאריך משלוח', 'Cub', 'משקל כולל', 'כמות גלילים', 'מחיר סחורה בדולר', 'שער הדולר',
-                      'עלות משלוח סופית', 'משלוח פנימי', 'עלות סופית כולל משלוח פנימי',
-                      'עלות משלוח לק״ג', 'מחיר כולל למטר מעוקב', 'אחוז עלות משלוח בד']
-            
-            for col, header in enumerate(headers, 1):
-                cell = ws.cell(row=1, column=col, value=header)
-                cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal='center')
-            
-            # Data
-            for row, item in enumerate(self.shipping_tree.get_children(), 2):
-                values = self.shipping_tree.item(item)['values']
-                for col, value in enumerate(values, 1):
-                    ws.cell(row=row, column=col, value=value)
-            
-            # Auto-adjust column widths
-            for column in ws.columns:
-                max_length = 0
-                column_letter = column[0].column_letter
-                for cell in column:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = min(max_length + 2, 50)
-                ws.column_dimensions[column_letter].width = adjusted_width
-            
-            # Save file
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".xlsx",
-                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
-                title="שמור קובץ אקסל"
-            )
-            
-            if filename:
-                wb.save(filename)
-                messagebox.showinfo("הצלחה", f"הקובץ נשמר בהצלחה: {filename}")
-            
-        except ImportError:
-            messagebox.showerror("שגיאה", "ספריית openpyxl לא מותקנת. אנא התקן אותה עם: pip install openpyxl")
-        except Exception as e:
-            messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל: {str(e)}")
-    
-    def _select_packing_list_file(self):
-        """Select a packing list Excel file to upload."""
-        file_path = filedialog.askopenfilename(
-            title="בחר קובץ PACKING LIST",
-            filetypes=[
-                ("Excel files", "*.xlsx *.xls"),
-                ("All files", "*.*")
-            ]
-        )
-        
-        if file_path:
-            # Copy file to packing_lists directory
-            try:
-                import shutil
-                import os
-                
-                # Create packing_lists directory if it doesn't exist
-                packing_lists_dir = "packing_lists"
-                if not os.path.exists(packing_lists_dir):
-                    os.makedirs(packing_lists_dir)
-                
-                # Generate unique filename
-                filename = os.path.basename(file_path)
-                name, ext = os.path.splitext(filename)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                new_filename = f"{name}_{timestamp}{ext}"
-                dest_path = os.path.join(packing_lists_dir, new_filename)
-                
-                # Copy file
-                shutil.copy2(file_path, dest_path)
-                
-                # Update the display
-                self.packing_list_var.set(new_filename)
-                
-                messagebox.showinfo("הצלחה", f"קובץ PACKING LIST נשמר: {new_filename}")
-                
-            except Exception as e:
-                messagebox.showerror("שגיאה", f"שגיאה בשמירת הקובץ: {str(e)}")
-    
-    def _clear_packing_list(self):
-        """Clear the selected packing list file."""
-        self.packing_list_var.set("")
-    
-    def _on_row_double_click(self, event):
-        """Handle double-click on any row to open files."""
-        # Get the item that was clicked
-        item = self.shipping_tree.selection()[0] if self.shipping_tree.selection() else None
-        if not item:
-            return
-        
-        # Get the values of the selected row
-        values = self.shipping_tree.item(item, 'values')
-        if len(values) < 13:  # Need at least 13 columns
-            return
-        
-        # Get packing list and payment request from the record data (not from display)
-        # We need to get these from the saved data since they're not displayed
-        packing_list_file = ""
-        payment_request_file = ""
-        
-        # Try to get from the record data
-        try:
-            # Get the record ID or name to find the full record
-            record_name = values[0] if values else ""
-            if record_name:
-                # Load the full record from file to get the hidden fields
-                data_file = "shipping_costs.json"
-                if os.path.exists(data_file):
-                    with open(data_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    
-                    # Find the matching record
-                    for record in data:
-                        if record.get('name') == record_name:
-                            packing_list_file = record.get('packing_list', '')
-                            payment_request_file = record.get('payment_request', '')
-                            break
-        except Exception:
-            pass
-        
-        # Check which files exist and ask user which one to open
-        files_to_open = []
-        
-        if packing_list_file and packing_list_file.strip():
-            files_to_open.append(("PACKING LIST", packing_list_file, "packing_lists"))
-        
-        if payment_request_file and payment_request_file.strip():
-            files_to_open.append(("דרישת תשלום", payment_request_file, "payment_requests"))
-        
-        if not files_to_open:
-            try:
-                messagebox.showinfo("מידע", "אין קבצים לשורה זו")
-            except Exception:
-                pass
-            return
-        
-        if len(files_to_open) == 1:
-            # Only one file, open it directly
-            file_type, filename, directory = files_to_open[0]
-            self._open_file(directory, filename)
-        else:
-            # Multiple files, ask user which one to open
-            import tkinter as tk
-            from tkinter import messagebox
-            
-            choice_window = tk.Toplevel()
-            choice_window.title("בחר קובץ לפתיחה")
-            choice_window.geometry("300x150")
-            choice_window.transient()
-            choice_window.grab_set()
-            
-            tk.Label(choice_window, text="איזה קובץ ברצונך לפתוח?", font=('Arial', 12, 'bold')).pack(pady=10)
-            
-            for i, (file_type, filename, directory) in enumerate(files_to_open):
-                tk.Button(
-                    choice_window, 
-                    text=f"פתח {file_type}",
-                    command=lambda d=directory, f=filename: [self._open_file(d, f), choice_window.destroy()],
-                    width=20
-                ).pack(pady=5)
-            
-            tk.Button(choice_window, text="ביטול", command=choice_window.destroy, width=20).pack(pady=5)
-    
-    def _open_file(self, directory, filename):
-        """Open a file from the specified directory."""
-        try:
-            import subprocess
-            import os
-            
-            file_path = os.path.join(directory, filename)
-            if os.path.exists(file_path):
-                # Try to open with default application
-                if os.name == 'nt':  # Windows
-                    os.startfile(file_path)
-                elif os.name == 'posix':  # macOS and Linux
-                    subprocess.call(['open', file_path])
-                else:
-                    subprocess.call(['xdg-open', file_path])
-            else:
-                messagebox.showerror("שגיאה", f"קובץ לא נמצא: {file_path}")
-                
-        except Exception as e:
-            messagebox.showerror("שגיאה", f"לא ניתן לפתוח את הקובץ: {str(e)}")
-    
-    def _select_payment_request_file(self):
-        """Select a payment request file to upload."""
-        file_path = filedialog.askopenfilename(
-            title="בחר קובץ דרישת תשלום",
-            filetypes=[
-                ("PDF files", "*.pdf"),
-                ("Excel files", "*.xlsx *.xls"),
-                ("Image files", "*.jpg *.jpeg *.png"),
-                ("All files", "*.*")
-            ]
-        )
-        
-        if file_path:
-            # Copy file to payment_requests directory
-            try:
-                import shutil
-                import os
-                
-                # Create payment_requests directory if it doesn't exist
-                payment_requests_dir = "payment_requests"
-                if not os.path.exists(payment_requests_dir):
-                    os.makedirs(payment_requests_dir)
-                
-                # Generate unique filename
-                filename = os.path.basename(file_path)
-                name, ext = os.path.splitext(filename)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                new_filename = f"{name}_{timestamp}{ext}"
-                dest_path = os.path.join(payment_requests_dir, new_filename)
-                
-                # Copy file
-                shutil.copy2(file_path, dest_path)
-                
-                # Update the display
-                self.payment_request_var.set(new_filename)
-                
-                messagebox.showinfo("הצלחה", f"קובץ דרישת תשלום נשמר: {new_filename}")
-                
-            except Exception as e:
-                messagebox.showerror("שגיאה", f"שגיאה בשמירת הקובץ: {str(e)}")
-    
-    def _clear_payment_request(self):
-        """Clear the selected payment request file."""
-        self.payment_request_var.set("")
-    
+
     def _load_shipping_companies_for_combobox(self):
         """Load shipping companies data for the combobox."""
         try:
@@ -800,8 +432,6 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         
         # Try to open the file
         try:
-            import subprocess
-            import os
             
             file_path = os.path.join("payment_requests", payment_request_file)
             if os.path.exists(file_path):
@@ -817,3 +447,405 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                 
         except Exception as e:
             messagebox.showerror("שגיאה", f"לא ניתן לפתוח את הקובץ: {str(e)}")
+    
+    def _save_shipping_data(self):
+        """Save shipping data to JSON file."""
+        try:
+            # Load existing data to preserve packing_list and payment_request
+            existing_data = []
+            try:
+                if os.path.exists("shipping_costs.json"):
+                    with open("shipping_costs.json", 'r', encoding='utf-8') as f:
+                        existing_data = json.load(f)
+            except Exception:
+                pass
+            
+            # Get all data from treeview
+            data = []
+            for item in self.shipping_tree.get_children():
+                values = self.shipping_tree.item(item)['values']
+                if values and len(values) >= 13:
+                    # Convert values back to proper format
+                    record = {
+                        'name': values[0],
+                        'date': values[1],
+                        'cub': float(values[2]) if values[2] else 0,
+                        'total_weight': float(values[3]) if values[3] else 0,
+                        'rolls_quantity': int(values[4]) if values[4] else 0,
+                        'product_price_usd': float(values[5]) if values[5] else 0,
+                        'usd_rate': float(values[6]) if values[6] else 0,
+                        'final_shipping_cost': float(values[7]) if values[7] else 0,
+                        'domestic_shipping': float(values[8]) if values[8] else 0,
+                        'final_cost_incl_domestic': float(values[9]) if values[9] else 0,
+                        'total_price_per_kg': float(values[10]) if values[10] else 0,
+                        'total_price_per_cubic': float(values[11]) if values[11] else 0,
+                        'fabric_shipping_cost_percent': float(values[12].replace('%', '')) if values[12] and values[12] != '' else 0,
+                        'packing_list': '',
+                        'payment_request': ''
+                    }
+                    
+                    # Find matching record in existing data to preserve packing_list and payment_request
+                    for existing_record in existing_data:
+                        if (existing_record.get('name') == record['name'] and 
+                            existing_record.get('date') == record['date']):
+                            record['packing_list'] = existing_record.get('packing_list', '')
+                            record['payment_request'] = existing_record.get('payment_request', '')
+                            break
+                    
+                    data.append(record)
+            
+            # Save to file
+            with open("shipping_costs.json", 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                
+        except Exception as e:
+            print(f"Error saving shipping data: {e}")
+            messagebox.showerror("שגיאה", f"שגיאה בשמירת הנתונים: {str(e)}")
+    
+    def _load_shipping_data(self):
+        """Load shipping data from JSON file."""
+        try:
+            data_file = "shipping_costs.json"
+            if os.path.exists(data_file):
+                with open(data_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Clear existing data
+                for item in self.shipping_tree.get_children():
+                    self.shipping_tree.delete(item)
+                
+                # Load data into treeview
+                for record in data:
+                    values = (
+                        record.get('name', ''),
+                        record.get('date', ''),
+                        f"{record.get('cub', 0):.2f}",
+                        f"{record.get('total_weight', 0):.1f}",
+                        str(record.get('rolls_quantity', 0)),
+                        f"{record.get('product_price_usd', 0):.2f}",
+                        f"{record.get('usd_rate', 0):.2f}",
+                        f"{record.get('final_shipping_cost', 0):.0f}",
+                        f"{record.get('domestic_shipping', 0):.0f}",
+                        f"{record.get('final_cost_incl_domestic', 0):.0f}",
+                        f"{record.get('total_price_per_kg', 0):.2f}",
+                        f"{record.get('total_price_per_cubic', 0):.0f}",
+                        f"{record.get('fabric_shipping_cost_percent', 0):.0f}%"
+                    )
+                    self.shipping_tree.insert('', 'end', values=values)
+                    
+        except Exception as e:
+            print(f"Error loading shipping data: {e}")
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת הנתונים: {str(e)}")
+    
+    def _select_packing_list_file(self):
+        """Select packing list file."""
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ Packing List",
+            filetypes=[("Excel files", "*.xlsx *.xls"), ("All files", "*.*")]
+        )
+        if file_path:
+            # Copy file to packing_lists directory
+            try:
+                import shutil
+                filename = os.path.basename(file_path)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                name, ext = os.path.splitext(filename)
+                new_filename = f"{name}_{timestamp}{ext}"
+                
+                # Create directory if it doesn't exist
+                os.makedirs("packing_lists", exist_ok=True)
+                
+                # Copy file
+                dest_path = os.path.join("packing_lists", new_filename)
+                shutil.copy2(file_path, dest_path)
+                
+                # Update the variable
+                self.packing_list_var.set(new_filename)
+                
+            except Exception as e:
+                messagebox.showerror("שגיאה", f"שגיאה בהעתקת הקובץ: {str(e)}")
+    
+    def _clear_packing_list(self):
+        """Clear packing list selection."""
+        self.packing_list_var.set("")
+    
+    def _select_payment_request_file(self):
+        """Select payment request file."""
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ דרישת תשלום",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+        )
+        if file_path:
+            # Copy file to payment_requests directory
+            try:
+                import shutil
+                filename = os.path.basename(file_path)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                name, ext = os.path.splitext(filename)
+                new_filename = f"{name}_{timestamp}{ext}"
+                
+                # Create directory if it doesn't exist
+                os.makedirs("payment_requests", exist_ok=True)
+                
+                # Copy file
+                dest_path = os.path.join("payment_requests", new_filename)
+                shutil.copy2(file_path, dest_path)
+                
+                # Update the variable
+                self.payment_request_var.set(new_filename)
+                
+            except Exception as e:
+                messagebox.showerror("שגיאה", f"שגיאה בהעתקת הקובץ: {str(e)}")
+    
+    def _clear_payment_request(self):
+        """Clear payment request selection."""
+        self.payment_request_var.set("")
+    
+    def _on_row_double_click(self, event):
+        """Handle double-click on table row to show file options."""
+        item = self.shipping_tree.selection()[0] if self.shipping_tree.selection() else None
+        if not item:
+            return
+        
+        values = self.shipping_tree.item(item, 'values')
+        if len(values) < 13:
+            return
+        
+        # Get the record name and date to find the full record
+        record_name = values[0]
+        record_date = values[1]
+        
+        try:
+            # Load the full record from file
+            packing_list = ""
+            payment_request = ""
+            
+            if os.path.exists("shipping_costs.json"):
+                with open("shipping_costs.json", 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Find the matching record
+                for record in data:
+                    if (record.get('name') == record_name and 
+                        record.get('date') == record_date):
+                        packing_list = record.get('packing_list', '')
+                        payment_request = record.get('payment_request', '')
+                        break
+            
+            # Show file options dialog
+            self._show_file_options_dialog(record_name, record_date, packing_list, payment_request)
+                        
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת הנתונים: {str(e)}")
+    
+    def _show_file_options_dialog(self, record_name, record_date, packing_list, payment_request):
+        """Show dialog with file options."""
+        # Create dialog window
+        dialog = tk.Toplevel()
+        dialog.title(f"קבצים עבור {record_name} - {record_date}")
+        dialog.geometry("400x300")
+        dialog.resizable(False, False)
+        
+        # Center the dialog
+        dialog.transient(self.root if hasattr(self, 'root') else None)
+        dialog.grab_set()
+        
+        # Main frame
+        main_frame = tk.Frame(dialog, bg='#f7f9fa')
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title
+        title_label = tk.Label(
+            main_frame,
+            text=f"קבצים עבור {record_name}",
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        )
+        title_label.pack(pady=(0, 20))
+        
+        # Packing list section
+        packing_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        packing_frame.pack(fill='x', pady=10)
+        
+        tk.Label(
+            packing_frame,
+            text="Packing List:",
+            font=('Arial', 12, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack(anchor='w')
+        
+        if packing_list and os.path.exists(os.path.join("packing_lists", packing_list)):
+            tk.Label(
+                packing_frame,
+                text=f"📄 {packing_list}",
+                font=('Arial', 10),
+                bg='#f7f9fa',
+                fg='#27ae60'
+            ).pack(anchor='w', pady=(5, 0))
+            
+            tk.Button(
+                packing_frame,
+                text="פתח Packing List",
+                command=lambda: self._open_file(os.path.join("packing_lists", packing_list)),
+                bg='#3498db',
+                fg='white',
+                font=('Arial', 10, 'bold'),
+                width=20
+            ).pack(anchor='w', pady=(5, 0))
+        else:
+            tk.Label(
+                packing_frame,
+                text="אין קובץ Packing List",
+                font=('Arial', 10),
+                bg='#f7f9fa',
+                fg='#e74c3c'
+            ).pack(anchor='w', pady=(5, 0))
+        
+        # Payment request section
+        payment_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        payment_frame.pack(fill='x', pady=10)
+        
+        tk.Label(
+            payment_frame,
+            text="דרישת תשלום:",
+            font=('Arial', 12, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack(anchor='w')
+        
+        if payment_request and os.path.exists(os.path.join("payment_requests", payment_request)):
+            tk.Label(
+                payment_frame,
+                text=f"📄 {payment_request}",
+                font=('Arial', 10),
+                bg='#f7f9fa',
+                fg='#27ae60'
+            ).pack(anchor='w', pady=(5, 0))
+            
+            tk.Button(
+                payment_frame,
+                text="פתח דרישת תשלום",
+                command=lambda: self._open_file(os.path.join("payment_requests", payment_request)),
+                bg='#e74c3c',
+                fg='white',
+                font=('Arial', 10, 'bold'),
+                width=20
+            ).pack(anchor='w', pady=(5, 0))
+        else:
+            tk.Label(
+                payment_frame,
+                text="אין קובץ דרישת תשלום",
+                font=('Arial', 10),
+                bg='#f7f9fa',
+                fg='#e74c3c'
+            ).pack(anchor='w', pady=(5, 0))
+        
+        # Close button
+        close_button = tk.Button(
+            main_frame,
+            text="סגור",
+            command=dialog.destroy,
+            bg='#95a5a6',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            width=15
+        )
+        close_button.pack(pady=(20, 0))
+    
+    def _open_file(self, file_path):
+        """Open a file with default application."""
+        try:
+            if os.path.exists(file_path):
+                if os.name == 'nt':  # Windows
+                    os.startfile(file_path)
+                elif os.name == 'posix':  # macOS and Linux
+                    subprocess.call(['open', file_path])
+                else:
+                    subprocess.call(['xdg-open', file_path])
+            else:
+                messagebox.showerror("שגיאה", f"קובץ לא נמצא: {file_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן לפתוח את הקובץ: {str(e)}")
+    
+    def _save_new_record_to_file(self, new_record):
+        """Save a new record directly to the JSON file."""
+        try:
+            # Load existing data
+            data = []
+            if os.path.exists("shipping_costs.json"):
+                with open("shipping_costs.json", 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            
+            # Add the new record
+            data.append(new_record)
+            
+            # Save back to file
+            with open("shipping_costs.json", 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                
+        except Exception as e:
+            print(f"Error saving new record: {e}")
+            messagebox.showerror("שגיאה", f"שגיאה בשמירת הרשומה החדשה: {str(e)}")
+    
+    def _load_csv_data(self):
+        """Load data from CSV file if exists."""
+        # This function can be implemented if needed
+        pass
+    
+    def _export_to_excel(self):
+        """Export shipping data to Excel."""
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, PatternFill
+            
+            # Create workbook and worksheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "עלויות משלוחים"
+            
+            # Headers
+            headers = [
+                'שם', 'תאריך משלוח', 'Cub', 'משקל כולל', 'כמות גלילים',
+                'מחיר סחורה בדולר', 'שער הדולר', 'עלות משלוח סופית',
+                'משלוח פנימי', 'עלות סופית כולל משלוח פנימי',
+                'עלות משלוח לק״ג', 'מחיר כולל למטר מעוקב', 'אחוז עלות משלוח בד'
+            ]
+            
+            # Write headers
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col, value=header)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+                cell.fill = PatternFill(start_color='CCCCCC', end_color='CCCCCC', fill_type='solid')
+            
+            # Write data
+            for row, item in enumerate(self.shipping_tree.get_children(), 2):
+                values = self.shipping_tree.item(item)['values']
+                for col, value in enumerate(values, 1):
+                    ws.cell(row=row, column=col, value=value)
+            
+            # Auto-adjust column widths
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Save file
+            filename = f"shipping_costs_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            filepath = os.path.join("exports", filename)
+            os.makedirs("exports", exist_ok=True)
+            wb.save(filepath)
+            
+            messagebox.showinfo("הצלחה", f"הנתונים יוצאו בהצלחה לקובץ: {filename}")
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל: {str(e)}")
