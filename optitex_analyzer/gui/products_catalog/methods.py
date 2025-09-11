@@ -637,8 +637,12 @@ class ProductsCatalogMethodsMixin:
             return
         try:
             new_id = self.data_processor.add_sewing_accessory(name, unit)
-            self.accessories_tree.insert('', 'end', values=(new_id, name, unit, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-            self.acc_name_var.set(''); self.acc_unit_var.set('')
+            # Clear the form fields
+            self.acc_name_var.set('')
+            self.acc_unit_var.set('')
+            # Reload the entire accessories tree to show the new item
+            self._load_accessories_into_tree()
+            messagebox.showinfo("הצלחה", f"אביזר '{name}' נוסף בהצלחה")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
