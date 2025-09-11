@@ -30,6 +30,7 @@ class DeliveryNoteMethodsMixin:
         # Internal state lists
         self._delivery_lines = []
         self._packages = []
+        self._accessories = []
 
     # ---- Helpers (products / variants) ----
     def _refresh_delivery_products_allowed(self, initial: bool = False):
@@ -210,8 +211,8 @@ class DeliveryNoteMethodsMixin:
         valid_names = set(self._get_supplier_names()) if hasattr(self,'_get_supplier_names') else set()
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
-        if not self._delivery_lines:
-            messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
+        if not self._delivery_lines and not self._accessories:
+            messagebox.showerror("שגיאה", "אין שורות מוצרים או אביזרי תפירה לשמירה"); return
         # אם רשימת ה-packages בזיכרון ריקה אך יש שורות בטבלה, נשחזר מהרשימה המוצגת
         try:
             if (not self._packages) and hasattr(self, 'packages_tree'):
@@ -243,12 +244,13 @@ class DeliveryNoteMethodsMixin:
         try:
             # שימוש בשיטה החדשה לאחר פיצול הקבצים (עם נפילה אחורה)
             if hasattr(self.data_processor, 'add_delivery_note'):
-                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages)
+                new_id = self.data_processor.add_delivery_note(supplier, date_str, self._delivery_lines, packages=self._packages, accessories=self._accessories)
             else:
-                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, receipt_kind='delivery_note')
+                new_id = self.data_processor.add_supplier_receipt(supplier, date_str, self._delivery_lines, packages=self._packages, accessories=self._accessories, receipt_kind='delivery_note')
             messagebox.showinfo("הצלחה", f"תעודה נשמרה (ID: {new_id})")
             self._clear_delivery_lines()
             self._clear_packages()
+            self._clear_accessories()
             try:
                 self._refresh_delivery_notes_list()
             except Exception:
@@ -260,6 +262,91 @@ class DeliveryNoteMethodsMixin:
                 pass
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    # ---- Sewing Accessories ops ----
+    def _load_sewing_accessories_for_delivery(self):
+        """Load sewing accessories for the delivery note combobox."""
+        try:
+            accessories = getattr(self.data_processor, 'sewing_accessories', []) or []
+            names = []
+            for acc in accessories:
+                name = (acc.get('name') or '').strip()
+                if name:
+                    names.append(name)
+            names = sorted({n for n in names})
+            if hasattr(self, 'dn_accessory_combo'):
+                self.dn_accessory_combo['values'] = names
+        except Exception:
+            if hasattr(self, 'dn_accessory_combo'):
+                self.dn_accessory_combo['values'] = []
+
+    def _on_accessory_selected(self, event=None):
+        """Handle accessory selection to update unit field."""
+        try:
+            selected = self.dn_accessory_var.get().strip()
+            if not selected:
+                self.dn_accessory_unit_var.set('')
+                return
+            
+            accessories = getattr(self.data_processor, 'sewing_accessories', []) or []
+            for acc in accessories:
+                if (acc.get('name') or '').strip() == selected:
+                    unit = (acc.get('unit') or '').strip()
+                    self.dn_accessory_unit_var.set(unit)
+                    return
+            self.dn_accessory_unit_var.set('')
+        except Exception:
+            pass
+
+    def _add_accessory_line(self):
+        """Add a sewing accessory line to the delivery note."""
+        accessory = self.dn_accessory_var.get().strip()
+        qty_raw = self.dn_accessory_qty_var.get().strip()
+        unit = self.dn_accessory_unit_var.get().strip()
+        
+        if not accessory or not qty_raw:
+            messagebox.showerror("שגיאה", "חובה לבחור אביזר תפירה ולהזין כמות")
+            return
+        
+        try:
+            qty = int(qty_raw)
+            assert qty > 0
+        except Exception:
+            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+            return
+        
+        # Check if accessory already exists
+        for acc in self._accessories:
+            if acc.get('accessory') == accessory:
+                messagebox.showwarning("אזהרה", "האביזר כבר קיים ברשימה")
+                return
+        
+        record = {'accessory': accessory, 'unit': unit, 'quantity': qty}
+        self._accessories.append(record)
+        self.accessories_tree.insert('', 'end', values=(accessory, unit, qty))
+        self.dn_accessory_qty_var.set('')
+        self._update_delivery_summary()
+
+    def _delete_selected_accessory(self):
+        """Delete selected accessory from the list."""
+        sel = self.accessories_tree.selection()
+        if not sel:
+            return
+        all_items = self.accessories_tree.get_children()
+        indices = [all_items.index(i) for i in sel]
+        for item in sel:
+            self.accessories_tree.delete(item)
+        for idx in sorted(indices, reverse=True):
+            if 0 <= idx < len(self._accessories):
+                del self._accessories[idx]
+        self._update_delivery_summary()
+
+    def _clear_accessories(self):
+        """Clear all accessories from the list."""
+        self._accessories = []
+        for item in self.accessories_tree.get_children():
+            self.accessories_tree.delete(item)
+        self._update_delivery_summary()
 
     # ---- Packages ops ----
     def _add_package_line(self):
@@ -362,6 +449,22 @@ class DeliveryNoteMethodsMixin:
             for line in rec.get('lines', []) or []:
                 lines_tree.insert('', 'end', values=(line.get('product'), line.get('size'), line.get('fabric_type'), line.get('fabric_color'), line.get('fabric_category',''), line.get('print_name'), line.get('quantity'), line.get('note')))
             lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
+            
+            # אביזרי תפירה
+            if rec.get('accessories'):
+                acc_frame = tk.LabelFrame(body, text='אביזרי תפירה')
+                body.add(acc_frame, stretch='always')
+                acc_cols = ('accessory','unit','quantity')
+                acc_tree = ttk.Treeview(acc_frame, columns=acc_cols, show='headings', height=6)
+                acc_headers = {'accessory':'אביזר תפירה','unit':'יחידה','quantity':'כמות'}
+                acc_widths = {'accessory':200,'unit':100,'quantity':80}
+                for c in acc_cols:
+                    acc_tree.heading(c, text=acc_headers[c])
+                    acc_tree.column(c, width=acc_widths[c], anchor='center')
+                for acc in rec.get('accessories', []) or []:
+                    acc_tree.insert('', 'end', values=(acc.get('accessory'), acc.get('unit'), acc.get('quantity')))
+                acc_tree.pack(fill='both', expand=True, padx=4, pady=4)
+            
             # חבילות הובלה
             pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
             body.add(pkg_frame, stretch='always')
@@ -606,6 +709,61 @@ class DeliveryNoteMethodsMixin:
                             pass
                     except Exception:
                         pass
+                    
+                    # אביזרי תפירה
+                    if rec.get('accessories'):
+                        ws.append([])  # רווח
+                        ws.append(["אביזרי תפירה"])
+                        try:
+                            # Merge and style the section title
+                            r = ws.max_row
+                            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
+                            tcell = ws.cell(row=r, column=1)
+                            tcell.font = Font(bold=True, size=12)
+                            tcell.alignment = Alignment(horizontal='right')
+                        except Exception:
+                            pass
+                        acc_header_row = ["אביזר תפירה", "יחידה", "כמות", ""]
+                        ws.append(acc_header_row)
+                        acc_start_row = ws.max_row + 1
+                        for acc in (rec.get('accessories', []) or []):
+                            accessory = acc.get('accessory', '')
+                            unit = acc.get('unit', '')
+                            qty = acc.get('quantity', '')
+                            ws.append([accessory, unit, qty, ""])
+                        acc_end_row = ws.max_row
+                        # Style accessories table
+                        try:
+                            thin = Side(style='thin', color='000000')
+                            border = Border(left=thin, right=thin, top=thin, bottom=thin)
+                            # Bold header row
+                            for cell in ws[ws.cell(row=acc_start_row-1, column=1).row]:
+                                if cell.row == acc_start_row-1:
+                                    try:
+                                        cell.font = Font(bold=True, size=12)
+                                    except Exception:
+                                        pass
+                            for row in ws.iter_rows(min_row=acc_start_row-1, max_row=acc_end_row, min_col=1, max_col=4):
+                                for cell in row:
+                                    try:
+                                        cell.border = border
+                                    except Exception:
+                                        pass
+                                    try:
+                                        if cell.row >= acc_start_row:
+                                            cell.font = Font(size=11)
+                                    except Exception:
+                                        pass
+                                # Align Hebrew text to the right
+                                try:
+                                    row[0].alignment = Alignment(horizontal='right')
+                                    row[1].alignment = Alignment(horizontal='right')
+                                    row[2].alignment = Alignment(horizontal='center')
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                    
                     end_data_row = ws.max_row
                     # Style: black grid on lines area + fonts and alignments
                     try:

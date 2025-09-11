@@ -193,10 +193,10 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה במיגרציית קליטות ספק: {e}")
 
-	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
+	def add_supplier_receipt(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, accessories: List[Dict] | None = None, receipt_kind: str = "supplier_intake") -> int:
 		"""שכבת תאימות – מפנה לפונקציה המתאימה לפי receipt_kind."""
 		if receipt_kind == 'delivery_note':
-			return self.add_delivery_note(supplier, date_str, lines, packages)
+			return self.add_delivery_note(supplier, date_str, lines, packages, accessories)
 		return self.add_supplier_intake(supplier, date_str, lines, packages)
 
 	def _next_id(self, records: List[Dict]) -> int:
@@ -225,7 +225,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת קליטת ספק: {e}")
 
-	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, accessories: List[Dict] | None = None) -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -238,6 +238,7 @@ class DataProcessor:
 				'lines': lines,
 				'total_quantity': total_quantity,
 				'packages': packages or [],
+				'accessories': accessories or [],
 				'receipt_kind': 'delivery_note',
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}

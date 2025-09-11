@@ -261,6 +261,53 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.delivery_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
     vs.pack(side='right', fill='y')
 
+    # Sewing accessories section
+    accessories_frame = ttk.LabelFrame(container, text="אביזרי תפירה", padding=8)
+    accessories_frame.pack(fill='x', padx=10, pady=(4,4))
+    
+    # Sewing accessories variables
+    ctx.dn_accessory_var = tk.StringVar()
+    ctx.dn_accessory_qty_var = tk.StringVar()
+    ctx.dn_accessory_unit_var = tk.StringVar()
+    
+    # Sewing accessories UI
+    tk.Label(accessories_frame, text="אביזר תפירה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
+    ctx.dn_accessory_combo = ttk.Combobox(accessories_frame, textvariable=ctx.dn_accessory_var, state='readonly', width=20)
+    ctx.dn_accessory_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
+    
+    tk.Label(accessories_frame, text="יחידה:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
+    ctx.dn_accessory_unit_entry = ttk.Entry(accessories_frame, textvariable=ctx.dn_accessory_unit_var, width=12, state='readonly')
+    ctx.dn_accessory_unit_entry.grid(row=0,column=3,sticky='w',padx=4,pady=2)
+    
+    tk.Label(accessories_frame, text="כמות:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
+    tk.Entry(accessories_frame, textvariable=ctx.dn_accessory_qty_var, width=8).grid(row=0,column=5,sticky='w',padx=4,pady=2)
+    
+    tk.Button(accessories_frame, text="➕ הוסף", command=ctx._add_accessory_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
+    tk.Button(accessories_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_accessory, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
+    tk.Button(accessories_frame, text="❌ נקה", command=ctx._clear_accessories, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+    
+    # Sewing accessories tree
+    ctx.accessories_tree = ttk.Treeview(accessories_frame, columns=('accessory','unit','quantity'), show='headings', height=4)
+    ctx.accessories_tree.heading('accessory', text='אביזר תפירה')
+    ctx.accessories_tree.heading('unit', text='יחידה')
+    ctx.accessories_tree.heading('quantity', text='כמות')
+    ctx.accessories_tree.column('accessory', width=200, anchor='center')
+    ctx.accessories_tree.column('unit', width=100, anchor='center')
+    ctx.accessories_tree.column('quantity', width=80, anchor='center')
+    ctx.accessories_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
+    
+    # Load sewing accessories for combobox
+    try:
+        ctx._load_sewing_accessories_for_delivery()
+    except Exception:
+        pass
+    
+    # Bind accessory selection to update unit field
+    try:
+        ctx.dn_accessory_combo.bind('<<ComboboxSelected>>', ctx._on_accessory_selected)
+    except Exception:
+        pass
+
     # Transportation section
     pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
     pkg_frame.pack(fill='x', padx=10, pady=(4,4))
