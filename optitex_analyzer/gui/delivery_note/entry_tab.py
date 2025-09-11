@@ -9,6 +9,43 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     ctx is the MainWindow (mixin host) instance. We reuse its state and methods.
     """
+    # Create a main frame with scrollbar
+    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame.pack(fill='both', expand=True)
+    
+    # Create canvas and scrollbar
+    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+    
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    
+    # Pack canvas and scrollbar
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+    
+    # Configure canvas to expand properly
+    def configure_scroll_region(event):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        # Make sure the scrollable frame takes full width
+        canvas_width = event.width
+        canvas.itemconfig(canvas.find_all()[0], width=canvas_width)
+    
+    canvas.bind('<Configure>', configure_scroll_region)
+    
+    # Bind mousewheel to canvas
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    
+    # Use scrollable_frame as the new container
+    container = scrollable_frame
     # Header form
     form = ttk.LabelFrame(container, text="פרטי תעודה", padding=10)
     form.pack(fill='x', padx=10, pady=6)

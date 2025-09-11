@@ -4,6 +4,44 @@ from tkinter import ttk
 # UI builder for the saved fabrics shipments list
 
 def build_fabrics_send_list_tab(ctx, container: tk.Frame):
+    # Create a main frame with scrollbar
+    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame.pack(fill='both', expand=True)
+    
+    # Create canvas and scrollbar
+    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+    
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    
+    # Pack canvas and scrollbar
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+    
+    # Configure canvas to expand properly
+    def configure_scroll_region(event):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        # Make sure the scrollable frame takes full width
+        canvas_width = event.width
+        canvas.itemconfig(canvas.find_all()[0], width=canvas_width)
+    
+    canvas.bind('<Configure>', configure_scroll_region)
+    
+    # Bind mousewheel to canvas
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    
+    # Use scrollable_frame as the new container
+    container = scrollable_frame
+    
     header = tk.Frame(container, bg='#f7f9fa')
     header.pack(fill='x', padx=10, pady=(8,4))
     tk.Label(header, text='שליחות בדים שמורות', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
