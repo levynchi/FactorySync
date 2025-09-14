@@ -276,9 +276,71 @@ class DeliveryNoteMethodsMixin:
             names = sorted({n for n in names})
             if hasattr(self, 'dn_accessory_combo'):
                 self.dn_accessory_combo['values'] = names
+                # Store all names for autocomplete
+                self._all_sewing_accessories = names
         except Exception:
             if hasattr(self, 'dn_accessory_combo'):
                 self.dn_accessory_combo['values'] = []
+                self._all_sewing_accessories = []
+
+    def _filter_sewing_accessories(self, event=None):
+        """Filter sewing accessories based on user input for autocomplete."""
+        try:
+            if not hasattr(self, '_all_sewing_accessories'):
+                return
+            
+            current_text = self.dn_accessory_var.get().strip()
+            if not current_text:
+                # Show all accessories if no text, sorted intelligently
+                sorted_accessories = self._sort_accessories_intelligently(self._all_sewing_accessories)
+                self.dn_accessory_combo['values'] = sorted_accessories
+                return
+            
+            # Filter accessories that start with the current text
+            filtered = [name for name in self._all_sewing_accessories 
+                       if name.lower().startswith(current_text.lower())]
+            
+            # Sort filtered results intelligently
+            sorted_filtered = self._sort_accessories_intelligently(filtered)
+            
+            # Update combobox values
+            self.dn_accessory_combo['values'] = sorted_filtered
+            
+            # Show dropdown if there are matches - use a safer method
+            if sorted_filtered and event and event.type == '2':  # KeyPress event
+                # Only open dropdown on key press, not on other events
+                try:
+                    self.dn_accessory_combo.event_generate('<Button-1>')
+                except:
+                    pass
+        except Exception:
+            pass
+
+    def _sort_accessories_intelligently(self, accessories):
+        """Sort accessories intelligently - numbers first, then alphabetically."""
+        def sort_key(name):
+            # Extract numbers from the name for sorting
+            import re
+            numbers = re.findall(r'\d+', name)
+            if numbers:
+                # Use the first number found for sorting
+                return (0, int(numbers[0]), name)  # 0 = numbers first
+            else:
+                # No numbers, sort alphabetically
+                return (1, name)  # 1 = letters after numbers
+        
+        return sorted(accessories, key=sort_key)
+
+    def _on_accessory_click(self, event=None):
+        """Handle accessory combobox click to show filtered options."""
+        try:
+            # Refresh the filtered list when clicking
+            self._filter_sewing_accessories()
+            
+            # Open dropdown after a short delay to ensure it's ready
+            self.after(50, lambda: self.dn_accessory_combo.event_generate('<Button-1>'))
+        except Exception:
+            pass
 
     def _on_accessory_selected(self, event=None):
         """Handle accessory selection to update unit field."""

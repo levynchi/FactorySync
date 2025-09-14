@@ -309,7 +309,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     
     # Sewing accessories UI
     tk.Label(accessories_frame, text="אביזר תפירה:").grid(row=0,column=0,sticky='w',padx=4,pady=2)
-    ctx.dn_accessory_combo = ttk.Combobox(accessories_frame, textvariable=ctx.dn_accessory_var, state='readonly', width=20)
+    ctx.dn_accessory_combo = ttk.Combobox(accessories_frame, textvariable=ctx.dn_accessory_var, state='normal', width=20)
     ctx.dn_accessory_combo.grid(row=0,column=1,sticky='w',padx=4,pady=2)
     
     tk.Label(accessories_frame, text="יחידה:").grid(row=0,column=2,sticky='w',padx=4,pady=2)
@@ -342,6 +342,10 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Bind accessory selection to update unit field
     try:
         ctx.dn_accessory_combo.bind('<<ComboboxSelected>>', ctx._on_accessory_selected)
+        # Bind autocomplete functionality
+        ctx.dn_accessory_combo.bind('<KeyRelease>', ctx._filter_sewing_accessories)
+        ctx.dn_accessory_combo.bind('<FocusIn>', ctx._filter_sewing_accessories)
+        ctx.dn_accessory_combo.bind('<Button-1>', ctx._on_accessory_click)
     except Exception:
         pass
 
