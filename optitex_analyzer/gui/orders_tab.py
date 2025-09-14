@@ -219,6 +219,7 @@ class OrdersTabMixin:
         
         # Initialize order data
         self.current_order_items = []
+        self._load_customers_from_file()  # Load customers from file first
         self._load_customers_for_order()
         self._load_products_for_order()
         self._generate_order_number()
@@ -308,6 +309,7 @@ class OrdersTabMixin:
         customers_scrollbar.pack(side='right', fill='y')
         
         # Load customers
+        self._load_customers_from_file()  # Load customers from file first
         self._load_customers_into_tree()
     
     def _build_orders_history_tab(self, parent):
@@ -371,6 +373,7 @@ class OrdersTabMixin:
         ).pack(side='right', padx=4)
         
         # Load orders
+        self._load_orders_from_file()  # Load orders from file first
         self._load_orders_into_tree()
     
     # Order management methods
