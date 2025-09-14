@@ -17,6 +17,7 @@ from .products_balance_tab import ProductsBalanceTabMixin
 from .business_details_tab import BusinessDetailsTabMixin
 from .formulas_tab import FormulasTabMixin
 from .shipping_costs_tab import ShippingCostsTabMixin
+from .orders_tab import OrdersTabMixin
 
 
 class MainWindow(
@@ -33,6 +34,7 @@ class MainWindow(
     BusinessDetailsTabMixin,
     FormulasTabMixin,
     ShippingCostsTabMixin,
+    OrdersTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -152,6 +154,14 @@ class MainWindow(
                 messagebox.showerror("שגיאה", f"טעינת טאב 'עלויות משלוחים ובדים' נכשלה: {e}")
             except Exception:
                 pass
+        # Orders management tab
+        try:
+            self._create_orders_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'יצירת הזמנה' נכשלה: {e}")
+            except Exception:
+                pass
 
         # ----- Footer / Status -----
         self._create_status_bar()
@@ -226,6 +236,13 @@ class MainWindow(
         # רענון רשימת ספקים עבור הקומבו בטאבים (אם כבר נוצרו)
         try:
             self._refresh_all_supplier_name_combos()
+        except Exception:
+            pass
+        
+        # טעינת נתוני הזמנות ולקוחות
+        try:
+            self._load_orders_from_file()
+            self._load_customers_from_file()
         except Exception:
             pass
     
