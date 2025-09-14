@@ -10,7 +10,7 @@ class OrdersTabMixin:
     def _create_orders_tab(self):
         """Create the orders management tab."""
         tab = tk.Frame(self.notebook, bg='#f7f9fa')
-        self.notebook.add(tab, text="יצירת הזמנה")
+        self.notebook.add(tab, text="הזמנות")
         
         # Title
         tk.Label(
