@@ -179,6 +179,10 @@ class OrdersTabMixin:
             self.order_items_tree.heading(col, text=headers[col])
             self.order_items_tree.column(col, width=widths[col], anchor='center')
         
+        # Enable editing for quantity column
+        self.order_items_tree.bind('<Double-1>', self._on_item_double_click)
+        self.order_items_tree.bind('<Return>', self._on_item_edit)
+        
         # Scrollbar for treeview
         items_scrollbar = ttk.Scrollbar(items_frame, orient='vertical', command=self.order_items_tree.yview)
         self.order_items_tree.configure(yscroll=items_scrollbar.set)
@@ -793,3 +797,114 @@ class OrdersTabMixin:
                     self.data_processor.customers = customers
         except Exception as e:
             print(f"Error loading customers: {e}")
+    
+    # Inline editing methods for order items
+    def _on_item_double_click(self, event):
+        """Handle double-click on order item for editing."""
+        item = self.order_items_tree.selection()[0] if self.order_items_tree.selection() else None
+        if not item:
+            return
+        
+        # Get the column that was clicked
+        column = self.order_items_tree.identify_column(event.x)
+        column_index = int(column.replace('#', '')) - 1
+        columns = ('product', 'size', 'fabric_type', 'fabric_color', 'quantity', 'packaging', 'total_units')
+        
+        # Only allow editing of quantity column
+        if column_index == 4:  # quantity column
+            self._start_edit_item(item, column_index)
+    
+    def _on_item_edit(self, event):
+        """Handle Enter key for editing."""
+        item = self.order_items_tree.selection()[0] if self.order_items_tree.selection() else None
+        if not item:
+            return
+        
+        # Start editing quantity column
+        self._start_edit_item(item, 4)  # quantity column
+    
+    def _start_edit_item(self, item, column_index):
+        """Start editing an item in the tree."""
+        # Get current values
+        values = list(self.order_items_tree.item(item, 'values'))
+        current_value = values[column_index]
+        
+        # Get item position
+        bbox = self.order_items_tree.bbox(item, column_index)
+        if not bbox:
+            return
+        
+        x, y, width, height = bbox
+        
+        # Create entry widget for editing
+        self.edit_entry = tk.Entry(self.order_items_tree, width=10)
+        self.edit_entry.place(x=x, y=y, width=width, height=height)
+        self.edit_entry.insert(0, str(current_value))
+        self.edit_entry.select_range(0, tk.END)
+        self.edit_entry.focus()
+        
+        # Bind events
+        self.edit_entry.bind('<Return>', lambda e: self._finish_edit_item(item, column_index))
+        self.edit_entry.bind('<Escape>', lambda e: self._cancel_edit_item())
+        self.edit_entry.bind('<FocusOut>', lambda e: self._finish_edit_item(item, column_index))
+    
+    def _finish_edit_item(self, item, column_index):
+        """Finish editing an item."""
+        if not hasattr(self, 'edit_entry'):
+            return
+        
+        try:
+            new_value = self.edit_entry.get().strip()
+            
+            # Validate quantity
+            if column_index == 4:  # quantity column
+                new_quantity = int(new_value)
+                if new_quantity <= 0:
+                    messagebox.showerror("שגיאה", "הכמות חייבת להיות מספר חיובי")
+                    self._cancel_edit_item()
+                    return
+                
+                # Update the item in current_order_items
+                tree_index = self.order_items_tree.index(item)
+                if tree_index < len(self.current_order_items):
+                    # Get packaging type to recalculate total units
+                    packaging = self.current_order_items[tree_index]['packaging']
+                    
+                    # Calculate total units based on packaging
+                    if packaging == 'חמישיות':
+                        total_units = new_quantity * 5
+                    elif packaging == 'שלישיות':
+                        total_units = new_quantity * 3
+                    else:  # יחידים
+                        total_units = new_quantity
+                    
+                    # Update the item
+                    self.current_order_items[tree_index]['quantity'] = new_quantity
+                    self.current_order_items[tree_index]['total_units'] = total_units
+                    
+                    # Update the tree display
+                    values = list(self.order_items_tree.item(item, 'values'))
+                    values[4] = str(new_quantity)  # quantity
+                    values[6] = str(total_units)   # total_units
+                    self.order_items_tree.item(item, values=values)
+            
+        except ValueError:
+            messagebox.showerror("שגיאה", "הכמות חייבת להיות מספר")
+            self._cancel_edit_item()
+            return
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בעדכון: {str(e)}")
+            self._cancel_edit_item()
+            return
+        finally:
+            self._cleanup_edit_entry()
+    
+    def _cancel_edit_item(self):
+        """Cancel editing an item."""
+        self._cleanup_edit_entry()
+    
+    def _cleanup_edit_entry(self):
+        """Clean up the edit entry widget."""
+        if hasattr(self, 'edit_entry'):
+            self.edit_entry.destroy()
+            delattr(self, 'edit_entry')
