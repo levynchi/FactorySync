@@ -298,6 +298,7 @@ class ProductsCatalogMethodsMixin:
 
     # ===== accessories builders =====
     def _build_accessories_section(self, parent):
+        print("🏗️  DEBUG: בונה טאב אביזרי תפירה...")
         self.acc_name_var = tk.StringVar(); self.acc_unit_var = tk.StringVar()
         acc_form = ttk.LabelFrame(parent, text="הוספת אביזר תפירה", padding=10)
         acc_form.pack(fill='x', padx=10, pady=6)
@@ -306,20 +307,35 @@ class ProductsCatalogMethodsMixin:
         tk.Label(acc_form, text="יחידת מדידה:", font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='w')
         tk.Entry(acc_form, textvariable=self.acc_unit_var, width=12).grid(row=0, column=3, padx=4, pady=4)
         tk.Button(acc_form, text="➕ הוסף", command=self._add_sewing_accessory, bg='#27ae60', fg='white').grid(row=0, column=4, padx=8)
-        tk.Button(acc_form, text="🗑️ מחק נבחר", command=self._delete_selected_accessory, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        print("🔴 DEBUG: יוצר כפתור 'מחק נבחר' עם command=self._delete_selected_sewing_accessory")
+        delete_btn = tk.Button(acc_form, text="🗑️ מחק נבחר", command=self._delete_selected_sewing_accessory, bg='#e67e22', fg='white')
+        delete_btn.grid(row=0, column=5, padx=4)
+        print("✅ DEBUG: כפתור 'מחק נבחר' נוצר בהצלחה!")
+        print(f"🔍 DEBUG: הכפתור נוצר: {delete_btn}")
+        print(f"🔍 DEBUG: הפונקציה: {self._delete_selected_sewing_accessory}")
+        
+        # הוספת פונקציה פשוטה לבדיקה
+        def test_button_click():
+            print("🧪 TEST: כפתור נלחץ - פונקציה פשוטה!")
+            self._delete_selected_sewing_accessory()
+        
+        # יצירת כפתור נוסף לבדיקה
+        test_btn = tk.Button(acc_form, text="🧪 בדיקה", command=test_button_click, bg='#3498db', fg='white')
+        test_btn.grid(row=0, column=6, padx=4)
+        print("🧪 DEBUG: כפתור בדיקה נוסף נוצר!")
 
         acc_tree_frame = ttk.LabelFrame(parent, text="אביזרים", padding=6)
         acc_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         acc_cols = ('id','name','unit','created_at')
-        self.accessories_tree = ttk.Treeview(acc_tree_frame, columns=acc_cols, show='headings', height=10)
+        self.sewing_accessories_tree = ttk.Treeview(acc_tree_frame, columns=acc_cols, show='headings', height=10)
         acc_headers = {'id':'ID','name':'שם','unit':'יחידה','created_at':'נוצר'}
         acc_widths = {'id':50,'name':160,'unit':100,'created_at':140}
         for c in acc_cols:
-            self.accessories_tree.heading(c, text=acc_headers[c])
-            self.accessories_tree.column(c, width=acc_widths[c], anchor='center')
-        acc_vs = ttk.Scrollbar(acc_tree_frame, orient='vertical', command=self.accessories_tree.yview)
-        self.accessories_tree.configure(yscroll=acc_vs.set)
-        self.accessories_tree.pack(side='left', fill='both', expand=True)
+            self.sewing_accessories_tree.heading(c, text=acc_headers[c])
+            self.sewing_accessories_tree.column(c, width=acc_widths[c], anchor='center')
+        acc_vs = ttk.Scrollbar(acc_tree_frame, orient='vertical', command=self.sewing_accessories_tree.yview)
+        self.sewing_accessories_tree.configure(yscroll=acc_vs.set)
+        self.sewing_accessories_tree.pack(side='left', fill='both', expand=True)
         acc_vs.pack(side='right', fill='y')
         self._load_accessories_into_tree()
 
@@ -618,15 +634,23 @@ class ProductsCatalogMethodsMixin:
             pass
 
     def _load_accessories_into_tree(self):
-        if not hasattr(self, 'accessories_tree'): return
-        for item in self.accessories_tree.get_children():
-            self.accessories_tree.delete(item)
+        print("🔄 DEBUG: טוען אביזרים לטבלה...")
+        if not hasattr(self, 'sewing_accessories_tree'):
+            print("❌ DEBUG: sewing_accessories_tree לא קיים")
+            return
+        for item in self.sewing_accessories_tree.get_children():
+            self.sewing_accessories_tree.delete(item)
         try:
-            for rec in getattr(self.data_processor, 'sewing_accessories', []):
-                self.accessories_tree.insert('', 'end', values=(
+            accessories_data = getattr(self.data_processor, 'sewing_accessories', [])
+            print(f"📊 DEBUG: נמצאו {len(accessories_data)} אביזרים")
+            for rec in accessories_data:
+                print(f"➕ DEBUG: מוסיף אביזר: {rec.get('name')} (ID: {rec.get('id')})")
+                self.sewing_accessories_tree.insert('', 'end', values=(
                     rec.get('id'), rec.get('name'), rec.get('unit'), rec.get('created_at')
                 ))
-        except Exception:
+            print(f"✅ DEBUG: נטענו {len(accessories_data)} אביזרים לטבלה")
+        except Exception as e:
+            print(f"❌ DEBUG: שגיאה בטעינת אביזרים: {e}")
             pass
 
     def _add_sewing_accessory(self):
@@ -646,18 +670,89 @@ class ProductsCatalogMethodsMixin:
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
-    def _delete_selected_accessory(self):
-        if not hasattr(self, 'accessories_tree'): return
-        sel = self.accessories_tree.selection()
-        if not sel: return
+    def _delete_selected_sewing_accessory(self):
+        print("=" * 60)
+        print("🔴🔴🔴 DEBUG: כפתור 'מחק נבחר' נלחץ בטאב אביזרי תפירה! 🔴🔴🔴")
+        print("📍 מיקום: קטלוג מוצרים ופריטים > אביזרי תפירה > כפתור מחק נבחר")
+        print("⏰ זמן: " + str(datetime.now()))
+        print("=" * 60)
+        
+        # הודעת דיבאגינג נוספת
+        import sys
+        print(f"🐍 Python version: {sys.version}")
+        print(f"🔍 Self type: {type(self)}")
+        print(f"🔍 Has sewing_accessories_tree: {hasattr(self, 'sewing_accessories_tree')}")
+        
+        if not hasattr(self, 'sewing_accessories_tree'): 
+            print("⚠️  טבלת אביזרים לא קיימת")
+            return
+            
+        # בדיקה נוספת - איזה טבלה זה?
+        print(f"🔍 DEBUG: sewing_accessories_tree ID: {id(self.sewing_accessories_tree)}")
+        print(f"🔍 DEBUG: sewing_accessories_tree type: {type(self.sewing_accessories_tree)}")
+        print(f"🔍 DEBUG: sewing_accessories_tree widget name: {self.sewing_accessories_tree.winfo_name()}")
+        print(f"🔍 DEBUG: sewing_accessories_tree parent: {self.sewing_accessories_tree.master}")
+        sel = self.sewing_accessories_tree.selection()
+        print(f"🔍 DEBUG: sel = {sel}")
+        print(f"🔍 DEBUG: type(sel) = {type(sel)}")
+        print(f"🔍 DEBUG: len(sel) = {len(sel) if sel else 'None'}")
+        
+        # בדיקה נוספת - כל הפריטים בטבלה
+        all_items = self.sewing_accessories_tree.get_children()
+        print(f"🔍 DEBUG: כל הפריטים בטבלה: {all_items}")
+        print(f"🔍 DEBUG: מספר פריטים בטבלה: {len(all_items)}")
+        
+        # בדיקה נוספת - נסה לטעון מחדש (רק אם הטבלה ריקה)
+        if len(all_items) == 0:
+            print("🔄 DEBUG: הטבלה ריקה, מנסה לטעון מחדש...")
+            self._load_accessories_into_tree()
+            all_items_after = self.sewing_accessories_tree.get_children()
+            print(f"🔍 DEBUG: אחרי טעינה מחדש - מספר פריטים: {len(all_items_after)}")
+            sel_after = self.sewing_accessories_tree.selection()
+            print(f"🔍 DEBUG: אחרי טעינה מחדש - sel: {sel_after}")
+        else:
+            print("✅ DEBUG: הטבלה לא ריקה, לא טוען מחדש")
+            print(f"🔍 DEBUG: הטבלה מכילה {len(all_items)} פריטים")
+            # בדיקה נוספת - נסה לקבל את הבחירה שוב
+            sel_again = self.sewing_accessories_tree.selection()
+            print(f"🔍 DEBUG: בדיקה נוספת - sel: {sel_again}")
+            if sel_again:
+                print("✅ DEBUG: נמצאה בחירה!")
+            else:
+                print("❌ DEBUG: עדיין אין בחירה")
+        
+        if not sel: 
+            print("⚠️  לא נבחרו אביזרים למחיקה")
+            print("💡 טיפ: לחץ על שורה בטבלה כדי לבחור אותה, ואז לחץ על 'מחק נבחר'")
+            messagebox.showwarning("אזהרה", "אנא בחר אביזר למחיקה\nלחץ על שורה בטבלה כדי לבחור אותה")
+            return
+        
+        print(f"📋 נבחרו {len(sel)} אביזר(ים) למחיקה")
+        print(f"🔍 אביזרים נבחרים: {[self.sewing_accessories_tree.item(item, 'values')[1] for item in sel]}")
         deleted = False
+        deleted_items = []
+        
         for item in sel:
-            vals = self.accessories_tree.item(item, 'values')
+            vals = self.sewing_accessories_tree.item(item, 'values')
             if vals:
+                accessory_name = vals[1] if len(vals) > 1 else "לא ידוע"
+                accessory_id = vals[0]
+                print(f"🗑️  מוחק אביזר: {accessory_name} (ID: {accessory_id})")
+                
                 if self.data_processor.delete_sewing_accessory(int(vals[0])):
                     deleted = True
+                    deleted_items.append(accessory_name)
+                    print(f"✅ אביזר '{accessory_name}' נמחק בהצלחה")
+                else:
+                    print(f"❌ שגיאה במחיקת אביזר '{accessory_name}'")
+        
         if deleted:
+            print(f"🎉 סה\"כ נמחקו {len(deleted_items)} אביזר(ים): {', '.join(deleted_items)}")
             self._load_accessories_into_tree()
+            messagebox.showinfo("הצלחה", f"נמחקו {len(deleted_items)} אביזר(ים) בהצלחה")
+        else:
+            print("❌ לא נמחקו אביזרים")
+            messagebox.showerror("שגיאה", "לא ניתן למחוק את האביזרים הנבחרים")
 
     def _load_categories_into_tree(self):
         if not hasattr(self, 'categories_tree'): return
