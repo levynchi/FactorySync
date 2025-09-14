@@ -844,7 +844,9 @@ class OrdersTabMixin:
             self.orders_tree.delete(item)
         
         orders = getattr(self.data_processor, 'orders', [])
+        print(f"🔍 Loading {len(orders)} orders into tree")
         for order in orders:
+            print(f"📋 Order: {order.get('order_number', '')} - {order.get('customer', '')}")
             self.orders_tree.insert('', 'end', values=(
                 order.get('id', ''),
                 order.get('order_number', ''),
@@ -969,8 +971,11 @@ class OrdersTabMixin:
                     if not hasattr(self.data_processor, 'orders'):
                         self.data_processor.orders = []
                     self.data_processor.orders = orders
+                    print(f"✅ Loaded {len(orders)} orders from file")
+            else:
+                print("❌ Orders file not found")
         except Exception as e:
-            print(f"Error loading orders: {e}")
+            print(f"❌ Error loading orders: {e}")
     
     def _load_customers_from_file(self):
         """Load customers from JSON file."""
