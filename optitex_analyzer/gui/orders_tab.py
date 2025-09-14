@@ -88,16 +88,33 @@ class OrdersTabMixin:
         )
         self.order_product_combo.grid(row=0, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(product_frame, text="מידה:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="מידות:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        # Create frame for size selection
+        size_frame = ttk.Frame(product_frame)
+        size_frame.grid(row=0, column=3, sticky='w', padx=2, pady=4)
+        
         self.order_size_var = tk.StringVar()
         self.order_size_combo = ttk.Combobox(
-            product_frame, 
+            size_frame, 
             textvariable=self.order_size_var, 
             state='readonly', 
             width=12, 
             justify='right'
         )
-        self.order_size_combo.grid(row=0, column=3, sticky='w', padx=2, pady=4)
+        self.order_size_combo.pack(side='left', padx=(0, 4))
+        self.order_size_combo.bind('<<ComboboxSelected>>', lambda e: self._on_size_select())
+        
+        # Display selected sizes
+        self.order_sizes_display_var = tk.StringVar()
+        self.order_sizes_display_entry = tk.Entry(size_frame, textvariable=self.order_sizes_display_var, width=20, state='readonly')
+        self.order_sizes_display_entry.pack(side='left', padx=(0, 4))
+        
+        # Clear sizes button
+        self.btn_clear_sizes = tk.Button(size_frame, text='נקה', command=lambda: self._clear_sizes(), width=4)
+        self.btn_clear_sizes.pack(side='left')
+        
+        # Initialize selected sizes list
+        self.selected_sizes = []
         
         tk.Label(product_frame, text="סוג בד:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.order_fabric_type_var = tk.StringVar()
@@ -377,17 +394,33 @@ class OrdersTabMixin:
         self._load_orders_into_tree()
     
     # Order management methods
+    def _on_size_select(self):
+        """Handle size selection for multi-size support."""
+        size = self.order_size_var.get().strip()
+        if size and size not in self.selected_sizes:
+            self.selected_sizes.append(size)
+            self.order_sizes_display_var.set(', '.join(self.selected_sizes))
+        self.order_size_combo.set('')
+    
+    def _clear_sizes(self):
+        """Clear selected sizes."""
+        self.selected_sizes.clear()
+        self.order_sizes_display_var.set('')
+    
     def _add_product_to_order(self):
         """Add a product to the current order."""
         product = self.order_product_var.get().strip()
-        size = self.order_size_var.get().strip()
         fabric_type = self.order_fabric_type_var.get().strip()
         fabric_color = self.order_fabric_color_var.get().strip()
         quantity = self.order_quantity_var.get().strip()
         packaging = self.order_packaging_var.get().strip()
         
-        if not all([product, size, fabric_type, fabric_color, quantity, packaging]):
+        if not all([product, fabric_type, fabric_color, quantity, packaging]):
             messagebox.showerror("שגיאה", "חובה למלא את כל השדות")
+            return
+        
+        if not self.selected_sizes:
+            messagebox.showerror("שגיאה", "חובה לבחור לפחות מידה אחת")
             return
         
         try:
@@ -407,28 +440,47 @@ class OrdersTabMixin:
         else:  # יחידים
             total_units = qty
         
-        # Add to order items
-        item = {
-            'product': product,
-            'size': size,
-            'fabric_type': fabric_type,
-            'fabric_color': fabric_color,
-            'quantity': qty,
-            'packaging': packaging,
-            'total_units': total_units
-        }
+        # Add items for each selected size
+        added_count = 0
+        for size in self.selected_sizes:
+            # Check if this combination already exists
+            existing_item = None
+            for item in self.current_order_items:
+                if (item['product'] == product and 
+                    item['size'] == size and 
+                    item['fabric_type'] == fabric_type and 
+                    item['fabric_color'] == fabric_color and 
+                    item['packaging'] == packaging):
+                    existing_item = item
+                    break
+            
+            if existing_item:
+                # Update existing item
+                existing_item['quantity'] += qty
+                existing_item['total_units'] += total_units
+            else:
+                # Add new item
+                item = {
+                    'product': product,
+                    'size': size,
+                    'fabric_type': fabric_type,
+                    'fabric_color': fabric_color,
+                    'quantity': qty,
+                    'packaging': packaging,
+                    'total_units': total_units
+                }
+                self.current_order_items.append(item)
+            
+            added_count += 1
         
-        self.current_order_items.append(item)
-        
-        # Add to treeview
-        self.order_items_tree.insert('', 'end', values=(
-            product, size, fabric_type, fabric_color, qty, packaging, total_units
-        ))
+        # Refresh the tree view
+        self._refresh_order_items_tree()
         
         # Clear form
         self.order_quantity_var.set('')
+        self._clear_sizes()
         
-        messagebox.showinfo("הצלחה", "המוצר נוסף להזמנה")
+        messagebox.showinfo("הצלחה", f"נוספו {added_count} וריאנטים של המוצר להזמנה")
     
     def _remove_selected_order_item(self):
         """Remove selected item from order."""
@@ -437,17 +489,38 @@ class OrdersTabMixin:
             messagebox.showwarning("אזהרה", "אנא בחר פריט למחיקה")
             return
         
-        for item in selection:
+        # Remove items in reverse order to maintain correct indices
+        for item in reversed(selection):
             index = self.order_items_tree.index(item)
-            self.current_order_items.pop(index)
-            self.order_items_tree.delete(item)
+            if index < len(self.current_order_items):
+                self.current_order_items.pop(index)
+        
+        # Refresh the tree view
+        self._refresh_order_items_tree()
     
     def _clear_order(self):
         """Clear the current order."""
         self.current_order_items.clear()
+        self._refresh_order_items_tree()
+        self._generate_order_number()
+    
+    def _refresh_order_items_tree(self):
+        """Refresh the order items tree view."""
+        # Clear existing items
         for item in self.order_items_tree.get_children():
             self.order_items_tree.delete(item)
-        self._generate_order_number()
+        
+        # Add all current order items
+        for item in self.current_order_items:
+            self.order_items_tree.insert('', 'end', values=(
+                item['product'],
+                item['size'],
+                item['fabric_type'],
+                item['fabric_color'],
+                item['quantity'],
+                item['packaging'],
+                item['total_units']
+            ))
     
     def _save_order(self):
         """Save the current order."""
