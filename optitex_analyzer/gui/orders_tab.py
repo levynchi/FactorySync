@@ -951,19 +951,21 @@ class OrdersTabMixin:
         
         tk.Button(
             buttons_frame, 
-            text="📊 ייצא לאקסל", 
+            text="📊 פתח באקסל", 
             command=lambda: self._export_order_to_excel(order), 
             bg='#27ae60', 
             fg='white'
         ).pack(side='right', padx=4)
     
     def _export_order_to_excel(self, order):
-        """Export order to Excel file."""
+        """Open Excel with order data."""
         try:
             from openpyxl import Workbook
-            from openpyxl.styles import Font, Alignment, PatternFill
+            from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
             from datetime import datetime
             import os
+            import subprocess
+            import tempfile
             
             # Create workbook and worksheet
             wb = Workbook()
@@ -972,6 +974,18 @@ class OrdersTabMixin:
             
             # Set RTL direction
             ws.sheet_view.rightToLeft = True
+            
+            # Set page orientation to landscape
+            ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+            ws.page_setup.paperSize = ws.PAPERSIZE_A4
+            
+            # Define border style
+            thin_border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
             
             # Header information
             ws['A1'] = f"מספר הזמנה: {order.get('order_number', '')}"
@@ -984,7 +998,10 @@ class OrdersTabMixin:
             # Style header
             header_font = Font(bold=True, size=12)
             for row in range(1, 6):
-                ws[f'A{row}'].font = header_font
+                cell = ws[f'A{row}']
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.border = thin_border
             
             # Items table headers
             headers = ['מוצר', 'מידה', 'סוג בד', 'צבע בד', 'כמות', 'צורת אריזה', 'סה"כ יחידות']
@@ -992,10 +1009,16 @@ class OrdersTabMixin:
                 cell = ws.cell(row=7, column=col, value=header)
                 cell.font = Font(bold=True)
                 cell.fill = PatternFill(start_color='CCCCCC', end_color='CCCCCC', fill_type='solid')
-                cell.alignment = Alignment(horizontal='center')
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.border = thin_border
             
             # Add items data
             for row_idx, item in enumerate(order.get('items', []), 8):
+                for col_idx in range(1, 8):
+                    cell = ws.cell(row=row_idx, column=col_idx)
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    cell.border = thin_border
+                
                 ws.cell(row=row_idx, column=1, value=item.get('product', ''))
                 ws.cell(row=row_idx, column=2, value=item.get('size', ''))
                 ws.cell(row=row_idx, column=3, value=item.get('fabric_type', ''))
@@ -1017,20 +1040,24 @@ class OrdersTabMixin:
                 adjusted_width = min(max_length + 2, 50)
                 ws.column_dimensions[column_letter].width = adjusted_width
             
-            # Save file
+            # Save to temporary file and open with Excel
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"exports/orders/order_{order.get('order_number', '')}_{timestamp}.xlsx"
+            temp_filename = f"order_{order.get('order_number', '')}_{timestamp}.xlsx"
+            temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
             
-            # Create exports directory if it doesn't exist
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            wb.save(temp_path)
             
-            wb.save(filename)
-            messagebox.showinfo("הצלחה", f"ההזמנה יוצאה בהצלחה לקובץ:\n{filename}")
+            # Open with Excel
+            try:
+                subprocess.Popen([temp_path], shell=True)
+                messagebox.showinfo("הצלחה", "אקסל נפתח עם פרטי ההזמנה")
+            except Exception as e:
+                messagebox.showinfo("הצלחה", f"הקובץ נשמר ב: {temp_path}\nאקסל לא נפתח אוטומטית: {e}")
             
         except ImportError:
             messagebox.showerror("שגיאה", "ספריית openpyxl לא מותקנת. אנא התקן אותה עם: pip install openpyxl")
         except Exception as e:
-            messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל: {e}")
+            messagebox.showerror("שגיאה", f"שגיאה בפתיחת אקסל: {e}")
     
     # File operations
     def _save_orders_to_file(self):
