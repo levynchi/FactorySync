@@ -384,6 +384,9 @@ class OrdersTabMixin:
         self.orders_tree.pack(side='left', fill='both', expand=True)
         orders_scrollbar.pack(side='right', fill='y')
         
+        # Bind double-click to view order details
+        self.orders_tree.bind('<Double-1>', lambda event: self._view_order_details())
+        
         # Action buttons
         buttons_frame = ttk.Frame(parent)
         buttons_frame.pack(fill='x', padx=10, pady=6)
