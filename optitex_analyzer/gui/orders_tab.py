@@ -76,8 +76,21 @@ class OrdersTabMixin:
         product_frame = ttk.LabelFrame(parent, text="הוספת מוצר להזמנה", padding=10)
         product_frame.pack(fill='x', padx=10, pady=6)
         
+        # Main category selection
+        tk.Label(product_frame, text="קטגוריה ראשית:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        self.order_main_category_var = tk.StringVar()
+        self.order_main_category_combo = ttk.Combobox(
+            product_frame, 
+            textvariable=self.order_main_category_var, 
+            state='readonly', 
+            width=15, 
+            justify='right'
+        )
+        self.order_main_category_combo.grid(row=0, column=1, sticky='w', padx=2, pady=4)
+        self.order_main_category_combo.bind('<<ComboboxSelected>>', lambda e: self._on_main_category_select())
+        
         # Product fields
-        tk.Label(product_frame, text="מוצר:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="מוצר:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.order_product_var = tk.StringVar()
         self.order_product_combo = ttk.Combobox(
             product_frame, 
@@ -86,12 +99,13 @@ class OrdersTabMixin:
             width=20, 
             justify='right'
         )
-        self.order_product_combo.grid(row=0, column=1, sticky='w', padx=2, pady=4)
+        self.order_product_combo.grid(row=1, column=1, sticky='w', padx=2, pady=4)
+        self.order_product_combo.bind('<<ComboboxSelected>>', lambda e: self._on_product_select())
         
-        tk.Label(product_frame, text="מידות:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="מידות:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         # Create frame for size selection
         size_frame = ttk.Frame(product_frame)
-        size_frame.grid(row=0, column=3, sticky='w', padx=2, pady=4)
+        size_frame.grid(row=1, column=3, sticky='w', padx=2, pady=4)
         
         self.order_size_var = tk.StringVar()
         self.order_size_combo = ttk.Combobox(
@@ -116,7 +130,7 @@ class OrdersTabMixin:
         # Initialize selected sizes list
         self.selected_sizes = []
         
-        tk.Label(product_frame, text="סוג בד:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="סוג בד:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.order_fabric_type_var = tk.StringVar()
         self.order_fabric_type_combo = ttk.Combobox(
             product_frame, 
@@ -125,10 +139,10 @@ class OrdersTabMixin:
             width=15, 
             justify='right'
         )
-        self.order_fabric_type_combo.grid(row=1, column=1, sticky='w', padx=2, pady=4)
+        self.order_fabric_type_combo.grid(row=2, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(product_frame, text="צבע בד:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
-        self.order_fabric_color_var = tk.StringVar()
+        tk.Label(product_frame, text="צבע בד:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=4, pady=4)
+        self.order_fabric_color_var = tk.StringVar(value="לבן")  # Default to white
         self.order_fabric_color_combo = ttk.Combobox(
             product_frame, 
             textvariable=self.order_fabric_color_var, 
@@ -136,14 +150,14 @@ class OrdersTabMixin:
             width=15, 
             justify='right'
         )
-        self.order_fabric_color_combo.grid(row=1, column=3, sticky='w', padx=2, pady=4)
+        self.order_fabric_color_combo.grid(row=2, column=3, sticky='w', padx=2, pady=4)
         
         # Quantity and packaging
-        tk.Label(product_frame, text="כמות:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="כמות:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
         self.order_quantity_var = tk.StringVar()
-        tk.Entry(product_frame, textvariable=self.order_quantity_var, width=10).grid(row=2, column=1, sticky='w', padx=2, pady=4)
+        tk.Entry(product_frame, textvariable=self.order_quantity_var, width=10).grid(row=3, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(product_frame, text="צורת אריזה:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="צורת אריזה:", font=('Arial', 10, 'bold')).grid(row=3, column=2, sticky='w', padx=4, pady=4)
         self.order_packaging_var = tk.StringVar()
         self.order_packaging_combo = ttk.Combobox(
             product_frame, 
@@ -153,7 +167,7 @@ class OrdersTabMixin:
             width=12, 
             justify='right'
         )
-        self.order_packaging_combo.grid(row=2, column=3, sticky='w', padx=2, pady=4)
+        self.order_packaging_combo.grid(row=3, column=3, sticky='w', padx=2, pady=4)
         
         # Add product button
         tk.Button(
@@ -239,6 +253,7 @@ class OrdersTabMixin:
         self._load_customers_from_file()  # Load customers from file first
         self._load_customers_for_order()
         self._load_products_for_order()
+        self._load_all_products_initially()  # Load all products initially
         self._generate_order_number()
     
     def _build_customers_tab(self, parent):
@@ -409,13 +424,14 @@ class OrdersTabMixin:
     
     def _add_product_to_order(self):
         """Add a product to the current order."""
+        main_category = self.order_main_category_var.get().strip()
         product = self.order_product_var.get().strip()
         fabric_type = self.order_fabric_type_var.get().strip()
         fabric_color = self.order_fabric_color_var.get().strip()
         quantity = self.order_quantity_var.get().strip()
         packaging = self.order_packaging_var.get().strip()
         
-        if not all([product, fabric_type, fabric_color, quantity, packaging]):
+        if not all([main_category, product, fabric_type, fabric_color, quantity, packaging]):
             messagebox.showerror("שגיאה", "חובה למלא את כל השדות")
             return
         
@@ -576,9 +592,10 @@ class OrdersTabMixin:
     
     def _load_products_for_order(self):
         """Load products into the order product combo."""
-        products = getattr(self.data_processor, 'products_catalog', [])
-        product_names = list(set([p.get('name', '') for p in products if p.get('name')]))
-        self.order_product_combo['values'] = product_names
+        # Load main categories
+        main_categories = getattr(self.data_processor, 'main_categories', [])
+        main_category_names = [c.get('name', '') for c in main_categories if c.get('name')]
+        self.order_main_category_combo['values'] = main_category_names
         
         # Load attributes
         sizes = [s.get('name', '') for s in getattr(self.data_processor, 'product_sizes', [])]
@@ -588,6 +605,100 @@ class OrdersTabMixin:
         self.order_size_combo['values'] = sizes
         self.order_fabric_type_combo['values'] = fabric_types
         self.order_fabric_color_combo['values'] = fabric_colors
+        
+        # Set default fabric color to white
+        if "לבן" in fabric_colors:
+            self.order_fabric_color_var.set("לבן")
+    
+    def _load_all_products_initially(self):
+        """Load all products initially for the product combo."""
+        products = getattr(self.data_processor, 'products_catalog', [])
+        all_product_names = list(set([p.get('name', '') for p in products if p.get('name')]))
+        self.order_product_combo['values'] = all_product_names
+    
+    def _on_main_category_select(self):
+        """Handle main category selection to filter products."""
+        main_category = self.order_main_category_var.get().strip()
+        if not main_category:
+            self.order_product_combo['values'] = []
+            return
+        
+        # Get products for this main category
+        products = getattr(self.data_processor, 'products_catalog', [])
+        filtered_products = []
+        
+        for product in products:
+            product_main_category = product.get('main_category', '')
+            # Check both exact match and if main_category is in the product's main_category field
+            if (product_main_category == main_category or 
+                (product_main_category and main_category in product_main_category) or
+                (not product_main_category and main_category == 'בגדים')):  # Default fallback
+                filtered_products.append(product.get('name', ''))
+        
+        # Update product combo
+        self.order_product_combo['values'] = list(set(filtered_products))
+        self.order_product_var.set('')  # Clear current selection
+    
+    def _on_product_select(self):
+        """Handle product selection to filter fabric types and sizes."""
+        product_name = self.order_product_var.get().strip()
+        if not product_name:
+            return
+        
+        # Get the selected product from catalog
+        products = getattr(self.data_processor, 'products_catalog', [])
+        selected_product = None
+        for product in products:
+            if product.get('name', '') == product_name:
+                selected_product = product
+                break
+        
+        if not selected_product:
+            return
+        
+        # Get fabric types and sizes for this specific product
+        product_fabric_types = selected_product.get('fabric_type', '')
+        product_sizes = selected_product.get('size', '')
+        
+        # Filter fabric types - get all unique fabric types for this product
+        all_fabric_types = []
+        for product in products:
+            if product.get('name', '') == product_name:
+                fabric_types = product.get('fabric_type', '')
+                if fabric_types:
+                    # Split by common separators and clean up
+                    fabric_type_list = [ft.strip() for ft in fabric_types.replace(',', ';').split(';') if ft.strip()]
+                    all_fabric_types.extend(fabric_type_list)
+        
+        # Remove duplicates and update combo
+        unique_fabric_types = list(set(all_fabric_types))
+        if unique_fabric_types:
+            self.order_fabric_type_combo['values'] = unique_fabric_types
+            self.order_fabric_type_var.set('')  # Clear selection to let user choose
+        else:
+            # If no specific fabric types found, show all available
+            all_available_fabric_types = [f.get('name', '') for f in getattr(self.data_processor, 'product_fabric_types', [])]
+            self.order_fabric_type_combo['values'] = all_available_fabric_types
+            self.order_fabric_type_var.set('')
+        
+        # Filter sizes - get all unique sizes for this product
+        all_sizes = []
+        for product in products:
+            if product.get('name', '') == product_name:
+                sizes = product.get('size', '')
+                if sizes:
+                    # Split by common separators and clean up
+                    size_list = [s.strip() for s in sizes.replace(',', ';').split(';') if s.strip()]
+                    all_sizes.extend(size_list)
+        
+        # Remove duplicates and update combo
+        unique_sizes = list(set(all_sizes))
+        if unique_sizes:
+            self.order_size_combo['values'] = unique_sizes
+        else:
+            # If no specific sizes found, show all available
+            all_available_sizes = [s.get('name', '') for s in getattr(self.data_processor, 'product_sizes', [])]
+            self.order_size_combo['values'] = all_available_sizes
     
     def _generate_order_number(self):
         """Generate a new order number."""
