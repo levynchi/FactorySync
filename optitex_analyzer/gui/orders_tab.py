@@ -944,6 +944,93 @@ class OrdersTabMixin:
         items_tree.configure(yscroll=items_scrollbar.set)
         items_tree.pack(side='left', fill='both', expand=True)
         items_scrollbar.pack(side='right', fill='y')
+        
+        # Action buttons
+        buttons_frame = ttk.Frame(details_window)
+        buttons_frame.pack(fill='x', padx=10, pady=6)
+        
+        tk.Button(
+            buttons_frame, 
+            text="📊 ייצא לאקסל", 
+            command=lambda: self._export_order_to_excel(order), 
+            bg='#27ae60', 
+            fg='white'
+        ).pack(side='right', padx=4)
+    
+    def _export_order_to_excel(self, order):
+        """Export order to Excel file."""
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, PatternFill
+            from datetime import datetime
+            import os
+            
+            # Create workbook and worksheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"הזמנה {order.get('order_number', '')}"
+            
+            # Set RTL direction
+            ws.sheet_view.rightToLeft = True
+            
+            # Header information
+            ws['A1'] = f"מספר הזמנה: {order.get('order_number', '')}"
+            ws['A2'] = f"לקוח: {order.get('customer', '')}"
+            ws['A3'] = f"תאריך: {order.get('date', '')}"
+            ws['A4'] = f"סטטוס: {order.get('status', '')}"
+            if order.get('notes'):
+                ws['A5'] = f"הערות: {order.get('notes', '')}"
+            
+            # Style header
+            header_font = Font(bold=True, size=12)
+            for row in range(1, 6):
+                ws[f'A{row}'].font = header_font
+            
+            # Items table headers
+            headers = ['מוצר', 'מידה', 'סוג בד', 'צבע בד', 'כמות', 'צורת אריזה', 'סה"כ יחידות']
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=7, column=col, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color='CCCCCC', end_color='CCCCCC', fill_type='solid')
+                cell.alignment = Alignment(horizontal='center')
+            
+            # Add items data
+            for row_idx, item in enumerate(order.get('items', []), 8):
+                ws.cell(row=row_idx, column=1, value=item.get('product', ''))
+                ws.cell(row=row_idx, column=2, value=item.get('size', ''))
+                ws.cell(row=row_idx, column=3, value=item.get('fabric_type', ''))
+                ws.cell(row=row_idx, column=4, value=item.get('fabric_color', ''))
+                ws.cell(row=row_idx, column=5, value=item.get('quantity', 0))
+                ws.cell(row=row_idx, column=6, value=item.get('packaging', ''))
+                ws.cell(row=row_idx, column=7, value=item.get('total_units', 0))
+            
+            # Auto-adjust column widths
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Save file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"exports/orders/order_{order.get('order_number', '')}_{timestamp}.xlsx"
+            
+            # Create exports directory if it doesn't exist
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            
+            wb.save(filename)
+            messagebox.showinfo("הצלחה", f"ההזמנה יוצאה בהצלחה לקובץ:\n{filename}")
+            
+        except ImportError:
+            messagebox.showerror("שגיאה", "ספריית openpyxl לא מותקנת. אנא התקן אותה עם: pip install openpyxl")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל: {e}")
     
     # File operations
     def _save_orders_to_file(self):
