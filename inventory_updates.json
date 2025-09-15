@@ -244,6 +244,40 @@
           "packaging": ""
         }
       ]
+    },
+    {
+      "id": "batch_20250914_142222",
+      "created_at": "2025-09-14 14:22:22",
+      "mode": "add",
+      "items": [
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "6-12",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "378",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        }
+      ]
+    },
+    {
+      "id": "batch_20250914_142403",
+      "created_at": "2025-09-14 14:24:03",
+      "mode": "add",
+      "items": [
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "18-24",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "-387",
+          "location": "גלריה 4",
+          "packaging": "חמישיות"
+        }
+      ]
     }
   ]
 }

@@ -1027,12 +1027,19 @@ class DeliveryNoteMethodsMixin:
             try: messagebox.showwarning('מידע', 'לא נמצאו ברקודים בקובץ')
             except Exception: pass
             return
+        
+        # Remove duplicates from the imported file itself
+        original_count = len(barcodes)
+        barcodes = list(dict.fromkeys(barcodes))  # Remove duplicates while preserving order
+        duplicates_in_file = original_count - len(barcodes)
+        
         # Build fast lookup from inventory
         try:
             records = getattr(self.data_processor, 'fabrics_inventory', []) or []
         except Exception:
             records = []
         index = { str(r.get('barcode')).strip(): r for r in records if str(r.get('barcode') or '').strip() }
+        
         # Current list to prevent duplicates
         current = set()
         try:
@@ -1042,10 +1049,14 @@ class DeliveryNoteMethodsMixin:
                     current.add(str(vals[0]))
         except Exception:
             pass
+        
         added = 0
         invalid = []
+        skipped_existing = 0
+        
         for bc in barcodes:
             if bc in current:
+                skipped_existing += 1
                 continue
             rec = index.get(bc)
             if not rec:
@@ -1064,10 +1075,21 @@ class DeliveryNoteMethodsMixin:
         # Report result
         try:
             msg = f"נוספו {added} ברקודים"
+            
+            # Report duplicates removed from file
+            if duplicates_in_file > 0:
+                msg += f"\nהוסרו {duplicates_in_file} כפילויות מהקובץ"
+            
+            # Report skipped existing barcodes
+            if skipped_existing > 0:
+                msg += f"\nדולגו {skipped_existing} ברקודים שכבר קיימים ברשימה"
+            
+            # Report invalid barcodes
             if invalid:
                 # Limit preview to first 20 for usability
                 preview = ', '.join(invalid[:20]) + (" ..." if len(invalid) > 20 else '')
                 msg += f"\nלא נמצאו במלאי: {len(invalid)}\n{preview}"
+            
             messagebox.showinfo('ייבוא ברקודים', msg)
         except Exception:
             pass
@@ -1109,6 +1131,141 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             pass
         self._fs_update_summary()
+
+    def _fs_add_manual_fabric(self):
+        """Add fabric manually without barcode (for fabrics with missing labels)."""
+        # Create manual fabric entry dialog
+        win = tk.Toplevel(self.notebook)
+        win.title("הוספת בד ידנית")
+        win.geometry('500x400')
+        win.transient(self.notebook.winfo_toplevel())
+        win.grab_set()  # Make modal
+        
+        # Center the window
+        win.update_idletasks()
+        x = (win.winfo_screenwidth() // 2) - (500 // 2)
+        y = (win.winfo_screenheight() // 2) - (400 // 2)
+        win.geometry(f'500x400+{x}+{y}')
+        
+        # Main frame
+        main_frame = tk.Frame(win, padx=20, pady=20)
+        main_frame.pack(fill='both', expand=True)
+        
+        # Title
+        tk.Label(main_frame, text="הוספת בד ידנית (ללא בר קוד)", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        
+        # Form fields
+        fields_frame = tk.Frame(main_frame)
+        fields_frame.pack(fill='x', pady=10)
+        
+        # Fabric type
+        tk.Label(fields_frame, text="סוג בד:", width=15, anchor='e').grid(row=0, column=0, sticky='e', padx=(0, 10), pady=5)
+        fabric_type_var = tk.StringVar()
+        fabric_type_combo = ttk.Combobox(fields_frame, textvariable=fabric_type_var, width=20, state='readonly')
+        fabric_type_combo['values'] = ['INTERLOCK', 'RIB', 'COTTON', 'POLYESTER', 'OTHER']
+        fabric_type_combo.grid(row=0, column=1, sticky='w', pady=5)
+        
+        # Color name
+        tk.Label(fields_frame, text="צבע:", width=15, anchor='e').grid(row=1, column=0, sticky='e', padx=(0, 10), pady=5)
+        color_name_var = tk.StringVar()
+        color_name_combo = ttk.Combobox(fields_frame, textvariable=color_name_var, width=20)
+        color_name_combo['values'] = ['לבן', 'שחור', 'אפור', 'כחול', 'אדום', 'ירוק', 'צהוב', 'ורוד', 'חום', 'אחר']
+        color_name_combo.grid(row=1, column=1, sticky='w', pady=5)
+        
+        # Color number
+        tk.Label(fields_frame, text="מס' צבע:", width=15, anchor='e').grid(row=2, column=0, sticky='e', padx=(0, 10), pady=5)
+        color_no_var = tk.StringVar()
+        tk.Entry(fields_frame, textvariable=color_no_var, width=22).grid(row=2, column=1, sticky='w', pady=5)
+        
+        # Design code
+        tk.Label(fields_frame, text="Desen Kodu:", width=15, anchor='e').grid(row=3, column=0, sticky='e', padx=(0, 10), pady=5)
+        design_code_var = tk.StringVar(value='חלק')
+        tk.Entry(fields_frame, textvariable=design_code_var, width=22).grid(row=3, column=1, sticky='w', pady=5)
+        
+        # Width
+        tk.Label(fields_frame, text="רוחב (ס\"מ):", width=15, anchor='e').grid(row=4, column=0, sticky='e', padx=(0, 10), pady=5)
+        width_var = tk.StringVar()
+        tk.Entry(fields_frame, textvariable=width_var, width=22).grid(row=4, column=1, sticky='w', pady=5)
+        
+        # Net weight
+        tk.Label(fields_frame, text="ק\"ג נטו:", width=15, anchor='e').grid(row=5, column=0, sticky='e', padx=(0, 10), pady=5)
+        net_kg_var = tk.StringVar()
+        tk.Entry(fields_frame, textvariable=net_kg_var, width=22).grid(row=5, column=1, sticky='w', pady=5)
+        
+        # Meters
+        tk.Label(fields_frame, text="מטרים:", width=15, anchor='e').grid(row=6, column=0, sticky='e', padx=(0, 10), pady=5)
+        meters_var = tk.StringVar()
+        tk.Entry(fields_frame, textvariable=meters_var, width=22).grid(row=6, column=1, sticky='w', pady=5)
+        
+        # Price
+        tk.Label(fields_frame, text="מחיר:", width=15, anchor='e').grid(row=7, column=0, sticky='e', padx=(0, 10), pady=5)
+        price_var = tk.StringVar()
+        tk.Entry(fields_frame, textvariable=price_var, width=22).grid(row=7, column=1, sticky='w', pady=5)
+        
+        # Buttons
+        buttons_frame = tk.Frame(main_frame)
+        buttons_frame.pack(fill='x', pady=(20, 0))
+        
+        def add_fabric():
+            # Validate required fields
+            if not fabric_type_var.get().strip():
+                messagebox.showerror("שגיאה", "חובה לבחור סוג בד")
+                return
+            if not color_name_var.get().strip():
+                messagebox.showerror("שגיאה", "חובה להזין צבע")
+                return
+            if not net_kg_var.get().strip():
+                messagebox.showerror("שגיאה", "חובה להזין ק\"ג נטו")
+                return
+            if not meters_var.get().strip():
+                messagebox.showerror("שגיאה", "חובה להזין מטרים")
+                return
+            
+            # Validate numeric fields
+            try:
+                net_kg = float(net_kg_var.get().replace(',', '.'))
+                meters = float(meters_var.get().replace(',', '.'))
+                price = float(price_var.get().replace(',', '.')) if price_var.get().strip() else 0.0
+                width = int(width_var.get()) if width_var.get().strip() else 0
+            except ValueError:
+                messagebox.showerror("שגיאה", "ערכים מספריים לא תקינים")
+                return
+            
+            # Save to unbarcoded fabrics table instead of regular inventory
+            try:
+                # Add to unbarcoded fabrics
+                new_id = self.data_processor.add_unbarcoded_fabric(
+                    fabric_type=fabric_type_var.get().strip(),
+                    manufacturer='',  # Not used in manual entry
+                    color=color_name_var.get().strip(),
+                    shade=color_no_var.get().strip(),
+                    notes=f"Desen: {design_code_var.get().strip()}, רוחב: {width}cm, ק\"ג: {net_kg:.2f}, מטרים: {meters:.2f}, מחיר: {price:.2f}"
+                )
+                
+                # Add to shipment tree for display (with barcode "0")
+                values = (
+                    '0',  # barcode
+                    fabric_type_var.get().strip(),
+                    color_name_var.get().strip(),
+                    color_no_var.get().strip(),
+                    design_code_var.get().strip(),
+                    str(width),
+                    f"{net_kg:.2f}",
+                    f"{meters:.2f}",
+                    f"{price:.2f}",
+                    'ידני',
+                    'במלאי'
+                )
+                
+                self.fs_tree.insert('', 'end', values=values)
+                self._fs_update_summary()
+                win.destroy()
+                messagebox.showinfo("הצלחה", f"הבד נוסף בהצלחה (ID: {new_id}) ונשמר בטאב 'בדים בלי ברקוד'")
+            except Exception as e:
+                messagebox.showerror("שגיאה", f"שגיאה בהוספת הבד: {str(e)}")
+        
+        tk.Button(buttons_frame, text="הוסף בד", command=add_fabric, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=(10, 0))
+        tk.Button(buttons_frame, text="ביטול", command=win.destroy, bg='#95a5a6', fg='white').pack(side='right')
 
     def _fs_remove_selected(self):
         try:
@@ -1238,29 +1395,39 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             pass
         # status+location update for each barcode (bulk for efficiency)
+        # Skip manual fabrics (barcode "0") as they are stored in unbarcoded table
         updated = 0
+        manual_fabrics = 0
         try:
-            updates = [{'barcode': bc, 'status': 'נשלח', 'location': supplier} for bc in barcodes]
-            if hasattr(self.data_processor, 'bulk_update_fabrics'):
-                updated = self.data_processor.bulk_update_fabrics(updates)
-            else:
-                # fallback per item
-                for bc in barcodes:
-                    try:
-                        if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'נשלח'):
-                            # also try to set location field directly
-                            try:
-                                inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
-                                for r in inv:
-                                    if str(r.get('barcode')) == str(bc):
-                                        r['location'] = supplier
-                                        break
-                                self.data_processor.save_fabrics_inventory()
-                            except Exception:
-                                pass
-                            updated += 1
-                    except Exception:
-                        pass
+            # Separate real barcodes from manual fabrics
+            real_barcodes = [bc for bc in barcodes if bc != '0']
+            manual_fabrics = len([bc for bc in barcodes if bc == '0'])
+            
+            if real_barcodes:
+                updates = [{'barcode': bc, 'status': 'נשלח', 'location': supplier} for bc in real_barcodes]
+                if hasattr(self.data_processor, 'bulk_update_fabrics'):
+                    updated = self.data_processor.bulk_update_fabrics(updates)
+                else:
+                    # fallback per item
+                    for bc in real_barcodes:
+                        try:
+                            if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'נשלח'):
+                                # also try to set location field directly
+                                try:
+                                    inv = getattr(self.data_processor, 'fabrics_inventory', []) or []
+                                    for r in inv:
+                                        if str(r.get('barcode')) == str(bc):
+                                            r['location'] = supplier
+                                            break
+                                    self.data_processor.save_fabrics_inventory()
+                                except Exception:
+                                    pass
+                                updated += 1
+                        except Exception:
+                            pass
+            
+            # For manual fabrics, we don't need to update inventory since they're in unbarcoded table
+            # They are already saved there when added manually
         except Exception:
             pass
         # persist shipment in data processor
@@ -1303,9 +1470,17 @@ class DeliveryNoteMethodsMixin:
             new_id = None
         try:
             if new_id:
-                messagebox.showinfo('הצלחה', f"נשמרה שליחת בדים (ID: {new_id}) לספק '{supplier}'.\nעודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}")
+                msg = f"נשמרה שליחת בדים (ID: {new_id}) לספק '{supplier}'.\n"
+                if updated > 0:
+                    msg += f"עודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}.\n"
+                if manual_fabrics > 0:
+                    msg += f"כללו {manual_fabrics} בדים ידניים שנשמרו בטאב 'בדים בלי ברקוד'."
+                messagebox.showinfo('הצלחה', msg)
             else:
-                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}")
+                msg = f"עודכנו {updated} בדים לסטטוס 'נשלח' והמיקום עודכן ל-{supplier}."
+                if manual_fabrics > 0:
+                    msg += f"\nכללו {manual_fabrics} בדים ידניים שנשמרו בטאב 'בדים בלי ברקוד'."
+                messagebox.showinfo('הצלחה', msg)
         except Exception:
             pass
         # clear UI and refresh inventory tab if available
