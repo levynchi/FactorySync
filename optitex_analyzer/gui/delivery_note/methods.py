@@ -647,19 +647,17 @@ class DeliveryNoteMethodsMixin:
                             from openpyxl.drawing.image import Image as XLImage  # type: ignore
                             if logo_path and os.path.exists(logo_path):
                                 img = XLImage(logo_path)
-                                # Optionally scale down if very large
+                                # Set specific dimensions as requested: height 4.66 cm, width 15.73 cm
                                 try:
-                                    if getattr(img, 'width', 0) and img.width > 480:
-                                        ratio = 480.0 / float(img.width)
-                                        img.width = int(img.width * ratio)
-                                        img.height = int(img.height * ratio)
+                                    # Convert cm to pixels: 1 cm = 37.8 pixels (96 DPI / 2.54 cm/inch)
+                                    img.height = 4.66 * 37.8  # 4.66 cm in pixels
+                                    img.width = 15.73 * 37.8  # 15.73 cm in pixels
                                 except Exception:
                                     pass
                                 ws.add_image(img, 'A1')
-                                # Ensure enough top space so image won't collide with rows below
+                                # Set row height to accommodate logo (Excel row height is in points, 1 cm = 28.35 points)
                                 try:
-                                    # Set generous header height; if image is large, we still ensure spacing
-                                    ws.row_dimensions[1].height = max(120, getattr(img, 'height', 120))
+                                    ws.row_dimensions[1].height = 4.66 * 28.35  # Convert cm to Excel row height units
                                 except Exception:
                                     ws.row_dimensions[1].height = 120
                                 # Add spacing rows under the image
@@ -690,7 +688,7 @@ class DeliveryNoteMethodsMixin:
                             except Exception:
                                 pass
                             try:
-                                ws.cell(row=r, column=1).font = Font(size=12)
+                                ws.cell(row=r, column=1).font = Font(size=16)
                                 ws.cell(row=r, column=1).alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
@@ -743,12 +741,12 @@ class DeliveryNoteMethodsMixin:
                         # Style: right-align, bold keys, slightly larger font
                         for row in ws.iter_rows(min_row=doc_info_start, max_row=doc_info_end, min_col=1, max_col=2):
                             try:
-                                row[0].font = Font(bold=True, size=12)
+                                row[0].font = Font(bold=True, size=16)
                                 row[0].alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
                             try:
-                                row[1].font = Font(size=12)
+                                row[1].font = Font(size=16)
                                 row[1].alignment = Alignment(horizontal='right')
                             except Exception:
                                 pass
@@ -768,12 +766,26 @@ class DeliveryNoteMethodsMixin:
                         r = ws.max_row
                         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
                         tcell = ws.cell(row=r, column=1)
-                        tcell.font = Font(bold=True, size=12)
+                        tcell.font = Font(bold=True, size=16)
                         tcell.alignment = Alignment(horizontal='right')
                     except Exception:
                         pass
                     header_row = ["שם הדגם", "מידה", "תיאור", "כמות"]
                     ws.append(header_row)
+                    
+                    # Add gray header row (row 10) with bold headers
+                    try:
+                        from openpyxl.styles import PatternFill
+                        gray_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        header_row_num = ws.max_row
+                        for col in range(1, 5):  # Columns A to D
+                            cell = ws.cell(row=header_row_num, column=col)
+                            cell.fill = gray_fill
+                            cell.font = Font(bold=True, size=16)
+                            cell.alignment = Alignment(horizontal='center')
+                    except Exception:
+                        pass
+                    
                     start_data_row = ws.max_row + 1
                     for line in (rec.get('lines', []) or []):
                         model = line.get('product')
@@ -796,7 +808,7 @@ class DeliveryNoteMethodsMixin:
                         ws.append([None, None, "סה\"כ כמות", total_qty])
                         r_tot = ws.max_row
                         try:
-                            ws.cell(row=r_tot, column=3).font = Font(bold=True, size=12)
+                            ws.cell(row=r_tot, column=3).font = Font(bold=True, size=16)
                             ws.cell(row=r_tot, column=3).alignment = Alignment(horizontal='right')
                             ws.cell(row=r_tot, column=4).alignment = Alignment(horizontal='center')
                         except Exception:
@@ -813,7 +825,7 @@ class DeliveryNoteMethodsMixin:
                             r = ws.max_row
                             ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
                             tcell = ws.cell(row=r, column=1)
-                            tcell.font = Font(bold=True, size=12)
+                            tcell.font = Font(bold=True, size=16)
                             tcell.alignment = Alignment(horizontal='right')
                         except Exception:
                             pass
@@ -834,7 +846,7 @@ class DeliveryNoteMethodsMixin:
                             for cell in ws[ws.cell(row=acc_start_row-1, column=1).row]:
                                 if cell.row == acc_start_row-1:
                                     try:
-                                        cell.font = Font(bold=True, size=12)
+                                        cell.font = Font(bold=True, size=16)
                                     except Exception:
                                         pass
                             for row in ws.iter_rows(min_row=acc_start_row-1, max_row=acc_end_row, min_col=1, max_col=4):
@@ -845,7 +857,7 @@ class DeliveryNoteMethodsMixin:
                                         pass
                                     try:
                                         if cell.row >= acc_start_row:
-                                            cell.font = Font(size=11)
+                                            cell.font = Font(size=16)
                                     except Exception:
                                         pass
                                 # Align Hebrew text to the right
@@ -867,7 +879,7 @@ class DeliveryNoteMethodsMixin:
                         for cell in ws[ws.cell(row=start_data_row-1, column=1).row]:
                             if cell.row == start_data_row-1:
                                 try:
-                                    cell.font = Font(bold=True, size=12)
+                                    cell.font = Font(bold=True, size=16)
                                 except Exception:
                                     pass
                         for row in ws.iter_rows(min_row=start_data_row-1, max_row=end_data_row, min_col=1, max_col=4):
@@ -879,7 +891,7 @@ class DeliveryNoteMethodsMixin:
                                 try:
                                     # Data font size a bit larger for readability
                                     if cell.row >= start_data_row:
-                                        cell.font = Font(size=11)
+                                        cell.font = Font(size=16)
                                 except Exception:
                                     pass
                             # Align quantity center/right
@@ -896,17 +908,31 @@ class DeliveryNoteMethodsMixin:
                                 pass
                     except Exception:
                         pass
-                    # Autosize simple columns
+                    # Autosize columns A, B, C, D with optimal width for all content
                     try:
-                        for col in ws.columns:
-                            max_len = 0; col_letter = col[0].column_letter
-                            for cell in col:
-                                try:
-                                    val = str(cell.value) if cell.value is not None else ""
-                                    if len(val) > max_len: max_len = len(val)
-                                except Exception:
-                                    pass
-                            ws.column_dimensions[col_letter].width = min(max(10, max_len + 2), 60)
+                        for col_letter in ['A', 'B', 'C', 'D']:
+                            max_len = 0
+                            col_num = ord(col_letter) - ord('A') + 1
+                            
+                            # Check all cells in this column
+                            for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=col_num, max_col=col_num):
+                                for cell in row:
+                                    try:
+                                        val = str(cell.value) if cell.value is not None else ""
+                                        if val.strip():  # Only count non-empty cells
+                                            # For Hebrew text, multiply by 1.8 for better width calculation
+                                            if any('\u0590' <= char <= '\u05FF' for char in val):
+                                                max_len = max(max_len, len(val) * 1.8)
+                                            else:
+                                                max_len = max(max_len, len(val))
+                                    except Exception:
+                                        pass
+                            
+                            # Set width based on content with minimum of 12 and maximum of 60
+                            if max_len > 0:
+                                ws.column_dimensions[col_letter].width = min(max(12, max_len + 3), 60)
+                            else:
+                                ws.column_dimensions[col_letter].width = 15  # Default width if no content
                     except Exception:
                         pass
                     # Save to exports folder
@@ -1748,7 +1774,7 @@ class DeliveryNoteMethodsMixin:
                 ws.append(["ספק", rec.get('supplier','')])
                 try:
                     for row in ws.iter_rows(min_row=ws.max_row-2, max_row=ws.max_row, min_col=1, max_col=2):
-                        row[0].font = Font(bold=True, size=12)
+                        row[0].font = Font(bold=True, size=16)
                         row[0].alignment = Alignment(horizontal='right')
                         row[1].alignment = Alignment(horizontal='right')
                 except Exception:
@@ -1788,7 +1814,7 @@ class DeliveryNoteMethodsMixin:
                     thin = Side(style='thin', color='000000')
                     border = Border(left=thin, right=thin, top=thin, bottom=thin)
                     for cell in ws[header_row]:
-                        cell.font = Font(bold=True, size=12)
+                        cell.font = Font(bold=True, size=16)
                         cell.alignment = Alignment(horizontal='center')
                     for row in ws.iter_rows(min_row=header_row, max_row=total_row, min_col=1, max_col=5):
                         for cell in row:

@@ -1408,5 +1408,61 @@
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2025-09-16 11:10:12"
+  },
+  {
+    "id": 104,
+    "name": "אוברול",
+    "size": "0-3",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל מודפס",
+    "ticks_qty": 1,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-09-16 12:12:00"
+  },
+  {
+    "id": 105,
+    "name": "אוברול",
+    "size": "3-6",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל מודפס",
+    "ticks_qty": 1,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-09-16 12:12:00"
+  },
+  {
+    "id": 106,
+    "name": "אוברול",
+    "size": "6-12",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל מודפס",
+    "ticks_qty": 1,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-09-16 12:12:00"
+  },
+  {
+    "id": 107,
+    "name": "אוברול",
+    "size": "12-18",
+    "fabric_type": "פלנל",
+    "fabric_color": "מודפס",
+    "print_name": "",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל מודפס",
+    "ticks_qty": 1,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-09-16 12:12:00"
   }
 ]
