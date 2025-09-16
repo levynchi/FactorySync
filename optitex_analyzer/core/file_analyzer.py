@@ -149,6 +149,19 @@ class OptitexFileAnalyzer:
                 return True
         return False
     
+    def _clean_size_name(self, size_name: str) -> str:
+        """ניקוי שם מידה - הסרת האות 'M' ממידות"""
+        if not isinstance(size_name, str):
+            return str(size_name)
+        
+        # הסרת האות 'M' ממידות בפורמט כמו "3M-6M" או "6M-12M"
+        cleaned = size_name.replace('M', '')
+        
+        # ניקוי נוסף של רווחים מיותרים
+        cleaned = cleaned.strip()
+        
+        return cleaned
+    
     def _process_sizes_table(self, df: pd.DataFrame, start_index: int, 
                            product_name: str, only_positive: bool, apply_tubular: bool):
         """עיבוד טבלת מידות"""
@@ -164,6 +177,9 @@ class OptitexFileAnalyzer:
                 continue
             
             if size_name not in ['Style File Name:', 'Size name']:
+                # ניקוי מידה - הסרת האות 'M' ממידות
+                cleaned_size = self._clean_size_name(size_name)
+                
                 # טיפול ב-Tubular
                 original_quantity = quantity
                 if apply_tubular and quantity > 0:
@@ -174,7 +190,7 @@ class OptitexFileAnalyzer:
                 if not only_positive or quantity > 0:
                     self.results.append({
                         'שם המוצר': product_name,
-                        'מידה': size_name,
+                        'מידה': cleaned_size,
                         'כמות': quantity,
                         'כמות מקורית': original_quantity if apply_tubular else quantity,
                         'הערה': 'חולק ב-2 (Tubular)' if apply_tubular and original_quantity > 0 else 'רגיל'
