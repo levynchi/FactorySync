@@ -324,18 +324,28 @@ def build_entry_tab(ctx, container: tk.Frame):
     tk.Button(accessories_frame, text="❌ נקה", command=ctx._clear_accessories, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
     
     # Sewing accessories tree
-    ctx.accessories_tree = ttk.Treeview(accessories_frame, columns=('accessory','unit','quantity'), show='headings', height=4)
-    ctx.accessories_tree.heading('accessory', text='אביזר תפירה')
-    ctx.accessories_tree.heading('unit', text='יחידה')
-    ctx.accessories_tree.heading('quantity', text='כמות')
-    ctx.accessories_tree.column('accessory', width=200, anchor='center')
-    ctx.accessories_tree.column('unit', width=100, anchor='center')
-    ctx.accessories_tree.column('quantity', width=80, anchor='center')
-    ctx.accessories_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
+    ctx.delivery_accessories_tree = ttk.Treeview(accessories_frame, columns=('accessory','unit','quantity'), show='headings', height=4)
+    ctx.delivery_accessories_tree.heading('accessory', text='אביזר תפירה')
+    ctx.delivery_accessories_tree.heading('unit', text='יחידה')
+    ctx.delivery_accessories_tree.heading('quantity', text='כמות')
+    ctx.delivery_accessories_tree.column('accessory', width=200, anchor='center')
+    ctx.delivery_accessories_tree.column('unit', width=100, anchor='center')
+    ctx.delivery_accessories_tree.column('quantity', width=80, anchor='center')
+    ctx.delivery_accessories_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
+    
+    # Configure grid weights for proper expansion
+    accessories_frame.grid_rowconfigure(1, weight=1)
+    accessories_frame.grid_columnconfigure(0, weight=1)
     
     # Load sewing accessories for combobox
     try:
         ctx._load_sewing_accessories_for_delivery()
+    except Exception:
+        pass
+    
+    # Initialize accessories tree with empty list
+    try:
+        ctx._refresh_accessories_tree()
     except Exception:
         pass
     

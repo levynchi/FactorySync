@@ -385,29 +385,61 @@ class DeliveryNoteMethodsMixin:
         
         record = {'accessory': accessory, 'unit': unit, 'quantity': qty}
         self._accessories.append(record)
-        self.accessories_tree.insert('', 'end', values=(accessory, unit, qty))
+        
+        # Debug message
+        print(f"DEBUG: Added accessory: {accessory}, Total accessories: {len(self._accessories)}")
+        
+        # Refresh the accessories tree to show all items
+        self._refresh_accessories_tree()
+        
+        # Clear the input fields
         self.dn_accessory_qty_var.set('')
+        
+        # Update summary
         self._update_delivery_summary()
+
+    def _refresh_accessories_tree(self):
+        """Refresh the accessories tree to show all current accessories."""
+        print(f"DEBUG: Refreshing accessories tree, count: {len(self._accessories)}")
+        
+        # Clear existing items
+        for item in self.delivery_accessories_tree.get_children():
+            self.delivery_accessories_tree.delete(item)
+        
+        # Insert all accessories from the list
+        for i, acc in enumerate(self._accessories):
+            values = (
+                acc.get('accessory', ''),
+                acc.get('unit', ''),
+                acc.get('quantity', 0)
+            )
+            print(f"DEBUG: Inserting accessory {i+1}: {values}")
+            self.delivery_accessories_tree.insert('', 'end', values=values)
+        
+        # Force update of the tree display
+        self.delivery_accessories_tree.update_idletasks()
+        print(f"DEBUG: Tree refresh complete, items in tree: {len(self.delivery_accessories_tree.get_children())}")
 
     def _delete_selected_accessory(self):
         """Delete selected accessory from the list."""
-        sel = self.accessories_tree.selection()
+        sel = self.delivery_accessories_tree.selection()
         if not sel:
             return
-        all_items = self.accessories_tree.get_children()
+        all_items = self.delivery_accessories_tree.get_children()
         indices = [all_items.index(i) for i in sel]
-        for item in sel:
-            self.accessories_tree.delete(item)
         for idx in sorted(indices, reverse=True):
             if 0 <= idx < len(self._accessories):
                 del self._accessories[idx]
+        
+        # Refresh the tree to show updated list
+        self._refresh_accessories_tree()
         self._update_delivery_summary()
 
     def _clear_accessories(self):
         """Clear all accessories from the list."""
         self._accessories = []
-        for item in self.accessories_tree.get_children():
-            self.accessories_tree.delete(item)
+        # Refresh the tree to show empty list
+        self._refresh_accessories_tree()
         self._update_delivery_summary()
 
     # ---- Packages ops ----
