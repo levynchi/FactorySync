@@ -201,8 +201,56 @@ def build_entry_tab(ctx, container: tk.Frame):
                 w.focus_set(); break
     ctx.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Variant controls
-    ctx.sup_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_size_var, width=10, state='readonly')
+    # Multi-size selection controls
+    # Create a frame for size selection
+    size_frame = tk.Frame(entry_bar)
+    
+    # Size selection combobox
+    ctx.sup_size_combo = ttk.Combobox(size_frame, textvariable=ctx.sup_size_var, width=8, state='readonly')
+    
+    # Selected sizes display field
+    ctx.sup_selected_sizes_var = tk.StringVar()
+    ctx.sup_selected_sizes_entry = tk.Entry(size_frame, textvariable=ctx.sup_selected_sizes_var, width=12, state='readonly', bg='#f0f0f0')
+    
+    # Multi-select buttons
+    ctx.sup_add_size_btn = tk.Button(size_frame, text="+", command=lambda: _add_size_to_selection(ctx), 
+                                   bg='#3498db', fg='white', width=3, font=('Arial', 8, 'bold'))
+    ctx.sup_remove_size_btn = tk.Button(size_frame, text="-", command=lambda: _remove_last_size(ctx), 
+                                      bg='#e74c3c', fg='white', width=3, font=('Arial', 8, 'bold'))
+    ctx.sup_clear_sizes_btn = tk.Button(size_frame, text="×", command=lambda: _clear_selected_sizes(ctx), 
+                                      bg='#95a5a6', fg='white', width=3, font=('Arial', 8, 'bold'))
+    
+    # Arrange components in size_frame
+    ctx.sup_size_combo.grid(row=0, column=0, padx=2)
+    ctx.sup_add_size_btn.grid(row=0, column=1, padx=2)
+    ctx.sup_selected_sizes_entry.grid(row=0, column=2, padx=2)
+    ctx.sup_remove_size_btn.grid(row=0, column=3, padx=2)
+    ctx.sup_clear_sizes_btn.grid(row=0, column=4, padx=2)
+    
+    # Initialize selected sizes list
+    if not hasattr(ctx, '_selected_sizes'):
+        ctx._selected_sizes = []
+    
+    def _add_size_to_selection(ctx):
+        """Add selected size to the multi-size selection"""
+        selected_size = ctx.sup_size_var.get().strip()
+        if selected_size and selected_size not in ctx._selected_sizes:
+            ctx._selected_sizes.append(selected_size)
+            # Update display
+            ctx.sup_selected_sizes_var.set(', '.join(ctx._selected_sizes))
+            # Clear the combobox
+            ctx.sup_size_var.set('')
+    
+    def _clear_selected_sizes(ctx):
+        """Clear all selected sizes"""
+        ctx._selected_sizes = []
+        ctx.sup_selected_sizes_var.set('')
+    
+    def _remove_last_size(ctx):
+        """Remove the last selected size"""
+        if ctx._selected_sizes:
+            ctx._selected_sizes.pop()
+            ctx.sup_selected_sizes_var.set(', '.join(ctx._selected_sizes))
     ctx.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_type_var, width=12, state='readonly')
     ctx.sup_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog; show as read-only entry
@@ -301,7 +349,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     field_pairs = {
         'main_category': (label_widgets['main_category'], ctx.sup_main_category_combo),
         'model_name': (label_widgets['model_name'], ctx.sup_product_combo),
-        'sizes': (label_widgets['sizes'], ctx.sup_size_combo),
+        'sizes': (label_widgets['sizes'], size_frame),
         'fabric_type': (label_widgets['fabric_type'], ctx.sup_fabric_type_combo),
         'fabric_color': (label_widgets['fabric_color'], ctx.sup_fabric_color_combo),
         'fabric_category': (label_widgets['fabric_category'], ctx.sup_fabric_category_entry),

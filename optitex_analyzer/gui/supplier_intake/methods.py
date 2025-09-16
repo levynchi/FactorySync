@@ -263,7 +263,7 @@ class SupplierIntakeMethodsMixin:
                 pass
 
     def _add_supplier_line(self):
-        product = self.sup_product_var.get().strip(); size = self.sup_size_var.get().strip(); qty_raw = self.sup_qty_var.get().strip(); note = self.sup_note_var.get().strip()
+        product = self.sup_product_var.get().strip(); qty_raw = self.sup_qty_var.get().strip(); note = self.sup_note_var.get().strip()
         fabric_type = self.sup_fabric_type_var.get().strip(); fabric_color = self.sup_fabric_color_var.get().strip(); print_name = self.sup_print_name_var.get().strip() or 'חלק'
         # Optional barcode per main category fields
         try:
@@ -287,23 +287,38 @@ class SupplierIntakeMethodsMixin:
         if returned_from_drawing != 'כן':
             drawing_id = ''
         category = (getattr(self, 'sup_category_var', tk.StringVar(value='')).get() or '').strip()
-        line = {
-            'product': product,
-            'size': size,
-            'fabric_type': fabric_type,
-            'fabric_color': fabric_color,
-            'fabric_category': fabric_category,
-            'print_name': print_name,
-            'barcode': barcode,
-            'category': category,
-            'returned_from_drawing': returned_from_drawing,
-            'drawing_id': drawing_id,
-            'quantity': qty,
-            'note': note
-        }
-        self._supplier_lines.append(line)
-        self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,returned_from_drawing,drawing_id,qty,note))
+        
+        # Handle multiple sizes
+        selected_sizes = getattr(self, '_selected_sizes', [])
+        if not selected_sizes:
+            messagebox.showerror("שגיאה", "חובה לבחור לפחות מידה אחת")
+            return
+        
+        # Add a line for each selected size
+        for size in selected_sizes:
+            line = {
+                'product': product,
+                'size': size,
+                'fabric_type': fabric_type,
+                'fabric_color': fabric_color,
+                'fabric_category': fabric_category,
+                'print_name': print_name,
+                'barcode': barcode,
+                'category': category,
+                'returned_from_drawing': returned_from_drawing,
+                'drawing_id': drawing_id,
+                'quantity': qty,
+                'note': note
+            }
+            self._supplier_lines.append(line)
+            self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,returned_from_drawing,drawing_id,qty,note))
+        
+        # Clear form after adding
         self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
+        # Clear selected sizes
+        self._selected_sizes = []
+        if hasattr(self, 'sup_selected_sizes_var'):
+            self.sup_selected_sizes_var.set('')
         try:
             self.sup_returned_from_drawing_var.set('לא')
             self.sup_drawing_id_var.set('')
@@ -328,6 +343,10 @@ class SupplierIntakeMethodsMixin:
     def _clear_supplier_lines(self):
         self._supplier_lines = []
         for item in self.supplier_tree.get_children(): self.supplier_tree.delete(item)
+        # Clear selected sizes as well
+        self._selected_sizes = []
+        if hasattr(self, 'sup_selected_sizes_var'):
+            self.sup_selected_sizes_var.set('')
         self._update_supplier_summary()
 
     def _update_supplier_summary(self):
