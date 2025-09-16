@@ -202,7 +202,7 @@ class DataProcessor:
 	def _next_id(self, records: List[Dict]) -> int:
 		return max([r.get('id', 0) for r in records], default=0) + 1
 
-	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None) -> int:
+	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, arrival_date: str = '', supplier_doc_number: str = '') -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
 			if not lines: raise ValueError("אין שורות לקליטה")
@@ -212,6 +212,8 @@ class DataProcessor:
 				'id': new_id,
 				'supplier': supplier,
 				'date': date_str,
+				'arrival_date': arrival_date,
+				'supplier_doc_number': supplier_doc_number,
 				'lines': lines,
 				'total_quantity': total_quantity,
 				'packages': packages or [],

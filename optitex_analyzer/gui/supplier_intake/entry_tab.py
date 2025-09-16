@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 def build_entry_tab(ctx, container: tk.Frame):
     # Reuse the original UI construction from SupplierIntakeTabMixin
@@ -251,6 +251,121 @@ def build_entry_tab(ctx, container: tk.Frame):
         if ctx._selected_sizes:
             ctx._selected_sizes.pop()
             ctx.sup_selected_sizes_var.set(', '.join(ctx._selected_sizes))
+    
+    def _edit_quantity_in_tree(ctx, event):
+        """Handle double-click editing of quantity in tree"""
+        # Get the item that was clicked
+        item = ctx.supplier_tree.identify('item', event.x, event.y)
+        if not item:
+            return
+        
+        # Get the column that was clicked
+        column = ctx.supplier_tree.identify('column', event.x, event.y)
+        if not column:
+            return
+        
+        # Check if it's the quantity column (index 10)
+        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','note')
+        if column != '#11':  # quantity is at index 10, but Treeview uses 1-based indexing
+            return
+        
+        # Get current values
+        values = list(ctx.supplier_tree.item(item, 'values'))
+        current_quantity = values[10] if len(values) > 10 else '0'
+        
+        # Create a simple dialog for editing quantity
+        from tkinter import simpledialog
+        new_quantity = simpledialog.askstring(
+            "עריכת כמות", 
+            f"הזן כמות חדשה:\n(כמות נוכחית: {current_quantity})",
+            initialvalue=current_quantity
+        )
+        
+        if new_quantity is not None:
+            try:
+                # Validate quantity
+                qty = int(new_quantity.strip())
+                if qty < 0:
+                    messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+                    return
+                
+                # Update the tree
+                values[10] = str(qty)
+                ctx.supplier_tree.item(item, values=values)
+                
+                # Update the data in memory
+                item_index = ctx.supplier_tree.index(item)
+                if 0 <= item_index < len(ctx._supplier_lines):
+                    ctx._supplier_lines[item_index]['quantity'] = qty
+                    ctx._update_supplier_summary()
+                
+            except ValueError:
+                messagebox.showerror("שגיאה", "כמות חייבת להיות מספר תקין")
+    
+    def _start_quantity_edit(ctx, event):
+        """Start inline editing of quantity in tree"""
+        # Get the item that was clicked
+        item = ctx.supplier_tree.identify('item', event.x, event.y)
+        if not item:
+            return
+        
+        # Get the column that was clicked
+        column = ctx.supplier_tree.identify('column', event.x, event.y)
+        if not column:
+            return
+        
+        # Check if it's the quantity column (index 10)
+        if column != '#11':  # quantity is at index 10, but Treeview uses 1-based indexing
+            return
+        
+        # Get current values
+        values = list(ctx.supplier_tree.item(item, 'values'))
+        current_quantity = values[10] if len(values) > 10 else '0'
+        
+        # Get the bounding box of the cell
+        bbox = ctx.supplier_tree.bbox(item, column)
+        if not bbox:
+            return
+        
+        # Create an entry widget for inline editing
+        edit_entry = tk.Entry(ctx.supplier_tree, font=('Arial', 9))
+        edit_entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+        edit_entry.insert(0, current_quantity)
+        edit_entry.select_range(0, tk.END)
+        edit_entry.focus()
+        
+        def save_edit():
+            try:
+                new_quantity = edit_entry.get().strip()
+                qty = int(new_quantity)
+                if qty < 0:
+                    messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+                    edit_entry.destroy()
+                    return
+                
+                # Update the tree
+                values[10] = str(qty)
+                ctx.supplier_tree.item(item, values=values)
+                
+                # Update the data in memory
+                item_index = ctx.supplier_tree.index(item)
+                if 0 <= item_index < len(ctx._supplier_lines):
+                    ctx._supplier_lines[item_index]['quantity'] = qty
+                    ctx._update_supplier_summary()
+                
+                edit_entry.destroy()
+                
+            except ValueError:
+                messagebox.showerror("שגיאה", "כמות חייבת להיות מספר תקין")
+                edit_entry.destroy()
+        
+        def cancel_edit():
+            edit_entry.destroy()
+        
+        # Bind events
+        edit_entry.bind('<Return>', lambda e: save_edit())
+        edit_entry.bind('<Escape>', lambda e: cancel_edit())
+        edit_entry.bind('<FocusOut>', lambda e: save_edit())
     ctx.sup_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_type_var, width=12, state='readonly')
     ctx.sup_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog; show as read-only entry
@@ -591,6 +706,12 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.supplier_tree.configure(yscroll=vs.set)
     ctx.supplier_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
     vs.pack(side='right', fill='y', pady=4)
+    
+    # Add double-click editing for quantity column
+    ctx.supplier_tree.bind('<Double-1>', lambda e: _edit_quantity_in_tree(ctx, e))
+    
+    # Add single-click editing for quantity column
+    ctx.supplier_tree.bind('<Button-1>', lambda e: _start_quantity_edit(ctx, e))
 
     # Transport section
     pkg_frame = ttk.LabelFrame(container, text="הובלה", padding=8)
