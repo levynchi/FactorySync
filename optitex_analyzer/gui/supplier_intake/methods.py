@@ -784,14 +784,23 @@ class SupplierIntakeMethodsMixin:
             try: messagebox.showwarning('שגיאה', 'אין בדים לשמירה')
             except Exception: pass
             return
-        # עדכן סטטוסים דרך DataProcessor
+        # עדכן סטטוסים ומיקום דרך DataProcessor
         updated = 0
-        for bc in barcodes:
-            try:
-                if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'בדים שנתקבלו בחזרה'):
-                    updated += 1
-            except Exception:
-                pass
+        try:
+            # השתמש ב-bulk_update_fabrics לעדכון גם סטטוס וגם מיקום
+            if hasattr(self.data_processor, 'bulk_update_fabrics'):
+                updates = [{'barcode': bc, 'status': 'במלאי', 'location': 'אריה'} for bc in barcodes]
+                updated = self.data_processor.bulk_update_fabrics(updates)
+            else:
+                # fallback לשיטה הישנה
+                for bc in barcodes:
+                    try:
+                        if hasattr(self.data_processor, 'update_fabric_status') and self.data_processor.update_fabric_status(bc, 'בדים שנתקבלו בחזרה'):
+                            updated += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # צור גם מסמך "תעודת קליטת בדים" עם מספר מזהה
         new_fi_id = None
         try:
@@ -802,9 +811,9 @@ class SupplierIntakeMethodsMixin:
         # משוב למשתמש
         try:
             if new_fi_id:
-                messagebox.showinfo('הצלחה', f"נשמרה תעודת קליטת בדים (ID: {new_fi_id}).\nעודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
+                messagebox.showinfo('הצלחה', f"נשמרה תעודת קליטת בדים (ID: {new_fi_id}).\nעודכנו {updated} בדים למיקום 'אריה' ולסטטוס 'במלאי'")
             else:
-                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים לסטטוס 'בדים שנתקבלו בחזרה'")
+                messagebox.showinfo('הצלחה', f"עודכנו {updated} בדים למיקום 'אריה' ולסטטוס 'במלאי'")
         except Exception:
             pass
         # נקה את הטבלה ורענן טאב מלאי בדים אם קיים
