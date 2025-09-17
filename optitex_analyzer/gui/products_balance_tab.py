@@ -45,23 +45,46 @@ class ProductsBalanceTabMixin:
         tk.Label(balance_page, text='מאזן מוצרים לפי ספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
 
         cut_page = tk.Frame(inner_nb, bg='#f7f9fa')
-        inner_nb.add(cut_page, text='מה נגזר אצל הספק')
-        tk.Label(cut_page, text='מה נגזר אצל הספק (מחושב מציורים "נחתך" × שכבות)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
-        # סרגל פנימי לעמוד הגזירה: חיפוש + פירוט לפי מידות
+        inner_nb.add(cut_page, text='ציורים שנשלחו/נחתכו אצל הספק')
+        tk.Label(cut_page, text='ציורים שנשלחו/נחתכו אצל הספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        # סרגל פנימי לעמוד הגזירה: חיפוש + מסננים
         cut_bar = tk.Frame(cut_page, bg='#f7f9fa'); cut_bar.pack(fill='x', padx=10, pady=(0,6))
+        
+        # חיפוש
         tk.Label(cut_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
         self.cut_search_var = tk.StringVar(); cut_search = tk.Entry(cut_bar, textvariable=self.cut_search_var, width=24); cut_search.pack(side='right', padx=(0,6))
         try:
-            cut_search.bind('<KeyRelease>', lambda e: self._refresh_supplier_cut_table())
+            cut_search.bind('<KeyRelease>', lambda e: self._refresh_drawings_table())
         except Exception:
             pass
-        self._cut_detail_by_size = True
-        self._cut_toggle_btn = tk.Button(cut_bar, text='תצוגת מוצר בלבד', command=self._toggle_cut_detail_mode, bg='#8e44ad', fg='white')
-        self._cut_toggle_btn.pack(side='left')
-        cols_cut = ('product','size','fabric','cut_qty')
+        
+        # מסנן סוג בד
+        tk.Label(cut_bar, text='סוג בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_fabric_filter_var = tk.StringVar(value='הכל')
+        self.cut_fabric_filter_cb = ttk.Combobox(cut_bar, textvariable=self.cut_fabric_filter_var, width=18, state='readonly', justify='right')
+        try:
+            self.cut_fabric_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_drawings_table())
+        except Exception:
+            pass
+        self.cut_fabric_filter_cb.pack(side='right', padx=(0,10))
+        
+        # מסנן סטטוס
+        tk.Label(cut_bar, text='סטטוס:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_status_filter_var = tk.StringVar(value='הכל')
+        self.cut_status_filter_cb = ttk.Combobox(cut_bar, textvariable=self.cut_status_filter_var, width=15, state='readonly', justify='right')
+        self.cut_status_filter_cb['values'] = ['הכל', 'נשלח', 'נחתך']
+        try:
+            self.cut_status_filter_cb.bind('<<ComboboxSelected>>', lambda e: self._refresh_drawings_table())
+        except Exception:
+            pass
+        self.cut_status_filter_cb.pack(side='right', padx=(0,10))
+        
+        # כפתור רענון
+        tk.Button(cut_bar, text='🔄 רענן', command=self._refresh_drawings_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        cols_cut = ('drawing_id','product','size','fabric','quantity','status','layers')
         self.supplier_cut_tree = ttk.Treeview(cut_page, columns=cols_cut, show='headings', height=18)
-        headers_cut = {'product':'מוצר','size':'מידה','fabric':'סוג בד','cut_qty':'נגזר (יח׳)'}
-        widths_cut = {'product':250,'size':90,'fabric':200,'cut_qty':100}
+        headers_cut = {'drawing_id':'ID ציור','product':'מוצר','size':'מידה','fabric':'סוג בד','quantity':'כמות יחידות','status':'סטטוס','layers':'שכבות'}
+        widths_cut = {'drawing_id':80,'product':200,'size':80,'fabric':150,'quantity':100,'status':80,'layers':80}
         for c in cols_cut:
             self.supplier_cut_tree.heading(c, text=headers_cut[c])
             self.supplier_cut_tree.column(c, width=widths_cut[c], anchor='center')
@@ -1636,63 +1659,99 @@ class ProductsBalanceTabMixin:
             pass
         self._refresh_supplier_cut_table()
 
-    def _refresh_supplier_cut_table(self):
+    def _refresh_drawings_table(self):
+        """רענון טבלת הציורים שנשלחו/נחתכו אצל הספק"""
         supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
-        # ניקוי
+        
+        # ניקוי הטבלה
         if hasattr(self, 'supplier_cut_tree'):
             for iid in self.supplier_cut_tree.get_children():
                 self.supplier_cut_tree.delete(iid)
+        
         if not supplier:
             return
+        
         # ודא שיש נתוני ציורים עדכניים
         try:
             if hasattr(self.data_processor, 'refresh_drawings_data'):
                 self.data_processor.refresh_drawings_data()
         except Exception:
             pass
-        # צבירה: לכל ציור בסטטוס נחתך, עם נמען = supplier, נחשב לכל מוצר/מידה: כמות*שכבות
-        by_size = getattr(self, '_cut_detail_by_size', True)
-        totals = {}
+        
+        # קבלת מסננים
+        search_txt = (getattr(self, 'cut_search_var', tk.StringVar()).get() or '').strip().lower()
+        fabric_filter = (getattr(self, 'cut_fabric_filter_var', tk.StringVar()).get() or '').strip()
+        status_filter = (getattr(self, 'cut_status_filter_var', tk.StringVar()).get() or '').strip()
+        
+        # בניית רשימת סוגי בדים למסנן
+        fabric_types = set()
+        
+        # טעינת נתוני הציורים
         try:
             for rec in getattr(self.data_processor, 'drawings_data', []) or []:
-                if rec.get('status') != 'נחתך':
-                    continue
+                # סינון לפי ספק
                 if (rec.get('נמען') or '').strip() != supplier:
                     continue
-                layers = rec.get('שכבות')
-                try:
-                    layers = int(layers)
-                except Exception:
-                    layers = None
-                if not layers or layers <= 0:
+                
+                # סינון לפי סטטוס
+                status = rec.get('status', '')
+                if status_filter != 'הכל' and status != status_filter:
                     continue
+                
+                # קבלת פרטי הציור
+                drawing_id = rec.get('id', '')
                 fabric_type = (rec.get('סוג בד') or '').strip()
+                layers = rec.get('שכבות', 0)
+                try:
+                    layers = int(layers) if layers else 0
+                except Exception:
+                    layers = 0
+                
+                # הוספת סוג בד לרשימת המסנן
+                if fabric_type:
+                    fabric_types.add(fabric_type)
+                
+                # עיבוד המוצרים בציור
                 for prod in rec.get('מוצרים', []) or []:
                     pname = (prod.get('שם המוצר') or '').strip()
+                    if not pname:
+                        continue
+                    
                     for sz in prod.get('מידות', []) or []:
                         size = (sz.get('מידה') or '').strip()
                         qty = int(sz.get('כמות', 0) or 0)
-                        if not pname or qty <= 0:
+                        if qty <= 0:
                             continue
-                        cut_units = qty * layers
-                        if by_size:
-                            key = (pname, size, fabric_type)
-                        else:
-                            key = (pname, '', fabric_type)
-                        totals[key] = totals.get(key, 0) + cut_units
+                        
+                        # סינון לפי סוג בד
+                        if fabric_filter != 'הכל' and fabric_type != fabric_filter:
+                            continue
+                        
+                        # סינון טקסטואלי
+                        if search_txt:
+                            hay = f"{pname} {size} {fabric_type} {drawing_id}".lower()
+                            if search_txt not in hay:
+                                continue
+                        
+                        # הוספה לטבלה
+                        self.supplier_cut_tree.insert('', 'end', values=(
+                            drawing_id,
+                            pname,
+                            size or '-',
+                            fabric_type or '-',
+                            qty,
+                            status,
+                            layers
+                        ))
+        except Exception as e:
+            print(f"שגיאה בטעינת נתוני ציורים: {e}")
+        
+        # עדכון רשימת סוגי הבדים במסנן
+        try:
+            fabric_list = ['הכל'] + sorted(list(fabric_types))
+            self.cut_fabric_filter_cb['values'] = fabric_list
         except Exception:
             pass
-        # סינון טקסטואלי
-        search_txt = (getattr(self, 'cut_search_var', tk.StringVar()).get() or '').strip().lower()
-        for (pname, size, fabric), qty in sorted(totals.items(), key=lambda x: (x[0][0], x[0][1], x[0][2])):
-            label_ok = True
-            if search_txt:
-                hay = f"{pname} {size} {fabric}".lower()
-                if search_txt not in hay:
-                    label_ok = False
-            if not label_ok:
-                continue
-            self.supplier_cut_tree.insert('', 'end', values=(pname, size or '-', fabric or '-', qty))
 
     # === מאזן סחורות שנחתכו אצל הספק ===
     def _refresh_cut_balance_table(self):
@@ -3251,3 +3310,4 @@ class ProductsBalanceTabMixin:
             self.inv_create_location_cb['values'] = vals
         except Exception:
             pass
+
