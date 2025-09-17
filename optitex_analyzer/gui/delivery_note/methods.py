@@ -908,10 +908,10 @@ class DeliveryNoteMethodsMixin:
                                 pass
                     except Exception:
                         pass
-                    # Autosize columns A, B, C, D with optimal width for all content
+                    # Autosize columns A, B, C, D with optimal width for all content (like Excel AutoFit)
                     try:
                         for col_letter in ['A', 'B', 'C', 'D']:
-                            max_len = 0
+                            max_width = 0
                             col_num = ord(col_letter) - ord('A') + 1
                             
                             # Check all cells in this column
@@ -920,19 +920,31 @@ class DeliveryNoteMethodsMixin:
                                     try:
                                         val = str(cell.value) if cell.value is not None else ""
                                         if val.strip():  # Only count non-empty cells
-                                            # For Hebrew text, multiply by 1.8 for better width calculation
-                                            if any('\u0590' <= char <= '\u05FF' for char in val):
-                                                max_len = max(max_len, len(val) * 1.8)
-                                            else:
-                                                max_len = max(max_len, len(val))
+                                            # Calculate character width more accurately
+                                            char_width = 0
+                                            for char in val:
+                                                # Hebrew characters are wider
+                                                if '\u0590' <= char <= '\u05FF':
+                                                    char_width += 1.2
+                                                # Numbers and English are narrower
+                                                elif char.isdigit() or char.isalpha():
+                                                    char_width += 0.6
+                                                # Special characters
+                                                else:
+                                                    char_width += 0.8
+                                            
+                                            # Add some padding for cell borders
+                                            char_width += 2
+                                            max_width = max(max_width, char_width)
                                     except Exception:
                                         pass
                             
-                            # Set width based on content with minimum of 12 and maximum of 60
-                            if max_len > 0:
-                                ws.column_dimensions[col_letter].width = min(max(12, max_len + 3), 60)
+                            # Set width with reasonable limits (Excel-like behavior)
+                            if max_width > 0:
+                                # Minimum 8, maximum 50 (Excel standard)
+                                ws.column_dimensions[col_letter].width = min(max(8, max_width), 50)
                             else:
-                                ws.column_dimensions[col_letter].width = 15  # Default width if no content
+                                ws.column_dimensions[col_letter].width = 12  # Default width if no content
                     except Exception:
                         pass
                     # Save to exports folder
