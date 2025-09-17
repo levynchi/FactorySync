@@ -821,16 +821,32 @@ class DeliveryNoteMethodsMixin:
                         ws.append([])  # רווח
                         ws.append(["אביזרי תפירה"])
                         try:
-                            # Merge and style the section title
+                            # Style the section title (like product lines)
                             r = ws.max_row
-                            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
                             tcell = ws.cell(row=r, column=1)
                             tcell.font = Font(bold=True, size=16)
                             tcell.alignment = Alignment(horizontal='right')
-                        except Exception:
+                            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=4)
+                            print(f"DEBUG: Styled 'אביזרי תפירה' title at row {r}")
+                        except Exception as e:
+                            print(f"DEBUG: Error styling title: {e}")
                             pass
                         acc_header_row = ["אביזר תפירה", "יחידה", "כמות", ""]
                         ws.append(acc_header_row)
+                        
+                        # Add gray header row with bold headers (EXACTLY like product lines)
+                        try:
+                            from openpyxl.styles import PatternFill
+                            gray_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                            header_row_num = ws.max_row
+                            for col in range(1, 5):  # Columns A to D
+                                cell = ws.cell(row=header_row_num, column=col)
+                                cell.fill = gray_fill
+                                cell.font = Font(bold=True, size=16)
+                                cell.alignment = Alignment(horizontal='center')
+                        except Exception:
+                            pass
+                        
                         acc_start_row = ws.max_row + 1
                         for acc in (rec.get('accessories', []) or []):
                             accessory = acc.get('accessory', '')
@@ -838,17 +854,11 @@ class DeliveryNoteMethodsMixin:
                             qty = acc.get('quantity', '')
                             ws.append([accessory, unit, qty, ""])
                         acc_end_row = ws.max_row
-                        # Style accessories table
+                        
+                        # Style accessories table borders and alignment
                         try:
                             thin = Side(style='thin', color='000000')
                             border = Border(left=thin, right=thin, top=thin, bottom=thin)
-                            # Bold header row
-                            for cell in ws[ws.cell(row=acc_start_row-1, column=1).row]:
-                                if cell.row == acc_start_row-1:
-                                    try:
-                                        cell.font = Font(bold=True, size=16)
-                                    except Exception:
-                                        pass
                             for row in ws.iter_rows(min_row=acc_start_row-1, max_row=acc_end_row, min_col=1, max_col=4):
                                 for cell in row:
                                     try:

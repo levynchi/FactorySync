@@ -827,5 +827,32 @@
     ],
     "receipt_kind": "supplier_intake",
     "created_at": "2025-09-16 12:08:03"
+  },
+  {
+    "id": 12,
+    "supplier": "עולה",
+    "date": "2025-09-17",
+    "arrival_date": "2025-09-16",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 325,
+        "note": ""
+      }
+    ],
+    "total_quantity": 325,
+    "packages": [],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2025-09-17 08:31:37"
   }
 ]

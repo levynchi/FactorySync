@@ -78,6 +78,13 @@ Alignment(horizontal='center')
 ```python
 from openpyxl.styles import PatternFill
 gray_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+
+# יישום על כותרות טבלה
+for col in range(1, num_columns + 1):
+    cell = ws.cell(row=header_row, column=col)
+    cell.fill = gray_fill
+    cell.font = Font(bold=True, size=16)
+    cell.alignment = Alignment(horizontal='center')
 ```
 
 ### 5. הגדרות גבולות
