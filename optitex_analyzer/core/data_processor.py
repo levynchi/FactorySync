@@ -230,7 +230,7 @@ class DataProcessor:
 	def add_delivery_note(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, accessories: List[Dict] | None = None) -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
-			if not lines: raise ValueError("אין שורות לקליטה")
+			if not lines and not accessories: raise ValueError("אין שורות לקליטה או אביזרי תפירה")
 			new_id = self._next_id(self.delivery_notes)
 			total_quantity = sum(int(l.get('quantity',0)) for l in lines)
 			record = {

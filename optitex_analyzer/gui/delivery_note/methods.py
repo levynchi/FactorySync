@@ -213,6 +213,15 @@ class DeliveryNoteMethodsMixin:
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
         if not self._delivery_lines and not self._accessories:
             messagebox.showerror("שגיאה", "אין שורות מוצרים או אביזרי תפירה לשמירה"); return
+        
+        # בדיקה אם יש רק אביזרי תפירה ללא שורות מוצרים
+        if not self._delivery_lines and self._accessories:
+            proceed = messagebox.askyesno(
+                "אישור",
+                "לא הוזנו פריטי מוצרים, רק אביזרי תפירה.\nהאם זה בסדר לשמור תעודת משלוח עם אביזרי תפירה בלבד?"
+            )
+            if not proceed:
+                return
         # אם רשימת ה-packages בזיכרון ריקה אך יש שורות בטבלה, נשחזר מהרשימה המוצגת
         try:
             if (not self._packages) and hasattr(self, 'packages_tree'):
