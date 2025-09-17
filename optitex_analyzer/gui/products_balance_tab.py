@@ -2043,14 +2043,24 @@ class ProductsBalanceTabMixin:
                 rec_date = rec.get('date') or rec.get('created_at') or ''
                 if not in_range(rec_date):
                     continue
-                for ln in rec.get('lines', []) or []:
-                    name = norm(ln.get('product'))
-                    qty = int(ln.get('quantity', 0) or 0)
+                # שורות מוצרים רגילות - הוסרו אביזרי תפירה (רק מהטבלה הנפרדת)
+                # for ln in rec.get('lines', []) or []:
+                #     name = norm(ln.get('product'))
+                #     qty = int(ln.get('quantity', 0) or 0)
+                #     if not name or qty <= 0:
+                #         continue
+                #     # אביזרי תפירה: לפי קטגוריה ראשית בקטלוג; אם לא ידוע – fallback לשמות אביזרים
+                #     if _is_accessory(name) or name in acc_names:
+                #         shipped[name] = shipped.get(name, 0) + qty
+                
+                # טבלת אביזרי תפירה הנפרדת
+                for acc in rec.get('accessories', []) or []:
+                    name = norm(acc.get('accessory'))
+                    qty = float(acc.get('quantity', 0) or 0)
                     if not name or qty <= 0:
                         continue
-                    # אביזרי תפירה: לפי קטגוריה ראשית בקטלוג; אם לא ידוע – fallback לשמות אביזרים
-                    if _is_accessory(name) or name in acc_names:
-                        shipped[name] = shipped.get(name, 0) + qty
+                    # הוספה לנתונים שנשלחו
+                    shipped[name] = shipped.get(name, 0) + qty
         except Exception:
             pass
 
@@ -2069,33 +2079,34 @@ class ProductsBalanceTabMixin:
                         continue
                     if _is_accessory(name) or name in acc_names:
                         received[name] = received.get(name, 0) + qty
-                    # תוספת: אביזרים שחזרו מבגדים תפורים – חישוב לפי הקטלוג
+                    # תוספת: אביזרים שחזרו ממוצרים – חישוב לפי הקטלוג
+                    # חיפוש בכל הקטגוריות, לא רק "בגדים תפורים"
                     subc = norm(ln.get('category'))
-                    if subc == 'בגדים תפורים':
-                        # חפש בקטלוג את רשומת המוצר לפי שם/מידה לקבלת כמויות אביזרים ליחידה
-                        psize = norm(ln.get('size'))
-                        try:
-                            catalog = getattr(self.data_processor, 'products_catalog', []) or []
-                        except Exception:
-                            catalog = []
-                        def _match(r):
-                            return norm(r.get('name')) == name and (not psize or norm(r.get('size')) == psize)
-                        per_ticks = per_elastic = per_ribbon = 0
-                        try:
-                            for r in catalog:
-                                if _match(r):
-                                    per_ticks = int(r.get('ticks_qty', 0) or 0)
-                                    per_elastic = int(r.get('elastic_qty', 0) or 0)
-                                    per_ribbon = int(r.get('ribbon_qty', 0) or 0)
-                                    break
-                        except Exception:
-                            pass
-                        if per_ticks > 0:
-                            received['טיק טק קומפלט'] = received.get('טיק טק קומפלט', 0) + per_ticks * qty
-                        if per_elastic > 0:
-                            received['גומי'] = received.get('גומי', 0) + per_elastic * qty
-                        if per_ribbon > 0:
-                            received['סרט'] = received.get('סרט', 0) + per_ribbon * qty
+                    # if subc == 'בגדים תפורים':  # הוסר - עכשיו מחפש בכל הקטגוריות
+                    # חפש בקטלוג את רשומת המוצר לפי שם/מידה לקבלת כמויות אביזרים ליחידה
+                    psize = norm(ln.get('size'))
+                    try:
+                        catalog = getattr(self.data_processor, 'products_catalog', []) or []
+                    except Exception:
+                        catalog = []
+                    def _match(r):
+                        return norm(r.get('name')) == name and (not psize or norm(r.get('size')) == psize)
+                    per_ticks = per_elastic = per_ribbon = 0
+                    try:
+                        for r in catalog:
+                            if _match(r):
+                                per_ticks = int(r.get('ticks_qty', 0) or 0)
+                                per_elastic = int(r.get('elastic_qty', 0) or 0)
+                                per_ribbon = int(r.get('ribbon_qty', 0) or 0)
+                                break
+                    except Exception:
+                        pass
+                    if per_ticks > 0:
+                        received['טיק טקים קומפלט'] = received.get('טיק טקים קומפלט', 0) + per_ticks * qty
+                    if per_elastic > 0:
+                        received['גומי'] = received.get('גומי', 0) + per_elastic * qty
+                    if per_ribbon > 0:
+                        received['סרט'] = received.get('סרט', 0) + per_ribbon * qty
         except Exception:
             pass
 
@@ -2118,12 +2129,20 @@ class ProductsBalanceTabMixin:
                     if not in_range(rec_date):
                         continue
                     rec_no = rec.get('number') or rec.get('id') or ''
-                    for ln in rec.get('lines', []) or []:
-                        if norm(ln.get('product')) != norm(kind_filter):
+                    # שורות מוצרים רגילות - הוסרו אביזרי תפירה (רק מהטבלה הנפרדת)
+                    # for ln in rec.get('lines', []) or []:
+                    #     if norm(ln.get('product')) != norm(kind_filter):
+                    #         continue
+                    #     qty = int(ln.get('quantity', 0) or 0)
+                    #     if qty > 0:
+                    #         add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
+                    # טבלת אביזרי תפירה הנפרדת
+                    for acc in rec.get('accessories', []) or []:
+                        if norm(acc.get('accessory')) != norm(kind_filter):
                             continue
-                        qty = int(ln.get('quantity', 0) or 0)
+                        qty = float(acc.get('quantity', 0) or 0)
                         if qty > 0:
-                            add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
+                            add(rec_date, 'תעודת משלוח (אביזרים)', rec_no, qty, 'נשלח')
             except Exception:
                 pass
             # קליטות ישירות של האביזר
