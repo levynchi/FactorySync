@@ -380,10 +380,10 @@ class DeliveryNoteMethodsMixin:
             return
         
         try:
-            qty = int(qty_raw)
+            qty = float(qty_raw)
             assert qty > 0
         except Exception:
-            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי")
+            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי (עשרוני או שלם)")
             return
         
         # Check if accessory already exists
