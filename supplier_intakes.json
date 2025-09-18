@@ -854,5 +854,38 @@
     "packages": [],
     "receipt_kind": "supplier_intake",
     "created_at": "2025-09-17 08:31:37"
+  },
+  {
+    "id": 13,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-09-18",
+    "arrival_date": "2025-09-18",
+    "supplier_doc_number": "211",
+    "lines": [
+      {
+        "product": "אוברול ארוך סואגי",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "10",
+        "quantity": 300,
+        "note": ""
+      }
+    ],
+    "total_quantity": 300,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2025-09-18 10:12:10"
   }
 ]
