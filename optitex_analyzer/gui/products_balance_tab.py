@@ -2161,6 +2161,7 @@ class ProductsBalanceTabMixin:
                     except Exception:
                         pass
                     if per_ticks > 0:
+                        # שמירה בשם אחיד: "טיק טקים קומפלט"
                         received['טיק טקים קומפלט'] = received.get('טיק טקים קומפלט', 0) + per_ticks * qty
                     if per_elastic > 0:
                         received['גומי'] = received.get('גומי', 0) + per_elastic * qty
@@ -2415,12 +2416,24 @@ class ProductsBalanceTabMixin:
                         continue
                     rec_date = rec.get('date') or rec.get('created_at') or ''
                     rec_no = rec.get('number') or rec.get('id') or ''
+                    
+                    # חיפוש בשורות המוצרים
                     for ln in rec.get('lines', []) or []:
                         if norm(ln.get('product')) != norm(name):
                             continue
                         qty = int(ln.get('quantity', 0) or 0)
                         if qty > 0:
                             add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
+                    
+                    # חיפוש בשדה אביזרים
+                    for acc in rec.get('accessories', []) or []:
+                        acc_name = norm(acc.get('accessory'))
+                        # תמיכה בשם אחיד: "טיק טקים קומפלט"
+                        if (acc_name == norm(name) or 
+                            (norm(name) == 'טיק טקים קומפלט' and acc_name == 'טיק טק קומפלט')):
+                            qty = int(acc.get('quantity', 0) or 0)
+                            if qty > 0:
+                                add(rec_date, 'תעודת משלוח - אביזרים', rec_no, qty, 'נשלח')
             except Exception:
                 pass
             # קליטות
@@ -2430,13 +2443,27 @@ class ProductsBalanceTabMixin:
                         continue
                     rec_date = rec.get('date') or rec.get('created_at') or ''
                     rec_no = rec.get('number') or rec.get('id') or ''
+                    
+                    # חיפוש בשורות המוצרים
                     for ln in rec.get('lines', []) or []:
                         # אם זו קליטה של אביזר ישיר
                         if norm(ln.get('product')) == norm(name):
                             qty = int(ln.get('quantity', 0) or 0)
                             if qty > 0:
                                 add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
-                        # אם זו קליטה של בגדים תפורים – חשב אביזרים שחזרו
+                    
+                    # חיפוש בשדה אביזרים
+                    for acc in rec.get('accessories', []) or []:
+                        acc_name = norm(acc.get('accessory'))
+                        # תמיכה בשם אחיד: "טיק טקים קומפלט"
+                        if (acc_name == norm(name) or 
+                            (norm(name) == 'טיק טקים קומפלט' and acc_name == 'טיק טק קומפלט')):
+                            qty = int(acc.get('quantity', 0) or 0)
+                            if qty > 0:
+                                add(rec_date, 'תעודת קליטה - אביזרים', rec_no, qty, 'נתקבל')
+                    
+                    # חיפוש בקליטות בגדים תפורים – חשב אביזרים שחזרו
+                    for ln in rec.get('lines', []) or []:
                         subc = norm(ln.get('category'))
                         if subc == 'בגדים תפורים':
                             p_name = norm(ln.get('product'))
@@ -2460,7 +2487,7 @@ class ProductsBalanceTabMixin:
                                         break
                             except Exception:
                                 pass
-                            if norm(name) == 'טיק טק קומפלט' and per_ticks > 0:
+                            if norm(name) == 'טיק טקים קומפלט' and per_ticks > 0:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ticks * qty_units, 'נתקבל')
                             if norm(name) == 'גומי' and per_elastic > 0:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל')
