@@ -233,6 +233,22 @@ class ReturnedDrawingTabMixin:
                     self.data_processor.update_drawing_layers(did, layers_val)
             except Exception:
                 pass
+            
+            # חישוב ושמירת משקל ומטרים כוללים של הבדים שנגזרו
+            try:
+                total_weight = 0.0
+                total_meters = 0.0
+                for barcode in self._scanned_barcodes:
+                    fabric = next((rec for rec in self.data_processor.fabrics_inventory if str(rec.get('barcode')) == barcode), None)
+                    if fabric:
+                        total_weight += float(fabric.get('net_kg', 0))
+                        total_meters += float(fabric.get('meters', 0))
+                
+                # שמירת המשקל והמטרים לציור
+                if hasattr(self.data_processor, 'update_drawing_weight_and_meters'):
+                    self.data_processor.update_drawing_weight_and_meters(did, total_weight, total_meters)
+            except Exception:
+                pass
             try:
                 self._refresh_drawings_tree()
             except Exception:

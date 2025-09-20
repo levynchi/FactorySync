@@ -740,6 +740,18 @@ class DrawingsManagerTabMixin:
             base_txt += f"\nנמען (ספק): {record.get('נמען')}"
         if 'כמות שכבות משוערת' in record:
             base_txt += f"\nכמות שכבות משוערת: {record.get('כמות שכבות משוערת')}"
+        # הוספת תצוגת שכבות בפועל אם הציור נחתך
+        if 'שכבות' in record and record.get('status') == 'נחתך':
+            actual_layers = record.get('שכבות')
+            base_txt += f"\nשכבות בפועל (נחתך): {actual_layers}"
+        # הוספת תצוגת משקל ומטרים אם הציור נחתך
+        if record.get('status') == 'נחתך':
+            if 'משקל כולל' in record:
+                total_weight = record.get('משקל כולל')
+                base_txt += f"\nמשקל כולל נגזר: {total_weight:.2f} ק״ג"
+            if 'מטרים כוללים' in record:
+                total_meters = record.get('מטרים כוללים')
+                base_txt += f"\nמטרים כוללים נגזרו: {total_meters:.2f}"
         status_val = record.get('status','')
         base_txt += f"\nסטטוס: {status_val}"
         tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)

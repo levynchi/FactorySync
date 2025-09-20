@@ -612,6 +612,34 @@ class DataProcessor:
 			print(f"שגיאה בעדכון שכבות לציור: {e}")
 			return False
 
+	def update_drawing_weight_and_meters(self, drawing_id: int, total_weight: float, total_meters: float) -> bool:
+		"""עדכון משקל ומטרים לציור שנחתך. מחזיר True אם בוצע שינוי ונשמר."""
+		try:
+			if total_weight is None and total_meters is None:
+				return False
+			changed = False
+			for rec in self.drawings_data:
+				if rec.get('id') == drawing_id:
+					# עדכון משקל אם סופק
+					if total_weight is not None:
+						prev_weight = rec.get('משקל כולל')
+						if prev_weight != total_weight:
+							rec['משקל כולל'] = float(total_weight)
+							changed = True
+					# עדכון מטרים אם סופק
+					if total_meters is not None:
+						prev_meters = rec.get('מטרים כוללים')
+						if prev_meters != total_meters:
+							rec['מטרים כוללים'] = float(total_meters)
+							changed = True
+					break
+			if changed:
+				self.save_drawings_data()
+			return changed
+		except Exception as e:
+			print(f"שגיאה בעדכון משקל ומטרים לציור: {e}")
+			return False
+
 	# ===== Fabrics Inventory =====
 	def load_fabrics_inventory(self) -> List[Dict]:
 		"""טעינת מלאי בדים"""
