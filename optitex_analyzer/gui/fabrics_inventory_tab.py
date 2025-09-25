@@ -16,6 +16,7 @@ class FabricsInventoryTabMixin:
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
         inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
         unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
+        barcode_search_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(barcode_search_tab, text="חיפוש לפי ברקוד")
 
         # Filter bar for inventory
         filter_frame = tk.Frame(inventory_tab, bg='#ffffff'); filter_frame.pack(fill='x', padx=5, pady=(6,0))
@@ -108,6 +109,9 @@ class FabricsInventoryTabMixin:
         self.ub_tree.grid(row=0,column=0,sticky='nsew'); ub_vsb.grid(row=0,column=1,sticky='ns')
         ub_frame.grid_columnconfigure(0,weight=1); ub_frame.grid_rowconfigure(0,weight=1)
         self._populate_unbarcoded_table()
+
+        # Barcode search tab
+        self._build_barcode_search_tab(barcode_search_tab)
 
         # Footer summary
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
@@ -531,3 +535,158 @@ class FabricsInventoryTabMixin:
             pass
         if self.data_processor.delete_unbarcoded_fabric(rec_id):
             self._populate_unbarcoded_table()
+
+    def _build_barcode_search_tab(self, container):
+        """בניית טאב חיפוש לפי ברקוד"""
+        # כותרת
+        tk.Label(container, text="חיפוש לפי ברקוד", font=('Arial', 14, 'bold'), bg='#ffffff').pack(pady=10)
+        
+        # שדה סריקת ברקוד
+        barcode_frame = tk.Frame(container, bg='#ffffff')
+        barcode_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Label(barcode_frame, text="ברקוד:", font=('Arial', 12, 'bold'), bg='#ffffff').pack(side='right', padx=(0, 8))
+        self.barcode_search_var = tk.StringVar()
+        barcode_entry = tk.Entry(barcode_frame, textvariable=self.barcode_search_var, font=('Consolas', 12), width=25)
+        barcode_entry.pack(side='right', padx=(0, 8))
+        barcode_entry.bind('<Return>', self._add_barcode_to_search)
+        
+        tk.Button(barcode_frame, text="➕ הוסף", command=self._add_barcode_to_search, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=8)
+        tk.Button(barcode_frame, text="🗑️ מחק נבחר", command=self._remove_selected_barcode, bg='#e67e22', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(barcode_frame, text="🧹 נקה הכל", command=self._clear_all_barcodes, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+        
+        # טבלת ברקודים שנסרקו
+        table_frame = tk.Frame(container, bg='#ffffff')
+        table_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        cols = ('barcode', 'fabric_type', 'color_name', 'color_no', 'design_code', 'width', 'net_kg', 'meters', 'price', 'location', 'status')
+        self.barcode_search_tree = ttk.Treeview(table_frame, columns=cols, show='headings', height=15)
+        
+        headers = {
+            'barcode': 'ברקוד', 'fabric_type': 'סוג בד', 'color_name': 'צבע', 'color_no': 'מס׳ צבע',
+            'design_code': 'Desen', 'width': 'רוחב', 'net_kg': 'ק"ג נטו', 'meters': 'מטרים',
+            'price': 'מחיר', 'location': 'מיקום', 'status': 'סטטוס'
+        }
+        
+        widths = {
+            'barcode': 120, 'fabric_type': 130, 'color_name': 100, 'color_no': 70,
+            'design_code': 100, 'width': 60, 'net_kg': 70, 'meters': 70,
+            'price': 70, 'location': 80, 'status': 80
+        }
+        
+        for c in cols:
+            self.barcode_search_tree.heading(c, text=headers[c])
+            self.barcode_search_tree.column(c, width=widths[c], anchor='center')
+        
+        # סרגל גלילה
+        search_vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.barcode_search_tree.yview)
+        self.barcode_search_tree.configure(yscroll=search_vsb.set)
+        self.barcode_search_tree.grid(row=0, column=0, sticky='nsew')
+        search_vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+        
+        # תחשיב כולל
+        summary_frame = tk.Frame(container, bg='#2c3e50', relief='raised', bd=2)
+        summary_frame.pack(fill='x', padx=20, pady=(10, 20))
+        
+        self.barcode_search_summary_var = tk.StringVar(value="אין ברקודים נסרקו")
+        tk.Label(summary_frame, textvariable=self.barcode_search_summary_var, bg='#2c3e50', fg='white', 
+                font=('Arial', 12, 'bold'), padx=15, pady=8).pack()
+        
+        # אתחול רשימת ברקודים
+        self._scanned_barcodes_list = []
+
+    def _add_barcode_to_search(self, event=None):
+        """הוספת ברקוד לחיפוש"""
+        barcode = self.barcode_search_var.get().strip()
+        if not barcode:
+            return
+        
+        # בדיקה אם הברקוד כבר קיים
+        if barcode in self._scanned_barcodes_list:
+            messagebox.showinfo("כפילות", f"הברקוד {barcode} כבר נסרק")
+            self.barcode_search_var.set("")
+            return
+        
+        # חיפוש הברקוד במלאי
+        fabric = None
+        for item in self.data_processor.fabrics_inventory:
+            if str(item.get('barcode', '')).strip() == barcode:
+                fabric = item
+                break
+        
+        if not fabric:
+            messagebox.showerror("ברקוד לא נמצא", f"הברקוד {barcode} לא נמצא במלאי")
+            self.barcode_search_var.set("")
+            return
+        
+        # הוספה לרשימה ולטבלה
+        self._scanned_barcodes_list.append(barcode)
+        
+        values = (
+            fabric.get('barcode', ''),
+            fabric.get('fabric_type', ''),
+            fabric.get('color_name', ''),
+            fabric.get('color_no', ''),
+            fabric.get('design_code', ''),
+            fabric.get('width', ''),
+            f"{fabric.get('net_kg', 0):.2f}",
+            f"{fabric.get('meters', 0):.2f}",
+            f"{fabric.get('price', 0):.2f}",
+            fabric.get('location', ''),
+            fabric.get('status', 'במלאי')
+        )
+        
+        self.barcode_search_tree.insert('', 'end', values=values)
+        self.barcode_search_var.set("")
+        self._update_barcode_search_summary()
+
+    def _remove_selected_barcode(self):
+        """מחיקת ברקוד נבחר"""
+        selected = self.barcode_search_tree.selection()
+        if not selected:
+            return
+        
+        for item in selected:
+            values = self.barcode_search_tree.item(item, 'values')
+            if values:
+                barcode = values[0]
+                if barcode in self._scanned_barcodes_list:
+                    self._scanned_barcodes_list.remove(barcode)
+            self.barcode_search_tree.delete(item)
+        
+        self._update_barcode_search_summary()
+
+    def _clear_all_barcodes(self):
+        """ניקוי כל הברקודים"""
+        self._scanned_barcodes_list.clear()
+        for item in self.barcode_search_tree.get_children():
+            self.barcode_search_tree.delete(item)
+        self._update_barcode_search_summary()
+
+    def _update_barcode_search_summary(self):
+        """עדכון תחשיב כולל"""
+        if not self._scanned_barcodes_list:
+            self.barcode_search_summary_var.set("אין ברקודים נסרקו")
+            return
+        
+        total_weight = 0.0
+        total_meters = 0.0
+        cut_count = 0
+        
+        for barcode in self._scanned_barcodes_list:
+            fabric = next((item for item in self.data_processor.fabrics_inventory 
+                          if str(item.get('barcode', '')).strip() == barcode), None)
+            if fabric:
+                total_weight += float(fabric.get('net_kg', 0))
+                total_meters += float(fabric.get('meters', 0))
+                if fabric.get('status', '') == 'נגזר':
+                    cut_count += 1
+        
+        summary_text = f"סה\"כ: {len(self._scanned_barcodes_list)} ברקודים | "
+        summary_text += f"משקל: {total_weight:.2f} ק\"ג | "
+        summary_text += f"מטרים: {total_meters:.2f} | "
+        summary_text += f"נגזרו: {cut_count} ברקודים"
+        
+        self.barcode_search_summary_var.set(summary_text)
