@@ -658,6 +658,34 @@ class DrawingsManagerTabMixin:
                     else:
                         cell.font = base_font
                         cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # הוספת טבלת ברקודים מתחת לטבלה הראשית
+            last_data_row = ws.max_row
+            barcode_start_row = last_data_row + 3  # רווח של שורתיים
+            
+            # המשפט מעל הטבלה
+            ws.cell(row=barcode_start_row, column=1, value="רשום את מספרי הברקודים ושדך לדף")
+            barcode_title_cell = ws.cell(row=barcode_start_row, column=1)
+            barcode_title_cell.font = Font(bold=True, size=16)
+            barcode_title_cell.alignment = Alignment(horizontal='center', vertical='center')
+            
+            # מיזוג התא לרוחב שתי עמודות
+            ws.merge_cells(start_row=barcode_start_row, start_column=1, end_row=barcode_start_row, end_column=2)
+            
+            # יצירת 10 שורות עם גבולות שחורים בעמודות A ו-B
+            thick_border = Border(
+                left=Side(border_style='thin', color='000000'),
+                right=Side(border_style='thin', color='000000'),
+                top=Side(border_style='thin', color='000000'),
+                bottom=Side(border_style='thin', color='000000')
+            )
+            
+            for row_num in range(barcode_start_row + 1, barcode_start_row + 11):  # 10 שורות
+                for col_num in [1, 2]:  # עמודות A ו-B
+                    cell = ws.cell(row=row_num, column=col_num, value="")
+                    cell.border = thick_border
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+            
             wb.save(tmp_path)
             # Open with Excel
             try:
