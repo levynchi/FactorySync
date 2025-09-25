@@ -89,7 +89,6 @@ class DrawingsManagerTabMixin:
         tk.Button(left, text="🔄 רענן", command=self._refresh_drawings_tree, bg='#3498db', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='left', padx=4)
         tk.Button(left, text="📊 ייצא לאקסל", command=self._export_drawings_to_excel_tab, bg='#27ae60', fg='white', font=('Arial', 10, 'bold'), width=12).pack(side='left', padx=4)
         right = tk.Frame(actions, bg='#f7f9fa'); right.pack(side='right')
-        tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='right', padx=4)
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='right', padx=4)
 
         # מערכת סינון
@@ -843,18 +842,6 @@ class DrawingsManagerTabMixin:
         else:
             messagebox.showerror("שגיאה", "המחיקה נכשלה")
 
-    def _clear_all_drawings_tab(self):
-        if not self.data_processor.drawings_data:
-            messagebox.showinfo("מידע", "אין ציורים למחיקה"); return
-        if not messagebox.askyesno("אישור מחיקה", f"למחוק את כל {len(self.data_processor.drawings_data)} הציורים? הפעולה לא ניתנת לשחזור"): return
-        cleared = False
-        if hasattr(self.data_processor, 'clear_all_drawings'):
-            try: cleared = self.data_processor.clear_all_drawings()
-            except Exception: cleared = False
-        if cleared:
-            self._refresh_drawings_tree(); messagebox.showinfo("הצלחה", "כל הציורים נמחקו")
-        else:
-            messagebox.showerror("שגיאה", "מחיקה נכשלה")
 
     def _export_drawings_to_excel_tab(self):
         if not self.data_processor.drawings_data:
