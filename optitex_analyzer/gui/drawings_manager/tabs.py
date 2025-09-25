@@ -92,6 +92,29 @@ class DrawingsManagerTabMixin:
         tk.Button(right, text="🗑️ מחק הכל", command=self._clear_all_drawings_tab, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='right', padx=4)
         tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='right', padx=4)
 
+        # מערכת סינון
+        filter_frame = tk.Frame(table_page, bg='#f7f9fa')
+        filter_frame.pack(fill='x', padx=12, pady=(0, 8))
+        
+        tk.Label(filter_frame, text="סינון:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='left', padx=(0, 8))
+        
+        # סינון לפי ספק
+        tk.Label(filter_frame, text="ספק:", font=('Arial', 9), bg='#f7f9fa').pack(side='left', padx=(0, 4))
+        self.drawings_supplier_filter_var = tk.StringVar()
+        self.drawings_supplier_filter_cb = ttk.Combobox(filter_frame, textvariable=self.drawings_supplier_filter_var, width=20, state='readonly')
+        self.drawings_supplier_filter_cb.pack(side='left', padx=(0, 8))
+        self.drawings_supplier_filter_cb.bind('<<ComboboxSelected>>', self._apply_drawings_filters)
+        
+        # סינון לפי סטטוס
+        tk.Label(filter_frame, text="סטטוס:", font=('Arial', 9), bg='#f7f9fa').pack(side='left', padx=(0, 4))
+        self.drawings_status_filter_var = tk.StringVar()
+        self.drawings_status_filter_cb = ttk.Combobox(filter_frame, textvariable=self.drawings_status_filter_var, width=15, state='readonly')
+        self.drawings_status_filter_cb.pack(side='left', padx=(0, 8))
+        self.drawings_status_filter_cb.bind('<<ComboboxSelected>>', self._apply_drawings_filters)
+        
+        # כפתור נקה סינון
+        tk.Button(filter_frame, text="🗑️ נקה סינון", command=self._clear_drawings_filters, bg='#95a5a6', fg='white', font=('Arial', 9)).pack(side='left', padx=8)
+
         table_frame = tk.Frame(table_page, bg='#ffffff')
         table_frame.pack(fill='both', expand=True, padx=12, pady=8)
         cols = ("id", "file_name", "created_at", "products", "total_quantity", "estimated_layers", "products_details", "sent_to_supplier", "status", "excel")
@@ -115,6 +138,9 @@ class DrawingsManagerTabMixin:
             self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
         self.drawings_stats_var = tk.StringVar(value="אין נתונים")
         tk.Label(table_page, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial', 10)).pack(fill='x', side='bottom')
+        
+        # אתחול רשימות הסינון
+        self._refresh_drawings_filter_options()
 
         # Build converter content inside second inner tab if available
         try:
@@ -383,7 +409,10 @@ class DrawingsManagerTabMixin:
         if hasattr(self.data_processor, 'refresh_drawings_data'):
             try: self.data_processor.refresh_drawings_data()
             except Exception: pass
-        self._populate_drawings_tree(); self._update_drawings_stats()
+        # עדכון רשימות הסינון
+        self._refresh_drawings_filter_options()
+        # החלת הסינון הנוכחי או הצגת הכל
+        self._apply_drawings_filters()
 
     def _on_drawings_double_click(self, event):
         item_id = self.drawings_tree.focus();
@@ -837,3 +866,113 @@ class DrawingsManagerTabMixin:
             messagebox.showinfo("הצלחה", f"הציורים יוצאו אל:\n{file_path}")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
+
+    def _refresh_drawings_filter_options(self):
+        """רענון רשימות הסינון"""
+        try:
+            # רשימת ספקים
+            suppliers = set()
+            for record in self.data_processor.drawings_data:
+                supplier = record.get('נמען', '').strip()
+                if supplier:
+                    suppliers.add(supplier)
+            
+            supplier_list = ['הכל'] + sorted(list(suppliers))
+            self.drawings_supplier_filter_cb['values'] = supplier_list
+            self.drawings_supplier_filter_var.set('הכל')
+            
+            # רשימת סטטוסים
+            status_list = ['הכל', 'טרם נשלח', 'נשלח', 'הוחזר', 'נחתך']
+            self.drawings_status_filter_cb['values'] = status_list
+            self.drawings_status_filter_var.set('הכל')
+        except Exception:
+            pass
+
+    def _apply_drawings_filters(self, event=None):
+        """החלת סינון על טבלת הציורים"""
+        try:
+            supplier_filter = self.drawings_supplier_filter_var.get()
+            status_filter = self.drawings_status_filter_var.get()
+            
+            # ניקוי הטבלה
+            for item in self.drawings_tree.get_children():
+                self.drawings_tree.delete(item)
+            
+            # הוספת רשומות מסוננות
+            filtered_count = 0
+            for record in self.data_processor.drawings_data:
+                # סינון לפי ספק
+                if supplier_filter != 'הכל':
+                    record_supplier = record.get('נמען', '').strip()
+                    if record_supplier != supplier_filter:
+                        continue
+                
+                # סינון לפי סטטוס
+                if status_filter != 'הכל':
+                    record_status = record.get('status', '').strip()
+                    if record_status != status_filter:
+                        continue
+                
+                # הוספה לטבלה
+                products_count = len(record.get('מוצרים', []))
+                total_quantity = record.get('סך כמויות', 0)
+                
+                # הצגת תאריך ללא שעת יצירה
+                created_raw = record.get('תאריך יצירה','')
+                created_date_only = created_raw.split()[0] if isinstance(created_raw, str) and created_raw else created_raw
+                
+                sent_flag = record.get('נשלח לספק')
+                supplier_name = (record.get('נמען') or '').strip()
+                if supplier_name:
+                    sent_display = supplier_name
+                else:
+                    sent_display = 'כן' if sent_flag is True else ('לא' if sent_flag is False else '')
+                
+                estimated_layers = record.get('כמות שכבות משוערת', '—')
+                products_details = self._format_products_details(record.get('מוצרים', []))
+                
+                self.drawings_tree.insert('', 'end', values=(
+                    record.get('id',''),
+                    record.get('שם הקובץ',''),
+                    created_date_only,
+                    products_count,
+                    f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
+                    estimated_layers,
+                    products_details,
+                    sent_display,
+                    record.get('status','נשלח'),
+                    "📄"
+                ))
+                filtered_count += 1
+            
+            # עדכון סטטיסטיקות
+            self._update_drawings_stats_filtered(filtered_count, supplier_filter, status_filter)
+        except Exception:
+            pass
+
+    def _clear_drawings_filters(self):
+        """ניקוי כל הסינונים"""
+        try:
+            self.drawings_supplier_filter_var.set('הכל')
+            self.drawings_status_filter_var.set('הכל')
+            self._refresh_drawings_tree()
+        except Exception:
+            pass
+
+    def _update_drawings_stats_filtered(self, filtered_count, supplier_filter, status_filter):
+        """עדכון סטטיסטיקות עם מידע על הסינון"""
+        try:
+            total_drawings = len(self.data_processor.drawings_data)
+            total_quantity = sum(r.get('סך כמויות', 0) for r in self.data_processor.drawings_data)
+            
+            filter_info = ""
+            if supplier_filter != 'הכל' or status_filter != 'הכל':
+                filter_info = f" | מסונן: {filtered_count} ציורים"
+                if supplier_filter != 'הכל':
+                    filter_info += f" (ספק: {supplier_filter})"
+                if status_filter != 'הכל':
+                    filter_info += f" (סטטוס: {status_filter})"
+            
+            self.drawings_stats_var.set(f"סך הכל: {total_drawings} ציורים | סך כמויות: {total_quantity:.1f}{filter_info}")
+        except Exception:
+            pass
