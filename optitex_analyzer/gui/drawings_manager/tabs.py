@@ -768,6 +768,13 @@ class DrawingsManagerTabMixin:
             base_txt += f"\nנמען (ספק): {record.get('נמען')}"
         if 'כמות שכבות משוערת' in record:
             base_txt += f"\nכמות שכבות משוערת: {record.get('כמות שכבות משוערת')}"
+        # הוספת תצוגת מידות הציור אם קיימות
+        if 'רוחב ציור' in record:
+            marker_width = record.get('רוחב ציור')
+            base_txt += f"\nרוחב ציור: {marker_width:.2f} ס״ם"
+        if 'אורך ציור' in record:
+            marker_length = record.get('אורך ציור')
+            base_txt += f"\nאורך ציור: {marker_length:.2f} ס״ם"
         # הוספת תצוגת שכבות בפועל אם הציור נחתך
         if 'שכבות' in record and record.get('status') == 'נחתך':
             actual_layers = record.get('שכבות')
