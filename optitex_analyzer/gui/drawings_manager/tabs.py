@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
+import json
+import os
+from datetime import datetime
 
 # סימן כיווניות RTL לטקסט עברי (Right-To-Left Mark)
 RLM = '\u200f'
@@ -76,7 +79,7 @@ class DrawingsManagerTabMixin:
         inner_nb.add(table_page, text="טבלת ציורים")
         inner_nb.add(converter_page, text="ממיר קבצים")
         inner_nb.add(product_map_page, text="מיפוי מוצרים")
-        inner_nb.add(area_calc_page, text="שטח כולל לדגם מידה")
+        inner_nb.add(area_calc_page, text="שטח רבוע לדגם מידה")
         # Embed cut drawings (returned drawings) tab if builder exists
         try:
             if hasattr(self, '_build_returned_drawings_content'):
@@ -1021,15 +1024,14 @@ class DrawingsManagerTabMixin:
         wrapper.pack(fill='both', expand=True, padx=10, pady=8)
         
         # כותרת
-        tk.Label(wrapper, text="חישוב שטח כולל לדגם מידה", font=('Arial', 14, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(0, 15))
+        tk.Label(wrapper, text="שטח רבוע לדגם מידה", font=('Arial', 14, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(0, 15))
         
         # מסגרת הזנת נתונים
         input_frame = ttk.LabelFrame(wrapper, text="הזנת נתונים", padding=15)
         input_frame.pack(fill='x', pady=(0, 15))
         
-        # אתחול משתנים
-        if not hasattr(self, '_area_calc_data'):
-            self._area_calc_data = []
+        # אתחול משתנים וטעינת נתונים
+        self._load_area_data_from_file()
         
         # שם דגם - נבחר מקטלוג המוצרים
         tk.Label(input_frame, text="שם הדגם:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=8)
@@ -1062,31 +1064,29 @@ class DrawingsManagerTabMixin:
         
         tk.Button(buttons_frame, text="➕ הוסף", command=self._add_area_calculation_entry,
                  bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
-        tk.Button(buttons_frame, text="🧮 חשב שטח כולל", command=self._calculate_total_area,
+        tk.Button(buttons_frame, text="🧮 חשב שטח רבוע", command=self._calculate_total_area,
                  bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
         tk.Button(buttons_frame, text="🗑️ נקה הכל", command=self._clear_area_calculations,
                  bg='#e74c3c', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
         
         # טבלת נתונים
-        table_frame = ttk.LabelFrame(wrapper, text="רשימת חישובים", padding=10)
+        table_frame = ttk.LabelFrame(wrapper, text="רשימת מ\"ר", padding=10)
         table_frame.pack(fill='both', expand=True, pady=(0, 15))
         
         # יצירת הטבלה
-        cols = ('product_name', 'size', 'sqm_per_piece', 'total_area')
+        cols = ('product_name', 'size', 'total_area')
         self.area_calc_tree = ttk.Treeview(table_frame, columns=cols, show='headings', height=12)
         
         headers = {
             'product_name': 'שם דגם',
             'size': 'מידה', 
-            'sqm_per_piece': 'מ"ר לחתיכה',
-            'total_area': 'שטח כולל'
+            'total_area': 'שטח רבוע'
         }
         
         widths = {
-            'product_name': 200,
-            'size': 100,
-            'sqm_per_piece': 150,
-            'total_area': 150
+            'product_name': 250,
+            'size': 150,
+            'total_area': 200
         }
         
         for col in cols:
@@ -1105,12 +1105,8 @@ class DrawingsManagerTabMixin:
         tk.Button(table_frame, text="❌ מחק שורה נבחרת", command=self._delete_selected_area_row,
                  bg='#e67e22', fg='white', font=('Arial', 9)).grid(row=1, column=0, pady=5, sticky='w')
         
-        # תצוגת תוצאה
-        self.area_result_var = tk.StringVar(value="סה\"כ שטח: 0.00 מ\"ר")
-        result_label = tk.Label(wrapper, textvariable=self.area_result_var, 
-                              font=('Arial', 12, 'bold'), bg='#34495e', fg='white', 
-                              padx=10, pady=8, relief='sunken')
-        result_label.pack(fill='x', pady=(0, 5))
+        # טעינת הנתונים השמורים לטבלה
+        self._populate_area_data_from_storage()
 
     def _get_unique_product_names_from_catalog(self):
         """קבלת רשימת שמות דגמים ייחודיים מקטלוג המוצרים"""
@@ -1182,9 +1178,11 @@ class DrawingsManagerTabMixin:
             self.area_calc_tree.insert('', 'end', values=(
                 product_name,
                 size,
-                f"{sqm_per_piece:.6f}",
-                "יחושב אוטומטית"
+                f"{sqm_per_piece:.6f}"
             ))
+            
+            # שמירת הנתונים
+            self._save_area_data_entry(product_name, size, sqm_per_piece)
             
             # איפוס השדות
             self.area_product_name_var.set('')
@@ -1210,7 +1208,11 @@ class DrawingsManagerTabMixin:
                 values = list(self.area_calc_tree.item(item, 'values'))
                 product_name = values[0]
                 size = values[1]
-                sqm_per_piece = float(values[2])
+                
+                # קבלת מ"ר לחתיכה מהמאגר
+                sqm_per_piece = self._get_area_data_entry(product_name, size)
+                if sqm_per_piece is None:
+                    continue
                 
                 # חיפוש כמות בכל הציורים
                 total_quantity = 0
@@ -1221,29 +1223,38 @@ class DrawingsManagerTabMixin:
                                 if size_info.get('מידה', '') == size:
                                     total_quantity += size_info.get('כמות', 0)
                 
-                # חישוב שטח עבור המוצר הזה
+                # חישוב שטח עבור המוצר הזה - רק להצגת הודעת מידע
                 product_area = total_quantity * sqm_per_piece
-                total_area += product_area
                 
-                # עדכון השטח בטבלה
-                values[3] = f"{product_area:.3f} מ\"ר ({total_quantity} יח')"
-                self.area_calc_tree.item(item, values=values)
-            
-            # עדכון התוצאה הכללית
-            self.area_result_var.set(f"סה\"כ שטח: {total_area:.3f} מ\"ר")
+                # כעת לא משנים את הערך בטבלה, רק שומרים את מ"ר המקורי
             
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
 
     def _delete_selected_area_row(self):
-        """מחיקת השורה הנבחרת מהטבלה"""
+        """מחיקת השורה הנבחרת מהטבלה ומהמאגר"""
         try:
             selected = self.area_calc_tree.selection()
             if not selected:
                 messagebox.showwarning("אזהרה", "יש לבחור שורה למחיקה")
                 return
             
+            # קבלת הנתונים של השורה הנבחרת
+            values = self.area_calc_tree.item(selected[0], 'values')
+            product_name = values[0]
+            size = values[1]
+            
+            # מחיקה מהמאגר
+            if hasattr(self.data_processor, 'area_data'):
+                self.data_processor.area_data = [
+                    entry for entry in self.data_processor.area_data 
+                    if not (entry.get('product_name') == product_name and entry.get('size') == size)
+                ]
+                self._save_area_data_to_file()
+            
+            # מחיקה מהטבלה
             self.area_calc_tree.delete(selected[0])
+            
             # עדכון התוצאה
             self._calculate_total_area()
             
@@ -1251,12 +1262,105 @@ class DrawingsManagerTabMixin:
             messagebox.showerror("שגיאה", f"שגיאה במחיקת שורה: {str(e)}")
 
     def _clear_area_calculations(self):
-        """ניקוי כל החישובים"""
+        """ניקוי כל החישובים מהטבלה ומהמאגר"""
         try:
             if messagebox.askyesno("אישור", "האם אתה בטוח שברצונך למחוק את כל החישובים?"):
+                # ניקוי המאגר
+                if hasattr(self.data_processor, 'area_data'):
+                    self.data_processor.area_data = []
+                    self._save_area_data_to_file()
+                
+                # ניקוי הטבלה
                 for item in self.area_calc_tree.get_children():
                     self.area_calc_tree.delete(item)
-                self.area_result_var.set("סה\"כ שטח: 0.00 מ\"ר")
                 
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בניקוי: {str(e)}")
+
+    def _save_area_data_entry(self, product_name: str, size: str, sqm_per_piece: float):
+        """שמירת רשומת מ"ר לדגם/מידה במאגר הנתונים"""
+        try:
+            # קבלת רשימת הנתונים הקיימת או יצירת חדשה
+            if not hasattr(self.data_processor, 'area_data'):
+                self.data_processor.area_data = []
+            
+            # בדיקה אם כבר קיימת רשומה
+            for entry in self.data_processor.area_data:
+                if entry.get('product_name') == product_name and entry.get('size') == size:
+                    entry['sqm_per_piece'] = sqm_per_piece
+                    entry['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    self._save_area_data_to_file()
+                    return
+            
+            # הוספת רשומה חדשה
+            new_entry = {
+                'product_name': product_name,
+                'size': size,
+                'sqm_per_piece': sqm_per_piece,
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.data_processor.area_data.append(new_entry)
+            self._save_area_data_to_file()
+            
+        except Exception as e:
+            print(f"שגיאה בשמירת נתוני שטח: {e}")
+
+    def _get_area_data_entry(self, product_name: str, size: str) -> float | None:
+        """קבלת מ"ר לחתיכה עבור דגם/מידה מהמאגר"""
+        try:
+            if not hasattr(self.data_processor, 'area_data'):
+                return None
+            
+            for entry in self.data_processor.area_data:
+                if entry.get('product_name') == product_name and entry.get('size') == size:
+                    return float(entry.get('sqm_per_piece', 0))
+            return None
+        except Exception:
+            return None
+
+    def _save_area_data_to_file(self):
+        """שמירת נתוני השטח לקובץ"""
+        try:
+            area_data_file = os.path.join(os.getcwd(), 'area_data.json')
+            with open(area_data_file, 'w', encoding='utf-8') as f:
+                json.dump(self.data_processor.area_data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"שגיאה בשמירת קובץ נתוני שטח: {e}")
+
+    def _load_area_data_from_file(self):
+        """טעינת נתוני השטח מהקובץ"""
+        try:
+            area_data_file = os.path.join(os.getcwd(), 'area_data.json')
+            if os.path.exists(area_data_file):
+                with open(area_data_file, 'r', encoding='utf-8') as f:
+                    self.data_processor.area_data = json.load(f)
+            else:
+                self.data_processor.area_data = []
+        except Exception as e:
+            print(f"שגיאה בטעינת נתוני שטח: {e}")
+            self.data_processor.area_data = []
+
+    def _populate_area_data_from_storage(self):
+        """מילוי הטבלה מהנתונים השמורים"""
+        try:
+            if not hasattr(self.data_processor, 'area_data'):
+                return
+            
+            # ניקוי הטבלה הנוכחית
+            for item in self.area_calc_tree.get_children():
+                self.area_calc_tree.delete(item)
+            
+            # הוספת הנתונים השמורים
+            for entry in self.data_processor.area_data:
+                product_name = entry.get('product_name', '')
+                size = entry.get('size', '')
+                sqm_per_piece = entry.get('sqm_per_piece', 0)
+                if product_name and size:
+                    self.area_calc_tree.insert('', 'end', values=(
+                        product_name,
+                        size,
+                        f"{sqm_per_piece:.6f}"
+                    ))
+        except Exception as e:
+            print(f"שגיאה במילוי טבלת שטח: {e}")

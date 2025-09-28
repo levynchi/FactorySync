@@ -258,5 +258,27 @@
     "meters": 54.36,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "created_at": "2025-09-25 13:38:01"
+  },
+  {
+    "id": 9,
+    "date": "2025-09-28",
+    "barcodes": [
+      "0"
+    ],
+    "count_barcodes": 1,
+    "packages": [
+      {
+        "package_type": "בד",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "fabric_type": "INTERLOCK",
+    "color_name": "אפור",
+    "color_no": "",
+    "net_kg": 23.4,
+    "meters": 50.0,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2025-09-28 12:20:17"
   }
 ]
