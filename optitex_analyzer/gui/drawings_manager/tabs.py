@@ -815,6 +815,13 @@ class DrawingsManagerTabMixin:
             if 'מטרים כוללים' in record:
                 total_meters = record.get('מטרים כוללים')
                 base_txt += f"\nמטרים כוללים נגזרו: {total_meters:.2f}"
+            # חישוב משקל לכל שכבה
+            if 'משקל כולל' in record and 'שכבות' in record:
+                total_weight = record.get('משקל כולל')
+                layers = record.get('שכבות')
+                if layers is not None and layers > 0:
+                    weight_per_layer = total_weight / layers
+                    base_txt += f"\nמשקל לכל שכבה: {weight_per_layer:.2f} ק״ג"
         status_val = record.get('status','')
         base_txt += f"\nסטטוס: {status_val}"
         tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)

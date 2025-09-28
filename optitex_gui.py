@@ -1044,6 +1044,25 @@ class OptitexAnalyzerGUI:
         tk.Label(info_frame, text=f"תאריך יצירה: {record.get('תאריך יצירה', '')}", bg='#f0f0f0').pack(anchor="w")
         tk.Label(info_frame, text=f"סך כמויות: {record.get('סך כמויות', 0)}", bg='#f0f0f0').pack(anchor="w")
         
+        # הצגת משקל ומטרים כוללים אם קיימים
+        total_weight = record.get('משקל כולל')
+        total_meters = record.get('מטרים כוללים')
+        layers = record.get('שכבות')
+        
+        if total_weight is not None:
+            tk.Label(info_frame, text=f"משקל כולל: {total_weight:.2f} ק״ג", bg='#f0f0f0', font=('Arial', 10, 'bold'), fg='#2980b9').pack(anchor="w")
+        
+        if total_meters is not None:
+            tk.Label(info_frame, text=f"מטרים כוללים: {total_meters:.2f} מ'", bg='#f0f0f0', font=('Arial', 10, 'bold'), fg='#2980b9').pack(anchor="w")
+        
+        if layers is not None:
+            tk.Label(info_frame, text=f"מספר שכבות: {layers}", bg='#f0f0f0', font=('Arial', 10, 'bold'), fg='#8e44ad').pack(anchor="w")
+        
+        # חישוב משקל לכל שכבה
+        if total_weight is not None and layers is not None and layers > 0:
+            weight_per_layer = total_weight / layers
+            tk.Label(info_frame, text=f"משקל לכל שכבה: {weight_per_layer:.2f} ק״ג", bg='#f0f0f0', font=('Arial', 12, 'bold'), fg='#e74c3c').pack(anchor="w", pady=(5, 0))
+        
         # טבלת מוצרים
         tk.Label(details_window, text="פירוט מוצרים:", font=('Arial', 12, 'bold'), bg='#f0f0f0').pack(anchor="w", padx=20, pady=(10, 5))
         
