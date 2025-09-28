@@ -1713,25 +1713,48 @@ class DeliveryNoteMethodsMixin:
         except Exception:
             inv_map = {}
         for bc in rec.get('barcodes', []) or []:
-            r = inv_map.get(str(bc).strip()) or {}
-            color = (r.get('color_name','') or '')
-            if r.get('color_no'):
-                color = f"{color} {r.get('color_no')}".strip()
-            try:
-                nk = f"{float(r.get('net_kg',0)):.2f}"
-            except Exception:
-                nk = r.get('net_kg',0)
-            try:
-                mt = f"{float(r.get('meters',0)):.2f}"
-            except Exception:
-                mt = r.get('meters',0)
-            tree2.insert('', 'end', values=(
-                bc,
-                r.get('fabric_type',''),
-                color,
-                nk,
-                mt
-            ))
+            # Handle manual fabrics (barcode "0") differently
+            if str(bc).strip() == "0":
+                # For manual fabrics, show data from the shipment record itself
+                color = rec.get('color_name', '')
+                if rec.get('color_no'):
+                    color = f"{color} {rec.get('color_no')}".strip()
+                try:
+                    nk = f"{float(rec.get('net_kg',0)):.2f}"
+                except Exception:
+                    nk = rec.get('net_kg',0)
+                try:
+                    mt = f"{float(rec.get('meters',0)):.2f}"
+                except Exception:
+                    mt = rec.get('meters',0)
+                tree2.insert('', 'end', values=(
+                    "בד ידני",
+                    rec.get('fabric_type',''),
+                    color,
+                    nk,
+                    mt
+                ))
+            else:
+                # For regular barcoded fabrics, look up in inventory
+                r = inv_map.get(str(bc).strip()) or {}
+                color = (r.get('color_name','') or '')
+                if r.get('color_no'):
+                    color = f"{color} {r.get('color_no')}".strip()
+                try:
+                    nk = f"{float(r.get('net_kg',0)):.2f}"
+                except Exception:
+                    nk = r.get('net_kg',0)
+                try:
+                    mt = f"{float(r.get('meters',0)):.2f}"
+                except Exception:
+                    mt = r.get('meters',0)
+                tree2.insert('', 'end', values=(
+                    bc,
+                    r.get('fabric_type',''),
+                    color,
+                    nk,
+                    mt
+                ))
         btns = tk.Frame(win)
         btns.pack(fill='x', pady=6)
         # Export to Excel (similar to delivery notes view)
@@ -1823,7 +1846,20 @@ class DeliveryNoteMethodsMixin:
                     inv_map = {}
                 total_kg = 0.0; total_m = 0.0
                 for bc in rec.get('barcodes', []) or []:
-                    r = inv_map.get(str(bc).strip()) or {}
+                    # Handle manual fabrics (barcode "0") differently for Excel export too
+                    if str(bc).strip() == "0":
+                        # For manual fabrics, use data from shipment record
+                        r = {
+                            'fabric_type': rec.get('fabric_type', ''),
+                            'color_name': rec.get('color_name', ''),
+                            'color_no': rec.get('color_no', ''),
+                            'net_kg': rec.get('net_kg', 0),
+                            'meters': rec.get('meters', 0)
+                        }
+                        display_barcode = "בד ידני"
+                    else:
+                        r = inv_map.get(str(bc).strip()) or {}
+                        display_barcode = bc
                     color = (r.get('color_name','') or '')
                     if r.get('color_no'):
                         color = f"{color} {r.get('color_no')}".strip()
@@ -1836,7 +1872,7 @@ class DeliveryNoteMethodsMixin:
                     except Exception:
                         mt = 0.0
                     total_kg += nk; total_m += mt
-                    ws.append([bc, r.get('fabric_type',''), color, nk, mt])
+                    ws.append([display_barcode, r.get('fabric_type',''), color, nk, mt])
                 # Totals row
                 ws.append([None, None, 'סה"כ', total_kg, total_m])
                 total_row = ws.max_row
