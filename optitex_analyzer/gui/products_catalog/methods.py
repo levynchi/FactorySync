@@ -11,7 +11,7 @@ class ProductsCatalogMethodsMixin:
         form.pack(fill='x', padx=10, pady=6)
         self.prod_name_var = tk.StringVar(); self.prod_size_var = tk.StringVar(); self.prod_fabric_type_var = tk.StringVar(); self.prod_fabric_color_var = tk.StringVar(); self.prod_print_name_var = tk.StringVar()
         self.prod_category_var = tk.StringVar(); self.prod_ticks_var = tk.StringVar(); self.prod_elastic_var = tk.StringVar(); self.prod_ribbon_var = tk.StringVar(); self.prod_unit_type_var = tk.StringVar()
-        self.prod_fabric_category_var = tk.StringVar(); self.prod_main_category_var = tk.StringVar()
+        self.prod_fabric_category_var = tk.StringVar(); self.prod_main_category_var = tk.StringVar(); self.prod_square_area_var = tk.StringVar()
 
         # --- Main Category selector (drives field visibility) ---
         self._products_field_widgets = {}
@@ -126,17 +126,21 @@ class ProductsCatalogMethodsMixin:
         # Unit Type (סוג יחידה)
         tk.Label(form, text="סוג יחידה:", font=('Arial',10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_unit_type_var, width=12).grid(row=6, column=7, sticky='w', padx=2, pady=4)
+        
+        # Square Area (שטח רבוע)
+        tk.Label(form, text="שטח רבוע:", font=('Arial',10,'bold')).grid(row=7, column=0, sticky='w', padx=4, pady=4)
+        tk.Entry(form, textvariable=self.prod_square_area_var, width=12).grid(row=7, column=1, sticky='w', padx=2, pady=4)
 
         # actions moved to their own row to avoid horizontal clipping
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=7, column=0, padx=12, pady=6, sticky='w')
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=7, column=1, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=7, column=2, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=7, column=3, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=8, column=0, padx=12, pady=6, sticky='w')
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=8, column=1, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
 
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         # Add main_category column for display
-        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
         headers = {
             'id':'ID',
@@ -148,6 +152,7 @@ class ProductsCatalogMethodsMixin:
             'fabric_color':'צבע בד',
             'print_name':'שם פרינט',
             'fabric_category':'קטגוריית בד',
+            'square_area':'שטח רבוע',
             'ticks_qty':'טיקטקים',
             'elastic_qty':'גומי',
             'ribbon_qty':'סרט',
@@ -163,6 +168,7 @@ class ProductsCatalogMethodsMixin:
             'fabric_color':110,
             'print_name':110,
             'fabric_category':120,
+            'square_area':100,
             'ticks_qty':70,
             'elastic_qty':60,
             'ribbon_qty':60,
@@ -627,7 +633,7 @@ class ProductsCatalogMethodsMixin:
                 main_category_value = rec.get('main_category') or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
                     rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
-                    rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('ticks_qty'), rec.get('elastic_qty'),
+                    rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
         except Exception:
@@ -920,6 +926,7 @@ class ProductsCatalogMethodsMixin:
         fcolors_raw = self.prod_fabric_color_var.get().strip()
         prints_raw = self.prod_print_name_var.get().strip()
         fabric_category_raw = self.prod_fabric_category_var.get().strip()
+        square_area_raw = self.prod_square_area_var.get().strip()
         ticks_raw = self.prod_ticks_var.get().strip()
         elastic_raw = self.prod_elastic_var.get().strip()
         ribbon_raw = self.prod_ribbon_var.get().strip()
@@ -983,7 +990,7 @@ class ProductsCatalogMethodsMixin:
                 if key in existing:
                     continue
                 new_id = self.data_processor.add_product_catalog_entry(
-                    name, sz, ft, fc, pn, category_value, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw
+                    name, sz, ft, fc, pn, category_value, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw, square_area_raw
                 )
                 existing.add(key)
                 added += 1
@@ -991,10 +998,10 @@ class ProductsCatalogMethodsMixin:
                 main_category_value = self.prod_main_category_var.get().strip() or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
                     new_id, name, main_category_value, category_value, sz, ft, fc, pn, fabric_category_value,
-                    ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
+                    square_area_raw or 0.0, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
-            self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_fabric_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
+            self.prod_name_var.set(''); self.prod_category_var.set(''); self.prod_fabric_category_var.set(''); self.prod_size_var.set(''); self.prod_fabric_type_var.set(''); self.prod_fabric_color_var.set(''); self.prod_print_name_var.set(''); self.prod_square_area_var.set(''); self.prod_ticks_var.set(''); self.prod_elastic_var.set(''); self.prod_ribbon_var.set('')
             self.selected_sizes.clear(); self.selected_fabric_types.clear(); self.selected_fabric_colors.clear(); self.selected_print_names.clear()
             if hasattr(self, 'size_picker'): self.size_picker.set('')
             if hasattr(self, 'ftype_picker'): self.ftype_picker.set('')

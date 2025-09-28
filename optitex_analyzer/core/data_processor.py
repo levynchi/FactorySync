@@ -923,7 +923,7 @@ class DataProcessor:
 			return False
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
-								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '') -> int:
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '', square_area: float | str = 0.0) -> int:
 		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
 
 		:param name: שם מוצר (חובה)
@@ -935,6 +935,8 @@ class DataProcessor:
 		:param ticks_qty: כמות טיקטקים (אופציונלי, מספר שלם)
 		:param elastic_qty: כמות גומי (אופציונלי, מספר שלם)
 		:param ribbon_qty: כמות סרט (אופציונלי, מספר שלם)
+		:param fabric_category: קטגוריית בד (אופציונלי)
+		:param square_area: שטח רבוע (אופציונלי, מספר עשרוני)
 		"""
 		try:
 			if not name:
@@ -945,9 +947,16 @@ class DataProcessor:
 					return int(str(val).strip())
 				except Exception:
 					return 0
+			def _to_float(val):
+				try:
+					if val in (None, ''): return 0.0
+					return float(str(val).strip())
+				except Exception:
+					return 0.0
 			ticks_i = _to_int(ticks_qty)
 			elastic_i = _to_int(elastic_qty)
 			ribbon_i = _to_int(ribbon_qty)
+			square_area_f = _to_float(square_area)
 			new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
 			record = {
 				'id': new_id,
@@ -958,6 +967,7 @@ class DataProcessor:
 				'print_name': print_name.strip(),
 				'category': (category or '').strip(),
 				'fabric_category': (fabric_category or '').strip(),
+				'square_area': square_area_f,
 				'ticks_qty': ticks_i,
 				'elastic_qty': elastic_i,
 				'ribbon_qty': ribbon_i,
@@ -986,10 +996,10 @@ class DataProcessor:
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category'
+			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category' ו'square_area'
 			columns = [
 				'id','name','category','size','fabric_type','fabric_color','fabric_category',
-				'print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'
+				'print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at'
 			]
 			rows = []
 			for rec in self.products_catalog:
@@ -1003,6 +1013,7 @@ class DataProcessor:
 					# ברירת מחדל: "בלי קטגוריה" אם חסר
 					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
 					'print_name': rec.get('print_name',''),
+					'square_area': rec.get('square_area', 0.0),
 					'ticks_qty': rec.get('ticks_qty', 0),
 					'elastic_qty': rec.get('elastic_qty', 0),
 					'ribbon_qty': rec.get('ribbon_qty', 0),
@@ -1026,7 +1037,7 @@ class DataProcessor:
 				raise Exception("קובץ לא נמצא")
 			df = pd.read_excel(file_path)
 			# נוודא קיום עמודות נדרשות
-			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','ticks_qty','elastic_qty','ribbon_qty','created_at'}
+			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at'}
 			cols = {str(c).strip() for c in df.columns}
 			missing = required - cols
 			if missing:
@@ -1050,6 +1061,14 @@ class DataProcessor:
 					return int(x)
 				except Exception:
 					return 0
+			
+			def _to_float(x):
+				try:
+					if x in (None, ''):
+						return 0.0
+					return float(x)
+				except Exception:
+					return 0.0
 
 			imported = 0
 			skipped = 0
@@ -1068,6 +1087,7 @@ class DataProcessor:
 					# ננרמל 'בלי קטגוריה' לריק	
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
+					square_area = _to_float(row.get('square_area'))
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
@@ -1085,6 +1105,7 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
+						'square_area': square_area,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
@@ -1106,6 +1127,7 @@ class DataProcessor:
 					fcat = (str(row.get('fabric_category') or '').strip())
 					if fcat == 'בלי קטגוריה':
 						fcat = ''
+					square_area = _to_float(row.get('square_area'))
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
@@ -1123,6 +1145,7 @@ class DataProcessor:
 						'print_name': pn,
 						'category': cat,
 						'fabric_category': fcat,
+						'square_area': square_area,
 						'ticks_qty': ticks,
 						'elastic_qty': elastic,
 						'ribbon_qty': ribbon,
