@@ -228,51 +228,63 @@ class FormulasTabMixin:
     
     def _build_fabric_weight_content(self, container):
         """Build the fabric weight calculation for drawings content."""
-        # Instructions frame
-        instructions_frame = ttk.LabelFrame(container, text="הוראות שימוש", padding=10)
-        instructions_frame.pack(fill='x', padx=20, pady=5)
+        # Combined frame for three columns: drawing selection, info, and instructions
+        main_frame = tk.Frame(container)
+        main_frame.pack(fill='x', padx=20, pady=10)
         
-        instructions_text = ("בחר ציור מהרשימה לחישוב חלוקת משקל בד לפי שטח רבוע של הפריטים.\n"
-                           "עבור ציורים בסטטוס 'נחתך' - כמות השכבות והמשקל ימולאו אוטומטית אם זמינים במסד הנתונים.\n\n"
-                           "הנוסחה: %ᵢ = (Aᵢ/ΣA) × 100, Gramsᵢ = W × (%ᵢ/100)\n"
-                           "כאשר W = משקל השכבה, Aᵢ = שטח רבוע למידה i, ΣA = סכום כל השטחים")
-        instructions_label = tk.Label(
-            instructions_frame,
-            text=instructions_text,
-            font=('Arial', 9),
-            fg='#7f8c8d',
-            justify='right',
-            wraplength=600
-        )
-        instructions_label.pack(pady=5)
-        
-        # Drawing selection frame
-        drawing_frame = ttk.LabelFrame(container, text="בחירת ציור", padding=15)
-        drawing_frame.pack(fill='x', padx=20, pady=10)
+        # Left column - Drawing selection frame
+        drawing_frame = ttk.LabelFrame(main_frame, text="בחירת ציור", padding=15)
+        drawing_frame.pack(side='left', fill='both', expand=True, padx=(0, 7))
         
         # Drawing selection
         tk.Label(drawing_frame, text="בחר ציור:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.selected_drawing_var = tk.StringVar()
         self.drawing_combobox = ttk.Combobox(drawing_frame, textvariable=self.selected_drawing_var, 
-                                           state='readonly', width=40, justify='right')
+                                           state='readonly', width=25, justify='right')
         self.drawing_combobox.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         self.drawing_combobox.bind('<<ComboboxSelected>>', self._on_drawing_selected)
         
         # Load drawings button
         load_btn = tk.Button(drawing_frame, text="טען ציורים", command=self._load_drawings_list,
                            bg='#3498db', fg='white', font=('Arial', 9, 'bold'))
-        load_btn.grid(row=0, column=2, padx=10, pady=5)
+        load_btn.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky='ew')
         
-        # Drawing info frame
-        info_frame = ttk.LabelFrame(container, text="פרטי הציור", padding=15)
-        info_frame.pack(fill='x', padx=20, pady=10)
+        # Configure grid weights for drawing frame
+        drawing_frame.grid_columnconfigure(1, weight=1)
         
-        self.drawing_info_text = tk.Text(info_frame, height=6, width=80, font=('Arial', 9), 
+        # Middle column - Drawing info frame
+        info_frame = ttk.LabelFrame(main_frame, text="פרטי הציור", padding=15)
+        info_frame.pack(side='left', fill='both', expand=True, padx=(7, 7))
+        
+        self.drawing_info_text = tk.Text(info_frame, height=6, width=30, font=('Arial', 9), 
                                        state='disabled', wrap='word')
         info_scrollbar = ttk.Scrollbar(info_frame, orient='vertical', command=self.drawing_info_text.yview)
         self.drawing_info_text.configure(yscrollcommand=info_scrollbar.set)
         self.drawing_info_text.pack(side='left', fill='both', expand=True)
         info_scrollbar.pack(side='right', fill='y')
+        
+        # Right column - Instructions frame
+        instructions_frame = ttk.LabelFrame(main_frame, text="הוראות שימוש", padding=15)
+        instructions_frame.pack(side='left', fill='both', expand=True, padx=(7, 0))
+        
+        instructions_text = ("בחר ציור מהרשימה לחישוב חלוקת משקל בד לפי שטח רבוע של הפריטים.\n\n"
+                           "עבור ציורים בסטטוס 'נחתך' - כמות השכבות והמשקל ימולאו אוטומטית.\n\n"
+                           "הנוסחה:\n"
+                           "%ᵢ = (Aᵢ/ΣA) × 100\n"
+                           "Gramsᵢ = W × (%ᵢ/100)\n\n"
+                           "כאשר:\n"
+                           "W = משקל השכבה\n"
+                           "Aᵢ = שטח רבוע למידה i\n"
+                           "ΣA = סכום כל השטחים")
+        instructions_label = tk.Label(
+            instructions_frame,
+            text=instructions_text,
+            font=('Arial', 8),
+            fg='#7f8c8d',
+            justify='right',
+            wraplength=250
+        )
+        instructions_label.pack(pady=5, fill='both', expand=True)
         
         # Weight input frame
         weight_frame = ttk.LabelFrame(container, text="נתוני הפריסה", padding=15)
