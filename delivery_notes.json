@@ -601,5 +601,33 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2025-09-29 08:46:46"
+  },
+  {
+    "id": 19,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-10-05",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "תווית 0-3",
+        "unit": "יחידות",
+        "quantity": 5000.0
+      },
+      {
+        "accessory": "טיק טקים קומפלט",
+        "unit": "יחידות",
+        "quantity": 10000.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2025-10-05 15:07:33"
   }
 ]
