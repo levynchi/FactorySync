@@ -210,8 +210,8 @@ class ProductsBalanceTabMixin:
         self.products_inventory_status_var = tk.StringVar(value='מקור: קטלוג מוצרים')
         tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg='#f7f9fa', anchor='e').pack(side='right', expand=True, fill='x')
 
-        # טבלת מלאי – עמודות נדרשות (הוספנו 'fabric_category')
-        inv_cols = ('name','main_category','size','fabric_category','fabric_type','quantity','location','packaging')
+        # טבלת מלאי – עמודות נדרשות (הוספנו 'fabric_category' ו'ticks')
+        inv_cols = ('name','main_category','size','fabric_category','fabric_type','quantity','location','packaging','ticks')
         inv_headers = {
             'name':'שם הדגם',
             'main_category':'קטגוריה ראשית',
@@ -220,7 +220,8 @@ class ProductsBalanceTabMixin:
             'fabric_type':'סוג בד',
             'quantity':'כמות',
             'location':'מיקום',
-            'packaging':'צורת אריזה'
+            'packaging':'צורת אריזה',
+            'ticks':'טיקטקים'
         }
         inv_widths = {
             'name':240,
@@ -230,7 +231,8 @@ class ProductsBalanceTabMixin:
             'fabric_type':160,
             'quantity':90,
             'location':120,
-            'packaging':120
+            'packaging':120,
+            'ticks':100
         }
         inv_table_wrap = tk.Frame(inv_view_page, bg='#ffffff', relief='groove', bd=1)
         inv_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
@@ -285,11 +287,19 @@ class ProductsBalanceTabMixin:
         self.inv_create_size_var = tk.StringVar()
         self.inv_create_size_cb = ttk.Combobox(form, textvariable=self.inv_create_size_var, width=16, justify='right')
         self.inv_create_size_cb.grid(row=0, column=1, padx=4, pady=2, sticky='e')
+        try:
+            self.inv_create_size_cb.bind('<<ComboboxSelected>>', lambda e: self._inv_create_update_ticks_field())
+        except Exception:
+            pass
 
         tk.Label(form, text='סוג בד:', bg='#f7f9fa').grid(row=1, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_fabric_var = tk.StringVar()
         self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24, justify='right')
         self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='e')
+        try:
+            self.inv_create_fabric_cb.bind('<<ComboboxSelected>>', lambda e: self._inv_create_update_ticks_field())
+        except Exception:
+            pass
 
         # קטגורית בד (נמשכת מהקטלוג עבור שם הדגם)
         tk.Label(form, text='קטגורית בד:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
@@ -310,6 +320,12 @@ class ProductsBalanceTabMixin:
         self.inv_create_packaging_var = tk.StringVar()
         self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16, justify='right')
         self.inv_create_packaging_cb.grid(row=2, column=3, padx=4, pady=2, sticky='e')
+
+        tk.Label(form, text='טיקטקים:', bg='#f7f9fa').grid(row=2, column=2, padx=4, pady=2, sticky='e')
+        self.inv_create_ticks_var = tk.StringVar(value='עם טיקטקים')
+        self.inv_create_ticks_cb = ttk.Combobox(form, textvariable=self.inv_create_ticks_var, width=16, justify='right', state='readonly')
+        self.inv_create_ticks_cb['values'] = ['עם טיקטקים', 'ללא טיקטקים']
+        self.inv_create_ticks_cb.grid(row=2, column=1, padx=4, pady=2, sticky='e')
 
         actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
         tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
@@ -363,11 +379,11 @@ class ProductsBalanceTabMixin:
             pass
         # טבלת פרטים
         self.inv_updates_details_tree = ttk.Treeview(hist_wrap, columns=(
-            'name','main_category','size','fabric_type','quantity','location','packaging'
+            'name','main_category','size','fabric_type','quantity','location','packaging','ticks'
         ), show='headings', height=12)
-        headers = {'name':'שם הדגם','main_category':'קטגוריה ראשית','size':'מידה','fabric_type':'סוג בד','quantity':'כמות','location':'מיקום','packaging':'צורת אריזה'}
-        widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120}
-        for c in ('name','main_category','size','fabric_type','quantity','location','packaging'):
+        headers = {'name':'שם הדגם','main_category':'קטגוריה ראשית','size':'מידה','fabric_type':'סוג בד','quantity':'כמות','location':'מיקום','packaging':'צורת אריזה','ticks':'טיקטקים'}
+        widths = {'name':240,'main_category':130,'size':90,'fabric_type':160,'quantity':90,'location':120,'packaging':120,'ticks':100}
+        for c in ('name','main_category','size','fabric_type','quantity','location','packaging','ticks'):
             self.inv_updates_details_tree.heading(c, text=headers[c])
             self.inv_updates_details_tree.column(c, width=widths[c], anchor='center')
         vs_hist = ttk.Scrollbar(hist_wrap, orient='vertical', command=self.inv_updates_details_tree.yview)
@@ -2717,8 +2733,8 @@ class ProductsBalanceTabMixin:
     def _refresh_products_inventory_table(self):
         """מציג מלאי עדכני מתוך קטלוג המוצרים (ללא קובץ חיצוני).
 
-        העמודות: שם הדגם, קטגוריה ראשית, מידה, קטגורית בד, סוג בד, כמות, מיקום, צורת אריזה.
-        מאחר והקטלוג לא כולל כמות/מיקום/אריזה – שדות אלה יוצגו ריקים כברירת מחדל.
+        העמודות: שם הדגם, קטגוריה ראשית, מידה, קטגורית בד, סוג בד, כמות, מיקום, צורת אריזה, טיקטקים.
+        מאחר והקטלוג לא כולל כמות/מיקום/אריזה/טיקטקים – שדות אלה יוצגו ריקים כברירת מחדל.
         """
         tree = getattr(self, 'products_inventory_tree', None)
         if not tree:
@@ -2782,6 +2798,7 @@ class ProductsBalanceTabMixin:
                     'quantity': '',
                     'location': '',
                     'packaging': '',
+                    'ticks': '',
                 })
         except Exception:
             rows = []
@@ -2798,6 +2815,7 @@ class ProductsBalanceTabMixin:
         # המפתח כולל גם קטגורית בד כדי למנוע דריסה בין "טריקו לבן" ו"טריקו מודפס" וכו׳
         base_qty_map = {}
         base_pkg_map = {}
+        base_ticks_map = {}
         for r in rows:
             key = (
                 r.get('name',''),
@@ -2813,6 +2831,8 @@ class ProductsBalanceTabMixin:
                 base_qty_map[key] = 0.0
             if r.get('packaging',''):
                 base_pkg_map[key] = r.get('packaging','')
+            if r.get('ticks',''):
+                base_ticks_map[key] = r.get('ticks','')
 
         try:
             if updates_data and isinstance(updates_data.get('batches', []), list):
@@ -2839,6 +2859,7 @@ class ProductsBalanceTabMixin:
                         except Exception:
                             q = 0.0
                         pkg = (it.get('packaging') or '').strip()
+                        ticks = (it.get('ticks') or '').strip()
                         cur = base_qty_map.get(key, 0.0)
                         if mode == 'add':
                             base_qty_map[key] = cur + q
@@ -2846,6 +2867,8 @@ class ProductsBalanceTabMixin:
                             base_qty_map[key] = q
                         if pkg:
                             base_pkg_map[key] = pkg
+                        if ticks:
+                            base_ticks_map[key] = ticks
         except Exception:
             pass
         # החלה על rows: אם קיים עדכון עבור מפתח התואם למיקום ריק – נשאיר loc ריק; אחר כך נביא גם לפי כל מיקום מפורש
@@ -2864,6 +2887,8 @@ class ProductsBalanceTabMixin:
                     r['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
                 if key_same_loc in base_pkg_map and base_pkg_map[key_same_loc]:
                     r['packaging'] = base_pkg_map[key_same_loc]
+                if key_same_loc in base_ticks_map and base_ticks_map[key_same_loc]:
+                    r['ticks'] = base_ticks_map[key_same_loc]
 
             # הוסף שורות עבור מיקומים/קטגוריות שנוצרו רק מעדכונים
             existing_keys = set(
@@ -2890,6 +2915,8 @@ class ProductsBalanceTabMixin:
                         newr['quantity'] = int(q) if abs(q-int(q)) < 1e-9 else q
                         if base_pkg_map.get(key):
                             newr['packaging'] = base_pkg_map[key]
+                        if base_ticks_map.get(key):
+                            newr['ticks'] = base_ticks_map[key]
                         rows.append(newr)
         except Exception:
             pass
@@ -2944,7 +2971,8 @@ class ProductsBalanceTabMixin:
                     r.get('fabric_type',''),
                     r.get('quantity',''),
                     r.get('location',''),
-                    r.get('packaging','')
+                    r.get('packaging',''),
+                    r.get('ticks','')
                 ))
         except Exception:
             pass
@@ -2995,7 +3023,7 @@ class ProductsBalanceTabMixin:
         try:
             for iid in tree.get_children():
                 vals = list(tree.item(iid, 'values') or [])
-                # צורה: name, main_category, size, fabric_category, fabric_type, quantity, location, packaging
+                # צורה: name, main_category, size, fabric_category, fabric_type, quantity, location, packaging, ticks
                 item = {
                     'name': (vals[0] if len(vals)>0 else '').strip(),
                     'main_category': (vals[1] if len(vals)>1 else '').strip(),
@@ -3005,6 +3033,7 @@ class ProductsBalanceTabMixin:
                     'quantity': (vals[5] if len(vals)>5 else '').strip(),
                     'location': (vals[6] if len(vals)>6 else '').strip(),
                     'packaging': (vals[7] if len(vals)>7 else '').strip(),
+                    'ticks': (vals[8] if len(vals)>8 else '').strip(),
                 }
                 if item['name']:
                     items.append(item)
@@ -3137,7 +3166,7 @@ class ProductsBalanceTabMixin:
         try:
             for it in (batch.get('items') or []):
                 d_tree.insert('', 'end', values=(
-                    it.get('name',''), it.get('main_category',''), it.get('size',''), it.get('fabric_type',''), it.get('quantity',''), it.get('location',''), it.get('packaging','')
+                    it.get('name',''), it.get('main_category',''), it.get('size',''), it.get('fabric_type',''), it.get('quantity',''), it.get('location',''), it.get('packaging',''), it.get('ticks','')
                 ))
         except Exception:
             pass
@@ -3204,6 +3233,51 @@ class ProductsBalanceTabMixin:
                 self.inv_create_fabric_cat_var.set('')
         except Exception:
             pass
+        
+        # עדכון שדה הטיקטקים לפי הנתונים מהקטלוג
+        self._inv_create_update_ticks_field()
+
+    def _inv_create_update_ticks_field(self):
+        """עדכון שדה הטיקטקים לפי הנתונים מהקטלוג בהתבסס על שם דגם, מידה וסוג בד."""
+        try:
+            name = (self.inv_create_name_var.get() or '').strip()
+            size = (self.inv_create_size_var.get() or '').strip()
+            fabric_type = (self.inv_create_fabric_var.get() or '').strip()
+            
+            if not name:
+                return
+            
+            # חיפוש בקטלוג המוצרים
+            catalog = getattr(self.data_processor, 'products_catalog', []) or []
+            ticks_qty = 0
+            
+            # חיפוש התאמה מדויקת לפי שם, מידה וסוג בד
+            for rec in catalog:
+                rec_name = (rec.get('name') or '').strip()
+                rec_size = (rec.get('size') or '').strip()
+                rec_fabric_type = (rec.get('fabric_type') or '').strip()
+                
+                # בדיקת התאמה
+                name_match = rec_name == name
+                size_match = (not size) or (rec_size == size)  # אם לא נבחרה מידה, התעלם מהתנאי
+                fabric_match = (not fabric_type) or (rec_fabric_type == fabric_type)  # אם לא נבחר סוג בד, התעלם מהתנאי
+                
+                if name_match and size_match and fabric_match:
+                    try:
+                        ticks_qty = int(rec.get('ticks_qty', 0) or 0)
+                        if ticks_qty > 0:
+                            break  # מצאנו התאמה עם טיקטקים
+                    except Exception:
+                        continue
+            
+            # עדכון השדה לפי הכמות שנמצאה
+            if ticks_qty > 0:
+                self.inv_create_ticks_var.set('עם טיקטקים')
+            else:
+                self.inv_create_ticks_var.set('')  # ריק אם אין טיקטקים
+                
+        except Exception:
+            pass
 
     def _inv_create_add_row(self):
         name = (self.inv_create_name_var.get() or '').strip()
@@ -3219,8 +3293,9 @@ class ProductsBalanceTabMixin:
         qty = (self.inv_create_qty_var.get() or '').strip()
         location = (self.inv_create_location_var.get() or '').strip()
         packaging = (self.inv_create_packaging_var.get() or '').strip()
+        ticks = (self.inv_create_ticks_var.get() or '').strip()
         main_cat = (self.inv_create_main_cat_var.get() or '').strip()
-        self.inv_create_tree.insert('', 'end', values=(name, main_cat, size, fabric_cat, fabric, qty, location, packaging))
+        self.inv_create_tree.insert('', 'end', values=(name, main_cat, size, fabric_cat, fabric, qty, location, packaging, ticks))
 
     def _inv_create_delete_selected(self):
         tree = getattr(self, 'inv_create_tree', None)
@@ -3394,6 +3469,11 @@ class ProductsBalanceTabMixin:
                 locs = self.settings.get('inventory.location_options', []) or []
         except Exception:
             pkgs = locs = []
+        
+        # הוספת "תפזורת" כאפשרות ברירת מחדל לצורות אריזה אם לא קיימת
+        if 'תפזורת' not in pkgs:
+            pkgs = ['תפזורת'] + pkgs
+            
         try:
             self.inv_create_packaging_cb['values'] = pkgs
             self.inv_create_location_cb['values'] = locs
