@@ -121,10 +121,10 @@ class DrawingsManagerTabMixin:
 
         table_frame = tk.Frame(table_page, bg='#ffffff')
         table_frame.pack(fill='both', expand=True, padx=12, pady=8)
-        cols = ("id", "file_name", "created_at", "products", "total_quantity", "estimated_layers", "products_details", "sent_to_supplier", "status", "excel")
+        cols = ("id", "file_name", "created_at", "products", "total_quantity", "estimated_layers", "actual_layers", "products_details", "sent_to_supplier", "status", "excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
-        headers = {"id": "ID", "file_name": "שם הקובץ", "created_at": "תאריך יצירה", "products": "מוצרים", "total_quantity": "סך כמויות", "estimated_layers": "שכבות משוערת", "products_details": "פירוט דגמים ומידות", "sent_to_supplier": "נשלח לספק", "status": "סטטוס", "excel": "Excel"}
-        widths = {"id": 70, "file_name": 260, "created_at": 140, "products": 80, "total_quantity": 90, "estimated_layers": 100, "products_details": 300, "sent_to_supplier": 100, "status": 90, "excel": 60}
+        headers = {"id": "ID", "file_name": "שם הקובץ", "created_at": "תאריך יצירה", "products": "מוצרים", "total_quantity": "סך כמויות", "estimated_layers": "שכבות משוערת", "actual_layers": "שכבות בפועל", "products_details": "פירוט דגמים ומידות", "sent_to_supplier": "נשלח לספק", "status": "סטטוס", "excel": "Excel"}
+        widths = {"id": 70, "file_name": 260, "created_at": 140, "products": 80, "total_quantity": 90, "estimated_layers": 100, "actual_layers": 100, "products_details": 300, "sent_to_supplier": 100, "status": 90, "excel": 60}
         for c in cols:
             self.drawings_tree.heading(c, text=headers[c])
             self.drawings_tree.column(c, width=widths[c], anchor='center')
@@ -397,6 +397,9 @@ class DrawingsManagerTabMixin:
             else:
                 sent_display = 'כן' if sent_flag is True else ('לא' if sent_flag is False else '')
             estimated_layers = record.get('כמות שכבות משוערת', '—')
+            # שכבות בפועל - מוצג רק לציורים שנחתכו
+            status = record.get('status', 'נשלח')
+            actual_layers = record.get('שכבות', '') if status == 'נחתך' else '—'
             products_details = self._format_products_details(record.get('מוצרים', []))
             self.drawings_tree.insert('', 'end', values=(
                 record.get('id',''),
@@ -405,6 +408,7 @@ class DrawingsManagerTabMixin:
                 products_count,
                 f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
                 estimated_layers,
+                actual_layers,
                 products_details,
                 sent_display,
                 record.get('status','נשלח'),
@@ -969,6 +973,9 @@ class DrawingsManagerTabMixin:
                     sent_display = 'כן' if sent_flag is True else ('לא' if sent_flag is False else '')
                 
                 estimated_layers = record.get('כמות שכבות משוערת', '—')
+                # שכבות בפועל - מוצג רק לציורים שנחתכו
+                status = record.get('status', 'נשלח')
+                actual_layers = record.get('שכבות', '') if status == 'נחתך' else '—'
                 products_details = self._format_products_details(record.get('מוצרים', []))
                 
                 self.drawings_tree.insert('', 'end', values=(
@@ -978,6 +985,7 @@ class DrawingsManagerTabMixin:
                     products_count,
                     f"{total_quantity:.1f}" if isinstance(total_quantity,(int,float)) else total_quantity,
                     estimated_layers,
+                    actual_layers,
                     products_details,
                     sent_display,
                     record.get('status','נשלח'),
