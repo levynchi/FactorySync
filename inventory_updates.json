@@ -295,6 +295,112 @@
           "packaging": "חמישיות"
         }
       ]
+    },
+    {
+      "id": "batch_20251012_155511",
+      "created_at": "2025-10-12 15:55:11",
+      "mode": "add",
+      "items": [
+        {
+          "name": "בגד גוף גופייה",
+          "main_category": "בגדים",
+          "size": "12-18",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "טריקו",
+          "quantity": "242",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": "ללא טיקטקים"
+        },
+        {
+          "name": "בגד גוף גופייה",
+          "main_category": "בגדים",
+          "size": "6-12",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "טריקו",
+          "quantity": "241",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": "ללא טיקטקים"
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "4",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "300",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "6",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "300",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "10",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "210",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "2",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "220",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "6",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "120",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "גופיות פלנל",
+          "main_category": "בגדים",
+          "size": "4",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "138",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": ""
+        },
+        {
+          "name": "חולצת בייבי",
+          "main_category": "בגדים",
+          "size": "18-24",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "390",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": "ללא טיקטקים"
+        }
+      ]
     }
   ]
 }
