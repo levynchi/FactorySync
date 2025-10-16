@@ -14,6 +14,10 @@ class ConverterTabMixin:
 
     def _build_converter_tab_content(self, container: tk.Widget):
         """בניית תוכן הממיר בתוך קונטיינר (לשימוש גם כמיני-טאב בתוך מנהל ציורים)."""
+        # שמירת הרפרנס ל-main window לצורך עדכוני UI מ-threads
+        if not hasattr(self, '_main_window'):
+            self._main_window = getattr(self, 'root', None)
+        
         for builder in (
             self._create_files_section,
             self._create_options_section,
@@ -203,11 +207,27 @@ class ConverterTabMixin:
         self._update_status("מנתח קבצים...")
         Thread(target=self._analyze_files_thread, daemon=True).start()
 
+    def _safe_log(self, message):
+        """כתיבת הודעה ללוג באופן בטוח ל-threads (דרך main thread)"""
+        main_window = getattr(self, '_main_window', None) or getattr(self, 'root', None)
+        if main_window and hasattr(main_window, 'after'):
+            main_window.after(0, lambda msg=message: self._log_message(msg))
+        else:
+            self._log_message(message)
+    
+    def _safe_update_status(self, message):
+        """עדכון סטטוס באופן בטוח ל-threads (דרך main thread)"""
+        main_window = getattr(self, '_main_window', None) or getattr(self, 'root', None)
+        if main_window and hasattr(main_window, 'after'):
+            main_window.after(0, lambda msg=message: self._update_status(msg))
+        else:
+            self._update_status(message)
+
     def _analyze_files_thread(self):
         try:
-            self._log_message("=== התחלת ניתוח ===")
+            self._safe_log("=== התחלת ניתוח ===")
             # יצירת מיפוי מהמילון הפנימי של הטאב 'מיפוי מוצרים'
-            self._log_message("טוען מיפוי מוצרים מהטאב...")
+            self._safe_log("טוען מיפוי מוצרים מהטאב...")
             mapping_rows = getattr(self, '_product_mapping_rows', [])
             internal_map = {}
             for r in mapping_rows:
@@ -216,32 +236,49 @@ class ConverterTabMixin:
                     internal_map[fn] = pn
             self.file_analyzer.product_mapping = internal_map
             if not internal_map:
-                self._log_message("⚠️ אין נתוני מיפוי (הטאב ריק)")
+                self._safe_log("⚠️ אין נתוני מיפוי (הטאב ריק)")
             products_count = len(self.file_analyzer.product_mapping)
-            self._log_message(f"✅ נטען מיפוי עבור {products_count} מוצרים")
-            self._log_message("מנתח קובץ אופטיטקס...")
+            self._safe_log(f"✅ נטען מיפוי עבור {products_count} מוצרים")
+            self._safe_log("מנתח קובץ אופטיטקס...")
             results = self.file_analyzer.analyze_file(self.rib_file, self.tubular_var.get(), self.only_positive_var.get())
             if not results:
-                self._log_message("❌ לא נמצאו נתונים מתאימים")
-                self._update_status("לא נמצאו נתונים")
+                self._safe_log("❌ לא נמצאו נתונים מתאימים")
+                self._safe_update_status("לא נמצאו נתונים")
                 return
             self.current_results = self.file_analyzer.sort_results()
             summary = self.file_analyzer.get_analysis_summary()
-            self._log_message(f"✅ נוצרה טבלה עם {summary['total_records']} רשומות")
+            self._safe_log(f"✅ נוצרה טבלה עם {summary['total_records']} רשומות")
             found_products = self.file_analyzer.get_products_found()
             if found_products:
-                self._log_message("\n📦 מוצרים שנמצאו:")
+                self._safe_log("\n📦 מוצרים שנמצאו:")
                 for file_name, product_name in found_products:
-                    self._log_message(f"   {file_name} → {product_name}")
-            self._display_detailed_results()
-            self._display_statistics(summary)
-            self._calculate_total_fabric_weight(summary)
-            self._update_status("הניתוח הושלם בהצלחה!")
+                    self._safe_log(f"   {file_name} → {product_name}")
+            # עדכון UI חייב להיעשות ב-main thread - שמירת המשתנים מחוץ ל-lambda
+            # כדי למנוע בעיות של late binding
+            summary_to_display = summary
+            # קבלת הרפרנס ל-main window (לא ל-container הזמני)
+            main_window = getattr(self, '_main_window', None) or getattr(self, 'root', None)
+            if main_window and hasattr(main_window, 'after'):
+                main_window.after(0, lambda: self._display_detailed_results())
+                main_window.after(0, lambda s=summary_to_display: self._display_statistics(s))
+                main_window.after(0, lambda s=summary_to_display: self._calculate_total_fabric_weight(s))
+                main_window.after(0, lambda: self._update_status("הניתוח הושלם בהצלחה!"))
+            else:
+                # fallback - קריאה ישירה (אם כבר במקרה ב-main thread)
+                self._display_detailed_results()
+                self._display_statistics(summary)
+                self._calculate_total_fabric_weight(summary)
+                self._update_status("הניתוח הושלם בהצלחה!")
         except Exception as e:
             error_msg = f"❌ שגיאה בניתוח: {str(e)}"
-            self._log_message(error_msg)
-            self._update_status("שגיאה בניתוח")
-            messagebox.showerror("שגיאה", str(e))
+            self._safe_log(error_msg)
+            self._safe_update_status("שגיאה בניתוח")
+            # messagebox גם צריך להיות ב-main thread
+            main_window = getattr(self, '_main_window', None) or getattr(self, 'root', None)
+            if main_window and hasattr(main_window, 'after'):
+                main_window.after(0, lambda err=str(e): messagebox.showerror("שגיאה", err))
+            else:
+                messagebox.showerror("שגיאה", str(e))
 
     def _display_detailed_results(self):
         # Populate the results table instead of verbose text lines
