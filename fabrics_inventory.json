@@ -2068,7 +2068,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נגזר"
   },
   {
     "barcode": "25112450",
@@ -2619,7 +2619,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נגזר"
   },
   {
     "barcode": "25112063",
@@ -2923,7 +2923,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נגזר"
   },
   {
     "barcode": "25111983",
@@ -3664,7 +3664,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נגזר"
   },
   {
     "barcode": "25111746",
@@ -3702,7 +3702,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נגזר"
   },
   {
     "barcode": "25111738",
@@ -3983,11 +3983,11 @@
     "meters": 48.2,
     "price": 6.7,
     "total": 98.83,
-    "location": "אריה",
+    "location": "עולה",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25103806",
