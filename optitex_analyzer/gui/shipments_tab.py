@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import json
 import os
+import calendar as _cal
 
 class ShipmentsTabMixin:
     """Mixin לטאב 'הובלות' המציג שורות אריזה מכל הקליטות והתעודות.
@@ -78,6 +79,58 @@ class ShipmentsTabMixin:
         self._load_drivers()
         self._refresh_drivers_table()
 
+        # --- עמוד דו"ח חישוב הובלות לתשלום ---
+        payment_report_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(payment_report_page, text='דו"ח חישוב הובלות לתשלום')
+        
+        tk.Label(payment_report_page, text="דו\"ח חישוב הובלות לתשלום", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        
+        # פריים לבחירת פרמטרים
+        params_frame = tk.LabelFrame(payment_report_page, text='בחירת פרמטרים', bg='#f7f9fa', font=('Arial',10,'bold'))
+        params_frame.pack(fill='x', padx=20, pady=10)
+        
+        # שורה 1: בחירת מוביל
+        row1 = tk.Frame(params_frame, bg='#f7f9fa')
+        row1.pack(fill='x', padx=10, pady=8)
+        tk.Label(row1, text='מוביל:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.payment_driver_var = tk.StringVar()
+        self.payment_driver_combo = ttk.Combobox(row1, textvariable=self.payment_driver_var, width=25, state='readonly')
+        self.payment_driver_combo.pack(side='right', padx=5)
+        
+        # שורה 2: תאריך התחלה
+        row2 = tk.Frame(params_frame, bg='#f7f9fa')
+        row2.pack(fill='x', padx=10, pady=8)
+        tk.Label(row2, text='תאריך התחלה:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.payment_start_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        payment_start_entry = tk.Entry(row2, textvariable=self.payment_start_date_var, width=15, font=('Arial',10))
+        payment_start_entry.pack(side='right', padx=5)
+        tk.Button(row2, text='📅', width=3, command=lambda: self._open_date_picker(payment_start_entry, self.payment_start_date_var)).pack(side='right', padx=2)
+        
+        # שורה 3: תאריך סוף
+        row3 = tk.Frame(params_frame, bg='#f7f9fa')
+        row3.pack(fill='x', padx=10, pady=8)
+        tk.Label(row3, text='תאריך סוף:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.payment_end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        payment_end_entry = tk.Entry(row3, textvariable=self.payment_end_date_var, width=15, font=('Arial',10))
+        payment_end_entry.pack(side='right', padx=5)
+        tk.Button(row3, text='📅', width=3, command=lambda: self._open_date_picker(payment_end_entry, self.payment_end_date_var)).pack(side='right', padx=2)
+        
+        # כפתור חישוב
+        btn_frame = tk.Frame(params_frame, bg='#f7f9fa')
+        btn_frame.pack(fill='x', padx=10, pady=10)
+        tk.Button(btn_frame, text='📊 חשב דו"ח', command=self._calculate_payment_report, bg='#2ecc71', fg='white', font=('Arial',11,'bold'), width=20).pack()
+        
+        # פריים לתוצאות
+        results_frame = tk.LabelFrame(payment_report_page, text='תוצאות', bg='#f7f9fa', font=('Arial',10,'bold'))
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # תצוגת תוצאות
+        self.payment_results_text = tk.Text(results_frame, height=15, width=60, font=('Arial',12), bg='white', fg='#2c3e50', state='disabled')
+        self.payment_results_text.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # עדכון רשימת מובילים בטאב החדש
+        self._update_payment_drivers_list()
+
     # ---- Drivers management ----
     def _drivers_file_path(self):
         return os.path.join(os.getcwd(), 'drivers.json')
@@ -125,6 +178,7 @@ class ShipmentsTabMixin:
             self._drivers.append({'name': name, 'phone': phone})
         self._save_drivers()
         self._refresh_drivers_table()
+        self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
         self.driver_name_var.set('')
         self.driver_phone_var.set('')
 
@@ -139,6 +193,7 @@ class ShipmentsTabMixin:
         self._drivers = [d for d in self._drivers if d.get('name') != name]
         self._save_drivers()
         self._refresh_drivers_table()
+        self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
 
     # ---- Data build ----
     def _refresh_shipments_table(self):
@@ -147,15 +202,21 @@ class ShipmentsTabMixin:
             # לוודא טעינה עדכנית מהדיסק
             if hasattr(self.data_processor, 'refresh_supplier_receipts'):
                 self.data_processor.refresh_supplier_receipts()
-            # טען גם קליטות בדים
+            # טען גם קליטות בדים ושליחות בדים
             try:
                 if hasattr(self.data_processor, 'refresh_fabrics_intakes'):
                     self.data_processor.refresh_fabrics_intakes()
             except Exception:
                 pass
+            try:
+                if hasattr(self.data_processor, 'refresh_fabrics_shipments'):
+                    self.data_processor.refresh_fabrics_shipments()
+            except Exception:
+                pass
             supplier_intakes = getattr(self.data_processor, 'supplier_intakes', [])
             delivery_notes = getattr(self.data_processor, 'delivery_notes', [])
             fabrics_intakes = getattr(self.data_processor, 'fabrics_intakes', [])
+            fabrics_shipments = getattr(self.data_processor, 'fabrics_shipments', [])
             # קריאה לקובץ מורשת ישן במידת הצורך (תאימות לאחור)
             legacy = []
             try:
@@ -187,7 +248,7 @@ class ShipmentsTabMixin:
                         rows.append({
                             'rec_id': rec_id,
                             'receipt_kind': receipt_kind,
-                            'kind': 'קליטה' if receipt_kind == 'supplier_intake' else ('הובלה' if receipt_kind == 'delivery_note' else ('קליטת בדים' if receipt_kind == 'fabrics_intake' else receipt_kind)),
+                            'kind': 'קליטה' if receipt_kind == 'supplier_intake' else ('הובלה' if receipt_kind == 'delivery_note' else ('קליטת בדים' if receipt_kind == 'fabrics_intake' else ('שליחת בדים' if receipt_kind == 'fabrics_shipment' else receipt_kind))),
                             'date': date_str,
                             'sort_dt': sort_dt,
                             'pkg_index': idx,
@@ -198,6 +259,7 @@ class ShipmentsTabMixin:
             collect(supplier_intakes, 'supplier_intake')
             collect(delivery_notes, 'delivery_note')
             collect(fabrics_intakes, 'fabrics_intake')
+            collect(fabrics_shipments, 'fabrics_shipment')
             # הוספת נתוני מורשת שאינם קיימים כבר ברשימות החדשות
             try:
                 existing_keys = {( 'supplier_intake', r.get('id') ) for r in supplier_intakes}
@@ -257,11 +319,10 @@ class ShipmentsTabMixin:
         # קביעת receipt_kind
         receipt_kind = (meta or {}).get('receipt_kind')
         if not receipt_kind:
-            receipt_kind = 'supplier_intake' if kind_display == 'קליטה' else ('delivery_note' if kind_display == 'הובלה' else ('fabrics_intake' if kind_display == 'קליטת בדים' else ''))
-        if receipt_kind not in ('supplier_intake', 'delivery_note'):
-            if receipt_kind != 'fabrics_intake':
-                messagebox.showerror('שגיאה', 'לא ניתן לזהות את סוג הרשומה של שורת ההובלה')
-                return
+            receipt_kind = 'supplier_intake' if kind_display == 'קליטה' else ('delivery_note' if kind_display == 'הובלה' else ('fabrics_intake' if kind_display == 'קליטת בדים' else ('fabrics_shipment' if kind_display == 'שליחת בדים' else '')))
+        if receipt_kind not in ('supplier_intake', 'delivery_note', 'fabrics_intake', 'fabrics_shipment'):
+            messagebox.showerror('שגיאה', 'לא ניתן לזהות את סוג הרשומה של שורת ההובלה')
+            return
         # המרה ל-int בטוח ל-id והכמות
         try:
             rec_id = int(rec_id_val)
@@ -280,8 +341,10 @@ class ShipmentsTabMixin:
             records = getattr(self.data_processor, 'supplier_intakes', [])
         elif receipt_kind == 'delivery_note':
             records = getattr(self.data_processor, 'delivery_notes', [])
-        else:
+        elif receipt_kind == 'fabrics_intake':
             records = getattr(self.data_processor, 'fabrics_intakes', [])
+        else:  # fabrics_shipment
+            records = getattr(self.data_processor, 'fabrics_shipments', [])
         target_rec = None
         for i, r in enumerate(records):
             if str(r.get('id')) == str(rec_id):
@@ -320,14 +383,18 @@ class ShipmentsTabMixin:
                 save_ok = self.data_processor._save_json_list(self.data_processor.supplier_intakes_file, records)
             elif receipt_kind == 'delivery_note':
                 save_ok = self.data_processor._save_json_list(self.data_processor.delivery_notes_file, records)
-            else:
+            elif receipt_kind == 'fabrics_intake':
                 save_ok = self.data_processor._save_json_list(self.data_processor.fabrics_intakes_file, records)
+            else:  # fabrics_shipment
+                save_ok = self.data_processor._save_json_list(self.data_processor.fabrics_shipments_file, records)
             if save_ok and hasattr(self.data_processor, '_rebuild_combined_receipts'):
                 self.data_processor._rebuild_combined_receipts()
-            # רענון קליטות בדים במידת הצורך
+            # רענון קליטות בדים או שליחות בדים במידת הצורך
             try:
                 if receipt_kind == 'fabrics_intake' and hasattr(self.data_processor, 'refresh_fabrics_intakes'):
                     self.data_processor.refresh_fabrics_intakes()
+                elif receipt_kind == 'fabrics_shipment' and hasattr(self.data_processor, 'refresh_fabrics_shipments'):
+                    self.data_processor.refresh_fabrics_shipments()
             except Exception:
                 pass
             # ריענון טבלה
@@ -343,3 +410,149 @@ class ShipmentsTabMixin:
                 self._refresh_shipments_table()
         except Exception:
             pass
+
+    # ---- Payment Report Functions ----
+    def _update_payment_drivers_list(self):
+        """עדכון רשימת המובילים בטאב דו\"ח תשלום."""
+        try:
+            if not hasattr(self, 'payment_driver_combo'):
+                return
+            driver_names = [d.get('name', '') for d in self._drivers if d.get('name')]
+            self.payment_driver_combo['values'] = driver_names
+            if driver_names:
+                self.payment_driver_combo.current(0)
+        except Exception:
+            pass
+
+    def _calculate_payment_report(self):
+        """חישוב דו\"ח הובלות לתשלום לפי מוביל וטווח תאריכים."""
+        try:
+            # קבלת פרמטרים
+            driver_name = (self.payment_driver_var.get() or '').strip()
+            start_date_str = (self.payment_start_date_var.get() or '').strip()
+            end_date_str = (self.payment_end_date_var.get() or '').strip()
+            
+            # בדיקת תקינות
+            if not driver_name:
+                messagebox.showwarning('חסר מוביל', 'נא לבחור מוביל')
+                return
+            
+            if not start_date_str or not end_date_str:
+                messagebox.showwarning('חסרים תאריכים', 'נא למלא תאריך התחלה וסוף')
+                return
+            
+            # המרת תאריכים
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            except Exception:
+                messagebox.showerror('שגיאה', 'פורמט תאריך לא תקין. השתמש ב-YYYY-MM-DD')
+                return
+            
+            if start_date > end_date:
+                messagebox.showerror('שגיאה', 'תאריך ההתחלה גדול מתאריך הסוף')
+                return
+            
+            # רענון נתונים
+            try:
+                if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                    self.data_processor.refresh_supplier_receipts()
+                if hasattr(self.data_processor, 'refresh_fabrics_intakes'):
+                    self.data_processor.refresh_fabrics_intakes()
+                if hasattr(self.data_processor, 'refresh_fabrics_shipments'):
+                    self.data_processor.refresh_fabrics_shipments()
+            except Exception:
+                pass
+            
+            # איסוף נתונים
+            supplier_intakes = getattr(self.data_processor, 'supplier_intakes', [])
+            delivery_notes = getattr(self.data_processor, 'delivery_notes', [])
+            fabrics_intakes = getattr(self.data_processor, 'fabrics_intakes', [])
+            fabrics_shipments = getattr(self.data_processor, 'fabrics_shipments', [])
+            
+            # סיכום כמויות לפי סוג חבילה
+            package_counts = {}
+            total_packages = 0
+            
+            def process_records(records_list):
+                """עיבוד רשומות וסיכום כמויות."""
+                nonlocal total_packages
+                for rec in records_list:
+                    # בדיקת תאריך
+                    date_str = rec.get('date', '')
+                    try:
+                        rec_date = datetime.strptime(date_str, '%Y-%m-%d')
+                    except Exception:
+                        try:
+                            rec_date = datetime.strptime(date_str[:10], '%Y-%m-%d')
+                        except Exception:
+                            continue
+                    
+                    # האם בטווח התאריכים?
+                    if not (start_date <= rec_date <= end_date):
+                        continue
+                    
+                    # עיבוד חבילות
+                    for pkg in rec.get('packages', []) or []:
+                        pkg_driver = (pkg.get('driver', '') or '').strip()
+                        
+                        # האם זה המוביל הנבחר?
+                        if pkg_driver != driver_name:
+                            continue
+                        
+                        pkg_type = pkg.get('package_type', 'לא מוגדר')
+                        pkg_qty = pkg.get('quantity', 0)
+                        
+                        try:
+                            pkg_qty = int(pkg_qty)
+                        except Exception:
+                            pkg_qty = 0
+                        
+                        # צבירת כמויות
+                        if pkg_type not in package_counts:
+                            package_counts[pkg_type] = 0
+                        package_counts[pkg_type] += pkg_qty
+                        total_packages += pkg_qty
+            
+            # עיבוד כל הרשומות
+            process_records(supplier_intakes)
+            process_records(delivery_notes)
+            process_records(fabrics_intakes)
+            process_records(fabrics_shipments)
+            
+            # הצגת תוצאות
+            self.payment_results_text.config(state='normal')
+            self.payment_results_text.delete('1.0', 'end')
+            
+            # כותרת
+            report_title = f"דו\"ח הובלות - {driver_name}\n"
+            report_title += f"תקופה: {start_date_str} עד {end_date_str}\n"
+            report_title += "=" * 50 + "\n\n"
+            self.payment_results_text.insert('end', report_title, 'title')
+            
+            if not package_counts:
+                self.payment_results_text.insert('end', "לא נמצאו הובלות בתקופה זו למוביל זה.\n", 'no_data')
+            else:
+                # תצוגת סיכום לפי סוג חבילה
+                self.payment_results_text.insert('end', "סיכום לפי סוג חבילה:\n\n", 'header')
+                
+                for pkg_type, qty in sorted(package_counts.items()):
+                    line = f"  • {pkg_type}: {qty}\n"
+                    self.payment_results_text.insert('end', line, 'data')
+                
+                self.payment_results_text.insert('end', "\n" + "-" * 50 + "\n", 'separator')
+                total_line = f"סה\"כ חבילות: {total_packages}\n"
+                self.payment_results_text.insert('end', total_line, 'total')
+            
+            # עיצוב טקסט
+            self.payment_results_text.tag_config('title', font=('Arial', 13, 'bold'), foreground='#2c3e50')
+            self.payment_results_text.tag_config('header', font=('Arial', 12, 'bold'), foreground='#34495e')
+            self.payment_results_text.tag_config('data', font=('Arial', 11), foreground='#2c3e50')
+            self.payment_results_text.tag_config('separator', foreground='#95a5a6')
+            self.payment_results_text.tag_config('total', font=('Arial', 12, 'bold'), foreground='#27ae60')
+            self.payment_results_text.tag_config('no_data', font=('Arial', 11), foreground='#e74c3c')
+            
+            self.payment_results_text.config(state='disabled')
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בחישוב דו\"ח: {e}')
