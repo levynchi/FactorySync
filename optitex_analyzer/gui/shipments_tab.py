@@ -27,10 +27,33 @@ class ShipmentsTabMixin:
 
         toolbar = tk.Frame(shipments_page, bg='#f7f9fa')
         toolbar.pack(fill='x', padx=8, pady=(0,4))
+        
+        # כפתורי פעולה בצד ימין
         tk.Button(toolbar, text="🔄 רענן", command=self._refresh_shipments_table, bg='#3498db', fg='white').pack(side='right', padx=4)
         tk.Button(toolbar, text='🗑 מחק שורה נבחרת', command=self._delete_selected_shipment_row, bg='#c0392b', fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='✓ סמן כשולם', command=self._mark_shipment_as_paid, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='✗ בטל שולם', command=self._mark_shipment_as_unpaid, bg='#e67e22', fg='white').pack(side='right', padx=4)
+        
+        # בקרי סידור בצד שמאל
+        tk.Label(toolbar, text='סידור לפי:', bg='#f7f9fa', font=('Arial',9)).pack(side='left', padx=(4,2))
+        self.shipments_sort_var = tk.StringVar(value='date_desc')
+        sort_options = [
+            ('תאריך (חדש לישן)', 'date_desc'),
+            ('תאריך (ישן לחדש)', 'date_asc'),
+            ('פריט הובלה', 'package_type'),
+            ('סוג', 'kind'),
+            ('מוביל', 'driver')
+        ]
+        sort_combo = ttk.Combobox(toolbar, textvariable=self.shipments_sort_var, width=18, state='readonly')
+        sort_combo['values'] = [opt[0] for opt in sort_options]
+        sort_combo.pack(side='left', padx=2)
+        # מיפוי בין תצוגה לערך
+        self._sort_display_to_value = {opt[0]: opt[1] for opt in sort_options}
+        self._sort_value_to_display = {opt[1]: opt[0] for opt in sort_options}
+        sort_combo.current(0)
+        sort_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
 
-        columns = ('id','kind','date','package_type','quantity','driver')
+        columns = ('id','kind','date','package_type','quantity','driver','paid')
         self.shipments_tree = ttk.Treeview(shipments_page, columns=columns, show='headings', height=17)
         headers = {
             'id': 'מספר תעודה',
@@ -38,9 +61,10 @@ class ShipmentsTabMixin:
             'date': 'תאריך',
             'package_type': 'פריט הובלה',
             'quantity': 'כמות',
-            'driver': 'שם המוביל'
+            'driver': 'שם המוביל',
+            'paid': 'האם שולם'
         }
-        widths = {'id':110,'kind':90,'date':110,'package_type':140,'quantity':80,'driver':110}
+        widths = {'id':110,'kind':90,'date':110,'package_type':140,'quantity':80,'driver':110,'paid':80}
         for c in columns:
             self.shipments_tree.heading(c, text=headers[c])
             self.shipments_tree.column(c, width=widths[c], anchor='center')
@@ -115,6 +139,16 @@ class ShipmentsTabMixin:
         payment_end_entry.pack(side='right', padx=5)
         tk.Button(row3, text='📅', width=3, command=lambda: self._open_date_picker(payment_end_entry, self.payment_end_date_var)).pack(side='right', padx=2)
         
+        # שורה 4: סינון לפי מצב תשלום
+        row4 = tk.Frame(params_frame, bg='#f7f9fa')
+        row4.pack(fill='x', padx=10, pady=8)
+        tk.Label(row4, text='סינון לפי מצב תשלום:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.payment_filter_var = tk.StringVar(value='לא שולם')
+        payment_filter_combo = ttk.Combobox(row4, textvariable=self.payment_filter_var, width=22, state='readonly')
+        payment_filter_combo['values'] = ['הכל', 'רק לא שולם', 'רק שולם']
+        payment_filter_combo.current(1)  # ברירת מחדל: רק לא שולם
+        payment_filter_combo.pack(side='right', padx=5)
+        
         # כפתור חישוב
         btn_frame = tk.Frame(params_frame, bg='#f7f9fa')
         btn_frame.pack(fill='x', padx=10, pady=10)
@@ -130,6 +164,75 @@ class ShipmentsTabMixin:
         
         # עדכון רשימת מובילים בטאב החדש
         self._update_payment_drivers_list()
+
+        # --- עמוד מחירון הובלות ---
+        pricing_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(pricing_page, text='מחירון')
+        
+        tk.Label(pricing_page, text="מחירון הובלות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        
+        # פריים לעדכון מחירים
+        update_frame = tk.LabelFrame(pricing_page, text='עדכון מחירים', bg='#f7f9fa', font=('Arial',10,'bold'))
+        update_frame.pack(fill='x', padx=20, pady=10)
+        
+        # שורה 1: בחירת מוביל
+        pricing_row1 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row1.pack(fill='x', padx=10, pady=8)
+        tk.Label(pricing_row1, text='בחר מוביל:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.pricing_driver_var = tk.StringVar()
+        self.pricing_driver_combo = ttk.Combobox(pricing_row1, textvariable=self.pricing_driver_var, width=25, state='readonly')
+        self.pricing_driver_combo.pack(side='right', padx=5)
+        self.pricing_driver_combo.bind('<<ComboboxSelected>>', self._load_driver_pricing)
+        
+        # שורה 2: מחיר לבד
+        pricing_row2 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row2.pack(fill='x', padx=10, pady=8)
+        tk.Label(pricing_row2, text='מחיר לבד (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.pricing_fabric_var = tk.StringVar(value='0')
+        tk.Entry(pricing_row2, textvariable=self.pricing_fabric_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        
+        # שורה 3: מחיר לשק
+        pricing_row3 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row3.pack(fill='x', padx=10, pady=8)
+        tk.Label(pricing_row3, text='מחיר לשק (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.pricing_bag_var = tk.StringVar(value='0')
+        tk.Entry(pricing_row3, textvariable=self.pricing_bag_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        
+        # שורה 4: מחיר לשקית קטנה
+        pricing_row4 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row4.pack(fill='x', padx=10, pady=8)
+        tk.Label(pricing_row4, text='מחיר לשקית קטנה (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        self.pricing_small_bag_var = tk.StringVar(value='0')
+        tk.Entry(pricing_row4, textvariable=self.pricing_small_bag_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        
+        # כפתור שמירה
+        pricing_btn_frame = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_btn_frame.pack(fill='x', padx=10, pady=10)
+        tk.Button(pricing_btn_frame, text='💾 שמור מחירים', command=self._save_driver_pricing, bg='#3498db', fg='white', font=('Arial',11,'bold'), width=20).pack()
+        
+        # טבלת מחירים קיימת
+        pricing_list_frame = tk.LabelFrame(pricing_page, text='מחירון נוכחי', bg='#f7f9fa', font=('Arial',10,'bold'))
+        pricing_list_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        pricing_columns = ('driver', 'fabric', 'bag', 'small_bag')
+        self.pricing_tree = ttk.Treeview(pricing_list_frame, columns=pricing_columns, show='headings', height=12)
+        self.pricing_tree.heading('driver', text='שם המוביל')
+        self.pricing_tree.heading('fabric', text='מחיר לבד (₪)')
+        self.pricing_tree.heading('bag', text='מחיר לשק (₪)')
+        self.pricing_tree.heading('small_bag', text='מחיר לשקית קטנה (₪)')
+        self.pricing_tree.column('driver', width=180, anchor='center')
+        self.pricing_tree.column('fabric', width=120, anchor='center')
+        self.pricing_tree.column('bag', width=120, anchor='center')
+        self.pricing_tree.column('small_bag', width=150, anchor='center')
+        
+        pricing_scroll = ttk.Scrollbar(pricing_list_frame, orient='vertical', command=self.pricing_tree.yview)
+        self.pricing_tree.configure(yscroll=pricing_scroll.set)
+        self.pricing_tree.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+        pricing_scroll.pack(side='left', fill='y', pady=10)
+        
+        # עדכון רשימת מובילים ומחירון
+        self._update_pricing_drivers_list()
+        self._refresh_pricing_table()
 
     # ---- Drivers management ----
     def _drivers_file_path(self):
@@ -179,6 +282,8 @@ class ShipmentsTabMixin:
         self._save_drivers()
         self._refresh_drivers_table()
         self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
+        self._update_pricing_drivers_list()  # עדכון גם בטאב מחירון
+        self._refresh_pricing_table()  # עדכון טבלת מחירון
         self.driver_name_var.set('')
         self.driver_phone_var.set('')
 
@@ -194,6 +299,8 @@ class ShipmentsTabMixin:
         self._save_drivers()
         self._refresh_drivers_table()
         self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
+        self._update_pricing_drivers_list()  # עדכון גם בטאב מחירון
+        self._refresh_pricing_table()  # עדכון טבלת מחירון
 
     # ---- Data build ----
     def _refresh_shipments_table(self):
@@ -254,7 +361,8 @@ class ShipmentsTabMixin:
                             'pkg_index': idx,
                             'package_type': pkg.get('package_type',''),
                             'quantity': pkg.get('quantity',''),
-                            'driver': pkg.get('driver','')
+                            'driver': pkg.get('driver',''),
+                            'paid': pkg.get('paid', False)
                         })
             collect(supplier_intakes, 'supplier_intake')
             collect(delivery_notes, 'delivery_note')
@@ -272,8 +380,25 @@ class ShipmentsTabMixin:
                     collect([rec], rk)
             except Exception:
                 pass
-            # מיון תאריך יורד ואז מספר תעודה יורד
-            rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=True)
+            # מיון לפי בחירת המשתמש
+            sort_mode = getattr(self, 'shipments_sort_var', None)
+            if sort_mode:
+                sort_value = self._sort_display_to_value.get(sort_mode.get(), 'date_desc')
+            else:
+                sort_value = 'date_desc'
+            
+            if sort_value == 'date_desc':
+                rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=True)
+            elif sort_value == 'date_asc':
+                rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=False)
+            elif sort_value == 'package_type':
+                rows.sort(key=lambda r: (r['package_type'], r['sort_dt']), reverse=False)
+            elif sort_value == 'kind':
+                rows.sort(key=lambda r: (r['kind'], r['sort_dt']), reverse=False)
+            elif sort_value == 'driver':
+                rows.sort(key=lambda r: (r['driver'], r['sort_dt']), reverse=False)
+            else:
+                rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=True)
         except Exception:
             rows = []
         if hasattr(self, 'shipments_tree'):
@@ -282,7 +407,8 @@ class ShipmentsTabMixin:
             for iid in self.shipments_tree.get_children():
                 self.shipments_tree.delete(iid)
             for r in rows:
-                iid = self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity'], r.get('driver','')))
+                paid_display = '✓' if r.get('paid') else ''
+                iid = self.shipments_tree.insert('', 'end', values=(r['rec_id'], r['kind'], r['date'], r['package_type'], r['quantity'], r.get('driver',''), paid_display))
                 # שמירת מטא כדי לאפשר מחיקה מדויקת של פריט הובלה
                 self._shipments_row_meta[iid] = {
                     'rec_id': r['rec_id'],
@@ -290,7 +416,8 @@ class ShipmentsTabMixin:
                     'pkg_index': r.get('pkg_index'),
                     'package_type': r.get('package_type'),
                     'quantity': r.get('quantity'),
-                    'driver': r.get('driver')
+                    'driver': r.get('driver'),
+                    'paid': r.get('paid', False)
                 }
 
     def _delete_selected_shipment_row(self):
@@ -402,6 +529,93 @@ class ShipmentsTabMixin:
         except Exception as e:
             messagebox.showerror('שגיאה', f'כשל במחיקת פריט הובלה: {e}')
 
+    def _mark_shipment_as_paid(self):
+        """סמן את ההובלה הנבחרת כשולמה."""
+        if not hasattr(self, 'shipments_tree'):
+            return
+        sel = self.shipments_tree.selection()
+        if not sel:
+            messagebox.showinfo('אין בחירה', 'נא לבחור שורת הובלה לסימון כשולמה')
+            return
+        self._update_shipment_paid_status(sel[0], True)
+
+    def _mark_shipment_as_unpaid(self):
+        """בטל סימון שולם עבור ההובלה הנבחרת."""
+        if not hasattr(self, 'shipments_tree'):
+            return
+        sel = self.shipments_tree.selection()
+        if not sel:
+            messagebox.showinfo('אין בחירה', 'נא לבחור שורת הובלה לביטול סימון שולם')
+            return
+        self._update_shipment_paid_status(sel[0], False)
+
+    def _update_shipment_paid_status(self, tree_iid, paid_status: bool):
+        """עדכן את מצב השולם של הובלה ושמור למסד נתונים."""
+        try:
+            # קבל מטא נתונים
+            meta = getattr(self, '_shipments_row_meta', {}).get(tree_iid) if hasattr(self, '_shipments_row_meta') else None
+            if not meta:
+                messagebox.showerror('שגיאה', 'לא נמצאו מטא נתונים לשורה זו')
+                return
+            
+            rec_id = meta.get('rec_id')
+            receipt_kind = meta.get('receipt_kind')
+            pkg_index = meta.get('pkg_index')
+            
+            # מציאת הרשומה במקור
+            if receipt_kind == 'supplier_intake':
+                records = getattr(self.data_processor, 'supplier_intakes', [])
+            elif receipt_kind == 'delivery_note':
+                records = getattr(self.data_processor, 'delivery_notes', [])
+            elif receipt_kind == 'fabrics_intake':
+                records = getattr(self.data_processor, 'fabrics_intakes', [])
+            else:  # fabrics_shipment
+                records = getattr(self.data_processor, 'fabrics_shipments', [])
+            
+            target_rec = None
+            for r in records:
+                if str(r.get('id')) == str(rec_id):
+                    target_rec = r
+                    break
+            
+            if target_rec is None:
+                messagebox.showerror('שגיאה', f"לא נמצאה רשומת מקור ID {rec_id}")
+                return
+            
+            # עדכן את מצב השולם
+            packages = target_rec.get('packages') or []
+            if pkg_index is not None and 0 <= int(pkg_index) < len(packages):
+                packages[int(pkg_index)]['paid'] = paid_status
+                
+                # שמירה לקובץ המתאים
+                if receipt_kind == 'supplier_intake':
+                    save_ok = self.data_processor._save_json_list(self.data_processor.supplier_intakes_file, records)
+                elif receipt_kind == 'delivery_note':
+                    save_ok = self.data_processor._save_json_list(self.data_processor.delivery_notes_file, records)
+                elif receipt_kind == 'fabrics_intake':
+                    save_ok = self.data_processor._save_json_list(self.data_processor.fabrics_intakes_file, records)
+                else:  # fabrics_shipment
+                    save_ok = self.data_processor._save_json_list(self.data_processor.fabrics_shipments_file, records)
+                
+                if save_ok:
+                    # ריענון רשימות
+                    try:
+                        if receipt_kind == 'fabrics_intake' and hasattr(self.data_processor, 'refresh_fabrics_intakes'):
+                            self.data_processor.refresh_fabrics_intakes()
+                        elif receipt_kind == 'fabrics_shipment' and hasattr(self.data_processor, 'refresh_fabrics_shipments'):
+                            self.data_processor.refresh_fabrics_shipments()
+                    except Exception:
+                        pass
+                    
+                    # ריענון טבלה
+                    self._refresh_shipments_table()
+                else:
+                    messagebox.showerror('שגיאה', 'כשל בשמירת השינויים')
+            else:
+                messagebox.showerror('שגיאה', 'אינדקס חבילה לא תקין')
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'כשל בעדכון מצב שולם: {e}')
+
     # ---- Hook from save actions ----
     def _notify_new_receipt_saved(self):
         """קריאה מהטאבים של קליטה / תעודת משלוח לאחר שמירה כדי לרענן הובלות."""
@@ -431,6 +645,7 @@ class ShipmentsTabMixin:
             driver_name = (self.payment_driver_var.get() or '').strip()
             start_date_str = (self.payment_start_date_var.get() or '').strip()
             end_date_str = (self.payment_end_date_var.get() or '').strip()
+            payment_filter = (self.payment_filter_var.get() or 'הכל').strip()
             
             # בדיקת תקינות
             if not driver_name:
@@ -500,6 +715,14 @@ class ShipmentsTabMixin:
                         if pkg_driver != driver_name:
                             continue
                         
+                        # בדיקת מצב תשלום לפי הפילטר
+                        pkg_paid = pkg.get('paid', False)
+                        if payment_filter == 'רק לא שולם' and pkg_paid:
+                            continue  # דלג על חבילות ששולמו
+                        elif payment_filter == 'רק שולם' and not pkg_paid:
+                            continue  # דלג על חבילות שלא שולמו
+                        # אם payment_filter == 'הכל', אל תדלג
+                        
                         pkg_type = pkg.get('package_type', 'לא מוגדר')
                         pkg_qty = pkg.get('quantity', 0)
                         
@@ -527,11 +750,18 @@ class ShipmentsTabMixin:
             # כותרת
             report_title = f"דו\"ח הובלות - {driver_name}\n"
             report_title += f"תקופה: {start_date_str} עד {end_date_str}\n"
+            report_title += f"סינון: {payment_filter}\n"
             report_title += "=" * 50 + "\n\n"
             self.payment_results_text.insert('end', report_title, 'title')
             
             if not package_counts:
-                self.payment_results_text.insert('end', "לא נמצאו הובלות בתקופה זו למוביל זה.\n", 'no_data')
+                no_data_msg = f"לא נמצאו הובלות בתקופה זו למוביל זה"
+                if payment_filter == 'רק לא שולם':
+                    no_data_msg += " (שלא שולמו)"
+                elif payment_filter == 'רק שולם':
+                    no_data_msg += " (ששולמו)"
+                no_data_msg += ".\n"
+                self.payment_results_text.insert('end', no_data_msg, 'no_data')
             else:
                 # תצוגת סיכום לפי סוג חבילה
                 self.payment_results_text.insert('end', "סיכום לפי סוג חבילה:\n\n", 'header')
@@ -556,3 +786,113 @@ class ShipmentsTabMixin:
             
         except Exception as e:
             messagebox.showerror('שגיאה', f'שגיאה בחישוב דו\"ח: {e}')
+
+    # ---- Pricing Management Functions ----
+    def _update_pricing_drivers_list(self):
+        """עדכון רשימת המובילים בטאב מחירון."""
+        try:
+            if not hasattr(self, 'pricing_driver_combo'):
+                return
+            driver_names = [d.get('name', '') for d in self._drivers if d.get('name')]
+            self.pricing_driver_combo['values'] = driver_names
+            if driver_names:
+                self.pricing_driver_combo.current(0)
+                # טען מחירים של המוביל הראשון
+                self._load_driver_pricing(None)
+        except Exception:
+            pass
+
+    def _load_driver_pricing(self, event):
+        """טעינת מחירי ההובלה של המוביל הנבחר."""
+        try:
+            driver_name = (self.pricing_driver_var.get() or '').strip()
+            if not driver_name:
+                return
+            
+            # מצא את המוביל
+            driver = None
+            for d in self._drivers:
+                if d.get('name') == driver_name:
+                    driver = d
+                    break
+            
+            if driver:
+                pricing = driver.get('pricing', {})
+                self.pricing_fabric_var.set(str(pricing.get('בד', 0)))
+                self.pricing_bag_var.set(str(pricing.get('שק', 0)))
+                self.pricing_small_bag_var.set(str(pricing.get('שקית קטנה', 0)))
+            else:
+                # אם לא נמצא, אפס את השדות
+                self.pricing_fabric_var.set('0')
+                self.pricing_bag_var.set('0')
+                self.pricing_small_bag_var.set('0')
+        except Exception:
+            pass
+
+    def _save_driver_pricing(self):
+        """שמירת מחירי ההובלה של המוביל הנבחר."""
+        try:
+            driver_name = (self.pricing_driver_var.get() or '').strip()
+            if not driver_name:
+                messagebox.showwarning('חסר מוביל', 'נא לבחור מוביל')
+                return
+            
+            # קבלת מחירים
+            try:
+                fabric_price = float(self.pricing_fabric_var.get() or '0')
+                bag_price = float(self.pricing_bag_var.get() or '0')
+                small_bag_price = float(self.pricing_small_bag_var.get() or '0')
+            except ValueError:
+                messagebox.showerror('שגיאה', 'נא להזין מחירים תקינים (מספרים בלבד)')
+                return
+            
+            # מצא את המוביל ועדכן מחירים
+            driver_found = False
+            for d in self._drivers:
+                if d.get('name') == driver_name:
+                    d['pricing'] = {
+                        'בד': fabric_price,
+                        'שק': bag_price,
+                        'שקית קטנה': small_bag_price
+                    }
+                    driver_found = True
+                    break
+            
+            if not driver_found:
+                messagebox.showerror('שגיאה', 'לא נמצא מוביל בשם זה')
+                return
+            
+            # שמור לקובץ
+            self._save_drivers()
+            self._refresh_pricing_table()
+            messagebox.showinfo('הצלחה', f'המחירים של {driver_name} נשמרו בהצלחה')
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בשמירת מחירים: {e}')
+
+    def _refresh_pricing_table(self):
+        """רענון טבלת המחירון."""
+        try:
+            if not hasattr(self, 'pricing_tree'):
+                return
+            
+            # נקה טבלה
+            for iid in self.pricing_tree.get_children():
+                self.pricing_tree.delete(iid)
+            
+            # הוסף שורות
+            for driver in self._drivers:
+                name = driver.get('name', '')
+                pricing = driver.get('pricing', {})
+                fabric_price = pricing.get('בד', 0)
+                bag_price = pricing.get('שק', 0)
+                small_bag_price = pricing.get('שקית קטנה', 0)
+                
+                self.pricing_tree.insert('', 'end', values=(
+                    name,
+                    f'{fabric_price:.2f}' if fabric_price else '0.00',
+                    f'{bag_price:.2f}' if bag_price else '0.00',
+                    f'{small_bag_price:.2f}' if small_bag_price else '0.00'
+                ))
+        except Exception:
+            pass
