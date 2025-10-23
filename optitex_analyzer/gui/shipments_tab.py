@@ -743,6 +743,13 @@ class ShipmentsTabMixin:
             process_records(fabrics_intakes)
             process_records(fabrics_shipments)
             
+            # קבלת מחירים של המוביל
+            driver_pricing = {}
+            for d in self._drivers:
+                if d.get('name') == driver_name:
+                    driver_pricing = d.get('pricing', {})
+                    break
+            
             # הצגת תוצאות
             self.payment_results_text.config(state='normal')
             self.payment_results_text.delete('1.0', 'end')
@@ -763,23 +770,38 @@ class ShipmentsTabMixin:
                 no_data_msg += ".\n"
                 self.payment_results_text.insert('end', no_data_msg, 'no_data')
             else:
-                # תצוגת סיכום לפי סוג חבילה
-                self.payment_results_text.insert('end', "סיכום לפי סוג חבילה:\n\n", 'header')
+                # תצוגת סיכום לפי סוג חבילה עם חישובי מחיר
+                self.payment_results_text.insert('end', "סיכום כמויות ועלויות:\n\n", 'header')
                 
+                total_cost = 0
                 for pkg_type, qty in sorted(package_counts.items()):
-                    line = f"  • {pkg_type}: {qty}\n"
-                    self.payment_results_text.insert('end', line, 'data')
+                    # קבלת מחיר לפי סוג החבילה
+                    price = driver_pricing.get(pkg_type, 0)
+                    cost = qty * price
+                    total_cost += cost
+                    
+                    # הצגת השורה
+                    if price > 0:
+                        line = f"  • {pkg_type}: {qty} × {price:.2f} ₪ = {cost:.2f} ₪\n"
+                        self.payment_results_text.insert('end', line, 'data')
+                    else:
+                        line = f"  • {pkg_type}: {qty} (ללא מחיר במחירון)\n"
+                        self.payment_results_text.insert('end', line, 'data_warning')
                 
                 self.payment_results_text.insert('end', "\n" + "-" * 50 + "\n", 'separator')
                 total_line = f"סה\"כ חבילות: {total_packages}\n"
                 self.payment_results_text.insert('end', total_line, 'total')
+                cost_line = f"סה\"כ לתשלום: {total_cost:.2f} ₪\n"
+                self.payment_results_text.insert('end', cost_line, 'total_cost')
             
             # עיצוב טקסט
             self.payment_results_text.tag_config('title', font=('Arial', 13, 'bold'), foreground='#2c3e50')
             self.payment_results_text.tag_config('header', font=('Arial', 12, 'bold'), foreground='#34495e')
             self.payment_results_text.tag_config('data', font=('Arial', 11), foreground='#2c3e50')
+            self.payment_results_text.tag_config('data_warning', font=('Arial', 11), foreground='#e67e22')
             self.payment_results_text.tag_config('separator', foreground='#95a5a6')
             self.payment_results_text.tag_config('total', font=('Arial', 12, 'bold'), foreground='#27ae60')
+            self.payment_results_text.tag_config('total_cost', font=('Arial', 13, 'bold'), foreground='#27ae60')
             self.payment_results_text.tag_config('no_data', font=('Arial', 11), foreground='#e74c3c')
             
             self.payment_results_text.config(state='disabled')
