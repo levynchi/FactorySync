@@ -643,7 +643,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112848",
@@ -852,7 +852,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112799",
@@ -890,7 +890,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112791",
@@ -909,7 +909,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112790",
@@ -1251,7 +1251,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112697",
@@ -1536,7 +1536,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112617",
@@ -1707,7 +1707,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112573",
@@ -1783,7 +1783,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112530",
@@ -1802,7 +1802,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112525",
@@ -1935,7 +1935,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112489",
@@ -2258,7 +2258,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25112161",
@@ -3094,7 +3094,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25111911",
@@ -3189,7 +3189,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25111880",
@@ -3227,7 +3227,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25111875",
@@ -3474,7 +3474,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25111792",
@@ -3607,7 +3607,7 @@
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "נשלח"
+    "status": "נגזר"
   },
   {
     "barcode": "25111757",
@@ -3907,11 +3907,11 @@
     "meters": 48.41,
     "price": 6.7,
     "total": 98.16,
-    "location": "אריה",
+    "location": "אלשראר מסחר ותעשייה בע\"מ",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25103900",
@@ -4363,11 +4363,11 @@
     "meters": 62.09,
     "price": 6.7,
     "total": 127.3,
-    "location": "אריה",
+    "location": "אלשראר מסחר ותעשייה בע\"מ",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25048131",
@@ -4401,11 +4401,11 @@
     "meters": 56.05,
     "price": 6.7,
     "total": 114.91,
-    "location": "אריה",
+    "location": "אלשראר מסחר ותעשייה בע\"מ",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25048121",
