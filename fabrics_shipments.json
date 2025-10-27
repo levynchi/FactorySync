@@ -42,7 +42,8 @@
       {
         "package_type": "בד",
         "quantity": 13,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -69,7 +70,8 @@
       {
         "package_type": "בד",
         "quantity": 6,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -194,7 +196,8 @@
       {
         "package_type": "בד",
         "quantity": 104,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -216,7 +219,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -270,7 +274,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -310,7 +315,8 @@
       {
         "package_type": "בד",
         "quantity": 3,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",

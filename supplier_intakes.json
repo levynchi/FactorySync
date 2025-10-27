@@ -43,7 +43,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -73,7 +74,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -146,7 +148,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -221,7 +224,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -352,7 +356,8 @@
       {
         "package_type": "שק",
         "quantity": 5,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -427,7 +432,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -572,7 +578,8 @@
       {
         "package_type": "שק",
         "quantity": 5,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -719,7 +726,8 @@
       {
         "package_type": "שק",
         "quantity": 4,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -822,7 +830,8 @@
       {
         "package_type": "שק",
         "quantity": 3,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -882,7 +891,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1026,7 +1036,8 @@
       {
         "package_type": "שק",
         "quantity": 4,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1129,7 +1140,8 @@
       {
         "package_type": "שק",
         "quantity": 5,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1204,7 +1216,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1516,7 +1529,8 @@
       {
         "package_type": "שק",
         "quantity": 11,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1759,7 +1773,8 @@
       {
         "package_type": "שק",
         "quantity": 14,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1834,7 +1849,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",
@@ -1881,7 +1897,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "receipt_kind": "supplier_intake",

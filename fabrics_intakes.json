@@ -83,7 +83,8 @@
       {
         "package_type": "בד",
         "quantity": 9,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "created_at": "2025-08-26 13:04:59"
@@ -108,7 +109,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "created_at": "2025-08-26 13:07:16"

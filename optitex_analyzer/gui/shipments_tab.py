@@ -25,6 +25,48 @@ class ShipmentsTabMixin:
         inner_nb.add(shipments_page, text='סיכום הובלות')
         tk.Label(shipments_page, text="הובלות - סיכום הובלה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
 
+        # פריים סינון
+        filter_frame = tk.LabelFrame(shipments_page, text='סינון', bg='#f7f9fa', font=('Arial',9,'bold'))
+        filter_frame.pack(fill='x', padx=8, pady=(0,4))
+        
+        # שורה ראשונה: מוביל ומצב תשלום
+        filter_row1 = tk.Frame(filter_frame, bg='#f7f9fa')
+        filter_row1.pack(fill='x', padx=4, pady=4)
+        
+        tk.Label(filter_row1, text='מוביל:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(4,2))
+        self.shipments_filter_driver_var = tk.StringVar(value='הכל')
+        self.shipments_filter_driver_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_driver_var, width=15, state='readonly')
+        self.shipments_filter_driver_combo['values'] = ['הכל']
+        self.shipments_filter_driver_combo.pack(side='right', padx=2)
+        self.shipments_filter_driver_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
+        
+        tk.Label(filter_row1, text='מצב תשלום:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        self.shipments_filter_paid_var = tk.StringVar(value='הכל')
+        filter_paid_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_paid_var, width=12, state='readonly')
+        filter_paid_combo['values'] = ['הכל', 'רק שולם', 'רק לא שולם']
+        filter_paid_combo.pack(side='right', padx=2)
+        filter_paid_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
+        
+        # שורה שנייה: תאריכים
+        filter_row2 = tk.Frame(filter_frame, bg='#f7f9fa')
+        filter_row2.pack(fill='x', padx=4, pady=4)
+        
+        tk.Label(filter_row2, text='תאריך מ:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(4,2))
+        self.shipments_filter_date_from_var = tk.StringVar()
+        date_from_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_from_var, width=12, font=('Arial',9))
+        date_from_entry.pack(side='right', padx=2)
+        date_from_entry.bind('<KeyRelease>', lambda e: self._refresh_shipments_table())
+        tk.Button(filter_row2, text='📅', width=2, command=lambda: self._open_date_picker(date_from_entry, self.shipments_filter_date_from_var)).pack(side='right', padx=2)
+        
+        tk.Label(filter_row2, text='עד:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        self.shipments_filter_date_to_var = tk.StringVar()
+        date_to_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_to_var, width=12, font=('Arial',9))
+        date_to_entry.pack(side='right', padx=2)
+        date_to_entry.bind('<KeyRelease>', lambda e: self._refresh_shipments_table())
+        tk.Button(filter_row2, text='📅', width=2, command=lambda: self._open_date_picker(date_to_entry, self.shipments_filter_date_to_var)).pack(side='right', padx=2)
+        
+        tk.Button(filter_row2, text='🔄 נקה סינון', command=self._clear_shipments_filter, bg='#95a5a6', fg='white', font=('Arial',8)).pack(side='right', padx=(10,2))
+
         toolbar = tk.Frame(shipments_page, bg='#f7f9fa')
         toolbar.pack(fill='x', padx=8, pady=(0,4))
         
@@ -102,6 +144,7 @@ class ShipmentsTabMixin:
 
         self._load_drivers()
         self._refresh_drivers_table()
+        self._update_shipments_filter_drivers()
 
         # --- עמוד דו"ח חישוב הובלות לתשלום ---
         payment_report_page = tk.Frame(inner_nb, bg='#f7f9fa')
@@ -149,10 +192,12 @@ class ShipmentsTabMixin:
         payment_filter_combo.current(1)  # ברירת מחדל: רק לא שולם
         payment_filter_combo.pack(side='right', padx=5)
         
-        # כפתור חישוב
+        # כפתורי חישוב ושמירה
         btn_frame = tk.Frame(params_frame, bg='#f7f9fa')
         btn_frame.pack(fill='x', padx=10, pady=10)
-        tk.Button(btn_frame, text='📊 חשב דו"ח', command=self._calculate_payment_report, bg='#2ecc71', fg='white', font=('Arial',11,'bold'), width=20).pack()
+        tk.Button(btn_frame, text='📊 חשב דו"ח', command=self._calculate_payment_report, bg='#2ecc71', fg='white', font=('Arial',11,'bold'), width=20).pack(side='right', padx=5)
+        self.save_report_btn = tk.Button(btn_frame, text='💾 שמור דוח', command=self._save_shipment_report, bg='#3498db', fg='white', font=('Arial',11,'bold'), width=20, state='disabled')
+        self.save_report_btn.pack(side='right', padx=5)
         
         # פריים לתוצאות
         results_frame = tk.LabelFrame(payment_report_page, text='תוצאות', bg='#f7f9fa', font=('Arial',10,'bold'))
@@ -234,6 +279,47 @@ class ShipmentsTabMixin:
         self._update_pricing_drivers_list()
         self._refresh_pricing_table()
 
+        # --- עמוד היסטוריית דוחות ---
+        reports_history_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inner_nb.add(reports_history_page, text='היסטוריית דוחות')
+        
+        tk.Label(reports_history_page, text="היסטוריית דוחות הובלות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        
+        # כפתור רענון
+        toolbar_reports = tk.Frame(reports_history_page, bg='#f7f9fa')
+        toolbar_reports.pack(fill='x', padx=8, pady=(0,4))
+        tk.Button(toolbar_reports, text="🔄 רענן", command=self._refresh_reports_history, bg='#3498db', fg='white').pack(side='right', padx=4)
+        
+        # טבלת דוחות
+        reports_columns = ('report_id', 'created_at', 'driver', 'period', 'total_cost', 'open_excel')
+        self.reports_history_tree = ttk.Treeview(reports_history_page, columns=reports_columns, show='headings', height=15)
+        self.reports_history_tree.heading('report_id', text='מספר דוח')
+        self.reports_history_tree.heading('created_at', text='תאריך יצירה')
+        self.reports_history_tree.heading('driver', text='מוביל')
+        self.reports_history_tree.heading('period', text='תקופה')
+        self.reports_history_tree.heading('total_cost', text='סכום לתשלום (₪)')
+        self.reports_history_tree.heading('open_excel', text='פתיחה')
+        self.reports_history_tree.column('report_id', width=80, anchor='center')
+        self.reports_history_tree.column('created_at', width=140, anchor='center')
+        self.reports_history_tree.column('driver', width=120, anchor='center')
+        self.reports_history_tree.column('period', width=180, anchor='center')
+        self.reports_history_tree.column('total_cost', width=120, anchor='center')
+        self.reports_history_tree.column('open_excel', width=100, anchor='center')
+        
+        # דאבל קליק לפתיחת אקסל
+        self.reports_history_tree.bind('<Double-Button-1>', self._on_report_double_click)
+        
+        reports_scroll = ttk.Scrollbar(reports_history_page, orient='vertical', command=self.reports_history_tree.yview)
+        self.reports_history_tree.configure(yscroll=reports_scroll.set)
+        self.reports_history_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
+        reports_scroll.pack(side='left', fill='y', pady=6)
+        
+        # טעינת היסטוריה
+        self._refresh_reports_history()
+        
+        # אתחול משתנה לדוח נוכחי
+        self._current_report_data = None
+
     # ---- Drivers management ----
     def _drivers_file_path(self):
         return os.path.join(os.getcwd(), 'drivers.json')
@@ -265,6 +351,32 @@ class ShipmentsTabMixin:
             self.drivers_tree.delete(iid)
         for d in self._drivers:
             self.drivers_tree.insert('', 'end', values=(d.get('name',''), d.get('phone','')))
+    
+    def _update_shipments_filter_drivers(self):
+        """עדכון רשימת המובילים בסינון."""
+        try:
+            if not hasattr(self, 'shipments_filter_driver_combo'):
+                return
+            driver_names = ['הכל'] + [d.get('name', '') for d in self._drivers if d.get('name')]
+            current = self.shipments_filter_driver_var.get()
+            self.shipments_filter_driver_combo['values'] = driver_names
+            if current in driver_names:
+                self.shipments_filter_driver_var.set(current)
+            else:
+                self.shipments_filter_driver_var.set('הכל')
+        except Exception:
+            pass
+    
+    def _clear_shipments_filter(self):
+        """ניקוי כל הסינונים."""
+        try:
+            self.shipments_filter_driver_var.set('הכל')
+            self.shipments_filter_paid_var.set('הכל')
+            self.shipments_filter_date_from_var.set('')
+            self.shipments_filter_date_to_var.set('')
+            self._refresh_shipments_table()
+        except Exception:
+            pass
 
     def _add_or_update_driver(self):
         name = (self.driver_name_var.get() or '').strip()
@@ -284,6 +396,7 @@ class ShipmentsTabMixin:
         self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
         self._update_pricing_drivers_list()  # עדכון גם בטאב מחירון
         self._refresh_pricing_table()  # עדכון טבלת מחירון
+        self._update_shipments_filter_drivers()  # עדכון גם בסינון הובלות
         self.driver_name_var.set('')
         self.driver_phone_var.set('')
 
@@ -301,6 +414,7 @@ class ShipmentsTabMixin:
         self._update_payment_drivers_list()  # עדכון גם בטאב דו"ח תשלום
         self._update_pricing_drivers_list()  # עדכון גם בטאב מחירון
         self._refresh_pricing_table()  # עדכון טבלת מחירון
+        self._update_shipments_filter_drivers()  # עדכון גם בסינון הובלות
 
     # ---- Data build ----
     def _refresh_shipments_table(self):
@@ -399,6 +513,49 @@ class ShipmentsTabMixin:
                 rows.sort(key=lambda r: (r['driver'], r['sort_dt']), reverse=False)
             else:
                 rows.sort(key=lambda r: (r['sort_dt'], r['rec_id']), reverse=True)
+            
+            # סינון לפי קריטריונים
+            filtered_rows = []
+            filter_driver = getattr(self, 'shipments_filter_driver_var', None)
+            filter_paid = getattr(self, 'shipments_filter_paid_var', None)
+            filter_date_from = getattr(self, 'shipments_filter_date_from_var', None)
+            filter_date_to = getattr(self, 'shipments_filter_date_to_var', None)
+            
+            for r in rows:
+                # סינון מוביל
+                if filter_driver and filter_driver.get() != 'הכל':
+                    if r.get('driver', '') != filter_driver.get():
+                        continue
+                
+                # סינון מצב תשלום
+                if filter_paid:
+                    paid_filter_val = filter_paid.get()
+                    if paid_filter_val == 'רק שולם' and not r.get('paid', False):
+                        continue
+                    elif paid_filter_val == 'רק לא שולם' and r.get('paid', False):
+                        continue
+                
+                # סינון תאריך מ-
+                if filter_date_from and filter_date_from.get():
+                    try:
+                        date_from = datetime.strptime(filter_date_from.get(), '%Y-%m-%d')
+                        if r['sort_dt'] < date_from:
+                            continue
+                    except Exception:
+                        pass
+                
+                # סינון תאריך עד
+                if filter_date_to and filter_date_to.get():
+                    try:
+                        date_to = datetime.strptime(filter_date_to.get(), '%Y-%m-%d')
+                        if r['sort_dt'] > date_to:
+                            continue
+                    except Exception:
+                        pass
+                
+                filtered_rows.append(r)
+            
+            rows = filtered_rows
         except Exception:
             rows = []
         if hasattr(self, 'shipments_tree'):
@@ -806,8 +963,32 @@ class ShipmentsTabMixin:
             
             self.payment_results_text.config(state='disabled')
             
+            # שמירת נתוני הדוח לשימוש בשמירה
+            if package_counts:
+                self._current_report_data = {
+                    'driver': driver_name,
+                    'start_date': start_date_str,
+                    'end_date': end_date_str,
+                    'payment_filter': payment_filter,
+                    'package_counts': package_counts,
+                    'total_packages': total_packages,
+                    'total_cost': total_cost if 'total_cost' in locals() else 0,
+                    'driver_pricing': driver_pricing,
+                    'items_data': []  # נמלא בשמירה
+                }
+                # אפשר כפתור שמירה
+                if hasattr(self, 'save_report_btn'):
+                    self.save_report_btn.config(state='normal')
+            else:
+                self._current_report_data = None
+                if hasattr(self, 'save_report_btn'):
+                    self.save_report_btn.config(state='disabled')
+            
         except Exception as e:
             messagebox.showerror('שגיאה', f'שגיאה בחישוב דו\"ח: {e}')
+            self._current_report_data = None
+            if hasattr(self, 'save_report_btn'):
+                self.save_report_btn.config(state='disabled')
 
     # ---- Pricing Management Functions ----
     def _update_pricing_drivers_list(self):
@@ -918,3 +1099,404 @@ class ShipmentsTabMixin:
                 ))
         except Exception:
             pass
+
+    # ---- Shipment Reports Functions ----
+    def _save_shipment_report(self):
+        """שמירת דוח הובלות - יצירת אקסל, עדכון סטטוס שולם ושמירת מטא-דאטה."""
+        try:
+            if not self._current_report_data:
+                messagebox.showwarning('אין דוח', 'נא לחשב דוח לפני השמירה')
+                return
+            
+            # בקש אישור
+            if not messagebox.askyesno('אישור שמירה', 
+                'שמירת הדוח תסמן את כל ההובלות כשולמו.\nהאם להמשיך?'):
+                return
+            
+            # איסוף פריטי הדוח מחדש (עם מחיר בלבד)
+            report_items = self._collect_report_items()
+            if not report_items:
+                messagebox.showerror('שגיאה', 'לא נמצאו פריטים לדוח')
+                return
+            
+            # יצירת קובץ אקסל
+            excel_filename = self._create_shipment_report_excel(report_items)
+            if not excel_filename:
+                return
+            
+            # עדכון סטטוס שולם
+            self._mark_report_items_as_paid(report_items)
+            
+            # שמירת מטא-דאטה
+            report_id = self._save_report_metadata(excel_filename)
+            
+            # הודעה למשתמש
+            messagebox.showinfo('הצלחה', f'הדוח נשמר בהצלחה!\nמספר דוח: {report_id}\nקובץ: {excel_filename}')
+            
+            # רענון היסטוריה וסיכום הובלות
+            self._refresh_reports_history()
+            self._refresh_shipments_table()
+            
+            # נקה דוח נוכחי ונטרל כפתור
+            self._current_report_data = None
+            if hasattr(self, 'save_report_btn'):
+                self.save_report_btn.config(state='disabled')
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בשמירת דוח: {e}')
+
+    def _collect_report_items(self):
+        """איסוף כל פריטי ההובלה שהשתתפו בדוח."""
+        if not self._current_report_data:
+            return []
+        
+        items = []
+        driver_name = self._current_report_data['driver']
+        start_date_str = self._current_report_data['start_date']
+        end_date_str = self._current_report_data['end_date']
+        payment_filter = self._current_report_data['payment_filter']
+        driver_pricing = self._current_report_data['driver_pricing']
+        
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        except:
+            return []
+        
+        # איסוף נתונים
+        supplier_intakes = getattr(self.data_processor, 'supplier_intakes', [])
+        delivery_notes = getattr(self.data_processor, 'delivery_notes', [])
+        fabrics_intakes = getattr(self.data_processor, 'fabrics_intakes', [])
+        fabrics_shipments = getattr(self.data_processor, 'fabrics_shipments', [])
+        
+        def collect_from_records(records_list, receipt_kind):
+            for rec in records_list:
+                rec_id = rec.get('id')
+                date_str = rec.get('date', '')
+                try:
+                    rec_date = datetime.strptime(date_str, '%Y-%m-%d')
+                except:
+                    try:
+                        rec_date = datetime.strptime(date_str[:10], '%Y-%m-%d')
+                    except:
+                        continue
+                
+                if not (start_date <= rec_date <= end_date):
+                    continue
+                
+                for pkg_index, pkg in enumerate(rec.get('packages', []) or []):
+                    pkg_driver = (pkg.get('driver', '') or '').strip()
+                    if pkg_driver != driver_name:
+                        continue
+                    
+                    pkg_paid = pkg.get('paid', False)
+                    if payment_filter == 'רק לא שולם' and pkg_paid:
+                        continue
+                    elif payment_filter == 'רק שולם' and not pkg_paid:
+                        continue
+                    
+                    pkg_type = pkg.get('package_type', 'לא מוגדר')
+                    price = driver_pricing.get(pkg_type, 0)
+                    
+                    # רק פריטים עם מחיר
+                    if price <= 0:
+                        continue
+                    
+                    pkg_qty = pkg.get('quantity', 0)
+                    try:
+                        pkg_qty = int(pkg_qty)
+                    except:
+                        pkg_qty = 0
+                    
+                    kind_display = 'קליטה' if receipt_kind == 'supplier_intake' else ('הובלה' if receipt_kind == 'delivery_note' else ('קליטת בדים' if receipt_kind == 'fabrics_intake' else 'שליחת בדים'))
+                    
+                    items.append({
+                        'rec_id': rec_id,
+                        'receipt_kind': receipt_kind,
+                        'pkg_index': pkg_index,
+                        'kind': kind_display,
+                        'date': date_str,
+                        'package_type': pkg_type,
+                        'quantity': pkg_qty,
+                        'driver': pkg_driver,
+                        'price': price,
+                        'cost': pkg_qty * price
+                    })
+        
+        collect_from_records(supplier_intakes, 'supplier_intake')
+        collect_from_records(delivery_notes, 'delivery_note')
+        collect_from_records(fabrics_intakes, 'fabrics_intake')
+        collect_from_records(fabrics_shipments, 'fabrics_shipment')
+        
+        return items
+
+    def _create_shipment_report_excel(self, report_items):
+        """יצירת קובץ אקסל עם הדוח."""
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, PatternFill
+        except ImportError:
+            messagebox.showerror('שגיאה', 'חסרה ספריית openpyxl. נא להתקין: pip install openpyxl')
+            return None
+        
+        try:
+            # יצירת תיקייה
+            reports_dir = os.path.join(os.getcwd(), 'exports', 'shipment_reports')
+            os.makedirs(reports_dir, exist_ok=True)
+            
+            # שם קובץ
+            driver_name = self._current_report_data['driver']
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            
+            # מציאת מספר דוח רץ
+            report_num = 1
+            while True:
+                filename = f"דוח_הובלות_{driver_name}_{timestamp}_{report_num:03d}.xlsx"
+                filepath = os.path.join(reports_dir, filename)
+                if not os.path.exists(filepath):
+                    break
+                report_num += 1
+            
+            # יצירת ספר עבודה
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "דוח הובלות"
+            
+            # כותרת
+            ws['A1'] = f"דוח הובלות - {driver_name}"
+            ws['A1'].font = Font(bold=True, size=14)
+            ws['A2'] = f"תקופה: {self._current_report_data['start_date']} עד {self._current_report_data['end_date']}"
+            ws['A3'] = f"סינון: {self._current_report_data['payment_filter']}"
+            
+            # סיכום
+            ws['A5'] = "סיכום כמויות ועלויות:"
+            ws['A5'].font = Font(bold=True, size=12)
+            
+            row = 6
+            package_counts = self._current_report_data['package_counts']
+            driver_pricing = self._current_report_data['driver_pricing']
+            
+            for pkg_type in sorted(package_counts.keys()):
+                qty = package_counts[pkg_type]
+                price = driver_pricing.get(pkg_type, 0)
+                if price > 0:
+                    cost = qty * price
+                    ws[f'A{row}'] = f"  • {pkg_type}: {qty} × {price:.2f} ₪ = {cost:.2f} ₪"
+                    row += 1
+            
+            row += 1
+            ws[f'A{row}'] = f"סה\"כ חבילות: {self._current_report_data['total_packages']}"
+            ws[f'A{row}'].font = Font(bold=True)
+            row += 1
+            ws[f'A{row}'] = f"סה\"כ לתשלום: {self._current_report_data['total_cost']:.2f} ₪"
+            ws[f'A{row}'].font = Font(bold=True, size=12, color="006100")
+            
+            # טבלה
+            row += 2
+            headers = ['מספר תעודה', 'סוג', 'תאריך', 'פריט הובלה', 'כמות', 'מוביל', 'מחיר ליחידה', 'עלות']
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=row, column=col, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+                cell.alignment = Alignment(horizontal='center')
+            
+            # נתונים
+            for item in report_items:
+                row += 1
+                ws.cell(row=row, column=1, value=item['rec_id'])
+                ws.cell(row=row, column=2, value=item['kind'])
+                ws.cell(row=row, column=3, value=item['date'])
+                ws.cell(row=row, column=4, value=item['package_type'])
+                ws.cell(row=row, column=5, value=item['quantity'])
+                ws.cell(row=row, column=6, value=item['driver'])
+                ws.cell(row=row, column=7, value=f"{item['price']:.2f}")
+                ws.cell(row=row, column=8, value=f"{item['cost']:.2f}")
+            
+            # רוחב עמודות
+            ws.column_dimensions['A'].width = 15
+            ws.column_dimensions['B'].width = 15
+            ws.column_dimensions['C'].width = 12
+            ws.column_dimensions['D'].width = 18
+            ws.column_dimensions['E'].width = 10
+            ws.column_dimensions['F'].width = 15
+            ws.column_dimensions['G'].width = 15
+            ws.column_dimensions['H'].width = 12
+            
+            # שמירה
+            wb.save(filepath)
+            
+            return filename
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה ביצירת קובץ אקסל: {e}')
+            return None
+
+    def _mark_report_items_as_paid(self, report_items):
+        """עדכון סטטוס שולם לכל הפריטים בדוח."""
+        try:
+            # קיבוץ לפי סוג רשומה
+            updates_by_kind = {}
+            for item in report_items:
+                kind = item['receipt_kind']
+                if kind not in updates_by_kind:
+                    updates_by_kind[kind] = []
+                updates_by_kind[kind].append(item)
+            
+            # עדכון כל סוג
+            for receipt_kind, items in updates_by_kind.items():
+                if receipt_kind == 'supplier_intake':
+                    records = getattr(self.data_processor, 'supplier_intakes', [])
+                    file_path = self.data_processor.supplier_intakes_file
+                elif receipt_kind == 'delivery_note':
+                    records = getattr(self.data_processor, 'delivery_notes', [])
+                    file_path = self.data_processor.delivery_notes_file
+                elif receipt_kind == 'fabrics_intake':
+                    records = getattr(self.data_processor, 'fabrics_intakes', [])
+                    file_path = self.data_processor.fabrics_intakes_file
+                else:  # fabrics_shipment
+                    records = getattr(self.data_processor, 'fabrics_shipments', [])
+                    file_path = self.data_processor.fabrics_shipments_file
+                
+                # עדכון פריטים
+                for item in items:
+                    for rec in records:
+                        if str(rec.get('id')) == str(item['rec_id']):
+                            packages = rec.get('packages', [])
+                            pkg_index = item['pkg_index']
+                            if 0 <= pkg_index < len(packages):
+                                packages[pkg_index]['paid'] = True
+                            break
+                
+                # שמירה
+                self.data_processor._save_json_list(file_path, records)
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בעדכון סטטוס שולם: {e}')
+
+    def _save_report_metadata(self, excel_filename):
+        """שמירת מטא-דאטה של הדוח."""
+        try:
+            reports_file = os.path.join(os.getcwd(), 'shipment_reports.json')
+            
+            # טעינת דוחות קיימים
+            if os.path.exists(reports_file):
+                try:
+                    with open(reports_file, 'r', encoding='utf-8') as f:
+                        reports = json.load(f)
+                except:
+                    reports = []
+            else:
+                reports = []
+            
+            # מציאת מספר דוח חדש
+            if reports:
+                max_id = max(r.get('id', 0) for r in reports)
+                new_id = max_id + 1
+            else:
+                new_id = 1
+            
+            # יצירת רשומה
+            report_record = {
+                'id': new_id,
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'driver': self._current_report_data['driver'],
+                'start_date': self._current_report_data['start_date'],
+                'end_date': self._current_report_data['end_date'],
+                'payment_filter': self._current_report_data['payment_filter'],
+                'total_packages': self._current_report_data['total_packages'],
+                'total_cost': self._current_report_data['total_cost'],
+                'excel_file': excel_filename
+            }
+            
+            reports.append(report_record)
+            
+            # שמירה
+            with open(reports_file, 'w', encoding='utf-8') as f:
+                json.dump(reports, f, ensure_ascii=False, indent=2)
+            
+            return new_id
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בשמירת מטא-דאטה: {e}')
+            return 0
+
+    def _refresh_reports_history(self):
+        """רענון טבלת היסטוריית הדוחות."""
+        try:
+            if not hasattr(self, 'reports_history_tree'):
+                return
+            
+            # ניקוי טבלה
+            for iid in self.reports_history_tree.get_children():
+                self.reports_history_tree.delete(iid)
+            
+            # טעינת דוחות
+            reports_file = os.path.join(os.getcwd(), 'shipment_reports.json')
+            if not os.path.exists(reports_file):
+                return
+            
+            try:
+                with open(reports_file, 'r', encoding='utf-8') as f:
+                    reports = json.load(f)
+            except:
+                return
+            
+            # הוספה לטבלה (הפוך - חדשים ראשונים)
+            for report in reversed(reports):
+                period = f"{report.get('start_date', '')} - {report.get('end_date', '')}"
+                self.reports_history_tree.insert('', 'end', values=(
+                    report.get('id', ''),
+                    report.get('created_at', ''),
+                    report.get('driver', ''),
+                    period,
+                    f"{report.get('total_cost', 0):.2f}",
+                    '📄 פתח'
+                ))
+        except Exception as e:
+            pass
+
+    def _on_report_double_click(self, event):
+        """פתיחת קובץ אקסל בדאבל קליק."""
+        try:
+            selection = self.reports_history_tree.selection()
+            if not selection:
+                return
+            
+            values = self.reports_history_tree.item(selection[0], 'values')
+            if not values:
+                return
+            
+            report_id = values[0]
+            
+            # טעינת דוחות
+            reports_file = os.path.join(os.getcwd(), 'shipment_reports.json')
+            if not os.path.exists(reports_file):
+                return
+            
+            with open(reports_file, 'r', encoding='utf-8') as f:
+                reports = json.load(f)
+            
+            # מציאת דוח
+            report = None
+            for r in reports:
+                if str(r.get('id')) == str(report_id):
+                    report = r
+                    break
+            
+            if not report:
+                messagebox.showerror('שגיאה', 'לא נמצא דוח')
+                return
+            
+            # פתיחת קובץ
+            excel_filename = report.get('excel_file')
+            filepath = os.path.join(os.getcwd(), 'exports', 'shipment_reports', excel_filename)
+            
+            if not os.path.exists(filepath):
+                messagebox.showerror('שגיאה', f'קובץ לא נמצא: {excel_filename}')
+                return
+            
+            # פתיחה
+            os.startfile(filepath)
+            
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בפתיחת קובץ: {e}')
