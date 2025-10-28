@@ -137,6 +137,16 @@ class ProductsCatalogMethodsMixin:
         tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
         tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
 
+        # סרגל סינון לפי שם הדגם
+        filter_frame = ttk.Frame(parent, padding=4)
+        filter_frame.pack(fill='x', padx=10, pady=(0, 2))
+        tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=(8, 4))
+        self.product_filter_var = tk.StringVar()
+        self.product_filter_var.trace_add('write', lambda *args: self._filter_products_tree())
+        filter_entry = tk.Entry(filter_frame, textvariable=self.product_filter_var, width=30, font=('Arial', 10))
+        filter_entry.pack(side='right', padx=2)
+        tk.Button(filter_frame, text='🗑️ נקה', command=lambda: self.product_filter_var.set(''), bg='#e74c3c', fg='white', width=6).pack(side='right', padx=4)
+
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
         # Add main_category column for display
@@ -625,7 +635,15 @@ class ProductsCatalogMethodsMixin:
 
     # ===== LOADERS =====
     def _load_products_catalog_into_tree(self):
+        """טעינת קטלוג המוצרים לטבלה (משתמש במערכת הסינון אם קיימת)"""
         if not hasattr(self, 'products_tree'): return
+        
+        # אם קיים סינון פעיל, השתמש בו
+        if hasattr(self, 'product_filter_var'):
+            self._filter_products_tree()
+            return
+            
+        # אחרת, טען הכל
         for item in self.products_tree.get_children(): self.products_tree.delete(item)
         try:
             for rec in getattr(self.data_processor, 'products_catalog', []):
@@ -636,6 +654,36 @@ class ProductsCatalogMethodsMixin:
                     rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
+        except Exception:
+            pass
+
+    def _filter_products_tree(self):
+        """סינון טבלת הפריטים לפי שם הדגם בזמן אמת"""
+        if not hasattr(self, 'products_tree'): return
+        
+        # קבלת ערך החיפוש
+        filter_text = self.product_filter_var.get().strip().lower()
+        
+        # ניקוי הטבלה
+        for item in self.products_tree.get_children():
+            self.products_tree.delete(item)
+        
+        try:
+            # טעינת כל הפריטים ממאגר הנתונים
+            for rec in getattr(self.data_processor, 'products_catalog', []):
+                product_name = rec.get('name', '').lower()
+                
+                # אם אין סינון או שם המוצר מכיל את טקסט החיפוש
+                if not filter_text or filter_text in product_name:
+                    fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
+                    main_category_value = rec.get('main_category') or 'בגדים'
+                    self.products_tree.insert('', 'end', values=(
+                        rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), 
+                        rec.get('size'), rec.get('fabric_type'), rec.get('fabric_color'), 
+                        rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), 
+                        rec.get('ticks_qty'), rec.get('elastic_qty'), rec.get('ribbon_qty'), 
+                        rec.get('created_at')
+                    ))
         except Exception:
             pass
 
