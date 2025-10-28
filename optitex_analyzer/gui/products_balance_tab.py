@@ -536,9 +536,11 @@ class ProductsBalanceTabMixin:
         # כפתורי סינון מהיר לאביזרים עיקריים
         self.accessories_kind_filter_var = tk.StringVar(value='')
         tk.Button(acc_bar, text='כל האביזרים', command=self._set_accessories_summary).pack(side='left', padx=(4,12))
-        tk.Button(acc_bar, text='טיקטקים', command=lambda: self._set_accessories_kind_filter('טיק טק קומפלט')).pack(side='left', padx=(16,4))
+        tk.Button(acc_bar, text='טיקטקים', command=lambda: self._set_accessories_kind_filter('טיק טק')).pack(side='left', padx=(16,4))
         tk.Button(acc_bar, text='גומי', command=lambda: self._set_accessories_kind_filter('גומי')).pack(side='left', padx=4)
         tk.Button(acc_bar, text='סרט', command=lambda: self._set_accessories_kind_filter('סרט')).pack(side='left', padx=4)
+        tk.Button(acc_bar, text='תווית', command=lambda: self._set_accessories_kind_filter('תווית')).pack(side='left', padx=4)
+        tk.Button(acc_bar, text='רוכסן', command=lambda: self._set_accessories_kind_filter('רוכסן')).pack(side='left', padx=4)
         # טבלה (נבנית דינמית – סיכום או פירוט)
         self._accessories_detail_mode = False
         self._accessories_page_frame = accessories_page
@@ -2356,8 +2358,8 @@ class ProductsBalanceTabMixin:
         if detail and kind_filter:
             # פירוט כרונולוגי עבור אביזר נבחר
             moves = []
-            def add(date, kind, doc_no, qty, direction):
-                moves.append({'date': date or '', 'kind': kind or '', 'no': str(doc_no or ''), 'qty': int(qty or 0), 'direction': direction or ''})
+            def add(date, kind, doc_no, qty, direction, accessory_name=''):
+                moves.append({'date': date or '', 'kind': kind or '', 'no': str(doc_no or ''), 'qty': int(qty or 0), 'direction': direction or '', 'accessory_name': accessory_name or ''})
             # משלוחים ישירים של האביזר
             try:
                 for rec in getattr(self.data_processor, 'delivery_notes', []) or []:
@@ -2376,11 +2378,13 @@ class ProductsBalanceTabMixin:
                     #         add(rec_date, 'תעודת משלוח', rec_no, qty, 'נשלח')
                     # טבלת אביזרי תפירה הנפרדת
                     for acc in rec.get('accessories', []) or []:
-                        if norm(acc.get('accessory')) != norm(kind_filter):
+                        acc_name = norm(acc.get('accessory'))
+                        # התאמה חכמה: תואם אם kind_filter מופיע בשם האביזר
+                        if norm(kind_filter).lower() not in acc_name.lower():
                             continue
                         qty = float(acc.get('quantity', 0) or 0)
                         if qty > 0:
-                            add(rec_date, 'תעודת משלוח (אביזרים)', rec_no, qty, 'נשלח')
+                            add(rec_date, 'תעודת משלוח (אביזרים)', rec_no, qty, 'נשלח', acc_name)
             except Exception:
                 pass
             # קליטות ישירות של האביזר
@@ -2393,10 +2397,12 @@ class ProductsBalanceTabMixin:
                         continue
                     rec_no = rec.get('number') or rec.get('id') or ''
                     for ln in rec.get('lines', []) or []:
-                        if norm(ln.get('product')) == norm(kind_filter):
+                        product_name = norm(ln.get('product'))
+                        # התאמה חכמה: תואם אם kind_filter מופיע בשם המוצר
+                        if norm(kind_filter).lower() in product_name.lower():
                             qty = int(ln.get('quantity', 0) or 0)
                             if qty > 0:
-                                add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל')
+                                add(rec_date, 'תעודת קליטה', rec_no, qty, 'נתקבל', product_name)
                         # החזרי אביזרים מבגדים תפורים
                         subc = norm(ln.get('category'))
                         if subc == 'בגדים תפורים':
@@ -2421,12 +2427,12 @@ class ProductsBalanceTabMixin:
                                         break
                             except Exception:
                                 pass
-                            if norm(kind_filter) == 'טיק טק קומפלט' and per_ticks > 0:
-                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ticks * qty_units, 'נתקבל')
-                            if norm(kind_filter) == 'גומי' and per_elastic > 0:
-                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל')
-                            if norm(kind_filter) == 'סרט' and per_ribbon > 0:
-                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל')
+                            if 'טיק טק' in norm(kind_filter).lower() and per_ticks > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ticks * qty_units, 'נתקבל', 'טיק טקים קומפלט')
+                            if 'גומי' in norm(kind_filter).lower() and per_elastic > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל', 'גומי')
+                            if 'סרט' in norm(kind_filter).lower() and per_ribbon > 0:
+                                add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל', 'סרט')
             except Exception:
                 pass
 
@@ -2442,10 +2448,10 @@ class ProductsBalanceTabMixin:
             moves_sorted = sorted(moves, key=lambda m: (parse_dt(m['date']) or datetime.min, m['kind'], m['no']))
             for m in moves_sorted:
                 # חיפוש טקסטואלי על שדות עיקריים
-                hay = f"{m['date']} {m['kind']} {m['no']} {m['direction']}"
+                hay = f"{m['date']} {m['kind']} {m['no']} {m['accessory_name']} {m['direction']}"
                 if search_txt and search_txt.lower() not in hay.lower():
                     continue
-                self.accessories_tree.insert('', 'end', values=(m['date'], m['kind'], m['no'], m['direction'], m['qty']))
+                self.accessories_tree.insert('', 'end', values=(m['date'], m['kind'], m['no'], m['accessory_name'], m['direction'], m['qty']))
             return
 
         # סיכום: כל האביזרים שנשלחו/נתקבלו (לא רק 3 העיקריים)
@@ -2521,9 +2527,9 @@ class ProductsBalanceTabMixin:
             pass
         # בניה
         if detail:
-            cols = ('date','doc_type','doc_no','direction','qty')
-            headers = {'date':'תאריך','doc_type':'סוג מסמך','doc_no':'מס׳','direction':'תנועה','qty':'כמות'}
-            widths = {'date':140,'doc_type':170,'doc_no':120,'direction':90,'qty':90}
+            cols = ('date','doc_type','doc_no','accessory_name','direction','qty')
+            headers = {'date':'תאריך','doc_type':'סוג מסמך','doc_no':'מס׳','accessory_name':'שם אביזר','direction':'תנועה','qty':'כמות'}
+            widths = {'date':110,'doc_type':160,'doc_no':90,'accessory_name':200,'direction':90,'qty':90}
         else:
             cols = ('name','unit','shipped','received','diff','status')
             headers = {'name':'שם אביזר','unit':'יחידה','shipped':'נשלח','received':'נתקבל','diff':'הפרש (נותר לקבל)','status':'סטטוס'}
