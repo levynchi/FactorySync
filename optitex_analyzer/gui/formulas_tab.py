@@ -29,17 +29,20 @@ class FormulasTabMixin:
         fabric_weight_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         product_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         tetra_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        all_over_print_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
         inner_nb.add(product_cost_tab, text="חישוב שמיכות")
         inner_nb.add(tetra_cost_tab, text="חישוב טטרות")
+        inner_nb.add(all_over_print_tab, text="בגדי אול אובר")
         
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
         self._build_fabric_weight_content(fabric_weight_tab)
         self._build_product_cost_content(product_cost_tab)
         self._build_tetra_cost_content(tetra_cost_tab)
+        self._build_all_over_print_content(all_over_print_tab)
     
     def _build_general_weight_content(self, container):
         """Build the general weight calculations content."""
@@ -1317,3 +1320,332 @@ class FormulasTabMixin:
             'header'
         )
         self.tetra_cost_results_text.config(state='disabled')
+    
+    def _build_all_over_print_content(self, container):
+        """Build the all over print cost calculation content."""
+        
+        # Title and description
+        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame.pack(fill='x', padx=20, pady=(10, 5))
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות הדפסת בגדי אול אובר",
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack()
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות הדפסה לפי שטח רבוע של הפריט",
+            font=('Arial', 9),
+            bg='#f7f9fa',
+            fg='#7f8c8d'
+        ).pack()
+        
+        # Product selection frame
+        selection_frame = ttk.LabelFrame(container, text="בחירת פריט", padding=20)
+        selection_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        selection_frame.grid_columnconfigure(1, weight=1)
+        selection_frame.grid_columnconfigure(3, weight=1)
+        
+        # Product name selection
+        tk.Label(selection_frame, text="שם דגם:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.aop_product_name_var = tk.StringVar()
+        self.aop_product_name_combo = ttk.Combobox(
+            selection_frame, 
+            textvariable=self.aop_product_name_var,
+            state='readonly',
+            width=30,
+            font=('Arial', 10)
+        )
+        self.aop_product_name_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        self.aop_product_name_combo.bind('<<ComboboxSelected>>', self._on_product_name_selected)
+        
+        # Product size selection
+        tk.Label(selection_frame, text="מידה:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.aop_product_size_var = tk.StringVar()
+        self.aop_product_size_combo = ttk.Combobox(
+            selection_frame,
+            textvariable=self.aop_product_size_var,
+            state='readonly',
+            width=20,
+            font=('Arial', 10)
+        )
+        self.aop_product_size_combo.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
+        self.aop_product_size_combo.bind('<<ComboboxSelected>>', self._on_product_size_selected)
+        
+        # Square area display
+        tk.Label(selection_frame, text="שטח רבוע:", font=('Arial', 10, 'bold')).grid(
+            row=1, column=0, sticky='w', padx=5, pady=5)
+        self.aop_square_area_label = tk.Label(
+            selection_frame,
+            text="בחר פריט",
+            font=('Arial', 10),
+            fg='#7f8c8d'
+        )
+        self.aop_square_area_label.grid(row=1, column=1, sticky='w', padx=5, pady=5)
+        
+        # Printing data frame
+        printing_frame = ttk.LabelFrame(container, text="נתוני הדפסה", padding=20)
+        printing_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        printing_frame.grid_columnconfigure(1, weight=1)
+        printing_frame.grid_columnconfigure(3, weight=1)
+        
+        # Printing cost per square meter
+        tk.Label(printing_frame, text="עלות הדפסה למטר רבוע (₪/מ״ר):", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.aop_printing_cost_per_sqm_var = tk.StringVar()
+        tk.Entry(printing_frame, textvariable=self.aop_printing_cost_per_sqm_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        # Waste percentage
+        tk.Label(printing_frame, text="אחוז פחת/בזבוז (%):", font=('Arial', 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.aop_waste_percentage_var = tk.StringVar()
+        tk.Entry(printing_frame, textvariable=self.aop_waste_percentage_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=3, padx=5, pady=5, sticky='w')
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Button(
+            buttons_frame,
+            text="חשב עלות",
+            command=self._calculate_all_over_print_cost,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=20,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        tk.Button(
+            buttons_frame,
+            text="נקה הכל",
+            command=self._clear_all_over_print_inputs,
+            bg='#e74c3c',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=15,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=20)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # Results display
+        self.aop_results_text = tk.Text(
+            results_frame,
+            height=12,
+            font=('Courier New', 10),
+            wrap=tk.WORD,
+            state='disabled',
+            bg='#ffffff'
+        )
+        self.aop_results_text.pack(fill='both', expand=True)
+        
+        # Configure text tags for formatting
+        self.aop_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
+        self.aop_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
+        self.aop_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
+        self.aop_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
+        self.aop_results_text.tag_configure('separator', foreground='#7f8c8d')
+        
+        # Initialize
+        self.aop_selected_product = None
+        self._load_product_names()
+        self._clear_all_over_print_inputs()
+    
+    def _load_product_names(self):
+        """Load unique product names from catalog."""
+        try:
+            products_catalog = getattr(self.data_processor, 'products_catalog', [])
+            
+            # Get unique product names
+            product_names = sorted(list(set(
+                product.get('name', '') 
+                for product in products_catalog 
+                if product.get('name')
+            )))
+            
+            self.aop_product_name_combo['values'] = product_names
+            
+            if product_names:
+                self.aop_product_name_combo.set(product_names[0])
+                self._on_product_name_selected()
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת רשימת המוצרים: {str(e)}")
+    
+    def _on_product_name_selected(self, event=None):
+        """Handle product name selection."""
+        try:
+            selected_name = self.aop_product_name_var.get()
+            if not selected_name:
+                return
+            
+            products_catalog = getattr(self.data_processor, 'products_catalog', [])
+            
+            # Get all sizes for selected product name
+            sizes = sorted(list(set(
+                product.get('size', '')
+                for product in products_catalog
+                if product.get('name') == selected_name and product.get('size')
+            )))
+            
+            self.aop_product_size_combo['values'] = sizes
+            
+            # Clear previous selection
+            self.aop_product_size_var.set('')
+            self.aop_selected_product = None
+            self.aop_square_area_label.config(text="בחר מידה")
+            
+            if sizes:
+                self.aop_product_size_combo.set(sizes[0])
+                self._on_product_size_selected()
+                
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת המידות: {str(e)}")
+    
+    def _on_product_size_selected(self, event=None):
+        """Handle product size selection."""
+        try:
+            selected_name = self.aop_product_name_var.get()
+            selected_size = self.aop_product_size_var.get()
+            
+            if not selected_name or not selected_size:
+                return
+            
+            products_catalog = getattr(self.data_processor, 'products_catalog', [])
+            
+            # Find the exact product
+            for product in products_catalog:
+                if (product.get('name') == selected_name and 
+                    product.get('size') == selected_size):
+                    self.aop_selected_product = product
+                    square_area = product.get('square_area', 0)
+                    self.aop_square_area_label.config(
+                        text=f"{square_area:.6f} מ״ר",
+                        fg='#27ae60',
+                        font=('Arial', 10, 'bold')
+                    )
+                    break
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת פרטי המוצר: {str(e)}")
+    
+    def _calculate_all_over_print_cost(self):
+        """Calculate all over print cost."""
+        try:
+            # Validate product selection
+            if not self.aop_selected_product:
+                messagebox.showwarning("אזהרה", "אנא בחר דגם ומידה")
+                return
+            
+            # Get input values
+            printing_cost_per_sqm_str = self.aop_printing_cost_per_sqm_var.get().strip()
+            waste_percentage_str = self.aop_waste_percentage_var.get().strip()
+            
+            if not printing_cost_per_sqm_str:
+                messagebox.showwarning("אזהרה", "אנא הזן עלות הדפסה למטר רבוע")
+                return
+            
+            try:
+                printing_cost_per_sqm = float(printing_cost_per_sqm_str)
+                waste_percentage = float(waste_percentage_str) if waste_percentage_str else 0
+            except ValueError:
+                messagebox.showwarning("אזהרה", "אנא הזן ערכים נומריים תקינים")
+                return
+            
+            # Validate inputs
+            if printing_cost_per_sqm <= 0:
+                messagebox.showwarning("אזהרה", "עלות הדפסה חייבת להיות גדולה מ-0")
+                return
+            
+            if waste_percentage < 0:
+                messagebox.showwarning("אזהרה", "אחוז הפחת לא יכול להיות שלילי")
+                return
+            
+            # Get product data
+            product_name = self.aop_selected_product.get('name', '')
+            product_size = self.aop_selected_product.get('size', '')
+            square_area = self.aop_selected_product.get('square_area', 0)
+            
+            # Perform calculations
+            actual_square_area = square_area * (1 + waste_percentage / 100)
+            total_printing_cost = actual_square_area * printing_cost_per_sqm
+            
+            # Display results
+            self.aop_results_text.config(state='normal')
+            self.aop_results_text.delete(1.0, tk.END)
+            
+            # Header
+            self.aop_results_text.insert(tk.END, "תוצאות חישוב עלות הדפסה - אול אובר\n", 'header')
+            self.aop_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Product details
+            self.aop_results_text.insert(tk.END, "פרטי הפריט:\n", 'header')
+            self.aop_results_text.insert(tk.END, f"  שם דגם:                               ", 'label')
+            self.aop_results_text.insert(tk.END, f"{product_name}\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, f"  מידה:                                  ", 'label')
+            self.aop_results_text.insert(tk.END, f"{product_size}\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, f"  שטח רבוע בסיסי:                       ", 'label')
+            self.aop_results_text.insert(tk.END, f"{square_area:.6f} מ״ר\n\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, "-" * 70 + "\n\n", 'separator')
+            
+            # Calculation details
+            self.aop_results_text.insert(tk.END, "נתוני חישוב:\n", 'header')
+            self.aop_results_text.insert(tk.END, f"  אחוז פחת:                              ", 'label')
+            self.aop_results_text.insert(tk.END, f"{waste_percentage:.2f}%\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, f"  שטח בפועל (כולל פחת):                 ", 'label')
+            self.aop_results_text.insert(tk.END, f"{actual_square_area:.6f} מ״ר\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, f"  עלות הדפסה למטר רבוע:                 ", 'label')
+            self.aop_results_text.insert(tk.END, f"{printing_cost_per_sqm:.2f} ₪/מ״ר\n\n", 'value')
+            
+            self.aop_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Total cost
+            self.aop_results_text.insert(tk.END, "עלות הדפסה כוללת: ", 'total')
+            self.aop_results_text.insert(tk.END, f"{total_printing_cost:.2f} ₪\n\n", 'total')
+            
+            self.aop_results_text.insert(tk.END, "=" * 70 + "\n", 'separator')
+            
+            self.aop_results_text.config(state='disabled')
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_all_over_print_inputs(self):
+        """Clear all all over print input fields and results."""
+        # Clear input variables
+        self.aop_printing_cost_per_sqm_var.set("")
+        self.aop_waste_percentage_var.set("")
+        
+        # Reset product selection display
+        if hasattr(self, 'aop_square_area_label'):
+            self.aop_square_area_label.config(text="בחר פריט", fg='#7f8c8d', font=('Arial', 10))
+        
+        # Clear results display
+        self.aop_results_text.config(state='normal')
+        self.aop_results_text.delete(1.0, tk.END)
+        self.aop_results_text.insert(
+            tk.END,
+            "\n\n\n          בחר פריט והזן נתוני הדפסה לחישוב עלות\n\n\n",
+            'header'
+        )
+        self.aop_results_text.config(state='disabled')
