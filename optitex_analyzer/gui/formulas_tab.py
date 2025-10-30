@@ -27,13 +27,19 @@ class FormulasTabMixin:
         # Sub-tabs
         weight_calc_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         fabric_weight_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        product_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        tetra_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
+        inner_nb.add(product_cost_tab, text="חישוב שמיכות")
+        inner_nb.add(tetra_cost_tab, text="חישוב טטרות")
         
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
         self._build_fabric_weight_content(fabric_weight_tab)
+        self._build_product_cost_content(product_cost_tab)
+        self._build_tetra_cost_content(tetra_cost_tab)
     
     def _build_general_weight_content(self, container):
         """Build the general weight calculations content."""
@@ -658,3 +664,656 @@ class FormulasTabMixin:
             
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בייצוא התוצאות: {str(e)}")
+    
+    def _build_product_cost_content(self, container):
+        """Build the product cost calculation content."""
+        
+        # Title and description
+        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame.pack(fill='x', padx=20, pady=(10, 5))
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות שמיכות",
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack()
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות יצור של פריטי טקסטיל - שמיכות, בגדי גוף, מגבות וכו'",
+            font=('Arial', 9),
+            bg='#f7f9fa',
+            fg='#7f8c8d'
+        ).pack()
+        
+        # Main input frame
+        input_frame = ttk.LabelFrame(container, text="נתוני הפריט", padding=20)
+        input_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        input_frame.grid_columnconfigure(1, weight=1)
+        input_frame.grid_columnconfigure(3, weight=1)
+        
+        row = 0
+        
+        # Fabric price per kg
+        tk.Label(input_frame, text="מחיר הבד ל-1 ק״ג:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.fabric_price_per_kg_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.fabric_price_per_kg_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Fabric weight per meter
+        tk.Label(input_frame, text="משקל 1 מטר רץ בד (גרמים):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.fabric_weight_per_meter_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.fabric_weight_per_meter_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Roll width
+        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.roll_width_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.roll_width_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Printing price per meter
+        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.printing_price_per_meter_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.printing_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Item width
+        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.item_width_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.item_width_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Item length
+        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.item_length_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.item_length_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Number of layers
+        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.num_layers_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.num_layers_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Printed layers
+        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.printed_layers_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.printed_layers_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Waste percentage
+        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.waste_percentage_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.waste_percentage_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Additional costs frame
+        costs_frame = ttk.LabelFrame(container, text="עלויות נוספות", padding=20)
+        costs_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        costs_frame.grid_columnconfigure(1, weight=1)
+        costs_frame.grid_columnconfigure(3, weight=1)
+        
+        # Sewing cost
+        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.sewing_cost_per_unit_var = tk.StringVar()
+        tk.Entry(costs_frame, textvariable=self.sewing_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        # Cutting cost
+        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.cutting_cost_per_unit_var = tk.StringVar()
+        tk.Entry(costs_frame, textvariable=self.cutting_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=3, padx=5, pady=5, sticky='w')
+        
+        # Filling cost
+        tk.Label(costs_frame, text="עלות מילוי ליחידה:", font=('Arial', 10, 'bold')).grid(
+            row=1, column=0, sticky='w', padx=5, pady=5)
+        self.filling_cost_per_unit_var = tk.StringVar()
+        tk.Entry(costs_frame, textvariable=self.filling_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+            row=1, column=1, padx=5, pady=5, sticky='w')
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Button(
+            buttons_frame,
+            text="חשב עלות",
+            command=self._calculate_product_cost,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=20,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        tk.Button(
+            buttons_frame,
+            text="נקה הכל",
+            command=self._clear_product_cost_inputs,
+            bg='#e74c3c',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=15,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=20)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # Results display
+        self.product_cost_results_text = tk.Text(
+            results_frame,
+            height=15,
+            font=('Courier New', 10),
+            wrap=tk.WORD,
+            state='disabled',
+            bg='#ffffff'
+        )
+        self.product_cost_results_text.pack(fill='both', expand=True)
+        
+        # Configure text tags for formatting
+        self.product_cost_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
+        self.product_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
+        self.product_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
+        self.product_cost_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
+        self.product_cost_results_text.tag_configure('separator', foreground='#7f8c8d')
+        
+        # Initial message
+        self._clear_product_cost_inputs()
+    
+    def _calculate_product_cost(self):
+        """Calculate product manufacturing cost."""
+        try:
+            # Get all input values
+            fabric_price_per_kg = float(self.fabric_price_per_kg_var.get() or 0)
+            fabric_weight_per_meter = float(self.fabric_weight_per_meter_var.get() or 0)
+            roll_width_cm = float(self.roll_width_cm_var.get() or 0)
+            item_width_cm = float(self.item_width_cm_var.get() or 0)
+            item_length_cm = float(self.item_length_cm_var.get() or 0)
+            printing_price_per_meter = float(self.printing_price_per_meter_var.get() or 0)
+            num_layers = float(self.num_layers_var.get() or 0)
+            printed_layers = float(self.printed_layers_var.get() or 0)
+            waste_percentage = float(self.waste_percentage_var.get() or 0)
+            sewing_cost_per_unit = float(self.sewing_cost_per_unit_var.get() or 0)
+            cutting_cost_per_unit = float(self.cutting_cost_per_unit_var.get() or 0)
+            filling_cost_per_unit = float(self.filling_cost_per_unit_var.get() or 0)
+            
+            # Validate inputs
+            if fabric_price_per_kg <= 0:
+                messagebox.showwarning("אזהרה", "מחיר הבד חייב להיות גדול מ-0")
+                return
+            
+            if fabric_weight_per_meter <= 0:
+                messagebox.showwarning("אזהרה", "משקל הבד למטר חייב להיות גדול מ-0")
+                return
+            
+            if roll_width_cm <= 0:
+                messagebox.showwarning("אזהרה", "רוחב הגליל חייב להיות גדול מ-0")
+                return
+            
+            if item_width_cm <= 0 or item_length_cm <= 0:
+                messagebox.showwarning("אזהרה", "מידות הפריט חייבות להיות גדולות מ-0")
+                return
+            
+            if item_width_cm > roll_width_cm:
+                messagebox.showwarning("אזהרה", "רוחב הפריט גדול מרוחב הגליל")
+                return
+            
+            if num_layers <= 0:
+                messagebox.showwarning("אזהרה", "מספר השכבות חייב להיות גדול מ-0")
+                return
+            
+            if printed_layers < 0 or printed_layers > 2:
+                messagebox.showwarning("אזהרה", "מספר שכבות מודפסות חייב להיות 0, 1 או 2")
+                return
+            
+            if printed_layers > num_layers:
+                messagebox.showwarning("אזהרה", "מספר שכבות מודפסות לא יכול להיות גדול ממספר השכבות הכולל")
+                return
+            
+            if waste_percentage < 0:
+                messagebox.showwarning("אזהרה", "אחוז הבזבוז לא יכול להיות שלילי")
+                return
+            
+            # Perform calculations
+            import math
+            
+            # Units per width of roll
+            units_per_width = math.floor(roll_width_cm / item_width_cm)
+            
+            # Meters per unit (including waste)
+            meters_per_unit = (item_length_cm / 100) * (1 + waste_percentage / 100)
+            
+            # Fabric cost per meter
+            fabric_cost_per_meter = (fabric_price_per_kg * fabric_weight_per_meter) / 1000
+            
+            # Fabric cost per unit
+            fabric_cost_per_unit = fabric_cost_per_meter * meters_per_unit * num_layers
+            
+            # Printing cost per unit
+            if units_per_width > 0 and printed_layers > 0:
+                printing_cost_per_unit = (printing_price_per_meter * meters_per_unit * printed_layers) / units_per_width
+            else:
+                printing_cost_per_unit = 0
+            
+            # Total cost per unit
+            total_cost_per_unit = fabric_cost_per_unit + printing_cost_per_unit + sewing_cost_per_unit + cutting_cost_per_unit + filling_cost_per_unit
+            
+            # Display results
+            self.product_cost_results_text.config(state='normal')
+            self.product_cost_results_text.delete(1.0, tk.END)
+            
+            # Header
+            self.product_cost_results_text.insert(tk.END, "תוצאות חישוב עלות יצור מוצר\n", 'header')
+            self.product_cost_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Calculation results
+            self.product_cost_results_text.insert(tk.END, "נתוני ייצור:\n", 'header')
+            self.product_cost_results_text.insert(tk.END, f"  יחידות לרוחב הגליל:                ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{units_per_width}\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  מטר רץ ליחידה (כולל בזבוז):         ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{meters_per_unit:.4f} מ'\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  עלות בד למטר רץ:                     ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{fabric_cost_per_meter:.4f} ₪\n\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, "-" * 70 + "\n\n", 'separator')
+            
+            # Cost breakdown
+            self.product_cost_results_text.insert(tk.END, "פירוט עלויות ליחידה:\n", 'header')
+            self.product_cost_results_text.insert(tk.END, f"  עלות בד ליחידה:                      ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{fabric_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  עלות הדפסה ליחידה:                   ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{printing_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  עלות תפירה ליחידה:                   ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{sewing_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  עלות גזירה ליחידה:                   ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{cutting_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, f"  עלות מילוי ליחידה:                   ", 'label')
+            self.product_cost_results_text.insert(tk.END, f"{filling_cost_per_unit:.4f} ₪\n\n", 'value')
+            
+            self.product_cost_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Total cost
+            self.product_cost_results_text.insert(tk.END, "עלות כוללת ליחידה: ", 'total')
+            self.product_cost_results_text.insert(tk.END, f"{total_cost_per_unit:.4f} ₪\n\n", 'total')
+            
+            self.product_cost_results_text.insert(tk.END, "=" * 70 + "\n", 'separator')
+            
+            self.product_cost_results_text.config(state='disabled')
+            
+        except ValueError:
+            messagebox.showerror("שגיאה", "אנא הזן ערכים נומריים תקינים בכל השדות")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_product_cost_inputs(self):
+        """Clear all product cost input fields and results."""
+        # Clear all input variables
+        self.fabric_price_per_kg_var.set("")
+        self.fabric_weight_per_meter_var.set("")
+        self.roll_width_cm_var.set("")
+        self.item_width_cm_var.set("")
+        self.item_length_cm_var.set("")
+        self.printing_price_per_meter_var.set("")
+        self.num_layers_var.set("")
+        self.printed_layers_var.set("")
+        self.waste_percentage_var.set("")
+        self.sewing_cost_per_unit_var.set("")
+        self.cutting_cost_per_unit_var.set("")
+        self.filling_cost_per_unit_var.set("")
+        
+        # Clear results display
+        self.product_cost_results_text.config(state='normal')
+        self.product_cost_results_text.delete(1.0, tk.END)
+        self.product_cost_results_text.insert(
+            tk.END,
+            "\n\n\n          הזן את נתוני הפריט ולחץ על 'חשב עלות' לקבלת תוצאות\n\n\n",
+            'header'
+        )
+        self.product_cost_results_text.config(state='disabled')
+    
+    def _build_tetra_cost_content(self, container):
+        """Build the tetra cost calculation content."""
+        
+        # Title and description
+        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame.pack(fill='x', padx=20, pady=(10, 5))
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות טטרות",
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack()
+        
+        tk.Label(
+            title_frame,
+            text="חישוב עלות יצור טטרות לפי מחיר למטר רץ",
+            font=('Arial', 9),
+            bg='#f7f9fa',
+            fg='#7f8c8d'
+        ).pack()
+        
+        # Main input frame
+        input_frame = ttk.LabelFrame(container, text="נתוני הפריט", padding=20)
+        input_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        input_frame.grid_columnconfigure(1, weight=1)
+        input_frame.grid_columnconfigure(3, weight=1)
+        
+        row = 0
+        
+        # Fabric price per meter
+        tk.Label(input_frame, text="מחיר בד למטר רץ:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.tetra_fabric_price_per_meter_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_fabric_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Roll width
+        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.tetra_roll_width_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_roll_width_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Printing price per meter
+        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.tetra_printing_price_per_meter_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_printing_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Item width
+        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.tetra_item_width_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_item_width_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Item length
+        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.tetra_item_length_cm_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_item_length_cm_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Number of layers
+        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.tetra_num_layers_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_num_layers_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Printed layers
+        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=0, sticky='w', padx=5, pady=5)
+        self.tetra_printed_layers_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_printed_layers_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=1, padx=5, pady=5, sticky='w')
+        
+        # Waste percentage
+        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=('Arial', 10, 'bold')).grid(
+            row=row, column=2, sticky='w', padx=5, pady=5)
+        self.tetra_waste_percentage_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.tetra_waste_percentage_var, width=15, font=('Arial', 10)).grid(
+            row=row, column=3, padx=5, pady=5, sticky='w')
+        
+        row += 1
+        
+        # Additional costs frame
+        costs_frame = ttk.LabelFrame(container, text="עלויות נוספות", padding=20)
+        costs_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Configure grid columns
+        costs_frame.grid_columnconfigure(1, weight=1)
+        costs_frame.grid_columnconfigure(3, weight=1)
+        
+        # Sewing cost
+        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.tetra_sewing_cost_per_unit_var = tk.StringVar()
+        tk.Entry(costs_frame, textvariable=self.tetra_sewing_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        # Cutting cost
+        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.tetra_cutting_cost_per_unit_var = tk.StringVar()
+        tk.Entry(costs_frame, textvariable=self.tetra_cutting_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+            row=0, column=3, padx=5, pady=5, sticky='w')
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Button(
+            buttons_frame,
+            text="חשב עלות",
+            command=self._calculate_tetra_cost,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=20,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        tk.Button(
+            buttons_frame,
+            text="נקה הכל",
+            command=self._clear_tetra_cost_inputs,
+            bg='#e74c3c',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=15,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=20)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # Results display
+        self.tetra_cost_results_text = tk.Text(
+            results_frame,
+            height=15,
+            font=('Courier New', 10),
+            wrap=tk.WORD,
+            state='disabled',
+            bg='#ffffff'
+        )
+        self.tetra_cost_results_text.pack(fill='both', expand=True)
+        
+        # Configure text tags for formatting
+        self.tetra_cost_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
+        self.tetra_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
+        self.tetra_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
+        self.tetra_cost_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
+        self.tetra_cost_results_text.tag_configure('separator', foreground='#7f8c8d')
+        
+        # Initial message
+        self._clear_tetra_cost_inputs()
+    
+    def _calculate_tetra_cost(self):
+        """Calculate tetra manufacturing cost."""
+        try:
+            # Get all input values
+            fabric_price_per_meter = float(self.tetra_fabric_price_per_meter_var.get() or 0)
+            roll_width_cm = float(self.tetra_roll_width_cm_var.get() or 0)
+            item_width_cm = float(self.tetra_item_width_cm_var.get() or 0)
+            item_length_cm = float(self.tetra_item_length_cm_var.get() or 0)
+            printing_price_per_meter = float(self.tetra_printing_price_per_meter_var.get() or 0)
+            num_layers = float(self.tetra_num_layers_var.get() or 0)
+            printed_layers = float(self.tetra_printed_layers_var.get() or 0)
+            waste_percentage = float(self.tetra_waste_percentage_var.get() or 0)
+            sewing_cost_per_unit = float(self.tetra_sewing_cost_per_unit_var.get() or 0)
+            cutting_cost_per_unit = float(self.tetra_cutting_cost_per_unit_var.get() or 0)
+            
+            # Validate inputs
+            if fabric_price_per_meter <= 0:
+                messagebox.showwarning("אזהרה", "מחיר הבד חייב להיות גדול מ-0")
+                return
+            
+            if roll_width_cm <= 0:
+                messagebox.showwarning("אזהרה", "רוחב הגליל חייב להיות גדול מ-0")
+                return
+            
+            if item_width_cm <= 0 or item_length_cm <= 0:
+                messagebox.showwarning("אזהרה", "מידות הפריט חייבות להיות גדולות מ-0")
+                return
+            
+            if item_width_cm > roll_width_cm:
+                messagebox.showwarning("אזהרה", "רוחב הפריט גדול מרוחב הגליל")
+                return
+            
+            if num_layers <= 0:
+                messagebox.showwarning("אזהרה", "מספר השכבות חייב להיות גדול מ-0")
+                return
+            
+            if printed_layers < 0 or printed_layers > 2:
+                messagebox.showwarning("אזהרה", "מספר שכבות מודפסות חייב להיות 0, 1 או 2")
+                return
+            
+            if printed_layers > num_layers:
+                messagebox.showwarning("אזהרה", "מספר שכבות מודפסות לא יכול להיות גדול ממספר השכבות הכולל")
+                return
+            
+            if waste_percentage < 0:
+                messagebox.showwarning("אזהרה", "אחוז הבזבוז לא יכול להיות שלילי")
+                return
+            
+            # Perform calculations
+            import math
+            
+            # Units per width of roll
+            units_per_width = math.floor(roll_width_cm / item_width_cm)
+            
+            # Meters per unit (including waste)
+            meters_per_unit = (item_length_cm / 100) * (1 + waste_percentage / 100)
+            
+            # Fabric cost per unit (based on price per meter)
+            fabric_cost_per_unit = fabric_price_per_meter * meters_per_unit * num_layers
+            
+            # Printing cost per unit
+            if units_per_width > 0 and printed_layers > 0:
+                printing_cost_per_unit = (printing_price_per_meter * meters_per_unit * printed_layers) / units_per_width
+            else:
+                printing_cost_per_unit = 0
+            
+            # Total cost per unit
+            total_cost_per_unit = fabric_cost_per_unit + printing_cost_per_unit + sewing_cost_per_unit + cutting_cost_per_unit
+            
+            # Display results
+            self.tetra_cost_results_text.config(state='normal')
+            self.tetra_cost_results_text.delete(1.0, tk.END)
+            
+            # Header
+            self.tetra_cost_results_text.insert(tk.END, "תוצאות חישוב עלות טטרה\n", 'header')
+            self.tetra_cost_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Calculation results
+            self.tetra_cost_results_text.insert(tk.END, "נתוני ייצור:\n", 'header')
+            self.tetra_cost_results_text.insert(tk.END, f"  יחידות לרוחב הגליל:                ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{units_per_width}\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, f"  מטר רץ ליחידה (כולל בזבוז):         ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{meters_per_unit:.4f} מ'\n\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, "-" * 70 + "\n\n", 'separator')
+            
+            # Cost breakdown
+            self.tetra_cost_results_text.insert(tk.END, "פירוט עלויות ליחידה:\n", 'header')
+            self.tetra_cost_results_text.insert(tk.END, f"  עלות בד ליחידה:                      ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{fabric_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, f"  עלות הדפסה ליחידה:                   ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{printing_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, f"  עלות תפירה ליחידה:                   ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{sewing_cost_per_unit:.4f} ₪\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, f"  עלות גזירה ליחידה:                   ", 'label')
+            self.tetra_cost_results_text.insert(tk.END, f"{cutting_cost_per_unit:.4f} ₪\n\n", 'value')
+            
+            self.tetra_cost_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Total cost
+            self.tetra_cost_results_text.insert(tk.END, "עלות כוללת ליחידה: ", 'total')
+            self.tetra_cost_results_text.insert(tk.END, f"{total_cost_per_unit:.4f} ₪\n\n", 'total')
+            
+            self.tetra_cost_results_text.insert(tk.END, "=" * 70 + "\n", 'separator')
+            
+            self.tetra_cost_results_text.config(state='disabled')
+            
+        except ValueError:
+            messagebox.showerror("שגיאה", "אנא הזן ערכים נומריים תקינים בכל השדות")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_tetra_cost_inputs(self):
+        """Clear all tetra cost input fields and results."""
+        # Clear all input variables
+        self.tetra_fabric_price_per_meter_var.set("")
+        self.tetra_roll_width_cm_var.set("")
+        self.tetra_printing_price_per_meter_var.set("")
+        self.tetra_item_width_cm_var.set("")
+        self.tetra_item_length_cm_var.set("")
+        self.tetra_num_layers_var.set("")
+        self.tetra_printed_layers_var.set("")
+        self.tetra_waste_percentage_var.set("")
+        self.tetra_sewing_cost_per_unit_var.set("")
+        self.tetra_cutting_cost_per_unit_var.set("")
+        
+        # Clear results display
+        self.tetra_cost_results_text.config(state='normal')
+        self.tetra_cost_results_text.delete(1.0, tk.END)
+        self.tetra_cost_results_text.insert(
+            tk.END,
+            "\n\n\n          הזן את נתוני הפריט ולחץ על 'חשב עלות' לקבלת תוצאות\n\n\n",
+            'header'
+        )
+        self.tetra_cost_results_text.config(state='disabled')

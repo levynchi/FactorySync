@@ -772,5 +772,66 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2025-10-26 13:14:22"
+  },
+  {
+    "id": 24,
+    "supplier": "עולה",
+    "date": "2025-10-30",
+    "lines": [
+      {
+        "product": "גופיות פלנל",
+        "size": "4",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "גופיות פלנל",
+        "size": "6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 496,
+        "note": ""
+      },
+      {
+        "product": "גופיות פלנל",
+        "size": "8",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      }
+    ],
+    "total_quantity": 992,
+    "packages": [],
+    "accessories": [
+      {
+        "accessory": "תווית 8",
+        "unit": "יחידות",
+        "quantity": 500.0
+      },
+      {
+        "accessory": "תווית 6",
+        "unit": "יחידות",
+        "quantity": 500.0
+      },
+      {
+        "accessory": "תוויות 4",
+        "unit": "יחידות",
+        "quantity": 500.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2025-10-30 08:34:28"
   }
 ]
