@@ -2210,5 +2210,155 @@
     "packages": [],
     "receipt_kind": "supplier_intake",
     "created_at": "2025-11-12 12:58:38"
+  },
+  {
+    "id": 28,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-11-12",
+    "arrival_date": "2025-11-12",
+    "supplier_doc_number": "245",
+    "lines": [
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "20",
+        "quantity": 199,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "20",
+        "quantity": 117,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "20",
+        "quantity": 654,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "20",
+        "quantity": 258,
+        "note": ""
+      }
+    ],
+    "total_quantity": 1228,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 4,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2025-11-12 13:11:26"
+  },
+  {
+    "id": 29,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-11-12",
+    "arrival_date": "2025-11-12",
+    "supplier_doc_number": "252",
+    "lines": [
+      {
+        "product": "גטקס",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "22",
+        "quantity": 638,
+        "note": ""
+      },
+      {
+        "product": "גטקס",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "22",
+        "quantity": 445,
+        "note": ""
+      },
+      {
+        "product": "גטקס",
+        "size": "24-30",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "22",
+        "quantity": 635,
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 50,
+        "note": ""
+      }
+    ],
+    "total_quantity": 1768,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 5,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2025-11-12 13:13:33"
   }
 ]
