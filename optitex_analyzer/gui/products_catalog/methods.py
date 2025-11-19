@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import re
+import os
+import json
 
 class ProductsCatalogMethodsMixin:
     """All event handlers, loaders, and helpers for Products Catalog tab."""
@@ -149,10 +151,11 @@ class ProductsCatalogMethodsMixin:
 
         tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
-        # Add main_category column for display
-        cols = ('id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        # Add barcode as first column and main_category column for display
+        cols = ('barcode','id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at')
         self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
         headers = {
+            'barcode':'מק"ט',
             'id':'ID',
             'name':'שם הדגם',
             'main_category':'קטגוריה ראשית',
@@ -169,6 +172,7 @@ class ProductsCatalogMethodsMixin:
             'created_at':'נוצר'
         }
         widths = {
+            'barcode':120,
             'id':40,
             'name':140,
             'main_category':110,
@@ -650,7 +654,7 @@ class ProductsCatalogMethodsMixin:
                 fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
                 main_category_value = rec.get('main_category') or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
-                    rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
+                    rec.get('barcode', ''), rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), rec.get('size'), rec.get('fabric_type'),
                     rec.get('fabric_color'), rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), rec.get('ticks_qty'), rec.get('elastic_qty'),
                     rec.get('ribbon_qty'), rec.get('created_at')
                 ))
@@ -678,7 +682,7 @@ class ProductsCatalogMethodsMixin:
                     fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
                     main_category_value = rec.get('main_category') or 'בגדים'
                     self.products_tree.insert('', 'end', values=(
-                        rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), 
+                        rec.get('barcode', ''), rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), 
                         rec.get('size'), rec.get('fabric_type'), rec.get('fabric_color'), 
                         rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), 
                         rec.get('ticks_qty'), rec.get('elastic_qty'), rec.get('ribbon_qty'), 
@@ -1037,7 +1041,7 @@ class ProductsCatalogMethodsMixin:
                 key = (name, category_value, sz, ft, fc, pn)
                 if key in existing:
                     continue
-                new_id = self.data_processor.add_product_catalog_entry(
+                new_id, new_barcode = self.data_processor.add_product_catalog_entry(
                     name, sz, ft, fc, pn, category_value, ticks_raw, elastic_raw, ribbon_raw, fabric_category_raw, square_area_raw
                 )
                 existing.add(key)
@@ -1045,7 +1049,7 @@ class ProductsCatalogMethodsMixin:
                 fabric_category_value = fabric_category_raw or 'בלי קטגוריה'
                 main_category_value = self.prod_main_category_var.get().strip() or 'בגדים'
                 self.products_tree.insert('', 'end', values=(
-                    new_id, name, main_category_value, category_value, sz, ft, fc, pn, fabric_category_value,
+                    new_barcode, new_id, name, main_category_value, category_value, sz, ft, fc, pn, fabric_category_value,
                     square_area_raw or 0.0, ticks_raw or 0, elastic_raw or 0, ribbon_raw or 0,
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ))
@@ -1069,7 +1073,8 @@ class ProductsCatalogMethodsMixin:
         for item in sel:
             vals = self.products_tree.item(item, 'values')
             if vals:
-                ids.append(int(vals[0]))
+                # vals[1] is now the ID (vals[0] is barcode)
+                ids.append(int(vals[1]))
         if not ids: return
         deleted_any = False
         for _id in ids:
@@ -1318,3 +1323,337 @@ class ProductsCatalogMethodsMixin:
                 deleted = True
         if deleted:
             self._load_model_names_into_tree()
+
+    # ===== barcodes section =====
+    def _build_barcodes_section(self, parent):
+        """Build the barcodes generation section."""
+        # Main frame
+        main_frame = tk.Frame(parent, bg='#f7f9fa')
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Title
+        title_label = tk.Label(
+            main_frame,
+            text="ייצור ברקודים EAN-13",
+            font=('Arial', 18, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        )
+        title_label.pack(pady=(0, 20))
+        
+        # Last barcode display frame
+        last_barcode_frame = ttk.LabelFrame(main_frame, text="ברקוד אחרון במערכת", padding=20)
+        last_barcode_frame.pack(fill='x', pady=(0, 20))
+        
+        self.last_barcode_var = tk.StringVar()
+        self._load_last_barcode()
+        
+        last_barcode_display = tk.Label(
+            last_barcode_frame,
+            textvariable=self.last_barcode_var,
+            font=('Arial', 28, 'bold'),
+            bg='#ecf0f1',
+            fg='#2c3e50',
+            relief='sunken',
+            padx=20,
+            pady=15
+        )
+        last_barcode_display.pack()
+        
+        # Generation frame
+        generation_frame = ttk.LabelFrame(main_frame, text="ייצור ברקודים חדשים", padding=20)
+        generation_frame.pack(fill='x', pady=(0, 20))
+        
+        # Quantity input
+        input_frame = tk.Frame(generation_frame, bg='#f7f9fa')
+        input_frame.pack(pady=10)
+        
+        tk.Label(
+            input_frame,
+            text="כמות ברקודים לייצור:",
+            font=('Arial', 12, 'bold'),
+            bg='#f7f9fa'
+        ).pack(side='right', padx=10)
+        
+        self.barcode_quantity_var = tk.StringVar(value="10")
+        quantity_entry = tk.Entry(
+            input_frame,
+            textvariable=self.barcode_quantity_var,
+            font=('Arial', 12),
+            width=10,
+            justify='center'
+        )
+        quantity_entry.pack(side='right', padx=10)
+        
+        # Generate button
+        generate_btn = tk.Button(
+            generation_frame,
+            text="🔢 ייצר ברקודים",
+            command=self._generate_barcodes,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 14, 'bold'),
+            padx=30,
+            pady=10,
+            cursor='hand2'
+        )
+        generate_btn.pack(pady=10)
+        
+        # Instructions
+        instructions_frame = ttk.LabelFrame(main_frame, text="הוראות שימוש", padding=15)
+        instructions_frame.pack(fill='x')
+        
+        instructions_text = """
+        1. הברקוד האחרון במערכת מוצג למעלה
+        2. הזן את מספר הברקודים שברצונך לייצר
+        3. לחץ על "ייצר ברקודים"
+        4. הברקודים ייוצרו בקובץ Excel ויישמרו בתיקיית exports/barcodes
+        5. המערכת תעדכן אוטומטית את הברקוד האחרון
+        """
+        
+        instructions_label = tk.Label(
+            instructions_frame,
+            text=instructions_text,
+            font=('Arial', 10),
+            bg='#f7f9fa',
+            fg='#34495e',
+            justify='right'
+        )
+        instructions_label.pack()
+
+    def _load_last_barcode(self):
+        """Load the last barcode from JSON file."""
+        try:
+            barcode_file = 'barcodes_data.json'
+            if os.path.exists(barcode_file):
+                with open(barcode_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    last_barcode = data.get('last_barcode', '7297555019592')
+            else:
+                last_barcode = '7297555019592'
+            
+            self.last_barcode_var.set(last_barcode)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת הברקוד האחרון:\n{str(e)}")
+            self.last_barcode_var.set('7297555019592')
+
+    def _save_last_barcode(self, barcode):
+        """Save the last barcode to JSON file."""
+        try:
+            barcode_file = 'barcodes_data.json'
+            data = {
+                'last_barcode': barcode,
+                'last_updated': datetime.now().isoformat()
+            }
+            with open(barcode_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            self.last_barcode_var.set(barcode)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בשמירת הברקוד האחרון:\n{str(e)}")
+
+    def _calculate_ean13_checksum(self, base_12_digits):
+        """
+        Calculate EAN-13 checksum digit.
+        
+        Args:
+            base_12_digits: String of 12 digits
+            
+        Returns:
+            Single digit checksum (0-9)
+        """
+        if len(base_12_digits) != 12:
+            raise ValueError("Base must be exactly 12 digits")
+        
+        # Sum odd positions (1st, 3rd, 5th, etc. - index 0, 2, 4...)
+        odd_sum = sum(int(base_12_digits[i]) for i in range(0, 12, 2))
+        
+        # Sum even positions (2nd, 4th, 6th, etc. - index 1, 3, 5...) and multiply by 3
+        even_sum = sum(int(base_12_digits[i]) for i in range(1, 12, 2)) * 3
+        
+        # Total sum
+        total = odd_sum + even_sum
+        
+        # Checksum is (10 - (total mod 10)) mod 10
+        checksum = (10 - (total % 10)) % 10
+        
+        return str(checksum)
+
+    def _generate_next_barcode(self, current_barcode):
+        """
+        Generate the next barcode in sequence with proper EAN-13 checksum.
+        
+        Args:
+            current_barcode: Current 13-digit EAN-13 barcode
+            
+        Returns:
+            Next 13-digit EAN-13 barcode
+        """
+        if len(current_barcode) != 13:
+            raise ValueError("Barcode must be exactly 13 digits")
+        
+        # Remove checksum digit (last digit)
+        base_12 = current_barcode[:12]
+        
+        # Increment the base
+        base_number = int(base_12) + 1
+        
+        # Pad back to 12 digits
+        new_base_12 = str(base_number).zfill(12)
+        
+        # Calculate new checksum
+        checksum = self._calculate_ean13_checksum(new_base_12)
+        
+        # Return full 13-digit barcode
+        return new_base_12 + checksum
+
+    def _generate_barcodes(self):
+        """Generate barcodes and export to Excel."""
+        try:
+            # Get quantity
+            quantity_str = self.barcode_quantity_var.get().strip()
+            if not quantity_str:
+                messagebox.showwarning("אזהרה", "אנא הזן כמות ברקודים")
+                return
+            
+            try:
+                quantity = int(quantity_str)
+            except ValueError:
+                messagebox.showwarning("אזהרה", "אנא הזן מספר שלם תקין")
+                return
+            
+            if quantity <= 0:
+                messagebox.showwarning("אזהרה", "הכמות חייבת להיות גדולה מאפס")
+                return
+            
+            if quantity > 10000:
+                messagebox.showwarning("אזהרה", "הכמות המקסימלית היא 10,000 ברקודים")
+                return
+            
+            # Get current last barcode
+            current_barcode = self.last_barcode_var.get()
+            
+            # Generate list of barcodes
+            barcodes = []
+            next_barcode = current_barcode
+            
+            for i in range(quantity):
+                next_barcode = self._generate_next_barcode(next_barcode)
+                barcodes.append(next_barcode)
+            
+            # Export to Excel
+            self._export_barcodes_to_excel(barcodes)
+            
+            # Update last barcode in system
+            self._save_last_barcode(barcodes[-1])
+            
+            messagebox.showinfo(
+                "הצלחה",
+                f"נוצרו {quantity} ברקודים בהצלחה!\n\n"
+                f"הברקוד האחרון: {barcodes[-1]}\n"
+                f"הקובץ נשמר בתיקיית exports/barcodes"
+            )
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצור ברקודים:\n{str(e)}")
+
+    def _export_barcodes_to_excel(self, barcodes):
+        """
+        Export barcodes list to Excel file.
+        
+        Args:
+            barcodes: List of barcode strings
+        """
+        try:
+            # Try to use openpyxl if available, otherwise use xlsxwriter
+            try:
+                from openpyxl import Workbook
+                from openpyxl.styles import Font, Alignment, PatternFill
+                use_openpyxl = True
+            except ImportError:
+                try:
+                    import xlsxwriter
+                    use_openpyxl = False
+                except ImportError:
+                    messagebox.showerror(
+                        "שגיאה",
+                        "לא נמצאה ספריית openpyxl או xlsxwriter.\n"
+                        "אנא התקן אחת מהן עם: pip install openpyxl"
+                    )
+                    return
+            
+            # Create exports directory if it doesn't exist
+            export_dir = os.path.join('exports', 'barcodes')
+            os.makedirs(export_dir, exist_ok=True)
+            
+            # Generate filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(export_dir, f"ברקודים_{timestamp}.xlsx")
+            
+            if use_openpyxl:
+                # Create workbook with openpyxl
+                wb = Workbook()
+                ws = wb.active
+                ws.title = "ברקודים"
+                
+                # Header
+                ws['A1'] = "מספר ברקוד"
+                header_cell = ws['A1']
+                header_cell.font = Font(bold=True, size=14)
+                header_cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+                header_cell.font = Font(bold=True, size=14, color="FFFFFF")
+                header_cell.alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Add barcodes
+                for idx, barcode in enumerate(barcodes, start=2):
+                    cell = ws[f'A{idx}']
+                    cell.value = barcode
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+                    cell.font = Font(size=12)
+                
+                # Set column width
+                ws.column_dimensions['A'].width = 25
+                
+                # Save workbook
+                wb.save(filename)
+                
+            else:
+                # Create workbook with xlsxwriter
+                workbook = xlsxwriter.Workbook(filename)
+                worksheet = workbook.add_worksheet("ברקודים")
+                
+                # Define formats
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'font_size': 14,
+                    'bg_color': '#366092',
+                    'font_color': 'white',
+                    'align': 'center',
+                    'valign': 'vcenter'
+                })
+                
+                cell_format = workbook.add_format({
+                    'font_size': 12,
+                    'align': 'center',
+                    'valign': 'vcenter'
+                })
+                
+                # Set column width
+                worksheet.set_column('A:A', 25)
+                
+                # Write header
+                worksheet.write('A1', "מספר ברקוד", header_format)
+                
+                # Write barcodes
+                for idx, barcode in enumerate(barcodes, start=1):
+                    worksheet.write(f'A{idx+1}', barcode, cell_format)
+                
+                # Close workbook
+                workbook.close()
+            
+            # Ask if user wants to open the file
+            if messagebox.askyesno("פתיחת קובץ", f"הקובץ נשמר בהצלחה.\nלפתוח את הקובץ?"):
+                os.startfile(filename)
+                
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל:\n{str(e)}")

@@ -70,6 +70,9 @@ class DataProcessor:
 		self._migrate_legacy_supplier_receipts()
 		# combined view (backward compatibility for old UI code)
 		self.supplier_receipts = self.supplier_intakes + self.delivery_notes
+		# Barcodes data
+		self.barcodes_data_file = 'barcodes_data.json'
+		self.barcodes_data = self.load_barcodes_data()
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -125,6 +128,94 @@ class DataProcessor:
 		if len(self.suppliers) != before:
 			self.save_suppliers(); return True
 		return False
+
+	def load_barcodes_data(self) -> Dict:
+		"""טעינת נתוני ברקודים"""
+		try:
+			if os.path.exists(self.barcodes_data_file):
+				with open(self.barcodes_data_file, 'r', encoding='utf-8') as f:
+					return json.load(f)
+			# Default barcode data
+			return {
+				'last_barcode': '7297555019592',
+				'last_updated': datetime.now().isoformat()
+			}
+		except Exception as e:
+			print(f"שגיאה בטעינת נתוני ברקודים: {e}")
+			return {
+				'last_barcode': '7297555019592',
+				'last_updated': datetime.now().isoformat()
+			}
+
+	def save_barcodes_data(self, last_barcode: str) -> bool:
+		"""שמירת נתוני ברקודים"""
+		try:
+			data = {
+				'last_barcode': last_barcode,
+				'last_updated': datetime.now().isoformat()
+			}
+			with open(self.barcodes_data_file, 'w', encoding='utf-8') as f:
+				json.dump(data, f, indent=2, ensure_ascii=False)
+			self.barcodes_data = data
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת נתוני ברקודים: {e}")
+			return False
+
+	def calculate_ean13_checksum(self, base_12_digits: str) -> str:
+		"""
+		Calculate EAN-13 checksum digit.
+		
+		Args:
+			base_12_digits: String of 12 digits
+			
+		Returns:
+			Single digit checksum (0-9)
+		"""
+		if len(base_12_digits) != 12:
+			raise ValueError("Base must be exactly 12 digits")
+		
+		# Sum odd positions (1st, 3rd, 5th, etc. - index 0, 2, 4...)
+		odd_sum = sum(int(base_12_digits[i]) for i in range(0, 12, 2))
+		
+		# Sum even positions (2nd, 4th, 6th, etc. - index 1, 3, 5...) and multiply by 3
+		even_sum = sum(int(base_12_digits[i]) for i in range(1, 12, 2)) * 3
+		
+		# Total sum
+		total = odd_sum + even_sum
+		
+		# Checksum is (10 - (total mod 10)) mod 10
+		checksum = (10 - (total % 10)) % 10
+		
+		return str(checksum)
+
+	def generate_next_barcode(self, current_barcode: str) -> str:
+		"""
+		Generate the next barcode in sequence with proper EAN-13 checksum.
+		
+		Args:
+			current_barcode: Current 13-digit EAN-13 barcode
+			
+		Returns:
+			Next 13-digit EAN-13 barcode
+		"""
+		if len(current_barcode) != 13:
+			raise ValueError("Barcode must be exactly 13 digits")
+		
+		# Remove checksum digit (last digit)
+		base_12 = current_barcode[:12]
+		
+		# Increment the base
+		base_number = int(base_12) + 1
+		
+		# Pad back to 12 digits
+		new_base_12 = str(base_number).zfill(12)
+		
+		# Calculate new checksum
+		checksum = self.calculate_ean13_checksum(new_base_12)
+		
+		# Return full 13-digit barcode
+		return new_base_12 + checksum
     
 	def load_drawings_data(self) -> List[Dict]:
 		"""טעינת נתוני ציורים מקומיים"""
@@ -923,8 +1014,8 @@ class DataProcessor:
 			return False
 
 	def add_product_catalog_entry(self, name: str, size: str, fabric_type: str, fabric_color: str, print_name: str,
-								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '', square_area: float | str = 0.0) -> int:
-		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר ID חדש.
+								 category: str = '', ticks_qty: int | str = 0, elastic_qty: int | str = 0, ribbon_qty: int | str = 0, fabric_category: str = '', square_area: float | str = 0.0) -> tuple[int, str]:
+		"""הוספת מוצר לקטלוג עם שדות מורחבים. מחזיר (ID חדש, ברקוד חדש).
 
 		:param name: שם מוצר (חובה)
 		:param size: מידה
@@ -958,8 +1049,14 @@ class DataProcessor:
 			ribbon_i = _to_int(ribbon_qty)
 			square_area_f = _to_float(square_area)
 			new_id = max([p.get('id', 0) for p in self.products_catalog], default=0) + 1
+			
+			# Generate new barcode
+			last_barcode = self.barcodes_data.get('last_barcode', '7297555019592')
+			new_barcode = self.generate_next_barcode(last_barcode)
+			
 			record = {
 				'id': new_id,
+				'barcode': new_barcode,
 				'name': name.strip(),
 				'size': size.strip(),
 				'fabric_type': fabric_type.strip(),
@@ -975,7 +1072,11 @@ class DataProcessor:
 			}
 			self.products_catalog.append(record)
 			self.save_products_catalog()
-			return new_id
+			
+			# Update last barcode
+			self.save_barcodes_data(new_barcode)
+			
+			return (new_id, new_barcode)
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת מוצר: {str(e)}")
 
@@ -996,14 +1097,15 @@ class DataProcessor:
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			# בונים DataFrame מסודר עם עמודות קבועות, כולל העמודה החדשה 'fabric_category' ו'square_area'
+			# בונים DataFrame מסודר עם עמודות קבועות, כולל barcode, fabric_category ו-square_area
 			columns = [
-				'id','name','category','size','fabric_type','fabric_color','fabric_category',
+				'barcode','id','name','category','size','fabric_type','fabric_color','fabric_category',
 				'print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at'
 			]
 			rows = []
 			for rec in self.products_catalog:
 				rows.append({
+					'barcode': rec.get('barcode',''),
 					'id': rec.get('id'),
 					'name': rec.get('name',''),
 					'category': rec.get('category',''),
