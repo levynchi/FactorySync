@@ -924,5 +924,28 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2025-11-18 09:59:23"
+  },
+  {
+    "id": 28,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2025-11-20",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "רוכסן 60 ס\"מ",
+        "unit": "יחידות",
+        "quantity": 1000.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2025-11-20 13:37:49"
   }
 ]
