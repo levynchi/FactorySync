@@ -30,12 +30,14 @@ class FormulasTabMixin:
         product_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         tetra_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         all_over_print_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        store_price_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
         inner_nb.add(product_cost_tab, text="חישוב שמיכות")
         inner_nb.add(tetra_cost_tab, text="חישוב טטרות")
         inner_nb.add(all_over_print_tab, text="בגדי אול אובר")
+        inner_nb.add(store_price_tab, text="מחיר לצרכן חנויות")
         
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
@@ -43,6 +45,7 @@ class FormulasTabMixin:
         self._build_product_cost_content(product_cost_tab)
         self._build_tetra_cost_content(tetra_cost_tab)
         self._build_all_over_print_content(all_over_print_tab)
+        self._build_store_price_content(store_price_tab)
     
     def _build_general_weight_content(self, container):
         """Build the general weight calculations content."""
@@ -1649,3 +1652,189 @@ class FormulasTabMixin:
             'header'
         )
         self.aop_results_text.config(state='disabled')
+    
+    def _build_store_price_content(self, container):
+        """Build the store price calculator content."""
+        
+        # Main formula frame
+        formula_frame = ttk.LabelFrame(container, text="נוסחת חישוב מחיר לצרכן", padding=20)
+        formula_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Formula display
+        formula_text = "מחיר לצרכן = (מחיר לחנות × 1.17) × 2"
+        formula_label = tk.Label(
+            formula_frame,
+            text=formula_text,
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50',
+            justify='center'
+        )
+        formula_label.pack(pady=10)
+        
+        # Formula breakdown
+        breakdown_text = "שלב 1: מחיר כולל מע״מ = מחיר × 1.17\nשלב 2: מחיר לצרכן = מחיר כולל מע״מ × 2 (הוספת 100%)"
+        breakdown_label = tk.Label(
+            formula_frame,
+            text=breakdown_text,
+            font=('Arial', 10),
+            bg='#f7f9fa',
+            fg='#7f8c8d',
+            justify='center'
+        )
+        breakdown_label.pack(pady=5)
+        
+        # Input fields frame
+        inputs_frame = ttk.LabelFrame(container, text="הזן מחיר", padding=20)
+        inputs_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Store price input
+        tk.Label(
+            inputs_frame, 
+            text="מחיר לחנות (לפני מע״מ):", 
+            font=('Arial', 12, 'bold')
+        ).grid(row=0, column=0, sticky='e', padx=10, pady=10)
+        
+        self.store_price_var = tk.StringVar()
+        store_price_entry = tk.Entry(
+            inputs_frame, 
+            textvariable=self.store_price_var, 
+            width=20, 
+            font=('Arial', 12)
+        )
+        store_price_entry.grid(row=0, column=1, padx=10, pady=10)
+        
+        tk.Label(
+            inputs_frame, 
+            text="ש״ח", 
+            font=('Arial', 12)
+        ).grid(row=0, column=2, sticky='w', padx=5, pady=10)
+        
+        # Calculate button
+        calculate_btn = tk.Button(
+            inputs_frame,
+            text="חשב מחיר לצרכן",
+            command=self._calculate_store_price,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 12, 'bold'),
+            width=20,
+            cursor='hand2'
+        )
+        calculate_btn.grid(row=1, column=0, columnspan=3, pady=15)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(container, text="תוצאות חישוב", padding=20)
+        results_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Price with VAT result
+        tk.Label(
+            results_frame, 
+            text="מחיר כולל מע״מ:", 
+            font=('Arial', 11, 'bold')
+        ).grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        
+        self.price_with_vat_var = tk.StringVar(value="--")
+        price_with_vat_label = tk.Label(
+            results_frame,
+            textvariable=self.price_with_vat_var,
+            font=('Arial', 14, 'bold'),
+            fg='#3498db',
+            bg='#f7f9fa'
+        )
+        price_with_vat_label.grid(row=0, column=1, padx=10, pady=8)
+        
+        tk.Label(
+            results_frame, 
+            text="ש״ח", 
+            font=('Arial', 11)
+        ).grid(row=0, column=2, sticky='w', padx=5, pady=8)
+        
+        # Consumer price result
+        tk.Label(
+            results_frame, 
+            text="מחיר לצרכן:", 
+            font=('Arial', 12, 'bold')
+        ).grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        
+        self.consumer_price_var = tk.StringVar(value="--")
+        consumer_price_label = tk.Label(
+            results_frame,
+            textvariable=self.consumer_price_var,
+            font=('Arial', 16, 'bold'),
+            fg='#27ae60',
+            bg='#f7f9fa'
+        )
+        consumer_price_label.grid(row=1, column=1, padx=10, pady=8)
+        
+        tk.Label(
+            results_frame, 
+            text="ש״ח", 
+            font=('Arial', 12, 'bold')
+        ).grid(row=1, column=2, sticky='w', padx=5, pady=8)
+        
+        # Example frame
+        example_frame = ttk.LabelFrame(container, text="דוגמה", padding=15)
+        example_frame.pack(fill='x', padx=20, pady=10)
+        
+        example_text = """
+📌 דוגמה לחישוב:
+
+מחיר לחנות: 26 ש״ח
+↓
+מחיר כולל מע״מ: 26 × 1.17 = 30.42 ש״ח
+↓
+מחיר לצרכן: 30.42 × 2 = 60.84 ש״ח
+        """
+        
+        example_label = tk.Label(
+            example_frame,
+            text=example_text,
+            font=('Arial', 10),
+            bg='#f7f9fa',
+            fg='#34495e',
+            justify='right'
+        )
+        example_label.pack()
+        
+        # Clear button
+        clear_btn = tk.Button(
+            container,
+            text="נקה",
+            command=self._clear_store_price_inputs,
+            bg='#e74c3c',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            width=15
+        )
+        clear_btn.pack(pady=20)
+    
+    def _calculate_store_price(self):
+        """Calculate consumer price from store price."""
+        try:
+            store_price = float(self.store_price_var.get() or 0)
+            
+            if store_price <= 0:
+                messagebox.showwarning("אזהרה", "אנא הזן מחיר חיובי")
+                return
+            
+            # Calculate price with VAT (17%)
+            price_with_vat = store_price * 1.17
+            
+            # Calculate consumer price (100% markup = x2)
+            consumer_price = price_with_vat * 2
+            
+            # Update result fields
+            self.price_with_vat_var.set(f"{price_with_vat:.2f}")
+            self.consumer_price_var.set(f"{consumer_price:.2f}")
+            
+        except ValueError:
+            messagebox.showerror("שגיאה", "אנא הזן מספר תקין")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_store_price_inputs(self):
+        """Clear all store price calculator inputs and results."""
+        self.store_price_var.set("")
+        self.price_with_vat_var.set("--")
+        self.consumer_price_var.set("--")
