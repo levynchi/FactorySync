@@ -343,5 +343,27 @@
     "meters": 115.0,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "created_at": "2025-11-16 10:29:04"
+  },
+  {
+    "id": 13,
+    "date": "2025-11-23",
+    "barcodes": [
+      "0"
+    ],
+    "count_barcodes": 1,
+    "packages": [
+      {
+        "package_type": "בד",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "fabric_type": "RIB",
+    "color_name": "אדום",
+    "color_no": "",
+    "net_kg": 60.0,
+    "meters": 60.0,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2025-11-23 14:05:06"
   }
 ]
