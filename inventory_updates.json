@@ -481,6 +481,46 @@
           "ticks": ""
         }
       ]
+    },
+    {
+      "id": "batch_20251124_095659",
+      "created_at": "2025-11-24 09:56:59",
+      "mode": "replace_gallery",
+      "items": [
+        {
+          "name": "בגד גוף ש.א",
+          "main_category": "בגדים",
+          "size": "24-30",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "350",
+          "location": "גלריה 4",
+          "packaging": "חמישיות",
+          "ticks": "עם טיקטקים"
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "18-24",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "350",
+          "location": "גלריה 4",
+          "packaging": "חמישיות",
+          "ticks": ""
+        },
+        {
+          "name": "רגליות",
+          "main_category": "בגדים",
+          "size": "6-12",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "50",
+          "location": "גלריה 4",
+          "packaging": "חמישיות",
+          "ticks": ""
+        }
+      ]
     }
   ]
 }

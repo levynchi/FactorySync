@@ -687,7 +687,11 @@ class ProductsBalanceTabMixin:
             try:
                 from tkinter import messagebox
                 mode = (batch.get('mode') or 'overwrite').strip()
-                mode_heb = 'הוספה' if mode == 'add' else 'דריסה'
+                mode_heb = {
+                    'add': 'הוספה',
+                    'overwrite': 'דריסה',
+                    'replace_gallery': 'החלפת גלריה'
+                }.get(mode, 'דריסה')
                 created = batch.get('created_at') or ''
                 cnt = len(batch.get('items') or [])
                 ok = messagebox.askyesno('מחיקת עדכון', f"האם למחוק את העדכון הבא?\n\nמזהה: {batch_id}\nתאריך: {created}\nמצב: {mode_heb}\nמס׳ פריטים: {cnt}\n\nפעולה זו תסיר את השפעת העדכון מהמלאי העדכני.")
@@ -2851,6 +2855,27 @@ class ProductsBalanceTabMixin:
                     pass
                 for b in batches:
                     mode = (b.get('mode') or 'overwrite').strip()
+                    
+                    # אם זה replace_gallery - צריך למחוק את כל הפריטים במיקום הספציפי
+                    if mode == 'replace_gallery':
+                        # איסוף המיקומים שיש בבאצ' הזה
+                        batch_locations = set()
+                        for it in (b.get('items') or []):
+                            loc = (it.get('location') or '').strip()
+                            if loc:
+                                batch_locations.add(loc)
+                        
+                        # מחיקת כל המפתחות עם אותם מיקומים
+                        for location in batch_locations:
+                            keys_to_delete = [k for k in base_qty_map.keys() if k[4] == location]
+                            for k in keys_to_delete:
+                                del base_qty_map[k]
+                                if k in base_pkg_map:
+                                    del base_pkg_map[k]
+                                if k in base_ticks_map:
+                                    del base_ticks_map[k]
+                    
+                    # עכשיו מוסיפים/מעדכנים את הפריטים החדשים
                     for it in (b.get('items') or []):
                         key = (
                             (it.get('name') or '').strip(),
@@ -2867,10 +2892,15 @@ class ProductsBalanceTabMixin:
                         pkg = (it.get('packaging') or '').strip()
                         ticks = (it.get('ticks') or '').strip()
                         cur = base_qty_map.get(key, 0.0)
+                        
+                        # במצב replace_gallery, תמיד מגדירים את הכמות (לא מוסיפים)
                         if mode == 'add':
                             base_qty_map[key] = cur + q
-                        else:
+                        elif mode == 'replace_gallery':
                             base_qty_map[key] = q
+                        else:  # overwrite
+                            base_qty_map[key] = q
+                        
                         if pkg:
                             base_pkg_map[key] = pkg
                         if ticks:
@@ -3052,18 +3082,168 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
             return
-        # שאל את המשתמש על מצב עדכון: הוסף (חיבור) או דרוס (החלפה)
-        mode = 'overwrite'
+        # בדיקת מיקומים ייחודיים
+        locations = set()
+        for item in items:
+            loc = item.get('location', '').strip()
+            if loc:
+                locations.add(loc)
+        
+        # האם יש רק מיקום אחד (או ללא מיקום)?
+        allow_gallery_replace = len(locations) == 1
+        single_location = list(locations)[0] if allow_gallery_replace and locations else None
+        
+        # שאל את המשתמש על מצב עדכון: הוסף (חיבור) או דרוס (החלפה) או החלף גלריה
+        mode = None
         try:
-            ans = messagebox.askyesnocancel(
-                'מצב עדכון מלאי',
-                "איך לעדכן את הכמות?\n\nכן = הוסף (חיבור לכמות קיימת)\nלא = דרוס (החלפה בכמות החדשה)\nביטול = בטל פעולה"
+            # יצירת דיאלוג מותאם אישית
+            dialog = tk.Toplevel(self.notebook)
+            dialog.title('מצב עדכון מלאי')
+            dialog.grab_set()
+            dialog.resizable(False, False)
+            
+            # מיקום במרכז המסך
+            dialog.update_idletasks()
+            x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+            y = (dialog.winfo_screenheight() // 2) - (300 // 2)
+            dialog.geometry(f'400x300+{x}+{y}')
+            
+            # כותרת
+            title_text = 'מצב עדכון מלאי'
+            if allow_gallery_replace and single_location:
+                title_text += f'\n(מיקום: {single_location})'
+            elif len(locations) > 1:
+                title_text += f'\n⚠️ זוהו {len(locations)} מיקומים שונים'
+            
+            title_label = tk.Label(
+                dialog, 
+                text=title_text,
+                font=('Arial', 12, 'bold'),
+                bg='#ecf0f1',
+                pady=10
             )
-            if ans is None:
+            title_label.pack(fill='x')
+            
+            # שאלה
+            question_label = tk.Label(
+                dialog,
+                text='איך לעדכן את המלאי?',
+                font=('Arial', 11),
+                pady=10
+            )
+            question_label.pack()
+            
+            # משתנה לשמירת התשובה
+            result = {'mode': None}
+            
+            def on_choice(choice):
+                result['mode'] = choice
+                dialog.destroy()
+            
+            # כפתורים
+            buttons_frame = tk.Frame(dialog)
+            buttons_frame.pack(pady=10)
+            
+            # כפתור הוסף
+            add_btn = tk.Button(
+                buttons_frame,
+                text='➕ הוסף\n(חיבור לכמות קיימת)',
+                command=lambda: on_choice('add'),
+                bg='#27ae60',
+                fg='white',
+                font=('Arial', 10),
+                width=20,
+                height=3
+            )
+            add_btn.pack(pady=5)
+            
+            # כפתור דרוס
+            overwrite_btn = tk.Button(
+                buttons_frame,
+                text='🔄 דרוס\n(החלפה בכמות חדשה)',
+                command=lambda: on_choice('overwrite'),
+                bg='#3498db',
+                fg='white',
+                font=('Arial', 10),
+                width=20,
+                height=3
+            )
+            overwrite_btn.pack(pady=5)
+            
+            # כפתור החלף גלריה (רק אם יש מיקום אחד)
+            if allow_gallery_replace and single_location:
+                replace_gallery_btn = tk.Button(
+                    buttons_frame,
+                    text=f'🏢 החלף תכולת גלריה\n(מחק הכל ב-{single_location})',
+                    command=lambda: on_choice('replace_gallery'),
+                    bg='#e74c3c',
+                    fg='white',
+                    font=('Arial', 10, 'bold'),
+                    width=20,
+                    height=3
+                )
+                replace_gallery_btn.pack(pady=5)
+            else:
+                # הסבר למה אין אפשרות החלף גלריה
+                info_label = tk.Label(
+                    buttons_frame,
+                    text='ℹ️ "החלף גלריה" זמין רק כאשר\nכל הפריטים שייכים לאותו מיקום',
+                    font=('Arial', 9),
+                    fg='#7f8c8d',
+                    justify='center'
+                )
+                info_label.pack(pady=5)
+            
+            # כפתור ביטול
+            cancel_btn = tk.Button(
+                buttons_frame,
+                text='✖ ביטול',
+                command=lambda: on_choice(None),
+                bg='#95a5a6',
+                fg='white',
+                font=('Arial', 10),
+                width=20
+            )
+            cancel_btn.pack(pady=10)
+            
+            # המתן לסגירת הדיאלוג
+            dialog.wait_window()
+            
+            mode = result['mode']
+            if mode is None:
                 return  # בוטל
-            mode = 'add' if ans else 'overwrite'
-        except Exception:
+        except Exception as e:
+            print(f"Error in dialog: {e}")
             mode = 'overwrite'
+        
+        # אם נבחר מצב החלפת גלריה, להציג אזהרה נוספת
+        if mode == 'replace_gallery':
+            try:
+                # ספירת פריטים קיימים במיקום
+                existing_count = 0
+                try:
+                    inv_data = self._compute_products_inventory()
+                    for inv_item in inv_data:
+                        if inv_item.get('location', '').strip() == single_location:
+                            existing_count += 1
+                except Exception:
+                    existing_count = 0
+                
+                warning_msg = f"⚠️ אזהרה!\n\n"
+                warning_msg += f"פעולה זו תמחק את כל הפריטים במיקום:\n'{single_location}'\n\n"
+                if existing_count > 0:
+                    warning_msg += f"({existing_count} פריטים קיימים)\n\n"
+                warning_msg += "האם אתה בטוח?"
+                
+                confirm = messagebox.askyesno(
+                    'אישור החלפת גלריה',
+                    warning_msg,
+                    icon='warning'
+                )
+                if not confirm:
+                    return  # המשתמש ביטל
+            except Exception:
+                pass
         # טען/שמור היסטוריה
         data = self._inv_updates_load_store()
         from datetime import datetime as _dt
@@ -3092,7 +3272,12 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         try:
-            messagebox.showinfo('עדכון מלאי', f"המלאי עודכן בהצלחה ({'הוספה' if mode=='add' else 'דריסה'})")
+            mode_text = {
+                'add': 'הוספה',
+                'overwrite': 'דריסה',
+                'replace_gallery': f'החלפת תכולה מלאה - {single_location}'
+            }.get(mode, 'דריסה')
+            messagebox.showinfo('עדכון מלאי', f"המלאי עודכן בהצלחה ({mode_text})")
         except Exception:
             pass
 
