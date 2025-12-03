@@ -250,5 +250,95 @@
     "color": "לבן",
     "shade": "",
     "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 23.80, מטרים: 52.00, מחיר: 0.00"
+  },
+  {
+    "id": 29,
+    "created_at": "2025-12-03 10:44:29",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.10, מטרים: 55.00, מחיר: 0.00"
+  },
+  {
+    "id": 30,
+    "created_at": "2025-12-03 10:45:13",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.80, מטרים: 65.00, מחיר: 0.00"
+  },
+  {
+    "id": 31,
+    "created_at": "2025-12-03 10:45:32",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.09, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 32,
+    "created_at": "2025-12-03 10:45:58",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.60, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 33,
+    "created_at": "2025-12-03 10:46:47",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.40, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 34,
+    "created_at": "2025-12-03 10:47:30",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.70, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 35,
+    "created_at": "2025-12-03 10:47:53",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.10, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 36,
+    "created_at": "2025-12-03 10:48:22",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.40, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 37,
+    "created_at": "2025-12-03 10:48:51",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.90, מטרים: 60.00, מחיר: 0.00"
+  },
+  {
+    "id": 38,
+    "created_at": "2025-12-03 10:49:16",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: קשי, רוחב: 169cm, ק\"ג: 24.70, מטרים: 60.00, מחיר: 0.00"
   }
 ]
