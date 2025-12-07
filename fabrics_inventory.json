@@ -525,11 +525,11 @@
     "meters": 57.99,
     "price": 6.7,
     "total": 116.25,
-    "location": "אריה",
+    "location": "אלשראר מסחר ותעשייה בע\"מ",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25112869",
@@ -3831,11 +3831,11 @@
     "meters": 48.91,
     "price": 6.7,
     "total": 99.16,
-    "location": "אריה",
+    "location": "אלשראר מסחר ותעשייה בע\"מ",
     "last_modified": "",
     "purpose": "",
     "import_log_id": 2,
-    "status": "במלאי"
+    "status": "נשלח"
   },
   {
     "barcode": "25111405",
