@@ -276,13 +276,7 @@ class SupplierIntakeMethodsMixin:
             messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות")
             return
         if hasattr(self, '_supplier_products_allowed') and self._supplier_products_allowed and product not in self._supplier_products_allowed:
-            # Ask user for confirmation to add manual product
-            response = messagebox.askyesno(
-                "מוצר לא קיים ברשימה",
-                f"המוצר '{product}' לא נמצא ברשימת המוצרים הקיימים.\n\nהאם תרצה להוסיף אותו בכל זאת?"
-            )
-            if not response:
-                return
+            messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד"); return
         try:
             qty = int(qty_raw); assert qty > 0
         except Exception:
