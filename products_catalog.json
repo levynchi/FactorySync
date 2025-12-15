@@ -1950,5 +1950,37 @@
     "ribbon_qty": 0,
     "created_at": "2025-10-28 10:09:05",
     "barcode": "7297555020819"
+  },
+  {
+    "id": 124,
+    "barcode": "7297555020826",
+    "name": "גטקס",
+    "size": "4",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל לבן",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-12-15 15:06:17"
+  },
+  {
+    "id": 125,
+    "barcode": "7297555020833",
+    "name": "גטקס",
+    "size": "6",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל לבן",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2025-12-15 15:06:17"
   }
 ]
