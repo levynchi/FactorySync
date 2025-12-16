@@ -171,7 +171,12 @@ class DeliveryNoteMethodsMixin:
         if not product or not qty_raw:
             messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות"); return
         if self._delivery_products_allowed and product not in self._delivery_products_allowed:
-            messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד"); return
+            proceed = messagebox.askyesno(
+                "אזהרה",
+                f"המוצר '{product}' לא קיים ברשימת המוצרים.\nהאם להוסיף בכל זאת?"
+            )
+            if not proceed:
+                return
         try:
             qty = int(qty_raw); assert qty > 0
         except Exception:
