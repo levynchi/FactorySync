@@ -162,24 +162,24 @@ class ConverterTabMixin:
         tree_frame.pack(fill='both', expand=True)
         
         cols = ('model','size','quantity')  # order right->left visually in RTL
-        self.results_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=22)
+        self.converter_results_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=22)
         headers = {'model':'דגם','size':'מידה','quantity':'כמות'}
         widths = {'model':200,'size':90,'quantity':90}
         for c in cols:
-            self.results_tree.heading(c, text=headers[c])
+            self.converter_results_tree.heading(c, text=headers[c])
             # align right for Hebrew readability
-            self.results_tree.column(c, width=widths[c], anchor='e', stretch=False)
+            self.converter_results_tree.column(c, width=widths[c], anchor='e', stretch=False)
         
         # Vertical scrollbar
-        vs = ttk.Scrollbar(tree_frame, orient='vertical', command=self.results_tree.yview)
-        self.results_tree.configure(yscroll=vs.set)
+        vs = ttk.Scrollbar(tree_frame, orient='vertical', command=self.converter_results_tree.yview)
+        self.converter_results_tree.configure(yscroll=vs.set)
         
         # Horizontal scrollbar
-        hs = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.results_tree.xview)
-        self.results_tree.configure(xscroll=hs.set)
+        hs = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.converter_results_tree.xview)
+        self.converter_results_tree.configure(xscroll=hs.set)
         
         # Grid layout with proper weights
-        self.results_tree.grid(row=0, column=0, sticky='nsew')
+        self.converter_results_tree.grid(row=0, column=0, sticky='nsew')
         vs.grid(row=0, column=1, sticky='ns')
         hs.grid(row=1, column=0, sticky='ew')
         
@@ -230,11 +230,21 @@ class ConverterTabMixin:
             self._safe_log("טוען מיפוי מוצרים מהטאב...")
             mapping_rows = getattr(self, '_product_mapping_rows', [])
             internal_map = {}
+            internal_unit_quantities = {}
             for r in mapping_rows:
                 fn = r.get('file name'); pn = r.get('product name')
                 if fn and pn:
                     internal_map[fn] = pn
+                    # Get unit quantity (default 1)
+                    try:
+                        uq = int(r.get('unit quantity', 1))
+                        if uq <= 0:
+                            uq = 1
+                    except (ValueError, TypeError):
+                        uq = 1
+                    internal_unit_quantities[fn] = uq
             self.file_analyzer.product_mapping = internal_map
+            self.file_analyzer.product_unit_quantities = internal_unit_quantities
             if not internal_map:
                 self._safe_log("⚠️ אין נתוני מיפוי (הטאב ריק)")
             products_count = len(self.file_analyzer.product_mapping)
@@ -281,16 +291,28 @@ class ConverterTabMixin:
                 messagebox.showerror("שגיאה", str(e))
 
     def _display_detailed_results(self):
-        # Populate the results table instead of verbose text lines
-        try:
-            for iid in self.results_tree.get_children():
-                self.results_tree.delete(iid)
-        except Exception:
-            pass
+        """Populate the results table with analysis data."""
+        if not hasattr(self, 'converter_results_tree'):
+            self._log_message("שגיאה: טבלת התוצאות לא אותחלה.")
+            return
+        
+        if not hasattr(self, 'current_results') or not self.current_results:
+            self._log_message("שגיאה: אין נתונים להצגה בטבלה.")
+            return
+        
+        # Clear existing items
+        for iid in self.converter_results_tree.get_children():
+            self.converter_results_tree.delete(iid)
+        
+        # Add new items
         for row in self.current_results:
-            self.results_tree.insert('', 'end', values=(row.get('שם המוצר',''), row.get('מידה',''), row.get('כמות','')))
+            product = row.get('שם המוצר', '')
+            size = row.get('מידה', '')
+            quantity = row.get('כמות', '')
+            self.converter_results_tree.insert('', 'end', values=(product, size, quantity))
+        
         # Add a concise header note to log area
-        self._log_message("=== תוצאות הניתוח (תצוגת טבלה) ===")
+        self._log_message(f"=== תוצאות הניתוח ({len(self.current_results)} רשומות) ===")
         if getattr(self.file_analyzer, 'is_tubular', False):
             self._log_message("(Layout Tubular) הכמויות בטבלה לאחר חלוקה ב-2 מהמקור")
 
@@ -507,7 +529,7 @@ class ConverterTabMixin:
         # Clear table and log
         if hasattr(self, 'results_tree'):
             try:
-                self.results_tree.delete(*self.results_tree.get_children())
+                self.converter_results_tree.delete(*self.converter_results_tree.get_children())
             except Exception:
                 pass
         if hasattr(self, 'results_text'):

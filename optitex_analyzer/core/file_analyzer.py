@@ -12,6 +12,7 @@ class OptitexFileAnalyzer:
     
     def __init__(self):
         self.product_mapping = {}
+        self.product_unit_quantities = {}  # mapping from file name to unit quantity (default 1)
         self.is_tubular = False
         self.results = []
         # Marker meta
@@ -28,10 +29,20 @@ class OptitexFileAnalyzer:
         try:
             df_products = pd.read_excel(products_file)
             self.product_mapping = {}
+            self.product_unit_quantities = {}
             
             for _, row in df_products.iterrows():
                 if pd.notna(row['product name']):
-                    self.product_mapping[row['file name']] = row['product name']
+                    file_name = row['file name']
+                    self.product_mapping[file_name] = row['product name']
+                    # Load unit quantity (default 1 if not present)
+                    try:
+                        unit_qty = int(row.get('unit quantity', 1))
+                        if unit_qty <= 0:
+                            unit_qty = 1
+                    except (ValueError, TypeError):
+                        unit_qty = 1
+                    self.product_unit_quantities[file_name] = unit_qty
             
             return True
         except Exception as e:
@@ -134,7 +145,7 @@ class OptitexFileAnalyzer:
                 elif (pd.notna(row.iloc[0]) and row.iloc[0] == 'Size name' and 
                       pd.notna(row.iloc[1]) and row.iloc[1] == 'Order' and product_name):
                     # עיבוד טבלת מידות עם אינדיקציה האם לחלק ב-2 עבור Style זה
-                    self._process_sizes_table(df, i, product_name, only_positive, apply_tubular=current_style_tubular)
+                    self._process_sizes_table(df, i, product_name, current_file_name, only_positive, apply_tubular=current_style_tubular)
             
             return self.results
             
@@ -163,9 +174,12 @@ class OptitexFileAnalyzer:
         return cleaned
     
     def _process_sizes_table(self, df: pd.DataFrame, start_index: int, 
-                           product_name: str, only_positive: bool, apply_tubular: bool):
+                           product_name: str, file_name: str, only_positive: bool, apply_tubular: bool):
         """עיבוד טבלת מידות"""
         j = start_index + 1
+        
+        # Get unit quantity for this file (default 1)
+        unit_quantity = self.product_unit_quantities.get(file_name, 1)
         
         while j < len(df) and pd.notna(df.iloc[j, 0]) and pd.notna(df.iloc[j, 1]):
             size_name = df.iloc[j, 0]
@@ -186,14 +200,25 @@ class OptitexFileAnalyzer:
                     quantity = quantity / 2
                     quantity = int(quantity) if quantity == int(quantity) else round(quantity, 1)
                 
+                # כפל לפי unit quantity
+                quantity = quantity * unit_quantity
+                original_quantity = original_quantity * unit_quantity
+                
                 # הוספה לתוצאות
                 if not only_positive or quantity > 0:
+                    note_parts = []
+                    if apply_tubular and original_quantity > 0:
+                        note_parts.append('חולק ב-2 (Tubular)')
+                    if unit_quantity > 1:
+                        note_parts.append(f'כפול {unit_quantity}')
+                    note = ' | '.join(note_parts) if note_parts else 'רגיל'
+                    
                     self.results.append({
                         'שם המוצר': product_name,
                         'מידה': cleaned_size,
                         'כמות': quantity,
                         'כמות מקורית': original_quantity if apply_tubular else quantity,
-                        'הערה': 'חולק ב-2 (Tubular)' if apply_tubular and original_quantity > 0 else 'רגיל'
+                        'הערה': note
                     })
             elif size_name in ['Style File Name:', 'Size name']:
                 break
