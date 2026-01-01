@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+import os
 
 class FabricsInventoryTabMixin:
     """Mixin לטאב מלאי בדים."""
@@ -9,7 +10,7 @@ class FabricsInventoryTabMixin:
         # Action bar
         actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=15, pady=5)
         tk.Button(actions, text="⬇️ הורד תבנית אקסל למשלוח", command=self._export_fabrics_template_excel, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
-        tk.Button(actions, text="📤 ייצא נתוני מלאי", command=self._export_current_fabrics_to_excel, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="📤 הדפס לאקסל", command=self._export_current_fabrics_to_excel, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg='#2980b9', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
 
@@ -224,7 +225,21 @@ class FabricsInventoryTabMixin:
     def _export_current_fabrics_to_excel(self):
         """ייצוא נתוני מלאי (כפי שמופיעים בטבלה, כולל תאריך קליטה) לאקסל."""
         base = list(getattr(self.data_processor, 'fabrics_inventory', []) or [])
-        records = self._filter_fabrics(base) if self._has_active_fabrics_filters() else base
+        
+        # בדיקה אם יש פילטרים פעילים והצגת דיאלוג בחירה
+        if self._has_active_fabrics_filters():
+            choice = messagebox.askyesnocancel(
+                "ייצוא לאקסל",
+                "יש פילטרים פעילים.\n\nהאם לייצא רק את הנתונים המסוננים?\n\nכן = נתונים מסוננים בלבד\nלא = כל הנתונים"
+            )
+            if choice is None:  # ביטול
+                return
+            elif choice:  # כן - נתונים מסוננים
+                records = self._filter_fabrics(base)
+            else:  # לא - כל הנתונים
+                records = base
+        else:
+            records = base
         try:
             logs = getattr(self.data_processor, 'fabrics_import_logs', None)
             if logs is None:
@@ -268,8 +283,11 @@ class FabricsInventoryTabMixin:
                 for j, v in enumerate(row, start=1): ws.cell(row=r_index, column=j, value=v)
                 r_index += 1
             wb.save(path)
-            try: messagebox.showinfo('נשמר', f'הקובץ נשמר בהצלחה:\n{path}')
-            except Exception: pass
+            # פתיחת הקובץ באקסל
+            try:
+                os.startfile(path)
+            except Exception:
+                pass
         except Exception as e:
             try: messagebox.showerror('שגיאה', f'כשל ביצוא המלאי: {e}')
             except Exception: pass
