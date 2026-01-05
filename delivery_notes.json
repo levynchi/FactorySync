@@ -1543,5 +1543,56 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-01-01 09:46:39"
+  },
+  {
+    "id": 44,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-01-05",
+    "lines": [
+      {
+        "product": "גופיות פלנל",
+        "size": "8",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 216,
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 201,
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 216,
+        "note": ""
+      }
+    ],
+    "total_quantity": 633,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-01-05 11:16:04"
   }
 ]
