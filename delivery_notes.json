@@ -1667,5 +1667,33 @@
     "accessories": [],
     "receipt_kind": "delivery_note",
     "created_at": "2026-01-06 12:49:38"
+  },
+  {
+    "id": 46,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-01-11",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "טיק טקים קומפלט",
+        "unit": "יחידות",
+        "quantity": 6000.0
+      },
+      {
+        "accessory": "גומי 1.5 בתפזורת",
+        "unit": "ק\"ג",
+        "quantity": 3.3
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-01-11 14:42:31"
   }
 ]
