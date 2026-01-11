@@ -1,4 +1,4 @@
-"""Formulas and calculations tab for weight and measurements calculations."""
+﻿"""Formulas and calculations tab for weight and measurements calculations."""
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -31,6 +31,7 @@ class FormulasTabMixin:
         tetra_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         all_over_print_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         store_price_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        fabric_rolls_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
@@ -38,6 +39,7 @@ class FormulasTabMixin:
         inner_nb.add(tetra_cost_tab, text="חישוב טטרות")
         inner_nb.add(all_over_print_tab, text="בגדי אול אובר")
         inner_nb.add(store_price_tab, text="מחיר לצרכן חנויות")
+        inner_nb.add(fabric_rolls_tab, text="חישוב גלילי בד")
         
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
@@ -46,6 +48,7 @@ class FormulasTabMixin:
         self._build_tetra_cost_content(tetra_cost_tab)
         self._build_all_over_print_content(all_over_print_tab)
         self._build_store_price_content(store_price_tab)
+        self._build_fabric_rolls_content(fabric_rolls_tab)
     
     def _build_general_weight_content(self, container):
         """Build the general weight calculations content."""
@@ -1838,3 +1841,430 @@ class FormulasTabMixin:
         self.store_price_var.set("")
         self.price_with_vat_var.set("--")
         self.consumer_price_var.set("--")
+    
+    def _build_fabric_rolls_content(self, container):
+        """Build the fabric rolls calculator content."""
+        
+        # Title and description
+        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame.pack(fill='x', padx=20, pady=(10, 5))
+        
+        tk.Label(
+            title_frame,
+            text="חישוב גלילי בד לגיזרה",
+            font=('Arial', 14, 'bold'),
+            bg='#f7f9fa',
+            fg='#2c3e50'
+        ).pack()
+        
+        tk.Label(
+            title_frame,
+            text="חישוב כמות גלילי הבד הנדרשים לגיזרה - כולל קליברציה מעבודה קודמת",
+            font=('Arial', 9),
+            bg='#f7f9fa',
+            fg='#7f8c8d'
+        ).pack()
+        
+        # ============ STEP 1: Calibration ============
+        calibration_frame = ttk.LabelFrame(container, text="שלב 1: קליברציה - חישוב אורך גליל מעבודה קודמת", padding=15)
+        calibration_frame.pack(fill='x', padx=20, pady=10)
+        
+        calibration_frame.grid_columnconfigure(1, weight=1)
+        calibration_frame.grid_columnconfigure(3, weight=1)
+        calibration_frame.grid_columnconfigure(5, weight=1)
+        
+        # Row 1: Previous job data
+        tk.Label(calibration_frame, text="אורך ציור קודם (מטר):", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.rolls_prev_drawing_length_var = tk.StringVar()
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_drawing_length_var, width=12, font=('Arial', 10)).grid(
+            row=0, column=1, padx=5, pady=5, sticky='w')
+        
+        tk.Label(calibration_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.rolls_prev_layers_var = tk.StringVar()
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_layers_var, width=12, font=('Arial', 10)).grid(
+            row=0, column=3, padx=5, pady=5, sticky='w')
+        
+        tk.Label(calibration_frame, text="כמות גלילים שנצרכו:", font=('Arial', 10, 'bold')).grid(
+            row=0, column=4, sticky='w', padx=5, pady=5)
+        self.rolls_prev_rolls_used_var = tk.StringVar()
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_rolls_used_var, width=12, font=('Arial', 10)).grid(
+            row=0, column=5, padx=5, pady=5, sticky='w')
+        
+        # Calculate roll length button
+        calc_roll_btn = tk.Button(
+            calibration_frame,
+            text="חשב אורך גליל",
+            command=self._calculate_roll_length,
+            bg='#3498db',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            width=15
+        )
+        calc_roll_btn.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky='w')
+        
+        # Roll length result
+        tk.Label(calibration_frame, text="אורך ממוצע לגליל:", font=('Arial', 10, 'bold')).grid(
+            row=1, column=2, sticky='w', padx=5, pady=5)
+        self.rolls_avg_roll_length_var = tk.StringVar(value="--")
+        self.rolls_avg_roll_length_label = tk.Label(
+            calibration_frame,
+            textvariable=self.rolls_avg_roll_length_var,
+            font=('Arial', 12, 'bold'),
+            fg='#27ae60'
+        )
+        self.rolls_avg_roll_length_label.grid(row=1, column=3, sticky='w', padx=5, pady=5)
+        
+        tk.Label(calibration_frame, text="מטר", font=('Arial', 10)).grid(
+            row=1, column=4, sticky='w', padx=0, pady=5)
+        
+        # OR manual entry
+        tk.Label(calibration_frame, text="או הזן ידנית:", font=('Arial', 9), fg='#7f8c8d').grid(
+            row=2, column=0, sticky='w', padx=5, pady=5)
+        self.rolls_manual_roll_length_var = tk.StringVar()
+        manual_entry = tk.Entry(calibration_frame, textvariable=self.rolls_manual_roll_length_var, width=12, font=('Arial', 10))
+        manual_entry.grid(row=2, column=1, padx=5, pady=5, sticky='w')
+        
+        use_manual_btn = tk.Button(
+            calibration_frame,
+            text="השתמש בערך ידני",
+            command=self._use_manual_roll_length,
+            bg='#95a5a6',
+            fg='white',
+            font=('Arial', 9, 'bold')
+        )
+        use_manual_btn.grid(row=2, column=2, padx=5, pady=5, sticky='w')
+        
+        # ============ STEP 2: New Job Calculation ============
+        new_job_frame = ttk.LabelFrame(container, text="שלב 2: חישוב לעבודה חדשה", padding=15)
+        new_job_frame.pack(fill='x', padx=20, pady=10)
+        
+        new_job_frame.grid_columnconfigure(1, weight=1)
+        new_job_frame.grid_columnconfigure(3, weight=1)
+        
+        # Drawing selection (optional)
+        tk.Label(new_job_frame, text="בחר ציור (אופציונלי):", font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        
+        self.rolls_drawing_var = tk.StringVar()
+        self.rolls_drawing_combo = ttk.Combobox(
+            new_job_frame,
+            textvariable=self.rolls_drawing_var,
+            state='readonly',
+            width=30,
+            justify='right'
+        )
+        self.rolls_drawing_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        self.rolls_drawing_combo.bind('<<ComboboxSelected>>', self._on_rolls_drawing_selected)
+        
+        load_btn = tk.Button(
+            new_job_frame,
+            text="טען ציורים",
+            command=self._load_rolls_drawings_list,
+            bg='#3498db',
+            fg='white',
+            font=('Arial', 9, 'bold')
+        )
+        load_btn.grid(row=0, column=2, padx=5, pady=5)
+        
+        # New job data
+        tk.Label(new_job_frame, text="אורך ציור חדש (מטר):", font=('Arial', 10, 'bold')).grid(
+            row=1, column=0, sticky='w', padx=5, pady=8)
+        self.rolls_new_drawing_length_var = tk.StringVar()
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_drawing_length_var, width=15, font=('Arial', 10)).grid(
+            row=1, column=1, padx=5, pady=8, sticky='w')
+        
+        tk.Label(new_job_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
+            row=1, column=2, sticky='w', padx=5, pady=8)
+        self.rolls_new_layers_var = tk.StringVar()
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_layers_var, width=15, font=('Arial', 10)).grid(
+            row=1, column=3, padx=5, pady=8, sticky='w')
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Button(
+            buttons_frame,
+            text="חשב גלילים נדרשים",
+            command=self._calculate_fabric_rolls,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=20,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        tk.Button(
+            buttons_frame,
+            text="נקה הכל",
+            command=self._clear_fabric_rolls_inputs,
+            bg='#e74c3c',
+            fg='white',
+            font=('Arial', 11, 'bold'),
+            width=15,
+            height=2
+        ).pack(side='left', padx=5)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=20)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # Results display
+        self.rolls_results_text = tk.Text(
+            results_frame,
+            height=12,
+            font=('Courier New', 10),
+            wrap=tk.WORD,
+            state='disabled',
+            bg='#ffffff'
+        )
+        self.rolls_results_text.pack(fill='both', expand=True)
+        
+        # Configure text tags for formatting
+        self.rolls_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
+        self.rolls_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
+        self.rolls_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
+        self.rolls_results_text.tag_configure('total', font=('Arial', 14, 'bold'), foreground='#27ae60')
+        self.rolls_results_text.tag_configure('warning', font=('Arial', 10, 'bold'), foreground='#e67e22')
+        self.rolls_results_text.tag_configure('separator', foreground='#7f8c8d')
+        
+        # Initialize
+        self.rolls_drawings_dict = {}
+        self.calculated_roll_length = None
+        self._load_rolls_drawings_list()
+        self._clear_fabric_rolls_inputs()
+    
+    def _calculate_roll_length(self):
+        """Calculate average roll length from previous job data."""
+        try:
+            prev_length_str = self.rolls_prev_drawing_length_var.get().strip()
+            prev_layers_str = self.rolls_prev_layers_var.get().strip()
+            prev_rolls_str = self.rolls_prev_rolls_used_var.get().strip()
+            
+            if not prev_length_str or not prev_layers_str or not prev_rolls_str:
+                messagebox.showwarning("אזהרה", "אנא הזן את כל נתוני העבודה הקודמת")
+                return
+            
+            try:
+                prev_length = float(prev_length_str)
+                prev_layers = float(prev_layers_str)
+                prev_rolls = float(prev_rolls_str)
+            except ValueError:
+                messagebox.showwarning("אזהרה", "אנא הזן ערכים נומריים תקינים")
+                return
+            
+            if prev_length <= 0 or prev_layers <= 0 or prev_rolls <= 0:
+                messagebox.showwarning("אזהרה", "כל הערכים חייבים להיות גדולים מ-0")
+                return
+            
+            # Calculate: total fabric used / number of rolls = avg length per roll
+            total_fabric = prev_length * prev_layers
+            avg_roll_length = total_fabric / prev_rolls
+            
+            self.calculated_roll_length = avg_roll_length
+            self.rolls_avg_roll_length_var.set(f"{avg_roll_length:.2f}")
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _use_manual_roll_length(self):
+        """Use manually entered roll length."""
+        try:
+            manual_str = self.rolls_manual_roll_length_var.get().strip()
+            if not manual_str:
+                messagebox.showwarning("אזהרה", "אנא הזן אורך גליל ידני")
+                return
+            
+            try:
+                manual_length = float(manual_str)
+            except ValueError:
+                messagebox.showwarning("אזהרה", "אנא הזן ערך נומרי תקין")
+                return
+            
+            if manual_length <= 0:
+                messagebox.showwarning("אזהרה", "אורך הגליל חייב להיות גדול מ-0")
+                return
+            
+            self.calculated_roll_length = manual_length
+            self.rolls_avg_roll_length_var.set(f"{manual_length:.2f}")
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה: {str(e)}")
+    
+    def _load_rolls_drawings_list(self):
+        """Load the list of drawings for the fabric rolls calculator."""
+        try:
+            drawings = getattr(self.data_processor, 'drawings_data', [])
+            drawing_names = []
+            self.rolls_drawings_dict = {}
+            
+            for drawing in drawings:
+                drawing_name = drawing.get('שם הקובץ', f"ציור {drawing.get('id', 'לא ידוע')}")
+                drawing_names.append(drawing_name)
+                self.rolls_drawings_dict[drawing_name] = drawing
+            
+            self.rolls_drawing_combo['values'] = [''] + drawing_names
+            self.rolls_drawing_combo.set('')
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת רשימת הציורים: {str(e)}")
+    
+    def _on_rolls_drawing_selected(self, event=None):
+        """Handle drawing selection for fabric rolls calculator."""
+        try:
+            selected_name = self.rolls_drawing_var.get()
+            if not selected_name or selected_name not in self.rolls_drawings_dict:
+                return
+            
+            drawing = self.rolls_drawings_dict[selected_name]
+            
+            # Get drawing length - try multiple possible field names
+            drawing_length = drawing.get('אורך', None) or drawing.get('אורך הציור', None) or drawing.get('length', None)
+            if drawing_length is not None:
+                self.rolls_new_drawing_length_var.set(str(drawing_length))
+            
+            # Get layers count - try multiple possible field names
+            layers = drawing.get('שכבות', None) or drawing.get('כמות שכבות משוערת', None) or drawing.get('layers', None)
+            if layers is not None:
+                self.rolls_new_layers_var.set(str(layers))
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת נתוני הציור: {str(e)}")
+    
+    def _calculate_fabric_rolls(self):
+        """Calculate the number of fabric rolls needed for new job."""
+        try:
+            # Check if roll length is set
+            if self.calculated_roll_length is None or self.calculated_roll_length <= 0:
+                messagebox.showwarning("אזהרה", "אנא חשב או הזן אורך גליל תחילה (שלב 1)")
+                return
+            
+            # Get new job input values
+            new_length_str = self.rolls_new_drawing_length_var.get().strip()
+            new_layers_str = self.rolls_new_layers_var.get().strip()
+            
+            if not new_length_str:
+                messagebox.showwarning("אזהרה", "אנא הזן אורך ציור חדש")
+                return
+            
+            if not new_layers_str:
+                messagebox.showwarning("אזהרה", "אנא הזן כמות שכבות")
+                return
+            
+            try:
+                new_length = float(new_length_str)
+                new_layers = float(new_layers_str)
+            except ValueError:
+                messagebox.showwarning("אזהרה", "אנא הזן ערכים נומריים תקינים")
+                return
+            
+            if new_length <= 0 or new_layers <= 0:
+                messagebox.showwarning("אזהרה", "כל הערכים חייבים להיות גדולים מ-0")
+                return
+            
+            # Perform calculation
+            import math
+            
+            roll_length = self.calculated_roll_length
+            total_fabric_needed = new_length * new_layers
+            exact_rolls = total_fabric_needed / roll_length
+            whole_rolls = math.ceil(exact_rolls)
+            
+            # Calculate leftover
+            leftover = (whole_rolls * roll_length) - total_fabric_needed
+            leftover_percentage = (leftover / (whole_rolls * roll_length)) * 100 if whole_rolls > 0 else 0
+            
+            # Display results
+            self.rolls_results_text.config(state='normal')
+            self.rolls_results_text.delete(1.0, tk.END)
+            
+            # Header
+            self.rolls_results_text.insert(tk.END, "תוצאות חישוב גלילי בד\n", 'header')
+            self.rolls_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Roll length used
+            self.rolls_results_text.insert(tk.END, "נתוני גליל:\n", 'header')
+            self.rolls_results_text.insert(tk.END, f"  אורך ממוצע לגליל:                    ", 'label')
+            self.rolls_results_text.insert(tk.END, f"{roll_length:.2f} מטר\n\n", 'value')
+            
+            # New job data
+            self.rolls_results_text.insert(tk.END, "נתוני עבודה חדשה:\n", 'header')
+            self.rolls_results_text.insert(tk.END, f"  אורך הציור:                          ", 'label')
+            self.rolls_results_text.insert(tk.END, f"{new_length:.2f} מטר\n", 'value')
+            
+            self.rolls_results_text.insert(tk.END, f"  כמות שכבות:                          ", 'label')
+            self.rolls_results_text.insert(tk.END, f"{new_layers:.0f}\n\n", 'value')
+            
+            self.rolls_results_text.insert(tk.END, "-" * 70 + "\n\n", 'separator')
+            
+            # Calculation details
+            self.rolls_results_text.insert(tk.END, "חישוב:\n", 'header')
+            self.rolls_results_text.insert(tk.END, f"  סה״כ בד נדרש:                        ", 'label')
+            self.rolls_results_text.insert(tk.END, f"{total_fabric_needed:.2f} מטר\n", 'value')
+            
+            self.rolls_results_text.insert(tk.END, f"  ({new_length:.2f} × {new_layers:.0f} = {total_fabric_needed:.2f})\n\n", 'label')
+            
+            self.rolls_results_text.insert(tk.END, f"  מספר גלילים מדויק:                   ", 'label')
+            self.rolls_results_text.insert(tk.END, f"{exact_rolls:.2f}\n\n", 'value')
+            
+            self.rolls_results_text.insert(tk.END, "=" * 70 + "\n\n", 'separator')
+            
+            # Main result
+            self.rolls_results_text.insert(tk.END, f"מספר גלילים נדרש: {whole_rolls}\n\n", 'total')
+            
+            # Exact rolls info
+            self.rolls_results_text.insert(tk.END, f"(מספר מדויק: {exact_rolls:.2f} גלילים)\n\n", 'warning')
+            
+            # Leftover info
+            if leftover > 0 and whole_rolls > exact_rolls:
+                self.rolls_results_text.insert(tk.END, f"עודף צפוי: {leftover:.2f} מטר ({leftover_percentage:.1f}%)\n", 'label')
+            
+            self.rolls_results_text.insert(tk.END, "\n" + "=" * 70 + "\n", 'separator')
+            
+            self.rolls_results_text.config(state='disabled')
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_fabric_rolls_inputs(self):
+        """Clear all fabric rolls calculator inputs and results."""
+        # Clear calibration inputs
+        if hasattr(self, 'rolls_prev_drawing_length_var'):
+            self.rolls_prev_drawing_length_var.set("")
+        if hasattr(self, 'rolls_prev_layers_var'):
+            self.rolls_prev_layers_var.set("")
+        if hasattr(self, 'rolls_prev_rolls_used_var'):
+            self.rolls_prev_rolls_used_var.set("")
+        if hasattr(self, 'rolls_manual_roll_length_var'):
+            self.rolls_manual_roll_length_var.set("")
+        if hasattr(self, 'rolls_avg_roll_length_var'):
+            self.rolls_avg_roll_length_var.set("--")
+        
+        # Clear new job inputs
+        if hasattr(self, 'rolls_new_drawing_length_var'):
+            self.rolls_new_drawing_length_var.set("")
+        if hasattr(self, 'rolls_new_layers_var'):
+            self.rolls_new_layers_var.set("")
+        
+        # Clear drawing selection
+        if hasattr(self, 'rolls_drawing_combo'):
+            self.rolls_drawing_combo.set('')
+        if hasattr(self, 'rolls_drawing_var'):
+            self.rolls_drawing_var.set('')
+        
+        # Reset calculated roll length
+        self.calculated_roll_length = None
+        
+        # Clear results display
+        if hasattr(self, 'rolls_results_text'):
+            self.rolls_results_text.config(state='normal')
+            self.rolls_results_text.delete(1.0, tk.END)
+            self.rolls_results_text.insert(
+                tk.END,
+                "\n\n          שלב 1: הזן נתוני עבודה קודמת לחישוב אורך גליל\n"
+                "          שלב 2: הזן נתוני עבודה חדשה לחישוב כמות הגלילים\n\n",
+                'header'
+            )
+            self.rolls_results_text.config(state='disabled')
