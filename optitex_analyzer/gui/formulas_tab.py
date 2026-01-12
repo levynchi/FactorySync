@@ -1865,34 +1865,38 @@ class FormulasTabMixin:
             fg='#7f8c8d'
         ).pack()
         
-        # ============ STEP 1: Calibration ============
-        calibration_frame = ttk.LabelFrame(container, text="שלב 1: קליברציה - חישוב אורך גליל מעבודה קודמת", padding=15)
-        calibration_frame.pack(fill='x', padx=20, pady=10)
+        # ============ STEPS CONTAINER (Side by Side) ============
+        steps_container = tk.Frame(container, bg='#f7f9fa')
+        steps_container.pack(fill='x', padx=20, pady=10)
+        steps_container.grid_columnconfigure(0, weight=1)
+        steps_container.grid_columnconfigure(1, weight=1)
         
-        calibration_frame.grid_columnconfigure(1, weight=1)
-        calibration_frame.grid_columnconfigure(3, weight=1)
-        calibration_frame.grid_columnconfigure(5, weight=1)
+        # ============ STEP 1: Calibration (Right Side) ============
+        calibration_frame = ttk.LabelFrame(steps_container, text="שלב 1: קליברציה - חישוב אורך גליל", padding=10)
+        calibration_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
-        # Row 1: Previous job data
+        # Row 0: Previous drawing length
         tk.Label(calibration_frame, text="אורך ציור קודם (מטר):", font=('Arial', 10, 'bold')).grid(
-            row=0, column=0, sticky='w', padx=5, pady=5)
+            row=0, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_drawing_length_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_drawing_length_var, width=12, font=('Arial', 10)).grid(
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_drawing_length_var, width=10, font=('Arial', 10)).grid(
             row=0, column=1, padx=5, pady=5, sticky='w')
         
+        # Row 1: Previous layers
         tk.Label(calibration_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
-            row=0, column=2, sticky='w', padx=5, pady=5)
+            row=1, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_layers_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_layers_var, width=12, font=('Arial', 10)).grid(
-            row=0, column=3, padx=5, pady=5, sticky='w')
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_layers_var, width=10, font=('Arial', 10)).grid(
+            row=1, column=1, padx=5, pady=5, sticky='w')
         
+        # Row 2: Rolls used
         tk.Label(calibration_frame, text="כמות גלילים שנצרכו:", font=('Arial', 10, 'bold')).grid(
-            row=0, column=4, sticky='w', padx=5, pady=5)
+            row=2, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_rolls_used_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_rolls_used_var, width=12, font=('Arial', 10)).grid(
-            row=0, column=5, padx=5, pady=5, sticky='w')
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_rolls_used_var, width=10, font=('Arial', 10)).grid(
+            row=2, column=1, padx=5, pady=5, sticky='w')
         
-        # Calculate roll length button
+        # Row 3: Calculate button
         calc_roll_btn = tk.Button(
             calibration_frame,
             text="חשב אורך גליל",
@@ -1902,84 +1906,84 @@ class FormulasTabMixin:
             font=('Arial', 10, 'bold'),
             width=15
         )
-        calc_roll_btn.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky='w')
+        calc_roll_btn.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
         
-        # Roll length result
-        tk.Label(calibration_frame, text="אורך ממוצע לגליל:", font=('Arial', 10, 'bold')).grid(
-            row=1, column=2, sticky='w', padx=5, pady=5)
+        # Row 4: Roll length result
+        result_frame = tk.Frame(calibration_frame)
+        result_frame.grid(row=4, column=0, columnspan=2, pady=5)
+        tk.Label(result_frame, text="אורך ממוצע לגליל:", font=('Arial', 10, 'bold')).pack(side='right', padx=2)
         self.rolls_avg_roll_length_var = tk.StringVar(value="--")
         self.rolls_avg_roll_length_label = tk.Label(
-            calibration_frame,
+            result_frame,
             textvariable=self.rolls_avg_roll_length_var,
             font=('Arial', 12, 'bold'),
             fg='#27ae60'
         )
-        self.rolls_avg_roll_length_label.grid(row=1, column=3, sticky='w', padx=5, pady=5)
+        self.rolls_avg_roll_length_label.pack(side='right', padx=2)
+        tk.Label(result_frame, text="מטר", font=('Arial', 10)).pack(side='right', padx=2)
         
-        tk.Label(calibration_frame, text="מטר", font=('Arial', 10)).grid(
-            row=1, column=4, sticky='w', padx=0, pady=5)
-        
-        # OR manual entry
-        tk.Label(calibration_frame, text="או הזן ידנית:", font=('Arial', 9), fg='#7f8c8d').grid(
-            row=2, column=0, sticky='w', padx=5, pady=5)
+        # Row 5: Manual entry
+        manual_frame = tk.Frame(calibration_frame)
+        manual_frame.grid(row=5, column=0, columnspan=2, pady=5)
+        tk.Label(manual_frame, text="או הזן ידנית:", font=('Arial', 9), fg='#7f8c8d').pack(side='right', padx=2)
         self.rolls_manual_roll_length_var = tk.StringVar()
-        manual_entry = tk.Entry(calibration_frame, textvariable=self.rolls_manual_roll_length_var, width=12, font=('Arial', 10))
-        manual_entry.grid(row=2, column=1, padx=5, pady=5, sticky='w')
-        
+        manual_entry = tk.Entry(manual_frame, textvariable=self.rolls_manual_roll_length_var, width=8, font=('Arial', 10))
+        manual_entry.pack(side='right', padx=2)
         use_manual_btn = tk.Button(
-            calibration_frame,
+            manual_frame,
             text="השתמש בערך ידני",
             command=self._use_manual_roll_length,
             bg='#95a5a6',
             fg='white',
             font=('Arial', 9, 'bold')
         )
-        use_manual_btn.grid(row=2, column=2, padx=5, pady=5, sticky='w')
+        use_manual_btn.pack(side='right', padx=2)
         
-        # ============ STEP 2: New Job Calculation ============
-        new_job_frame = ttk.LabelFrame(container, text="שלב 2: חישוב לעבודה חדשה", padding=15)
-        new_job_frame.pack(fill='x', padx=20, pady=10)
+        # ============ STEP 2: New Job Calculation (Left Side) ============
+        new_job_frame = ttk.LabelFrame(steps_container, text="שלב 2: חישוב לעבודה חדשה", padding=10)
+        new_job_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
         
-        new_job_frame.grid_columnconfigure(1, weight=1)
-        new_job_frame.grid_columnconfigure(3, weight=1)
-        
-        # Drawing selection (optional)
+        # Row 0: Drawing selection
         tk.Label(new_job_frame, text="בחר ציור (אופציונלי):", font=('Arial', 10, 'bold')).grid(
-            row=0, column=0, sticky='w', padx=5, pady=5)
+            row=0, column=0, sticky='e', padx=5, pady=5)
+        
+        drawing_select_frame = tk.Frame(new_job_frame)
+        drawing_select_frame.grid(row=0, column=1, sticky='w', padx=5, pady=5)
         
         self.rolls_drawing_var = tk.StringVar()
         self.rolls_drawing_combo = ttk.Combobox(
-            new_job_frame,
+            drawing_select_frame,
             textvariable=self.rolls_drawing_var,
             state='readonly',
-            width=30,
+            width=20,
             justify='right'
         )
-        self.rolls_drawing_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        self.rolls_drawing_combo.pack(side='right', padx=2)
         self.rolls_drawing_combo.bind('<<ComboboxSelected>>', self._on_rolls_drawing_selected)
         
         load_btn = tk.Button(
-            new_job_frame,
+            drawing_select_frame,
             text="טען ציורים",
             command=self._load_rolls_drawings_list,
             bg='#3498db',
             fg='white',
             font=('Arial', 9, 'bold')
         )
-        load_btn.grid(row=0, column=2, padx=5, pady=5)
+        load_btn.pack(side='right', padx=2)
         
-        # New job data
+        # Row 1: New drawing length
         tk.Label(new_job_frame, text="אורך ציור חדש (מטר):", font=('Arial', 10, 'bold')).grid(
-            row=1, column=0, sticky='w', padx=5, pady=8)
+            row=1, column=0, sticky='e', padx=5, pady=8)
         self.rolls_new_drawing_length_var = tk.StringVar()
-        tk.Entry(new_job_frame, textvariable=self.rolls_new_drawing_length_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_drawing_length_var, width=12, font=('Arial', 10)).grid(
             row=1, column=1, padx=5, pady=8, sticky='w')
         
+        # Row 2: New layers count
         tk.Label(new_job_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
-            row=1, column=2, sticky='w', padx=5, pady=8)
+            row=2, column=0, sticky='e', padx=5, pady=8)
         self.rolls_new_layers_var = tk.StringVar()
-        tk.Entry(new_job_frame, textvariable=self.rolls_new_layers_var, width=15, font=('Arial', 10)).grid(
-            row=1, column=3, padx=5, pady=8, sticky='w')
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_layers_var, width=12, font=('Arial', 10)).grid(
+            row=2, column=1, padx=5, pady=8, sticky='w')
         
         # Buttons frame
         buttons_frame = tk.Frame(container, bg='#f7f9fa')
