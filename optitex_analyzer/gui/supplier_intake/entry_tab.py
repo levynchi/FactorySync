@@ -88,6 +88,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Returned from drawing + Drawing ID
     ctx.sup_returned_from_drawing_var = tk.StringVar(value='לא')
     ctx.sup_drawing_id_var = tk.StringVar()
+    
+    # Label status - for accessories balance calculation
+    ctx.sup_label_status_var = tk.StringVar(value='עם תווית')
 
     # Product list
     ctx._supplier_products_allowed = []
@@ -407,6 +410,10 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
+    # Label status combobox for accessories balance
+    ctx.sup_label_status_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_label_status_var, width=12, state='readonly',
+                                               values=['עם תווית', 'ללא תווית', 'תווית חיצונית'])
+
     # Main Category (values from data_processor.main_categories) – default 'בגדים'
     ctx.sup_main_category_var = tk.StringVar(value='בגדים')
     ctx.sup_main_category_combo = ttk.Combobox(entry_bar, textvariable=ctx.sup_main_category_var, width=14, state='readonly')
@@ -452,6 +459,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'drawing_id': "מס' ציור",
         'quantity': 'כמות',
         'note': 'הערה',
+        'label_status': 'תוויות',
     }
     label_widgets = {k: tk.Label(entry_bar, text=v, bg='#f7f9fa') for k,v in label_texts.items()}
 
@@ -475,6 +483,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'drawing_id': (label_widgets['drawing_id'], ctx.sup_drawing_id_combo),
         'quantity': (label_widgets['quantity'], qty_entry),
         'note': (label_widgets['note'], note_entry),
+        'label_status': (label_widgets['label_status'], ctx.sup_label_status_combo),
     }
 
     # Action buttons placed after fields dynamically
@@ -510,8 +519,8 @@ def build_entry_tab(ctx, container: tk.Frame):
         else:
             visible_keys = ['main_category','model_name']
 
-        # Always keep sub_category, returned-from-drawing, drawing_id, quantity, note
-        tail = ['sub_category','returned_from_drawing','drawing_id','quantity','note']
+        # Always keep sub_category, returned-from-drawing, drawing_id, quantity, label_status, note
+        tail = ['sub_category','returned_from_drawing','drawing_id','quantity','label_status','note']
 
         # Hide all first
         for key,(lbl,inp) in field_pairs.items():
@@ -690,15 +699,15 @@ def build_entry_tab(ctx, container: tk.Frame):
             pass
 
     # Lines tree
-    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','note')
+    cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','label_status','note')
     ctx.supplier_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
     headers = {
         'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
         'fabric_category':'קטגורית בד','print_name':'שם פרינט','barcode':'בר קוד','category':'קטגוריה',
         'returned_from_drawing':'חזר מציור','drawing_id':"מס' ציור",
-        'quantity':'כמות','note':'הערה'
+        'quantity':'כמות','label_status':'תוויות','note':'הערה'
     }
-    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'barcode':110,'category':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220}
+    widths = {'product':160,'size':80,'fabric_type':110,'fabric_color':90,'fabric_category':120,'print_name':110,'barcode':110,'category':110,'returned_from_drawing':90,'drawing_id':80,'quantity':70,'label_status':90,'note':200}
     for c in cols:
         ctx.supplier_tree.heading(c, text=headers[c])
         ctx.supplier_tree.column(c, width=widths[c], anchor='center')

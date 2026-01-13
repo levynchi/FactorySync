@@ -294,6 +294,9 @@ class SupplierIntakeMethodsMixin:
             messagebox.showerror("שגיאה", "חובה לבחור לפחות מידה אחת")
             return
         
+        # Get label status
+        label_status = (getattr(self, 'sup_label_status_var', tk.StringVar(value='עם תווית')).get() or 'עם תווית').strip()
+        
         # Add a line for each selected size
         for size in selected_sizes:
             line = {
@@ -308,10 +311,11 @@ class SupplierIntakeMethodsMixin:
                 'returned_from_drawing': returned_from_drawing,
                 'drawing_id': drawing_id,
                 'quantity': qty,
+                'label_status': label_status,
                 'note': note
             }
             self._supplier_lines.append(line)
-            self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,returned_from_drawing,drawing_id,qty,note))
+            self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,returned_from_drawing,drawing_id,qty,label_status,note))
         
         # Clear form after adding
         self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
@@ -322,6 +326,10 @@ class SupplierIntakeMethodsMixin:
         try:
             self.sup_returned_from_drawing_var.set('לא')
             self.sup_drawing_id_var.set('')
+        except Exception:
+            pass
+        try:
+            self.sup_label_status_var.set('עם תווית')
         except Exception:
             pass
         if hasattr(self, 'sup_product_combo'):
@@ -559,17 +567,17 @@ class SupplierIntakeMethodsMixin:
 
         lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
         lines_frame.pack(fill='both', expand=True, pady=6)
-        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','note')
+        cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','label_status','note')
         tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
         headers = {
             'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד',
             'fabric_category':'קטגורית בד','print_name':'שם פרינט','barcode':'בר קוד','category':'קטגוריה',
-            'returned_from_drawing':'חזר מציור','drawing_id':'"מס\' ציור"','quantity':'כמות','note':'הערה'
+            'returned_from_drawing':'חזר מציור','drawing_id':'"מס\' ציור"','quantity':'כמות','label_status':'תוויות','note':'הערה'
         }
         widths = {
             'product':180,'size':80,'fabric_type':100,'fabric_color':90,
             'fabric_category':120,'print_name':110,'barcode':110,'category':110,
-            'returned_from_drawing':90,'drawing_id':80,'quantity':70,'note':220
+            'returned_from_drawing':90,'drawing_id':80,'quantity':70,'label_status':90,'note':200
         }
         for c in cols:
             tree.heading(c, text=headers[c])
@@ -581,7 +589,7 @@ class SupplierIntakeMethodsMixin:
         for ln in rec.get('lines', []) or []:
             tree.insert('', 'end', values=(
                 ln.get('product',''), ln.get('size',''), ln.get('fabric_type',''), ln.get('fabric_color',''), ln.get('fabric_category',''),
-                ln.get('print_name',''), ln.get('barcode',''), ln.get('category',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('note','')
+                ln.get('print_name',''), ln.get('barcode',''), ln.get('category',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('label_status','עם תווית'), ln.get('note','')
             ))
 
         pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg='#f7f9fa')

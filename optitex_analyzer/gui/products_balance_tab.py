@@ -2351,6 +2351,18 @@ class ProductsBalanceTabMixin:
                         received['גומי'] = received.get('גומי', 0) + per_elastic * qty
                     if per_ribbon > 0:
                         received['סרט'] = received.get('סרט', 0) + per_ribbon * qty
+                    
+                    # חישוב תוויות אוטומטי לפי מידה
+                    label_status = norm(ln.get('label_status', 'עם תווית'))
+                    if label_status == 'עם תווית' and psize:
+                        label_name = f"תווית {psize}"
+                        # בדיקה אם התווית קיימת ברשימת אביזרי תפירה
+                        try:
+                            sewing_acc = getattr(self.data_processor, 'sewing_accessories', []) or []
+                            if any(norm(a.get('name')) == label_name for a in sewing_acc):
+                                received[label_name] = received.get(label_name, 0) + qty
+                        except Exception:
+                            pass
         except Exception:
             pass
 
@@ -2437,6 +2449,13 @@ class ProductsBalanceTabMixin:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל', 'גומי')
                             if 'סרט' in norm(kind_filter).lower() and per_ribbon > 0:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל', 'סרט')
+                            # חישוב תוויות לפי מידה
+                            if 'תווית' in norm(kind_filter).lower() and p_size:
+                                label_status = norm(ln.get('label_status', 'עם תווית'))
+                                if label_status == 'עם תווית':
+                                    label_name = f"תווית {p_size}"
+                                    if norm(kind_filter).lower() in label_name.lower():
+                                        add(rec_date, 'קליטת בגדים תפורים – תוויות', rec_no, qty_units, 'נתקבל', label_name)
             except Exception:
                 pass
 
@@ -2681,6 +2700,13 @@ class ProductsBalanceTabMixin:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_elastic * qty_units, 'נתקבל')
                             if norm(name) == 'סרט' and per_ribbon > 0:
                                 add(rec_date, 'קליטת בגדים תפורים – אביזרים', rec_no, per_ribbon * qty_units, 'נתקבל')
+                            # חישוב תוויות לפי מידה
+                            if 'תווית' in norm(name).lower() and p_size:
+                                label_status = norm(ln.get('label_status', 'עם תווית'))
+                                if label_status == 'עם תווית':
+                                    label_name = f"תווית {p_size}"
+                                    if norm(name) == norm(label_name):
+                                        add(rec_date, 'קליטת בגדים תפורים – תוויות', rec_no, qty_units, 'נתקבל')
             except Exception:
                 pass
 
