@@ -32,6 +32,7 @@ class FormulasTabMixin:
         all_over_print_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         store_price_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         fabric_rolls_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        sqm_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
@@ -40,6 +41,7 @@ class FormulasTabMixin:
         inner_nb.add(all_over_print_tab, text="בגדי אול אובר")
         inner_nb.add(store_price_tab, text="מחיר לצרכן חנויות")
         inner_nb.add(fabric_rolls_tab, text="חישוב גלילי בד")
+        inner_nb.add(sqm_cost_tab, text="עלות למ\"ר")
         
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
@@ -49,6 +51,7 @@ class FormulasTabMixin:
         self._build_all_over_print_content(all_over_print_tab)
         self._build_store_price_content(store_price_tab)
         self._build_fabric_rolls_content(fabric_rolls_tab)
+        self._build_sqm_cost_content(sqm_cost_tab)
     
     def _build_general_weight_content(self, container):
         """Build the general weight calculations content."""
@@ -2272,3 +2275,414 @@ class FormulasTabMixin:
                 'header'
             )
             self.rolls_results_text.config(state='disabled')
+    
+    # =====================================================================
+    # Square Meter Cost Tab - חישוב עלות למ"ר
+    # =====================================================================
+    
+    def _build_sqm_cost_content(self, container):
+        """Build the square meter cost calculation content."""
+        
+        # Main container with scrollbar
+        canvas = tk.Canvas(container, bg='#f7f9fa', highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack scrollbar and canvas
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        
+        # Bind mousewheel to scroll
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Instructions frame
+        instructions_frame = ttk.LabelFrame(scrollable_frame, text="הסבר", padding=15)
+        instructions_frame.pack(fill='x', padx=20, pady=10)
+        
+        instructions_text = (
+            "חישוב עלות של 1 מ\"ר בד על בסיס ציור שנחתך\n\n"
+            "1. בחר ציור שנחתך מהרשימה\n"
+            "2. פרטי הציור יוצגו אוטומטית\n"
+            "3. הזן מחיר ל-1 ק\"ג בד\n"
+            "4. לחץ 'חשב עלות' לקבלת עלות למ\"ר"
+        )
+        instructions_label = tk.Label(
+            instructions_frame,
+            text=instructions_text,
+            font=('Arial', 10),
+            bg='#f7f9fa',
+            fg='#2c3e50',
+            justify='right',
+            anchor='e'
+        )
+        instructions_label.pack(fill='x', pady=5)
+        
+        # Formula display
+        formula_frame = ttk.LabelFrame(scrollable_frame, text="נוסחה", padding=15)
+        formula_frame.pack(fill='x', padx=20, pady=10)
+        
+        formula_text = (
+            "שטח פריסה = אורך × רוחב (מ\"ר)\n"
+            "שטח כולל = שטח פריסה × כמות שכבות\n"
+            "משקל בק\"ג = משקל כולל / 1000\n"
+            "עלות כוללת = משקל בק\"ג × מחיר לק\"ג\n"
+            "עלות למ\"ר = עלות כוללת / שטח כולל"
+        )
+        formula_label = tk.Label(
+            formula_frame,
+            text=formula_text,
+            font=('Consolas', 11),
+            bg='#ecf0f1',
+            fg='#2c3e50',
+            justify='right',
+            anchor='e',
+            padx=15,
+            pady=10
+        )
+        formula_label.pack(fill='x', pady=5)
+        
+        # Drawing selection frame
+        selection_frame = ttk.LabelFrame(scrollable_frame, text="בחירת ציור", padding=15)
+        selection_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Drawing combobox
+        tk.Label(selection_frame, text="בחר ציור שנחתך:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=5)
+        
+        self.sqm_drawing_var = tk.StringVar()
+        self.sqm_drawing_combo = ttk.Combobox(
+            selection_frame,
+            textvariable=self.sqm_drawing_var,
+            width=60,
+            state='readonly'
+        )
+        self.sqm_drawing_combo.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+        self.sqm_drawing_combo.bind('<<ComboboxSelected>>', self._on_sqm_drawing_selected)
+        
+        # Refresh button
+        refresh_btn = tk.Button(
+            selection_frame,
+            text="🔄 רענן רשימה",
+            command=self._load_sqm_cut_drawings,
+            bg='#3498db',
+            fg='white',
+            font=('Arial', 9, 'bold')
+        )
+        refresh_btn.grid(row=0, column=2, padx=10, pady=5)
+        
+        # Drawing details frame
+        details_frame = ttk.LabelFrame(scrollable_frame, text="פרטי הציור", padding=15)
+        details_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Row 1 - Fabric type and layers
+        tk.Label(details_frame, text="סוג בד:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=5)
+        self.sqm_fabric_type_var = tk.StringVar(value="--")
+        tk.Label(details_frame, textvariable=self.sqm_fabric_type_var, font=('Arial', 10), width=20, anchor='w').grid(row=0, column=1, sticky='w', padx=5, pady=5)
+        
+        tk.Label(details_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='e', padx=5, pady=5)
+        self.sqm_layers_var = tk.StringVar(value="--")
+        tk.Label(details_frame, textvariable=self.sqm_layers_var, font=('Arial', 10), width=15, anchor='w').grid(row=0, column=3, sticky='w', padx=5, pady=5)
+        
+        # Row 2 - Dimensions
+        tk.Label(details_frame, text="אורך ציור (מטר):", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=5)
+        self.sqm_length_var = tk.StringVar(value="--")
+        tk.Label(details_frame, textvariable=self.sqm_length_var, font=('Arial', 10), width=20, anchor='w').grid(row=1, column=1, sticky='w', padx=5, pady=5)
+        
+        tk.Label(details_frame, text="רוחב ציור (מטר):", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='e', padx=5, pady=5)
+        self.sqm_width_var = tk.StringVar(value="--")
+        tk.Label(details_frame, textvariable=self.sqm_width_var, font=('Arial', 10), width=15, anchor='w').grid(row=1, column=3, sticky='w', padx=5, pady=5)
+        
+        # Row 3 - Total weight
+        tk.Label(details_frame, text="משקל כולל (גרם):", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        self.sqm_total_weight_var = tk.StringVar(value="--")
+        tk.Label(details_frame, textvariable=self.sqm_total_weight_var, font=('Arial', 10, 'bold'), width=20, anchor='w', fg='#e74c3c').grid(row=2, column=1, sticky='w', padx=5, pady=5)
+        
+        # Price input frame
+        input_frame = ttk.LabelFrame(scrollable_frame, text="קלט מחיר", padding=15)
+        input_frame.pack(fill='x', padx=20, pady=10)
+        
+        tk.Label(input_frame, text="מחיר ל-1 ק\"ג בד (₪):", font=('Arial', 11, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=10)
+        self.sqm_price_per_kg_var = tk.StringVar()
+        price_entry = tk.Entry(input_frame, textvariable=self.sqm_price_per_kg_var, width=15, font=('Arial', 12))
+        price_entry.grid(row=0, column=1, padx=10, pady=10)
+        
+        # Calculate button
+        calc_btn = tk.Button(
+            input_frame,
+            text="📊 חשב עלות למ\"ר",
+            command=self._calculate_sqm_cost,
+            bg='#27ae60',
+            fg='white',
+            font=('Arial', 12, 'bold'),
+            padx=20,
+            pady=5
+        )
+        calc_btn.grid(row=0, column=2, padx=20, pady=10)
+        
+        # Clear button
+        clear_btn = tk.Button(
+            input_frame,
+            text="🗑️ נקה",
+            command=self._clear_sqm_cost_inputs,
+            bg='#95a5a6',
+            fg='white',
+            font=('Arial', 10, 'bold')
+        )
+        clear_btn.grid(row=0, column=3, padx=10, pady=10)
+        
+        # Results frame
+        results_frame = ttk.LabelFrame(scrollable_frame, text="תוצאות החישוב", padding=15)
+        results_frame.pack(fill='x', padx=20, pady=10)
+        
+        # Results text widget
+        self.sqm_results_text = tk.Text(
+            results_frame,
+            height=12,
+            width=70,
+            font=('Consolas', 11),
+            bg='#2c3e50',
+            fg='#ecf0f1',
+            insertbackground='white',
+            state='disabled',
+            wrap='word'
+        )
+        self.sqm_results_text.pack(fill='x', pady=10)
+        
+        # Configure tags for results
+        self.sqm_results_text.tag_configure('header', foreground='#f39c12', font=('Consolas', 12, 'bold'))
+        self.sqm_results_text.tag_configure('label', foreground='#bdc3c7', font=('Consolas', 10))
+        self.sqm_results_text.tag_configure('value', foreground='#2ecc71', font=('Consolas', 11, 'bold'))
+        self.sqm_results_text.tag_configure('total', foreground='#e74c3c', font=('Consolas', 14, 'bold'))
+        self.sqm_results_text.tag_configure('separator', foreground='#7f8c8d')
+        
+        # Initial welcome message
+        self.sqm_results_text.config(state='normal')
+        self.sqm_results_text.insert(tk.END, "\n\n          בחר ציור שנחתך והזן מחיר לק\"ג לחישוב עלות למ\"ר\n\n", 'header')
+        self.sqm_results_text.config(state='disabled')
+        
+        # Load cut drawings
+        self._load_sqm_cut_drawings()
+    
+    def _load_sqm_cut_drawings(self):
+        """Load cut drawings that have actual layers into the combobox."""
+        try:
+            drawings = self.data_processor.drawings_data
+            cut_drawings = []
+            
+            for d in drawings:
+                # Check if drawing is cut (status = "נחתך") and has layers
+                status = d.get('status', d.get('סטטוס', ''))
+                layers = d.get('שכבות', 0)
+                
+                if status == 'נחתך' and layers and int(layers) > 0:
+                    drawing_id = d.get('id', '')
+                    file_name = d.get('שם הקובץ', '')
+                    fabric_type = d.get('סוג בד', '')
+                    display_text = f"ID: {drawing_id} - {file_name} ({fabric_type})"
+                    cut_drawings.append((drawing_id, display_text))
+            
+            # Sort by ID
+            cut_drawings.sort(key=lambda x: x[0])
+            
+            # Update combobox
+            display_texts = [item[1] for item in cut_drawings]
+            self.sqm_drawing_combo['values'] = display_texts
+            
+            # Store mapping
+            self.sqm_drawing_id_map = {item[1]: item[0] for item in cut_drawings}
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת ציורים: {str(e)}")
+    
+    def _on_sqm_drawing_selected(self, event=None):
+        """Handle drawing selection for SQM cost calculation."""
+        try:
+            selected = self.sqm_drawing_var.get()
+            if not selected or not hasattr(self, 'sqm_drawing_id_map'):
+                return
+            
+            drawing_id = self.sqm_drawing_id_map.get(selected)
+            if not drawing_id:
+                return
+            
+            # Find the drawing
+            drawing = None
+            for d in self.data_processor.drawings_data:
+                if d.get('id') == drawing_id:
+                    drawing = d
+                    break
+            
+            if not drawing:
+                return
+            
+            # Update display fields
+            fabric_type = drawing.get('סוג בד', '--')
+            self.sqm_fabric_type_var.set(fabric_type)
+            
+            layers = drawing.get('שכבות', 0)
+            self.sqm_layers_var.set(str(layers) if layers else '--')
+            
+            # Get length and width
+            length = drawing.get('אורך ציור', drawing.get('אורך_ציור', 0))
+            width = drawing.get('רוחב ציור', drawing.get('רוחב_ציור', 0))
+            
+            # Convert to float and display
+            try:
+                length_val = float(length) if length else 0
+                self.sqm_length_var.set(f"{length_val:.2f}" if length_val else '--')
+            except (ValueError, TypeError):
+                self.sqm_length_var.set('--')
+            
+            try:
+                width_val = float(width) if width else 0
+                self.sqm_width_var.set(f"{width_val:.2f}" if width_val else '--')
+            except (ValueError, TypeError):
+                self.sqm_width_var.set('--')
+            
+            # Get total weight
+            total_weight = drawing.get('משקל כולל', drawing.get('משקל_כולל', 0))
+            try:
+                weight_val = float(total_weight) if total_weight else 0
+                self.sqm_total_weight_var.set(f"{weight_val:.2f}" if weight_val else '--')
+            except (ValueError, TypeError):
+                self.sqm_total_weight_var.set('--')
+            
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת פרטי ציור: {str(e)}")
+    
+    def _calculate_sqm_cost(self):
+        """Calculate cost per square meter."""
+        try:
+            # Get values
+            layers_str = self.sqm_layers_var.get()
+            length_str = self.sqm_length_var.get()
+            width_str = self.sqm_width_var.get()
+            total_weight_str = self.sqm_total_weight_var.get()
+            price_per_kg_str = self.sqm_price_per_kg_var.get()
+            
+            # Validate inputs
+            if not price_per_kg_str:
+                messagebox.showerror("שגיאה", "נא להזין מחיר לק\"ג")
+                return
+            
+            if '--' in [layers_str, length_str, width_str, total_weight_str]:
+                messagebox.showerror("שגיאה", "נא לבחור ציור עם נתונים מלאים")
+                return
+            
+            # Convert to numbers
+            layers = float(layers_str)
+            length = float(length_str)
+            width = float(width_str)
+            total_weight = float(total_weight_str)
+            price_per_kg = float(price_per_kg_str)
+            
+            if layers <= 0 or length <= 0 or width <= 0 or total_weight <= 0 or price_per_kg <= 0:
+                messagebox.showerror("שגיאה", "כל הערכים חייבים להיות גדולים מ-0")
+                return
+            
+            # Calculate
+            spread_area = length * width  # Single spread area in sqm
+            total_area = spread_area * layers  # Total area in sqm
+            weight_kg = total_weight / 1000  # Convert grams to kg
+            total_cost = weight_kg * price_per_kg  # Total cost
+            cost_per_sqm = total_cost / total_area  # Cost per square meter
+            
+            # Display results
+            self.sqm_results_text.config(state='normal')
+            self.sqm_results_text.delete(1.0, tk.END)
+            
+            self.sqm_results_text.insert(tk.END, "\n", 'separator')
+            self.sqm_results_text.insert(tk.END, "=" * 60 + "\n", 'separator')
+            self.sqm_results_text.insert(tk.END, "          תוצאות חישוב עלות למ\"ר\n", 'header')
+            self.sqm_results_text.insert(tk.END, "=" * 60 + "\n\n", 'separator')
+            
+            # Input summary
+            self.sqm_results_text.insert(tk.END, "נתוני הקלט:\n", 'header')
+            self.sqm_results_text.insert(tk.END, f"  אורך ציור:           ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{length:.2f} מטר\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  רוחב ציור:           ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{width:.2f} מטר\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  כמות שכבות:          ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{int(layers)}\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  משקל כולל:           ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{total_weight:.2f} גרם\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  מחיר לק\"ג:           ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{price_per_kg:.2f} ₪\n\n", 'value')
+            
+            self.sqm_results_text.insert(tk.END, "-" * 60 + "\n\n", 'separator')
+            
+            # Calculation details
+            self.sqm_results_text.insert(tk.END, "חישובים:\n", 'header')
+            self.sqm_results_text.insert(tk.END, f"  שטח פריסה אחת:       ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{spread_area:.4f} מ\"ר\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  ({length:.2f} × {width:.2f})\n\n", 'label')
+            
+            self.sqm_results_text.insert(tk.END, f"  שטח כולל:            ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{total_area:.4f} מ\"ר\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  ({spread_area:.4f} × {int(layers)})\n\n", 'label')
+            
+            self.sqm_results_text.insert(tk.END, f"  משקל בק\"ג:           ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{weight_kg:.3f} ק\"ג\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  ({total_weight:.2f} / 1000)\n\n", 'label')
+            
+            self.sqm_results_text.insert(tk.END, f"  עלות כוללת:          ", 'label')
+            self.sqm_results_text.insert(tk.END, f"{total_cost:.2f} ₪\n", 'value')
+            self.sqm_results_text.insert(tk.END, f"  ({weight_kg:.3f} × {price_per_kg:.2f})\n\n", 'label')
+            
+            self.sqm_results_text.insert(tk.END, "=" * 60 + "\n\n", 'separator')
+            
+            # Final result - highlighted
+            self.sqm_results_text.insert(tk.END, f"  עלות ל-1 מ\"ר: {cost_per_sqm:.2f} ₪\n\n", 'total')
+            
+            self.sqm_results_text.insert(tk.END, "=" * 60 + "\n", 'separator')
+            
+            self.sqm_results_text.config(state='disabled')
+            
+        except ValueError:
+            messagebox.showerror("שגיאה", "נא להזין ערכים מספריים תקינים")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+    
+    def _clear_sqm_cost_inputs(self):
+        """Clear all SQM cost calculation inputs and results."""
+        # Clear drawing selection
+        if hasattr(self, 'sqm_drawing_combo'):
+            self.sqm_drawing_combo.set('')
+        if hasattr(self, 'sqm_drawing_var'):
+            self.sqm_drawing_var.set('')
+        
+        # Clear display fields
+        if hasattr(self, 'sqm_fabric_type_var'):
+            self.sqm_fabric_type_var.set('--')
+        if hasattr(self, 'sqm_layers_var'):
+            self.sqm_layers_var.set('--')
+        if hasattr(self, 'sqm_length_var'):
+            self.sqm_length_var.set('--')
+        if hasattr(self, 'sqm_width_var'):
+            self.sqm_width_var.set('--')
+        if hasattr(self, 'sqm_total_weight_var'):
+            self.sqm_total_weight_var.set('--')
+        
+        # Clear price input
+        if hasattr(self, 'sqm_price_per_kg_var'):
+            self.sqm_price_per_kg_var.set('')
+        
+        # Clear results
+        if hasattr(self, 'sqm_results_text'):
+            self.sqm_results_text.config(state='normal')
+            self.sqm_results_text.delete(1.0, tk.END)
+            self.sqm_results_text.insert(
+                tk.END,
+                "\n\n          בחר ציור שנחתך והזן מחיר לק\"ג לחישוב עלות למ\"ר\n\n",
+                'header'
+            )
+            self.sqm_results_text.config(state='disabled')
