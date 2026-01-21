@@ -139,9 +139,24 @@ class ProductsCatalogMethodsMixin:
         tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
         tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
 
-        # סרגל סינון לפי שם הדגם
+        # סרגל סינון לפי שם הדגם + טוגל תצוגה
         filter_frame = ttk.Frame(parent, padding=4)
         filter_frame.pack(fill='x', padx=10, pady=(0, 2))
+        
+        # טוגל תצוגת עלויות (בצד שמאל)
+        self.cost_view_mode = tk.BooleanVar(value=False)
+        self.toggle_view_btn = tk.Button(
+            filter_frame, 
+            text='💰 תצוגת עלויות', 
+            command=self._toggle_cost_view,
+            bg='#3498db', 
+            fg='white', 
+            font=('Arial', 10, 'bold'),
+            width=14
+        )
+        self.toggle_view_btn.pack(side='left', padx=4)
+        
+        # חיפוש (בצד ימין)
         tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=(8, 4))
         self.product_filter_var = tk.StringVar()
         self.product_filter_var.trace_add('write', lambda *args: self._filter_products_tree())
@@ -149,12 +164,13 @@ class ProductsCatalogMethodsMixin:
         filter_entry.pack(side='right', padx=2)
         tk.Button(filter_frame, text='🗑️ נקה', command=lambda: self.product_filter_var.set(''), bg='#e74c3c', fg='white', width=6).pack(side='right', padx=4)
 
-        tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
-        tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
-        # Add barcode as first column and main_category column for display
-        cols = ('barcode','id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at')
-        self.products_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=12)
-        headers = {
+        # Frame לטבלה (שומר רפרנס לשימוש בהחלפת תצוגה)
+        self.products_tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
+        self.products_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
+        
+        # הגדרות עמודות - תצוגה רגילה
+        self.regular_cols = ('barcode','id','name','main_category','category','size','fabric_type','fabric_color','print_name','fabric_category','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at')
+        self.regular_headers = {
             'barcode':'מק"ט',
             'id':'ID',
             'name':'שם הדגם',
@@ -171,30 +187,37 @@ class ProductsCatalogMethodsMixin:
             'ribbon_qty':'סרט',
             'created_at':'נוצר'
         }
-        widths = {
-            'barcode':120,
-            'id':40,
-            'name':140,
-            'main_category':110,
-            'category':100,
-            'size':70,
-            'fabric_type':110,
-            'fabric_color':110,
-            'print_name':110,
-            'fabric_category':120,
-            'square_area':100,
-            'ticks_qty':70,
-            'elastic_qty':60,
-            'ribbon_qty':60,
-            'created_at':140
+        self.regular_widths = {
+            'barcode':120, 'id':40, 'name':140, 'main_category':110, 'category':100,
+            'size':70, 'fabric_type':110, 'fabric_color':110, 'print_name':110,
+            'fabric_category':120, 'square_area':100, 'ticks_qty':70, 'elastic_qty':60,
+            'ribbon_qty':60, 'created_at':140
         }
-        for c in cols:
-            self.products_tree.heading(c, text=headers[c])
-            self.products_tree.column(c, width=widths[c], anchor='center')
-        vs = ttk.Scrollbar(tree_frame, orient='vertical', command=self.products_tree.yview)
-        self.products_tree.configure(yscroll=vs.set)
-        self.products_tree.pack(side='left', fill='both', expand=True)
-        vs.pack(side='right', fill='y')
+        
+        # הגדרות עמודות - תצוגת עלויות
+        self.cost_cols = ('barcode','name','size','fabric_category','fabric_color','print_name','fabric_cost','ticks_cost','elastic_cost','ribbon_cost','sewing_cost','total_cost')
+        self.cost_headers = {
+            'barcode':'מק"ט',
+            'name':'שם הדגם',
+            'size':'מידה',
+            'fabric_category':'קטגוריית בד',
+            'fabric_color':'צבע בד',
+            'print_name':'פרינט',
+            'fabric_cost':'עלות בד',
+            'ticks_cost':'עלות טיקטקים',
+            'elastic_cost':'עלות גומי',
+            'ribbon_cost':'עלות סרט',
+            'sewing_cost':'עלות תפירה',
+            'total_cost':'סה"כ עלות'
+        }
+        self.cost_widths = {
+            'barcode':110, 'name':130, 'size':60, 'fabric_category':100, 'fabric_color':90,
+            'print_name':80, 'fabric_cost':85, 'ticks_cost':90, 'elastic_cost':80,
+            'ribbon_cost':80, 'sewing_cost':85, 'total_cost':90
+        }
+        
+        # יצירת הטבלה בתצוגה רגילה
+        self._create_products_tree(self.regular_cols, self.regular_headers, self.regular_widths)
         self._load_products_catalog_into_tree()
 
         # collect field widgets for toggling (labels + inputs/buttons)
@@ -525,12 +548,16 @@ class ProductsCatalogMethodsMixin:
         prints_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         fcats_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         modelnames_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        fabric_prices_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        cost_settings_tab = tk.Frame(attr_nb, bg='#f7f9fa')
         attr_nb.add(sizes_tab, text='מידות')
         attr_nb.add(ftypes_tab, text='סוגי בד')
         attr_nb.add(fcolors_tab, text='צבעי בד')
         attr_nb.add(prints_tab, text='שמות פרינט')
         attr_nb.add(fcats_tab, text='קטגוריות בדים')
         attr_nb.add(modelnames_tab, text='שם הדגם')
+        attr_nb.add(fabric_prices_tab, text='מחירי בדים')
+        attr_nb.add(cost_settings_tab, text='הגדרות עלויות')
 
         # bind vars
         self.attr_size_var = tk.StringVar(); self.attr_fabric_type_var = tk.StringVar(); self.attr_fabric_color_var = tk.StringVar(); self.attr_print_name_var = tk.StringVar(); self.attr_fabric_category_var = tk.StringVar(); self.attr_model_name_var = tk.StringVar()
@@ -625,17 +652,290 @@ class ProductsCatalogMethodsMixin:
         mn_form.pack(fill='x', padx=8, pady=6)
         tk.Label(mn_form, text='שם דגם:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(mn_form, textvariable=self.attr_model_name_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Label(mn_form, text='מחיר תפירה (₪):', font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4)
+        self.attr_model_sewing_price_var = tk.StringVar(value='0')
+        tk.Entry(mn_form, textvariable=self.attr_model_sewing_price_var, width=10).grid(row=0, column=3, padx=4, pady=4)
+        tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
+        tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
+        tk.Button(mn_form, text='💾 עדכן מחיר', command=self._update_selected_model_sewing_price, bg='#3498db', fg='white').grid(row=0, column=6, padx=4)
         mn_tree_frame = ttk.LabelFrame(modelnames_tab, text='שמות דגם', padding=4)
         mn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
-        self.model_names_tree = ttk.Treeview(mn_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
-        for c,t,w in [('id','ID',60),('name','שם דגם',160),('created_at','נוצר',140)]:
+        self.model_names_tree = ttk.Treeview(mn_tree_frame, columns=('id','name','sewing_price','created_at'), show='headings', height=10)
+        for c,t,w in [('id','ID',60),('name','שם דגם',160),('sewing_price','מחיר תפירה',100),('created_at','נוצר',140)]:
             self.model_names_tree.heading(c, text=t); self.model_names_tree.column(c, width=w, anchor='center')
         mn_vs = ttk.Scrollbar(mn_tree_frame, orient='vertical', command=self.model_names_tree.yview)
         self.model_names_tree.configure(yscroll=mn_vs.set)
         self.model_names_tree.pack(side='left', fill='both', expand=True); mn_vs.pack(side='right', fill='y')
+        # לחיצה על שורה מעדכנת את שדה המחיר
+        self.model_names_tree.bind('<<TreeviewSelect>>', self._on_model_name_select)
         self._load_model_names_into_tree()
+
+        # Fabric Prices (מחירי בדים)
+        self._build_fabric_prices_section(fabric_prices_tab)
+        
+        # Cost Settings (הגדרות עלויות)
+        self._build_cost_settings_section(cost_settings_tab)
+
+    # ===== Products Tree View Toggle =====
+    def _create_products_tree(self, cols, headers, widths):
+        """יצירת טבלת פריטים עם עמודות מותאמות"""
+        # מחיקת טבלה קיימת אם יש
+        if hasattr(self, 'products_tree') and self.products_tree:
+            self.products_tree.destroy()
+        if hasattr(self, 'products_tree_scrollbar') and self.products_tree_scrollbar:
+            self.products_tree_scrollbar.destroy()
+        
+        # יצירת טבלה חדשה
+        self.products_tree = ttk.Treeview(self.products_tree_frame, columns=cols, show='headings', height=12)
+        for c in cols:
+            self.products_tree.heading(c, text=headers[c])
+            self.products_tree.column(c, width=widths[c], anchor='center')
+        
+        self.products_tree_scrollbar = ttk.Scrollbar(self.products_tree_frame, orient='vertical', command=self.products_tree.yview)
+        self.products_tree.configure(yscroll=self.products_tree_scrollbar.set)
+        self.products_tree.pack(side='left', fill='both', expand=True)
+        self.products_tree_scrollbar.pack(side='right', fill='y')
+
+    def _toggle_cost_view(self):
+        """החלפה בין תצוגה רגילה לתצוגת עלויות"""
+        current_mode = self.cost_view_mode.get()
+        new_mode = not current_mode
+        self.cost_view_mode.set(new_mode)
+        
+        if new_mode:
+            # עבור לתצוגת עלויות
+            self.toggle_view_btn.config(text='📋 תצוגה רגילה', bg='#27ae60')
+            self.products_tree_frame.config(text='פריטים - תצוגת עלויות')
+            self._create_products_tree(self.cost_cols, self.cost_headers, self.cost_widths)
+        else:
+            # עבור לתצוגה רגילה
+            self.toggle_view_btn.config(text='💰 תצוגת עלויות', bg='#3498db')
+            self.products_tree_frame.config(text='פריטים')
+            self._create_products_tree(self.regular_cols, self.regular_headers, self.regular_widths)
+        
+        # טעינת הנתונים מחדש
+        self._filter_products_tree()
+
+    # ===== Fabric Prices Section =====
+    def _build_fabric_prices_section(self, parent):
+        """בניית טאב מחירי בדים"""
+        # משתנים לטופס
+        self.fp_fabric_category_var = tk.StringVar()
+        self.fp_fabric_color_var = tk.StringVar()
+        self.fp_print_name_var = tk.StringVar()
+        self.fp_price_per_kg_var = tk.StringVar()
+        self.fp_weight_per_sqm_var = tk.StringVar()
+        
+        # טופס הוספה
+        fp_form = ttk.LabelFrame(parent, text='הוספת מחיר בד', padding=10)
+        fp_form.pack(fill='x', padx=8, pady=6)
+        
+        # שורה 1 - קטגוריה, צבע, פרינט
+        tk.Label(fp_form, text='קטגוריית בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='e')
+        fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
+        self.fp_fabric_category_combo = ttk.Combobox(fp_form, textvariable=self.fp_fabric_category_var, values=fabric_cat_names, width=16, justify='right')
+        self.fp_fabric_category_combo.grid(row=0, column=1, padx=4, pady=4, sticky='w')
+        
+        tk.Label(fp_form, text='צבע בד:', font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='e')
+        fabric_color_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_colors', [])]
+        self.fp_fabric_color_combo = ttk.Combobox(fp_form, textvariable=self.fp_fabric_color_var, values=fabric_color_names, width=16, justify='right')
+        self.fp_fabric_color_combo.grid(row=0, column=3, padx=4, pady=4, sticky='w')
+        
+        tk.Label(fp_form, text='פרינט:', font=('Arial',10,'bold')).grid(row=0, column=4, padx=4, pady=4, sticky='e')
+        print_names = [r.get('name') for r in getattr(self.data_processor, 'product_print_names', [])]
+        self.fp_print_name_combo = ttk.Combobox(fp_form, textvariable=self.fp_print_name_var, values=print_names, width=16, justify='right')
+        self.fp_print_name_combo.grid(row=0, column=5, padx=4, pady=4, sticky='w')
+        
+        # שורה 2 - מחיר ומשקל
+        tk.Label(fp_form, text='מחיר לק"ג (₪):', font=('Arial',10,'bold')).grid(row=1, column=0, padx=4, pady=4, sticky='e')
+        tk.Entry(fp_form, textvariable=self.fp_price_per_kg_var, width=12).grid(row=1, column=1, padx=4, pady=4, sticky='w')
+        
+        tk.Label(fp_form, text='משקל למ"ר (גרם):', font=('Arial',10,'bold')).grid(row=1, column=2, padx=4, pady=4, sticky='e')
+        tk.Entry(fp_form, textvariable=self.fp_weight_per_sqm_var, width=12).grid(row=1, column=3, padx=4, pady=4, sticky='w')
+        
+        # כפתורים
+        tk.Button(fp_form, text='➕ הוסף', command=self._add_fabric_price, bg='#27ae60', fg='white').grid(row=1, column=4, padx=6, pady=4)
+        tk.Button(fp_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_price, bg='#e67e22', fg='white').grid(row=1, column=5, padx=4, pady=4)
+        
+        # טבלה
+        fp_tree_frame = ttk.LabelFrame(parent, text='טבלת מחירי בדים', padding=6)
+        fp_tree_frame.pack(fill='both', expand=True, padx=8, pady=6)
+        
+        fp_cols = ('id', 'fabric_category', 'fabric_color', 'print_name', 'price_per_kg', 'weight_per_sqm', 'created_at')
+        self.fabric_prices_tree = ttk.Treeview(fp_tree_frame, columns=fp_cols, show='headings', height=12)
+        fp_headers = {
+            'id': 'ID',
+            'fabric_category': 'קטגוריית בד',
+            'fabric_color': 'צבע בד',
+            'print_name': 'פרינט',
+            'price_per_kg': 'מחיר לק"ג',
+            'weight_per_sqm': 'משקל למ"ר',
+            'created_at': 'נוצר'
+        }
+        fp_widths = {'id': 50, 'fabric_category': 120, 'fabric_color': 100, 'print_name': 100, 'price_per_kg': 90, 'weight_per_sqm': 100, 'created_at': 130}
+        for c in fp_cols:
+            self.fabric_prices_tree.heading(c, text=fp_headers[c])
+            self.fabric_prices_tree.column(c, width=fp_widths[c], anchor='center')
+        
+        fp_vs = ttk.Scrollbar(fp_tree_frame, orient='vertical', command=self.fabric_prices_tree.yview)
+        self.fabric_prices_tree.configure(yscroll=fp_vs.set)
+        self.fabric_prices_tree.pack(side='left', fill='both', expand=True)
+        fp_vs.pack(side='right', fill='y')
+        
+        self._load_fabric_prices_into_tree()
+
+    def _build_cost_settings_section(self, parent):
+        """בניית טאב הגדרות עלויות גלובליות"""
+        # טעינת הגדרות קיימות
+        settings = self.data_processor.load_item_cost_settings()
+        
+        # משתנים
+        self.cs_tick_price_var = tk.StringVar(value=str(settings.get('tick_price', 0)))
+        self.cs_elastic_price_var = tk.StringVar(value=str(settings.get('elastic_price', 0)))
+        self.cs_ribbon_price_var = tk.StringVar(value=str(settings.get('ribbon_price', 0)))
+        self.cs_sewing_price_var = tk.StringVar(value=str(settings.get('sewing_price', 0)))
+        
+        # כותרת
+        tk.Label(parent, text='הגדרות מחירי עלות גלובליים', font=('Arial', 14, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(10, 5))
+        tk.Label(parent, text='מחירים אלו ישמשו לחישוב עלות כל הפריטים בקטלוג', font=('Arial', 10), bg='#f7f9fa', fg='#7f8c8d').pack(pady=(0, 10))
+        
+        # טופס
+        cs_form = ttk.LabelFrame(parent, text='מחירי אביזרים ותפירה', padding=20)
+        cs_form.pack(fill='x', padx=20, pady=10)
+        
+        # שורה 1
+        tk.Label(cs_form, text='מחיר טיקטק ליחידה (₪):', font=('Arial',11,'bold')).grid(row=0, column=0, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_tick_price_var, width=15, font=('Arial', 11)).grid(row=0, column=1, padx=10, pady=10, sticky='w')
+        
+        tk.Label(cs_form, text='מחיר גומי ליחידה (₪):', font=('Arial',11,'bold')).grid(row=0, column=2, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_elastic_price_var, width=15, font=('Arial', 11)).grid(row=0, column=3, padx=10, pady=10, sticky='w')
+        
+        # שורה 2
+        tk.Label(cs_form, text='מחיר סרט ליחידה (₪):', font=('Arial',11,'bold')).grid(row=1, column=0, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_ribbon_price_var, width=15, font=('Arial', 11)).grid(row=1, column=1, padx=10, pady=10, sticky='w')
+        
+        tk.Label(cs_form, text='מחיר תפירה ברירת מחדל (₪):', font=('Arial',11,'bold')).grid(row=1, column=2, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_sewing_price_var, width=15, font=('Arial', 11)).grid(row=1, column=3, padx=10, pady=10, sticky='w')
+        
+        # כפתור שמירה
+        btn_frame = tk.Frame(parent, bg='#f7f9fa')
+        btn_frame.pack(pady=20)
+        tk.Button(btn_frame, text='💾 שמור הגדרות', command=self._save_cost_settings, bg='#27ae60', fg='white', font=('Arial', 12, 'bold'), padx=30, pady=10).pack()
+        
+        # הסבר נוסחה
+        formula_frame = ttk.LabelFrame(parent, text='נוסחת חישוב עלות פריט', padding=15)
+        formula_frame.pack(fill='x', padx=20, pady=10)
+        
+        formula_text = """
+עלות בד = שטח רבוע × (משקל למ"ר / 1000) × מחיר לק"ג
+עלות טיקטקים = כמות טיקטקים × מחיר טיקטק
+עלות גומי = כמות גומי × מחיר גומי
+עלות סרט = כמות סרט × מחיר סרט
+עלות תפירה = מחיר תפירה לפי שם הדגם (או מחיר ברירת מחדל)
+
+סה"כ עלות = עלות בד + עלות טיקטקים + עלות גומי + עלות סרט + עלות תפירה
+
+* מחיר תפירה מוגדר בטאב "שם הדגם" לכל דגם בנפרד
+* אם לא מוגדר לדגם - ישתמש במחיר ברירת מחדל למעלה
+        """
+        tk.Label(formula_frame, text=formula_text, font=('Courier New', 10), bg='#f7f9fa', fg='#34495e', justify='right').pack()
+
+    def _load_fabric_prices_into_tree(self):
+        """טעינת מחירי בדים לטבלה"""
+        if not hasattr(self, 'fabric_prices_tree'):
+            return
+        for item in self.fabric_prices_tree.get_children():
+            self.fabric_prices_tree.delete(item)
+        try:
+            prices = self.data_processor.load_fabric_prices()
+            for rec in prices:
+                self.fabric_prices_tree.insert('', 'end', values=(
+                    rec.get('id'),
+                    rec.get('fabric_category', ''),
+                    rec.get('fabric_color', ''),
+                    rec.get('print_name', ''),
+                    rec.get('price_per_kg', 0),
+                    rec.get('weight_per_sqm', 0),
+                    rec.get('created_at', '')
+                ))
+        except Exception as e:
+            print(f"שגיאה בטעינת מחירי בדים: {e}")
+
+    def _add_fabric_price(self):
+        """הוספת מחיר בד חדש"""
+        fabric_category = self.fp_fabric_category_var.get().strip()
+        fabric_color = self.fp_fabric_color_var.get().strip()
+        print_name = self.fp_print_name_var.get().strip()
+        price_per_kg_str = self.fp_price_per_kg_var.get().strip()
+        weight_per_sqm_str = self.fp_weight_per_sqm_var.get().strip()
+        
+        if not fabric_category:
+            messagebox.showerror('שגיאה', 'חובה לבחור קטגוריית בד')
+            return
+        
+        try:
+            price_per_kg = float(price_per_kg_str) if price_per_kg_str else 0
+            weight_per_sqm = float(weight_per_sqm_str) if weight_per_sqm_str else 0
+        except ValueError:
+            messagebox.showerror('שגיאה', 'מחיר ומשקל חייבים להיות מספרים')
+            return
+        
+        try:
+            new_id = self.data_processor.add_fabric_price(fabric_category, fabric_color, print_name, price_per_kg, weight_per_sqm)
+            self._load_fabric_prices_into_tree()
+            # ניקוי טופס
+            self.fp_fabric_category_var.set('')
+            self.fp_fabric_color_var.set('')
+            self.fp_print_name_var.set('')
+            self.fp_price_per_kg_var.set('')
+            self.fp_weight_per_sqm_var.set('')
+            messagebox.showinfo('הצלחה', 'מחיר הבד נוסף בהצלחה')
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
+    def _delete_selected_fabric_price(self):
+        """מחיקת מחיר בד נבחר"""
+        if not hasattr(self, 'fabric_prices_tree'):
+            return
+        sel = self.fabric_prices_tree.selection()
+        if not sel:
+            messagebox.showwarning('אזהרה', 'בחר שורה למחיקה')
+            return
+        
+        deleted = False
+        for item in sel:
+            vals = self.fabric_prices_tree.item(item, 'values')
+            if vals:
+                price_id = int(vals[0])
+                if self.data_processor.delete_fabric_price(price_id):
+                    deleted = True
+        
+        if deleted:
+            self._load_fabric_prices_into_tree()
+            messagebox.showinfo('הצלחה', 'מחיר הבד נמחק בהצלחה')
+
+    def _save_cost_settings(self):
+        """שמירת הגדרות עלויות גלובליות"""
+        try:
+            tick_price = float(self.cs_tick_price_var.get() or 0)
+            elastic_price = float(self.cs_elastic_price_var.get() or 0)
+            ribbon_price = float(self.cs_ribbon_price_var.get() or 0)
+            sewing_price = float(self.cs_sewing_price_var.get() or 0)
+        except ValueError:
+            messagebox.showerror('שגיאה', 'כל המחירים חייבים להיות מספרים')
+            return
+        
+        settings = {
+            'tick_price': tick_price,
+            'elastic_price': elastic_price,
+            'ribbon_price': ribbon_price,
+            'sewing_price': sewing_price
+        }
+        
+        if self.data_processor.save_item_cost_settings(settings):
+            messagebox.showinfo('הצלחה', 'ההגדרות נשמרו בהצלחה')
+        else:
+            messagebox.showerror('שגיאה', 'שגיאה בשמירת ההגדרות')
 
     # ===== LOADERS =====
     def _load_products_catalog_into_tree(self):
@@ -662,11 +962,14 @@ class ProductsCatalogMethodsMixin:
             pass
 
     def _filter_products_tree(self):
-        """סינון טבלת הפריטים לפי שם הדגם בזמן אמת"""
+        """סינון טבלת הפריטים לפי שם הדגם בזמן אמת - תומך בשתי תצוגות"""
         if not hasattr(self, 'products_tree'): return
         
         # קבלת ערך החיפוש
         filter_text = self.product_filter_var.get().strip().lower()
+        
+        # בדיקת מצב תצוגה
+        is_cost_view = getattr(self, 'cost_view_mode', None) and self.cost_view_mode.get()
         
         # ניקוי הטבלה
         for item in self.products_tree.get_children():
@@ -679,17 +982,36 @@ class ProductsCatalogMethodsMixin:
                 
                 # אם אין סינון או שם המוצר מכיל את טקסט החיפוש
                 if not filter_text or filter_text in product_name:
-                    fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
-                    main_category_value = rec.get('main_category') or 'בגדים'
-                    self.products_tree.insert('', 'end', values=(
-                        rec.get('barcode', ''), rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), 
-                        rec.get('size'), rec.get('fabric_type'), rec.get('fabric_color'), 
-                        rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), 
-                        rec.get('ticks_qty'), rec.get('elastic_qty'), rec.get('ribbon_qty'), 
-                        rec.get('created_at')
-                    ))
-        except Exception:
-            pass
+                    if is_cost_view:
+                        # תצוגת עלויות - חישוב עלויות
+                        costs = self.data_processor.calculate_item_cost(rec)
+                        self.products_tree.insert('', 'end', values=(
+                            rec.get('barcode', ''),
+                            rec.get('name', ''),
+                            rec.get('size', ''),
+                            rec.get('fabric_category', ''),
+                            rec.get('fabric_color', ''),
+                            rec.get('print_name', ''),
+                            f"₪{costs['fabric_cost']:.2f}",
+                            f"₪{costs['ticks_cost']:.2f}",
+                            f"₪{costs['elastic_cost']:.2f}",
+                            f"₪{costs['ribbon_cost']:.2f}",
+                            f"₪{costs['sewing_cost']:.2f}",
+                            f"₪{costs['total_cost']:.2f}"
+                        ))
+                    else:
+                        # תצוגה רגילה
+                        fabric_category_value = rec.get('fabric_category') or 'בלי קטגוריה'
+                        main_category_value = rec.get('main_category') or 'בגדים'
+                        self.products_tree.insert('', 'end', values=(
+                            rec.get('barcode', ''), rec.get('id'), rec.get('name'), main_category_value, rec.get('category',''), 
+                            rec.get('size'), rec.get('fabric_type'), rec.get('fabric_color'), 
+                            rec.get('print_name'), fabric_category_value, rec.get('square_area', 0.0), 
+                            rec.get('ticks_qty'), rec.get('elastic_qty'), rec.get('ribbon_qty'), 
+                            rec.get('created_at')
+                        ))
+        except Exception as e:
+            print(f"שגיאה בטעינת פריטים: {e}")
 
     def _load_accessories_into_tree(self):
         print("🔄 DEBUG: טוען אביזרים לטבלה...")
@@ -954,7 +1276,52 @@ class ProductsCatalogMethodsMixin:
         if not hasattr(self, 'model_names_tree'): return
         for item in self.model_names_tree.get_children(): self.model_names_tree.delete(item)
         for rec in getattr(self.data_processor, 'product_model_names', []):
-            self.model_names_tree.insert('', 'end', values=(rec.get('id'), rec.get('name'), rec.get('created_at')))
+            sewing_price = rec.get('sewing_price', 0) or 0
+            self.model_names_tree.insert('', 'end', values=(
+                rec.get('id'), 
+                rec.get('name'), 
+                f"₪{sewing_price:.2f}" if sewing_price else "₪0.00",
+                rec.get('created_at')
+            ))
+
+    def _on_model_name_select(self, event):
+        """כאשר נבחר שם דגם - הצג את מחיר התפירה שלו"""
+        if not hasattr(self, 'model_names_tree'): return
+        sel = self.model_names_tree.selection()
+        if sel:
+            vals = self.model_names_tree.item(sel[0], 'values')
+            if vals and len(vals) >= 3:
+                # קבל את המחיר מהערך (הסר את הסימן ₪)
+                price_str = str(vals[2]).replace('₪', '').strip()
+                try:
+                    self.attr_model_sewing_price_var.set(price_str)
+                except:
+                    self.attr_model_sewing_price_var.set('0')
+
+    def _update_selected_model_sewing_price(self):
+        """עדכון מחיר תפירה לשם דגם נבחר"""
+        if not hasattr(self, 'model_names_tree'): return
+        sel = self.model_names_tree.selection()
+        if not sel:
+            messagebox.showwarning('אזהרה', 'בחר שם דגם לעדכון')
+            return
+        
+        vals = self.model_names_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        
+        rec_id = int(vals[0])
+        try:
+            sewing_price = float(self.attr_model_sewing_price_var.get() or 0)
+        except ValueError:
+            messagebox.showerror('שגיאה', 'מחיר תפירה חייב להיות מספר')
+            return
+        
+        if self.data_processor.update_model_name_sewing_price(rec_id, sewing_price):
+            self._load_model_names_into_tree()
+            messagebox.showinfo('הצלחה', 'מחיר התפירה עודכן בהצלחה')
+        else:
+            messagebox.showerror('שגיאה', 'שגיאה בעדכון מחיר התפירה')
 
     # ===== ADD =====
     def _add_product_catalog_entry(self):
@@ -1258,9 +1625,14 @@ class ProductsCatalogMethodsMixin:
             messagebox.showerror('שגיאה', 'חובה להזין שם דגם')
             return
         try:
-            new_id = self.data_processor.add_model_name_item(name)
-            self.model_names_tree.insert('', 'end', values=(new_id, name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            sewing_price = float(self.attr_model_sewing_price_var.get() or 0)
+        except ValueError:
+            sewing_price = 0.0
+        try:
+            new_id = self.data_processor.add_model_name_item(name, sewing_price)
+            self._load_model_names_into_tree()
             self.attr_model_name_var.set('')
+            self.attr_model_sewing_price_var.set('0')
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))
 

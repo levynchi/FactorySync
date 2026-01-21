@@ -1532,8 +1532,43 @@ class DataProcessor:
 	def delete_fabric_category_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_fabric_categories, self.save_fabric_categories, rec_id)
 
-	def add_model_name_item(self, name: str) -> int:
-		return self._add_to_simple_list(self.product_model_names, self.save_model_names, name)
+	def add_model_name_item(self, name: str, sewing_price: float = 0.0) -> int:
+		"""הוספת שם דגם עם מחיר תפירה"""
+		if not name:
+			raise Exception("חובה להזין שם")
+		for rec in self.product_model_names:
+			if rec.get('name','').strip() == name.strip():
+				raise Exception("פריט כבר קיים")
+		new_id = max([r.get('id',0) for r in self.product_model_names], default=0) + 1
+		rec = {
+			'id': new_id,
+			'name': name.strip(),
+			'sewing_price': float(sewing_price),
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+		}
+		self.product_model_names.append(rec)
+		self.save_model_names()
+		return new_id
+
+	def update_model_name_sewing_price(self, rec_id: int, sewing_price: float) -> bool:
+		"""עדכון מחיר תפירה לשם דגם"""
+		try:
+			for rec in self.product_model_names:
+				if rec.get('id') == rec_id:
+					rec['sewing_price'] = float(sewing_price)
+					self.save_model_names()
+					return True
+			return False
+		except Exception as e:
+			print(f"שגיאה בעדכון מחיר תפירה: {e}")
+			return False
+
+	def get_sewing_price_by_model_name(self, model_name: str) -> float:
+		"""קבלת מחיר תפירה לפי שם דגם"""
+		for rec in self.product_model_names:
+			if rec.get('name', '').strip() == model_name.strip():
+				return float(rec.get('sewing_price', 0) or 0)
+		return 0.0
 
 	def delete_model_name_item(self, rec_id: int) -> bool:
 		return self._delete_from_simple_list(self.product_model_names, self.save_model_names, rec_id)
@@ -1546,3 +1581,178 @@ class DataProcessor:
 		self.product_fabric_categories = self.load_fabric_categories()
 		self.product_model_names = self.load_model_names()
 
+	# ===== Fabric Prices (מחירי בדים) =====
+	def load_fabric_prices(self) -> List[Dict]:
+		"""טעינת טבלת מחירי בדים"""
+		try:
+			path = 'fabric_prices.json'
+			if os.path.exists(path):
+				with open(path, 'r', encoding='utf-8') as f:
+					return json.load(f)
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת מחירי בדים: {e}")
+			return []
+
+	def save_fabric_prices(self, prices: List[Dict]) -> bool:
+		"""שמירת טבלת מחירי בדים"""
+		try:
+			with open('fabric_prices.json', 'w', encoding='utf-8') as f:
+				json.dump(prices, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת מחירי בדים: {e}")
+			return False
+
+	def add_fabric_price(self, fabric_category: str, fabric_color: str, print_name: str, price_per_kg: float, weight_per_sqm: float) -> int:
+		"""הוספת מחיר בד חדש"""
+		try:
+			prices = self.load_fabric_prices()
+			# בדיקת כפילות
+			for p in prices:
+				if (p.get('fabric_category', '').strip() == fabric_category.strip() and
+					p.get('fabric_color', '').strip() == fabric_color.strip() and
+					p.get('print_name', '').strip() == print_name.strip()):
+					raise ValueError("שילוב זה כבר קיים בטבלה")
+			new_id = max([p.get('id', 0) for p in prices], default=0) + 1
+			rec = {
+				'id': new_id,
+				'fabric_category': fabric_category.strip(),
+				'fabric_color': fabric_color.strip(),
+				'print_name': print_name.strip(),
+				'price_per_kg': float(price_per_kg),
+				'weight_per_sqm': float(weight_per_sqm),
+				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+			}
+			prices.append(rec)
+			self.save_fabric_prices(prices)
+			return new_id
+		except Exception as e:
+			raise Exception(f"שגיאה בהוספת מחיר בד: {str(e)}")
+
+	def update_fabric_price(self, price_id: int, fabric_category: str, fabric_color: str, print_name: str, price_per_kg: float, weight_per_sqm: float) -> bool:
+		"""עדכון מחיר בד קיים"""
+		try:
+			prices = self.load_fabric_prices()
+			for p in prices:
+				if p.get('id') == price_id:
+					p['fabric_category'] = fabric_category.strip()
+					p['fabric_color'] = fabric_color.strip()
+					p['print_name'] = print_name.strip()
+					p['price_per_kg'] = float(price_per_kg)
+					p['weight_per_sqm'] = float(weight_per_sqm)
+					p['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+					return self.save_fabric_prices(prices)
+			return False
+		except Exception as e:
+			print(f"שגיאה בעדכון מחיר בד: {e}")
+			return False
+
+	def delete_fabric_price(self, price_id: int) -> bool:
+		"""מחיקת מחיר בד"""
+		try:
+			prices = self.load_fabric_prices()
+			before = len(prices)
+			prices = [p for p in prices if p.get('id') != price_id]
+			if len(prices) != before:
+				return self.save_fabric_prices(prices)
+			return False
+		except Exception as e:
+			print(f"שגיאה במחיקת מחיר בד: {e}")
+			return False
+
+	def find_fabric_price(self, fabric_category: str, fabric_color: str, print_name: str) -> Dict:
+		"""מציאת מחיר בד לפי קטגוריה, צבע ופרינט"""
+		prices = self.load_fabric_prices()
+		for p in prices:
+			if (p.get('fabric_category', '').strip() == fabric_category.strip() and
+				p.get('fabric_color', '').strip() == fabric_color.strip() and
+				p.get('print_name', '').strip() == print_name.strip()):
+				return p
+		return {}
+
+	# ===== Global Item Cost Settings (הגדרות עלויות גלובליות) =====
+	def load_item_cost_settings(self) -> Dict:
+		"""טעינת הגדרות עלויות פריטים"""
+		try:
+			path = 'item_cost_settings.json'
+			if os.path.exists(path):
+				with open(path, 'r', encoding='utf-8') as f:
+					return json.load(f)
+			# ברירת מחדל
+			return {
+				'tick_price': 0.0,
+				'elastic_price': 0.0,
+				'ribbon_price': 0.0,
+				'sewing_price': 0.0
+			}
+		except Exception as e:
+			print(f"שגיאה בטעינת הגדרות עלויות: {e}")
+			return {'tick_price': 0.0, 'elastic_price': 0.0, 'ribbon_price': 0.0, 'sewing_price': 0.0}
+
+	def save_item_cost_settings(self, settings: Dict) -> bool:
+		"""שמירת הגדרות עלויות פריטים"""
+		try:
+			with open('item_cost_settings.json', 'w', encoding='utf-8') as f:
+				json.dump(settings, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת הגדרות עלויות: {e}")
+			return False
+
+	def calculate_item_cost(self, item: Dict) -> Dict:
+		"""חישוב עלות פריט"""
+		try:
+			settings = self.load_item_cost_settings()
+			# מציאת מחיר בד
+			fabric_price_rec = self.find_fabric_price(
+				item.get('fabric_category', ''),
+				item.get('fabric_color', ''),
+				item.get('print_name', '')
+			)
+			
+			square_area = float(item.get('square_area', 0) or 0)
+			ticks_qty = float(item.get('ticks_qty', 0) or 0)
+			elastic_qty = float(item.get('elastic_qty', 0) or 0)
+			ribbon_qty = float(item.get('ribbon_qty', 0) or 0)
+			
+			# חישוב עלות בד: שטח_רבוע × (משקל_למ"ר / 1000) × מחיר_לק"ג
+			price_per_kg = float(fabric_price_rec.get('price_per_kg', 0) or 0)
+			weight_per_sqm = float(fabric_price_rec.get('weight_per_sqm', 0) or 0)
+			fabric_cost = square_area * (weight_per_sqm / 1000) * price_per_kg
+			
+			# חישוב עלויות אביזרים
+			tick_price = float(settings.get('tick_price', 0) or 0)
+			elastic_price = float(settings.get('elastic_price', 0) or 0)
+			ribbon_price = float(settings.get('ribbon_price', 0) or 0)
+			
+			# מחיר תפירה - לפי שם הדגם (או גלובלי אם לא מוגדר)
+			model_name = item.get('name', '')
+			sewing_price = self.get_sewing_price_by_model_name(model_name)
+			if sewing_price == 0:
+				sewing_price = float(settings.get('sewing_price', 0) or 0)
+			
+			ticks_cost = ticks_qty * tick_price
+			elastic_cost = elastic_qty * elastic_price
+			ribbon_cost = ribbon_qty * ribbon_price
+			
+			total_cost = fabric_cost + ticks_cost + elastic_cost + ribbon_cost + sewing_price
+			
+			return {
+				'fabric_cost': round(fabric_cost, 2),
+				'ticks_cost': round(ticks_cost, 2),
+				'elastic_cost': round(elastic_cost, 2),
+				'ribbon_cost': round(ribbon_cost, 2),
+				'sewing_cost': round(sewing_price, 2),
+				'total_cost': round(total_cost, 2)
+			}
+		except Exception as e:
+			print(f"שגיאה בחישוב עלות פריט: {e}")
+			return {
+				'fabric_cost': 0,
+				'ticks_cost': 0,
+				'elastic_cost': 0,
+				'ribbon_cost': 0,
+				'sewing_cost': 0,
+				'total_cost': 0
+			}
