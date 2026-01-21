@@ -723,8 +723,7 @@ class ProductsCatalogMethodsMixin:
         self.fp_fabric_category_var = tk.StringVar()
         self.fp_fabric_color_var = tk.StringVar()
         self.fp_print_name_var = tk.StringVar()
-        self.fp_price_per_kg_var = tk.StringVar()
-        self.fp_weight_per_sqm_var = tk.StringVar()
+        self.fp_price_per_sqm_var = tk.StringVar()
         
         # טופס הוספה
         fp_form = ttk.LabelFrame(parent, text='הוספת מחיר בד', padding=10)
@@ -746,33 +745,29 @@ class ProductsCatalogMethodsMixin:
         self.fp_print_name_combo = ttk.Combobox(fp_form, textvariable=self.fp_print_name_var, values=print_names, width=16, justify='right')
         self.fp_print_name_combo.grid(row=0, column=5, padx=4, pady=4, sticky='w')
         
-        # שורה 2 - מחיר ומשקל
-        tk.Label(fp_form, text='מחיר לק"ג (₪):', font=('Arial',10,'bold')).grid(row=1, column=0, padx=4, pady=4, sticky='e')
-        tk.Entry(fp_form, textvariable=self.fp_price_per_kg_var, width=12).grid(row=1, column=1, padx=4, pady=4, sticky='w')
-        
-        tk.Label(fp_form, text='משקל למ"ר (גרם):', font=('Arial',10,'bold')).grid(row=1, column=2, padx=4, pady=4, sticky='e')
-        tk.Entry(fp_form, textvariable=self.fp_weight_per_sqm_var, width=12).grid(row=1, column=3, padx=4, pady=4, sticky='w')
+        # שורה 2 - מחיר למ"ר
+        tk.Label(fp_form, text='מחיר למ"ר (₪):', font=('Arial',10,'bold')).grid(row=1, column=0, padx=4, pady=4, sticky='e')
+        tk.Entry(fp_form, textvariable=self.fp_price_per_sqm_var, width=12).grid(row=1, column=1, padx=4, pady=4, sticky='w')
         
         # כפתורים
-        tk.Button(fp_form, text='➕ הוסף', command=self._add_fabric_price, bg='#27ae60', fg='white').grid(row=1, column=4, padx=6, pady=4)
-        tk.Button(fp_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_price, bg='#e67e22', fg='white').grid(row=1, column=5, padx=4, pady=4)
+        tk.Button(fp_form, text='➕ הוסף', command=self._add_fabric_price, bg='#27ae60', fg='white').grid(row=1, column=2, padx=6, pady=4)
+        tk.Button(fp_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_price, bg='#e67e22', fg='white').grid(row=1, column=3, padx=4, pady=4)
         
         # טבלה
         fp_tree_frame = ttk.LabelFrame(parent, text='טבלת מחירי בדים', padding=6)
         fp_tree_frame.pack(fill='both', expand=True, padx=8, pady=6)
         
-        fp_cols = ('id', 'fabric_category', 'fabric_color', 'print_name', 'price_per_kg', 'weight_per_sqm', 'created_at')
+        fp_cols = ('id', 'fabric_category', 'fabric_color', 'print_name', 'price_per_sqm', 'created_at')
         self.fabric_prices_tree = ttk.Treeview(fp_tree_frame, columns=fp_cols, show='headings', height=12)
         fp_headers = {
             'id': 'ID',
             'fabric_category': 'קטגוריית בד',
             'fabric_color': 'צבע בד',
             'print_name': 'פרינט',
-            'price_per_kg': 'מחיר לק"ג',
-            'weight_per_sqm': 'משקל למ"ר',
+            'price_per_sqm': 'מחיר למ"ר',
             'created_at': 'נוצר'
         }
-        fp_widths = {'id': 50, 'fabric_category': 120, 'fabric_color': 100, 'print_name': 100, 'price_per_kg': 90, 'weight_per_sqm': 100, 'created_at': 130}
+        fp_widths = {'id': 50, 'fabric_category': 140, 'fabric_color': 120, 'print_name': 120, 'price_per_sqm': 100, 'created_at': 140}
         for c in fp_cols:
             self.fabric_prices_tree.heading(c, text=fp_headers[c])
             self.fabric_prices_tree.column(c, width=fp_widths[c], anchor='center')
@@ -827,7 +822,7 @@ class ProductsCatalogMethodsMixin:
         formula_frame.pack(fill='x', padx=20, pady=10)
         
         formula_text = """
-עלות בד = שטח רבוע × (משקל למ"ר / 1000) × מחיר לק"ג
+עלות בד = שטח רבוע × מחיר למ"ר
 עלות טיקטקים = כמות טיקטקים × מחיר טיקטק
 עלות גומי = כמות גומי × מחיר גומי
 עלות סרט = כמות סרט × מחיר סרט
@@ -854,8 +849,7 @@ class ProductsCatalogMethodsMixin:
                     rec.get('fabric_category', ''),
                     rec.get('fabric_color', ''),
                     rec.get('print_name', ''),
-                    rec.get('price_per_kg', 0),
-                    rec.get('weight_per_sqm', 0),
+                    rec.get('price_per_sqm', 0),
                     rec.get('created_at', '')
                 ))
         except Exception as e:
@@ -866,29 +860,26 @@ class ProductsCatalogMethodsMixin:
         fabric_category = self.fp_fabric_category_var.get().strip()
         fabric_color = self.fp_fabric_color_var.get().strip()
         print_name = self.fp_print_name_var.get().strip()
-        price_per_kg_str = self.fp_price_per_kg_var.get().strip()
-        weight_per_sqm_str = self.fp_weight_per_sqm_var.get().strip()
+        price_per_sqm_str = self.fp_price_per_sqm_var.get().strip()
         
         if not fabric_category:
             messagebox.showerror('שגיאה', 'חובה לבחור קטגוריית בד')
             return
         
         try:
-            price_per_kg = float(price_per_kg_str) if price_per_kg_str else 0
-            weight_per_sqm = float(weight_per_sqm_str) if weight_per_sqm_str else 0
+            price_per_sqm = float(price_per_sqm_str) if price_per_sqm_str else 0
         except ValueError:
-            messagebox.showerror('שגיאה', 'מחיר ומשקל חייבים להיות מספרים')
+            messagebox.showerror('שגיאה', 'מחיר חייב להיות מספר')
             return
         
         try:
-            new_id = self.data_processor.add_fabric_price(fabric_category, fabric_color, print_name, price_per_kg, weight_per_sqm)
+            new_id = self.data_processor.add_fabric_price(fabric_category, fabric_color, print_name, price_per_sqm)
             self._load_fabric_prices_into_tree()
             # ניקוי טופס
             self.fp_fabric_category_var.set('')
             self.fp_fabric_color_var.set('')
             self.fp_print_name_var.set('')
-            self.fp_price_per_kg_var.set('')
-            self.fp_weight_per_sqm_var.set('')
+            self.fp_price_per_sqm_var.set('')
             messagebox.showinfo('הצלחה', 'מחיר הבד נוסף בהצלחה')
         except Exception as e:
             messagebox.showerror('שגיאה', str(e))

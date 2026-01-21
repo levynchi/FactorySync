@@ -1604,7 +1604,7 @@ class DataProcessor:
 			print(f"שגיאה בשמירת מחירי בדים: {e}")
 			return False
 
-	def add_fabric_price(self, fabric_category: str, fabric_color: str, print_name: str, price_per_kg: float, weight_per_sqm: float) -> int:
+	def add_fabric_price(self, fabric_category: str, fabric_color: str, print_name: str, price_per_sqm: float) -> int:
 		"""הוספת מחיר בד חדש"""
 		try:
 			prices = self.load_fabric_prices()
@@ -1620,8 +1620,7 @@ class DataProcessor:
 				'fabric_category': fabric_category.strip(),
 				'fabric_color': fabric_color.strip(),
 				'print_name': print_name.strip(),
-				'price_per_kg': float(price_per_kg),
-				'weight_per_sqm': float(weight_per_sqm),
+				'price_per_sqm': float(price_per_sqm),
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			prices.append(rec)
@@ -1630,7 +1629,7 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת מחיר בד: {str(e)}")
 
-	def update_fabric_price(self, price_id: int, fabric_category: str, fabric_color: str, print_name: str, price_per_kg: float, weight_per_sqm: float) -> bool:
+	def update_fabric_price(self, price_id: int, fabric_category: str, fabric_color: str, print_name: str, price_per_sqm: float) -> bool:
 		"""עדכון מחיר בד קיים"""
 		try:
 			prices = self.load_fabric_prices()
@@ -1639,8 +1638,7 @@ class DataProcessor:
 					p['fabric_category'] = fabric_category.strip()
 					p['fabric_color'] = fabric_color.strip()
 					p['print_name'] = print_name.strip()
-					p['price_per_kg'] = float(price_per_kg)
-					p['weight_per_sqm'] = float(weight_per_sqm)
+					p['price_per_sqm'] = float(price_per_sqm)
 					p['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					return self.save_fabric_prices(prices)
 			return False
@@ -1716,10 +1714,9 @@ class DataProcessor:
 			elastic_qty = float(item.get('elastic_qty', 0) or 0)
 			ribbon_qty = float(item.get('ribbon_qty', 0) or 0)
 			
-			# חישוב עלות בד: שטח_רבוע × (משקל_למ"ר / 1000) × מחיר_לק"ג
-			price_per_kg = float(fabric_price_rec.get('price_per_kg', 0) or 0)
-			weight_per_sqm = float(fabric_price_rec.get('weight_per_sqm', 0) or 0)
-			fabric_cost = square_area * (weight_per_sqm / 1000) * price_per_kg
+			# חישוב עלות בד: שטח_רבוע × מחיר_למ"ר
+			price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
+			fabric_cost = square_area * price_per_sqm
 			
 			# חישוב עלויות אביזרים
 			tick_price = float(settings.get('tick_price', 0) or 0)
