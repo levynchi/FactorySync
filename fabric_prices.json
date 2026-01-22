@@ -1,2 +1,18 @@
 [
+  {
+    "id": 1,
+    "fabric_category": "פלנל לבן",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "price_per_sqm": 11.0,
+    "created_at": "2026-01-22 08:39:44"
+  },
+  {
+    "id": 2,
+    "fabric_category": "טריקו לבן",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "price_per_sqm": 10.0,
+    "created_at": "2026-01-22 08:42:00"
+  }
 ]
