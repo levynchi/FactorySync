@@ -246,9 +246,73 @@ class FormulasTabMixin:
     
     def _build_fabric_weight_content(self, container):
         """Build the fabric weight calculation for drawings content."""
+        
+        # Create scrollable container
+        canvas = tk.Canvas(container, bg='#f7f9fa', highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+        
+        # Create window and store the window ID
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        # Configure scroll region when frame changes
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        # Make the frame expand to canvas width
+        def _on_canvas_configure(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+        canvas.bind("<Configure>", _on_canvas_configure)
+        
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack scrollbar and canvas
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        
+        # Bind mousewheel to scroll
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Filters frame at the top
+        filters_frame = ttk.LabelFrame(scrollable_frame, text="סינון ציורים", padding=10)
+        filters_frame.pack(fill='x', padx=20, pady=(10, 5))
+        
+        # Row 1 - Supplier and Fabric Type filters
+        tk.Label(filters_frame, text="ספק:", font=('Arial', 9, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=3)
+        self.filter_supplier_var = tk.StringVar(value="הכל")
+        self.filter_supplier_combo = ttk.Combobox(filters_frame, textvariable=self.filter_supplier_var, 
+                                                  state='readonly', width=20)
+        self.filter_supplier_combo.grid(row=0, column=1, padx=5, pady=3, sticky='w')
+        
+        tk.Label(filters_frame, text="סוג בד:", font=('Arial', 9, 'bold')).grid(row=0, column=2, sticky='e', padx=5, pady=3)
+        self.filter_fabric_var = tk.StringVar(value="הכל")
+        self.filter_fabric_combo = ttk.Combobox(filters_frame, textvariable=self.filter_fabric_var, 
+                                                state='readonly', width=20)
+        self.filter_fabric_combo.grid(row=0, column=3, padx=5, pady=3, sticky='w')
+        
+        # Row 2 - Product name filter
+        tk.Label(filters_frame, text="שם מוצר:", font=('Arial', 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
+        self.filter_product_var = tk.StringVar(value="הכל")
+        self.filter_product_combo = ttk.Combobox(filters_frame, textvariable=self.filter_product_var, 
+                                                 state='readonly', width=20)
+        self.filter_product_combo.grid(row=1, column=1, padx=5, pady=3, sticky='w')
+        
+        # Filter buttons
+        filter_btn = tk.Button(filters_frame, text="🔍 סנן", command=self._apply_drawing_filters,
+                              bg='#27ae60', fg='white', font=('Arial', 9, 'bold'))
+        filter_btn.grid(row=1, column=2, padx=5, pady=3)
+        
+        clear_filter_btn = tk.Button(filters_frame, text="🗑️ נקה סינון", command=self._clear_drawing_filters,
+                                    bg='#95a5a6', fg='white', font=('Arial', 9, 'bold'))
+        clear_filter_btn.grid(row=1, column=3, padx=5, pady=3, sticky='w')
+        
         # Combined frame for three columns: drawing selection, info, and instructions
-        main_frame = tk.Frame(container)
-        main_frame.pack(fill='x', padx=20, pady=10)
+        main_frame = tk.Frame(scrollable_frame)
+        main_frame.pack(fill='x', padx=20, pady=5)
         
         # Left column - Drawing selection frame
         drawing_frame = ttk.LabelFrame(main_frame, text="בחירת ציור", padding=15)
@@ -258,14 +322,19 @@ class FormulasTabMixin:
         tk.Label(drawing_frame, text="בחר ציור:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.selected_drawing_var = tk.StringVar()
         self.drawing_combobox = ttk.Combobox(drawing_frame, textvariable=self.selected_drawing_var, 
-                                           state='readonly', width=25, justify='right')
+                                           state='readonly', width=35, justify='right')
         self.drawing_combobox.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         self.drawing_combobox.bind('<<ComboboxSelected>>', self._on_drawing_selected)
         
+        # Drawing count label
+        self.drawing_count_var = tk.StringVar(value="")
+        tk.Label(drawing_frame, textvariable=self.drawing_count_var, font=('Arial', 8), fg='#7f8c8d').grid(
+            row=1, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+        
         # Load drawings button
-        load_btn = tk.Button(drawing_frame, text="טען ציורים", command=self._load_drawings_list,
+        load_btn = tk.Button(drawing_frame, text="🔄 טען ציורים", command=self._load_drawings_list,
                            bg='#3498db', fg='white', font=('Arial', 9, 'bold'))
-        load_btn.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky='ew')
+        load_btn.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky='ew')
         
         # Configure grid weights for drawing frame
         drawing_frame.grid_columnconfigure(1, weight=1)
@@ -305,7 +374,7 @@ class FormulasTabMixin:
         instructions_label.pack(pady=5, fill='both', expand=True)
         
         # Weight input frame
-        weight_frame = ttk.LabelFrame(container, text="נתוני הפריסה", padding=15)
+        weight_frame = ttk.LabelFrame(scrollable_frame, text="נתוני הפריסה", padding=15)
         weight_frame.pack(fill='x', padx=20, pady=10)
         
         # Layer count row
@@ -337,12 +406,12 @@ class FormulasTabMixin:
         export_btn.grid(row=2, column=3, padx=5, pady=5)
         
         # Results frame
-        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=15)
-        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        results_frame = ttk.LabelFrame(scrollable_frame, text="תוצאות החישוב", padding=15)
+        results_frame.pack(fill='x', padx=20, pady=10)
         
-        # Results table
+        # Results table - increased height
         cols = ('product_name', 'size', 'quantity', 'square_area', 'percentage', 'weight_total', 'weight_per_unit', 'cost_total', 'cost_per_unit')
-        self.results_tree = ttk.Treeview(results_frame, columns=cols, show='headings', height=12)
+        self.results_tree = ttk.Treeview(results_frame, columns=cols, show='headings', height=20)
         
         headers = {
             'product_name': 'שם המוצר',
@@ -379,7 +448,7 @@ class FormulasTabMixin:
         results_scrollbar.pack(side='right', fill='y')
         
         # Summary frame
-        summary_frame = ttk.LabelFrame(container, text="סיכום", padding=10)
+        summary_frame = ttk.LabelFrame(scrollable_frame, text="סיכום", padding=10)
         summary_frame.pack(fill='x', padx=20, pady=5)
         
         self.summary_var = tk.StringVar(value="בחר ציור והזן משקל לחישוב")
@@ -391,31 +460,117 @@ class FormulasTabMixin:
         self._load_drawings_list()
     
     def _load_drawings_list(self):
-        """Load the list of drawings from the database."""
+        """Load the list of drawings from the database and populate filter options."""
         try:
             # Get drawings from data processor
             drawings = getattr(self.data_processor, 'drawings_data', [])
-            drawing_names = []
-            self.drawings_dict = {}
+            
+            # Build filter options from all drawings
+            suppliers = set(["הכל"])
+            fabric_types = set(["הכל"])
+            product_names = set(["הכל"])
             
             for drawing in drawings:
-                drawing_name = drawing.get('שם הקובץ', f"ציור {drawing.get('id', 'לא ידוע')}")
-                drawing_names.append(drawing_name)
-                self.drawings_dict[drawing_name] = drawing
+                # Get supplier
+                supplier = drawing.get('נמען (ספק)', drawing.get('ספק', ''))
+                if supplier:
+                    suppliers.add(supplier)
+                
+                # Get fabric type
+                fabric = drawing.get('סוג בד', '')
+                if fabric:
+                    fabric_types.add(fabric)
+                
+                # Get product names from this drawing
+                products = drawing.get('מוצרים', [])
+                for product in products:
+                    product_name = product.get('שם המוצר', '')
+                    if product_name:
+                        product_names.add(product_name)
             
-            self.drawing_combobox['values'] = drawing_names
+            # Update filter comboboxes
+            self.filter_supplier_combo['values'] = sorted(list(suppliers), key=lambda x: (x != "הכל", x))
+            self.filter_fabric_combo['values'] = sorted(list(fabric_types), key=lambda x: (x != "הכל", x))
+            self.filter_product_combo['values'] = sorted(list(product_names), key=lambda x: (x != "הכל", x))
             
-            if drawing_names:
-                self.drawing_combobox.set(drawing_names[0])
-                self._on_drawing_selected()
-            else:
-                self.drawing_info_text.config(state='normal')
-                self.drawing_info_text.delete(1.0, tk.END)
-                self.drawing_info_text.insert(tk.END, "לא נמצאו ציורים במסד הנתונים")
-                self.drawing_info_text.config(state='disabled')
+            # Apply filters and load drawings
+            self._apply_drawing_filters()
                 
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בטעינת רשימת הציורים: {str(e)}")
+    
+    def _apply_drawing_filters(self):
+        """Apply filters and update the drawings list."""
+        try:
+            drawings = getattr(self.data_processor, 'drawings_data', [])
+            
+            # Get filter values
+            supplier_filter = self.filter_supplier_var.get()
+            fabric_filter = self.filter_fabric_var.get()
+            product_filter = self.filter_product_var.get()
+            
+            # Filter drawings
+            filtered_drawings = []
+            for drawing in drawings:
+                # Check supplier filter
+                if supplier_filter != "הכל":
+                    supplier = drawing.get('נמען (ספק)', drawing.get('ספק', ''))
+                    if supplier != supplier_filter:
+                        continue
+                
+                # Check fabric type filter
+                if fabric_filter != "הכל":
+                    fabric = drawing.get('סוג בד', '')
+                    if fabric != fabric_filter:
+                        continue
+                
+                # Check product name filter
+                if product_filter != "הכל":
+                    products = drawing.get('מוצרים', [])
+                    product_names = [p.get('שם המוצר', '') for p in products]
+                    if product_filter not in product_names:
+                        continue
+                
+                filtered_drawings.append(drawing)
+            
+            # Build display list with ID + file name
+            drawing_display_names = []
+            self.drawings_dict = {}
+            
+            for drawing in filtered_drawings:
+                drawing_id = drawing.get('id', '?')
+                file_name = drawing.get('שם הקובץ', 'לא ידוע')
+                display_name = f"ID: {drawing_id} - {file_name}"
+                drawing_display_names.append(display_name)
+                self.drawings_dict[display_name] = drawing
+            
+            # Update combobox
+            self.drawing_combobox['values'] = drawing_display_names
+            
+            # Update count label
+            total_count = len(drawings)
+            filtered_count = len(filtered_drawings)
+            self.drawing_count_var.set(f"מציג {filtered_count} מתוך {total_count} ציורים")
+            
+            if drawing_display_names:
+                self.drawing_combobox.set(drawing_display_names[0])
+                self._on_drawing_selected()
+            else:
+                self.drawing_combobox.set('')
+                self.drawing_info_text.config(state='normal')
+                self.drawing_info_text.delete(1.0, tk.END)
+                self.drawing_info_text.insert(tk.END, "לא נמצאו ציורים התואמים לסינון")
+                self.drawing_info_text.config(state='disabled')
+                
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בסינון ציורים: {str(e)}")
+    
+    def _clear_drawing_filters(self):
+        """Clear all filters and reload drawings."""
+        self.filter_supplier_var.set("הכל")
+        self.filter_fabric_var.set("הכל")
+        self.filter_product_var.set("הכל")
+        self._apply_drawing_filters()
     
     def _on_drawing_selected(self, event=None):
         """Handle drawing selection."""
