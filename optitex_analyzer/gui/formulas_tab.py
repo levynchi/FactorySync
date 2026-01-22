@@ -294,21 +294,29 @@ class FormulasTabMixin:
                                                 state='readonly', width=20)
         self.filter_fabric_combo.grid(row=0, column=3, padx=5, pady=3, sticky='w')
         
-        # Row 2 - Product name filter
+        # Row 2 - Product name and size filters
         tk.Label(filters_frame, text="שם מוצר:", font=('Arial', 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
         self.filter_product_var = tk.StringVar(value="הכל")
         self.filter_product_combo = ttk.Combobox(filters_frame, textvariable=self.filter_product_var, 
                                                  state='readonly', width=20)
         self.filter_product_combo.grid(row=1, column=1, padx=5, pady=3, sticky='w')
+        self.filter_product_combo.bind('<<ComboboxSelected>>', self._on_product_filter_changed)
         
-        # Filter buttons
+        tk.Label(filters_frame, text="מידה:", font=('Arial', 9, 'bold')).grid(row=1, column=2, sticky='e', padx=5, pady=3)
+        self.filter_size_var = tk.StringVar(value="הכל")
+        self.filter_size_combo = ttk.Combobox(filters_frame, textvariable=self.filter_size_var, 
+                                              state='disabled', width=15)
+        self.filter_size_combo.grid(row=1, column=3, padx=5, pady=3, sticky='w')
+        self.filter_size_combo['values'] = ["הכל"]
+        
+        # Row 3 - Filter buttons
         filter_btn = tk.Button(filters_frame, text="🔍 סנן", command=self._apply_drawing_filters,
                               bg='#27ae60', fg='white', font=('Arial', 9, 'bold'))
-        filter_btn.grid(row=1, column=2, padx=5, pady=3)
+        filter_btn.grid(row=2, column=1, padx=5, pady=5, sticky='e')
         
         clear_filter_btn = tk.Button(filters_frame, text="🗑️ נקה סינון", command=self._clear_drawing_filters,
                                     bg='#95a5a6', fg='white', font=('Arial', 9, 'bold'))
-        clear_filter_btn.grid(row=1, column=3, padx=5, pady=3, sticky='w')
+        clear_filter_btn.grid(row=2, column=2, padx=5, pady=5, sticky='w')
         
         # Combined frame for three columns: drawing selection, info, and instructions
         main_frame = tk.Frame(scrollable_frame)
@@ -472,7 +480,7 @@ class FormulasTabMixin:
             
             for drawing in drawings:
                 # Get supplier
-                supplier = drawing.get('נמען (ספק)', drawing.get('ספק', ''))
+                supplier = drawing.get('נמען', drawing.get('נמען (ספק)', drawing.get('ספק', '')))
                 if supplier:
                     suppliers.add(supplier)
                 
@@ -508,13 +516,14 @@ class FormulasTabMixin:
             supplier_filter = self.filter_supplier_var.get()
             fabric_filter = self.filter_fabric_var.get()
             product_filter = self.filter_product_var.get()
+            size_filter = self.filter_size_var.get()
             
             # Filter drawings
             filtered_drawings = []
             for drawing in drawings:
                 # Check supplier filter
                 if supplier_filter != "הכל":
-                    supplier = drawing.get('נמען (ספק)', drawing.get('ספק', ''))
+                    supplier = drawing.get('נמען', drawing.get('נמען (ספק)', drawing.get('ספק', '')))
                     if supplier != supplier_filter:
                         continue
                 
@@ -524,11 +533,25 @@ class FormulasTabMixin:
                     if fabric != fabric_filter:
                         continue
                 
-                # Check product name filter
+                # Check product name filter (and optionally size)
                 if product_filter != "הכל":
                     products = drawing.get('מוצרים', [])
-                    product_names = [p.get('שם המוצר', '') for p in products]
-                    if product_filter not in product_names:
+                    
+                    # Check if drawing has the product
+                    product_found = False
+                    for product in products:
+                        if product.get('שם המוצר', '') == product_filter:
+                            # If size filter is active, check for specific size
+                            if size_filter != "הכל":
+                                sizes_in_product = [s.get('מידה', '') for s in product.get('מידות', [])]
+                                if size_filter in sizes_in_product:
+                                    product_found = True
+                                    break
+                            else:
+                                product_found = True
+                                break
+                    
+                    if not product_found:
                         continue
                 
                 filtered_drawings.append(drawing)
@@ -565,11 +588,46 @@ class FormulasTabMixin:
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בסינון ציורים: {str(e)}")
     
+    def _on_product_filter_changed(self, event=None):
+        """Handle product filter change - populate size filter with available sizes."""
+        try:
+            selected_product = self.filter_product_var.get()
+            
+            if selected_product == "הכל":
+                # Disable size filter if no specific product selected
+                self.filter_size_var.set("הכל")
+                self.filter_size_combo['values'] = ["הכל"]
+                self.filter_size_combo.configure(state='disabled')
+            else:
+                # Find all sizes for this product across all drawings
+                drawings = getattr(self.data_processor, 'drawings_data', [])
+                sizes = set(["הכל"])
+                
+                for drawing in drawings:
+                    products = drawing.get('מוצרים', [])
+                    for product in products:
+                        if product.get('שם המוצר', '') == selected_product:
+                            for size_info in product.get('מידות', []):
+                                size = size_info.get('מידה', '')
+                                if size:
+                                    sizes.add(size)
+                
+                # Update size combobox
+                self.filter_size_var.set("הכל")
+                self.filter_size_combo['values'] = sorted(list(sizes), key=lambda x: (x != "הכל", x))
+                self.filter_size_combo.configure(state='readonly')
+                
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בטעינת מידות: {str(e)}")
+    
     def _clear_drawing_filters(self):
         """Clear all filters and reload drawings."""
         self.filter_supplier_var.set("הכל")
         self.filter_fabric_var.set("הכל")
         self.filter_product_var.set("הכל")
+        self.filter_size_var.set("הכל")
+        self.filter_size_combo['values'] = ["הכל"]
+        self.filter_size_combo.configure(state='disabled')
         self._apply_drawing_filters()
     
     def _on_drawing_selected(self, event=None):
