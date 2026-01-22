@@ -277,75 +277,80 @@ class FormulasTabMixin:
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
-        # Filters frame at the top
-        filters_frame = ttk.LabelFrame(scrollable_frame, text="סינון ציורים", padding=10)
-        filters_frame.pack(fill='x', padx=20, pady=(10, 5))
-        
-        # Row 1 - Supplier and Fabric Type filters
-        tk.Label(filters_frame, text="ספק:", font=('Arial', 9, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=3)
-        self.filter_supplier_var = tk.StringVar(value="הכל")
-        self.filter_supplier_combo = ttk.Combobox(filters_frame, textvariable=self.filter_supplier_var, 
-                                                  state='readonly', width=20)
-        self.filter_supplier_combo.grid(row=0, column=1, padx=5, pady=3, sticky='w')
-        
-        tk.Label(filters_frame, text="סוג בד:", font=('Arial', 9, 'bold')).grid(row=0, column=2, sticky='e', padx=5, pady=3)
-        self.filter_fabric_var = tk.StringVar(value="הכל")
-        self.filter_fabric_combo = ttk.Combobox(filters_frame, textvariable=self.filter_fabric_var, 
-                                                state='readonly', width=20)
-        self.filter_fabric_combo.grid(row=0, column=3, padx=5, pady=3, sticky='w')
-        
-        # Row 2 - Product name and size filters
-        tk.Label(filters_frame, text="שם מוצר:", font=('Arial', 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
-        self.filter_product_var = tk.StringVar(value="הכל")
-        self.filter_product_combo = ttk.Combobox(filters_frame, textvariable=self.filter_product_var, 
-                                                 state='readonly', width=20)
-        self.filter_product_combo.grid(row=1, column=1, padx=5, pady=3, sticky='w')
-        self.filter_product_combo.bind('<<ComboboxSelected>>', self._on_product_filter_changed)
-        
-        tk.Label(filters_frame, text="מידה:", font=('Arial', 9, 'bold')).grid(row=1, column=2, sticky='e', padx=5, pady=3)
-        self.filter_size_var = tk.StringVar(value="הכל")
-        self.filter_size_combo = ttk.Combobox(filters_frame, textvariable=self.filter_size_var, 
-                                              state='disabled', width=15)
-        self.filter_size_combo.grid(row=1, column=3, padx=5, pady=3, sticky='w')
-        self.filter_size_combo['values'] = ["הכל"]
-        
-        # Row 3 - Filter buttons
-        filter_btn = tk.Button(filters_frame, text="🔍 סנן", command=self._apply_drawing_filters,
-                              bg='#27ae60', fg='white', font=('Arial', 9, 'bold'))
-        filter_btn.grid(row=2, column=1, padx=5, pady=5, sticky='e')
-        
-        clear_filter_btn = tk.Button(filters_frame, text="🗑️ נקה סינון", command=self._clear_drawing_filters,
-                                    bg='#95a5a6', fg='white', font=('Arial', 9, 'bold'))
-        clear_filter_btn.grid(row=2, column=2, padx=5, pady=5, sticky='w')
+        # Initialize selected drawings list for multi-select
+        self.selected_weight_drawings = []
         
         # Combined frame for three columns: drawing selection, info, and instructions
         main_frame = tk.Frame(scrollable_frame)
         main_frame.pack(fill='x', padx=20, pady=5)
         
-        # Left column - Drawing selection frame
-        drawing_frame = ttk.LabelFrame(main_frame, text="בחירת ציור", padding=15)
+        # Left column - Drawing selection frame (with multi-select)
+        drawing_frame = ttk.LabelFrame(main_frame, text="בחירת ציורים", padding=10)
         drawing_frame.pack(side='left', fill='both', expand=True, padx=(0, 7))
         
-        # Drawing selection
-        tk.Label(drawing_frame, text="בחר ציור:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
-        self.selected_drawing_var = tk.StringVar()
-        self.drawing_combobox = ttk.Combobox(drawing_frame, textvariable=self.selected_drawing_var, 
-                                           state='readonly', width=35, justify='right')
-        self.drawing_combobox.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        self.drawing_combobox.bind('<<ComboboxSelected>>', self._on_drawing_selected)
+        # Available drawings listbox
+        tk.Label(drawing_frame, text="ציורים זמינים:", font=('Arial', 9, 'bold')).pack(anchor='w')
+        
+        listbox_frame = tk.Frame(drawing_frame)
+        listbox_frame.pack(fill='both', expand=True, pady=2)
+        
+        self.drawings_listbox = tk.Listbox(
+            listbox_frame,
+            selectmode=tk.EXTENDED,
+            font=('Arial', 8),
+            height=5,
+            exportselection=False
+        )
+        listbox_scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=self.drawings_listbox.yview)
+        self.drawings_listbox.configure(yscrollcommand=listbox_scrollbar.set)
+        self.drawings_listbox.pack(side='left', fill='both', expand=True)
+        listbox_scrollbar.pack(side='right', fill='y')
+        
+        # Bind double-click to add single drawing
+        self.drawings_listbox.bind('<Double-Button-1>', lambda e: self._add_drawing_to_selection())
+        
+        # Bind single click to show drawing details
+        self.drawings_listbox.bind('<<ListboxSelect>>', self._on_available_drawing_selected)
         
         # Drawing count label
         self.drawing_count_var = tk.StringVar(value="")
-        tk.Label(drawing_frame, textvariable=self.drawing_count_var, font=('Arial', 8), fg='#7f8c8d').grid(
-            row=1, column=0, columnspan=2, padx=5, pady=2, sticky='w')
+        tk.Label(drawing_frame, textvariable=self.drawing_count_var, font=('Arial', 7), fg='#7f8c8d').pack(anchor='w')
         
-        # Load drawings button
-        load_btn = tk.Button(drawing_frame, text="🔄 טען ציורים", command=self._load_drawings_list,
-                           bg='#3498db', fg='white', font=('Arial', 9, 'bold'))
-        load_btn.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky='ew')
+        # Buttons row
+        btn_frame = tk.Frame(drawing_frame)
+        btn_frame.pack(fill='x', pady=3)
         
-        # Configure grid weights for drawing frame
-        drawing_frame.grid_columnconfigure(1, weight=1)
+        tk.Button(btn_frame, text="➕ הוסף לחישוב", command=self._add_drawing_to_selection,
+                 bg='#27ae60', fg='white', font=('Arial', 8, 'bold')).pack(side='right', padx=2)
+        tk.Button(btn_frame, text="🔄 רענן", command=self._load_drawings_list,
+                 bg='#3498db', fg='white', font=('Arial', 8, 'bold')).pack(side='right', padx=2)
+        
+        # Selected drawings section
+        tk.Label(drawing_frame, text="ציורים נבחרים לחישוב:", font=('Arial', 9, 'bold')).pack(anchor='w', pady=(5,0))
+        
+        selected_frame = tk.Frame(drawing_frame)
+        selected_frame.pack(fill='both', expand=True, pady=2)
+        
+        self.selected_drawings_listbox = tk.Listbox(
+            selected_frame,
+            selectmode=tk.EXTENDED,
+            font=('Arial', 8),
+            height=3,
+            exportselection=False,
+            bg='#ecf0f1'
+        )
+        selected_scrollbar = ttk.Scrollbar(selected_frame, orient="vertical", command=self.selected_drawings_listbox.yview)
+        self.selected_drawings_listbox.configure(yscrollcommand=selected_scrollbar.set)
+        self.selected_drawings_listbox.pack(side='left', fill='both', expand=True)
+        selected_scrollbar.pack(side='right', fill='y')
+        
+        # Selected count label
+        self.selected_count_var = tk.StringVar(value="נבחרו: 0 ציורים")
+        tk.Label(drawing_frame, textvariable=self.selected_count_var, font=('Arial', 8, 'bold'), fg='#27ae60').pack(anchor='w')
+        
+        # Remove button
+        tk.Button(drawing_frame, text="🗑️ הסר נבחרים", command=self._remove_drawing_from_selection,
+                 bg='#e74c3c', fg='white', font=('Arial', 8, 'bold')).pack(anchor='e', pady=2)
         
         # Middle column - Drawing info frame
         info_frame = ttk.LabelFrame(main_frame, text="פרטי הציור", padding=15)
@@ -358,28 +363,51 @@ class FormulasTabMixin:
         self.drawing_info_text.pack(side='left', fill='both', expand=True)
         info_scrollbar.pack(side='right', fill='y')
         
-        # Right column - Instructions frame
-        instructions_frame = ttk.LabelFrame(main_frame, text="הוראות שימוש", padding=15)
-        instructions_frame.pack(side='left', fill='both', expand=True, padx=(7, 0))
+        # Right column - Filters frame
+        filters_frame = ttk.LabelFrame(main_frame, text="סינון ציורים", padding=10)
+        filters_frame.pack(side='left', fill='both', expand=True, padx=(7, 0))
         
-        instructions_text = ("בחר ציור מהרשימה לחישוב חלוקת משקל בד לפי שטח רבוע של הפריטים.\n\n"
-                           "עבור ציורים בסטטוס 'נחתך' - כמות השכבות והמשקל ימולאו אוטומטית.\n\n"
-                           "הנוסחה:\n"
-                           "%ᵢ = (Aᵢ/ΣA) × 100\n"
-                           "Gramsᵢ = W × (%ᵢ/100)\n\n"
-                           "כאשר:\n"
-                           "W = משקל השכבה\n"
-                           "Aᵢ = שטח רבוע למידה i\n"
-                           "ΣA = סכום כל השטחים")
-        instructions_label = tk.Label(
-            instructions_frame,
-            text=instructions_text,
-            font=('Arial', 8),
-            fg='#7f8c8d',
-            justify='right',
-            wraplength=250
-        )
-        instructions_label.pack(pady=5, fill='both', expand=True)
+        # Row 1 - Supplier filter
+        tk.Label(filters_frame, text="ספק:", font=('Arial', 9, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=3)
+        self.filter_supplier_var = tk.StringVar(value="הכל")
+        self.filter_supplier_combo = ttk.Combobox(filters_frame, textvariable=self.filter_supplier_var, 
+                                                  state='readonly', width=18)
+        self.filter_supplier_combo.grid(row=0, column=1, padx=5, pady=3, sticky='w')
+        
+        # Row 2 - Fabric Type filter
+        tk.Label(filters_frame, text="סוג בד:", font=('Arial', 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
+        self.filter_fabric_var = tk.StringVar(value="הכל")
+        self.filter_fabric_combo = ttk.Combobox(filters_frame, textvariable=self.filter_fabric_var, 
+                                                state='readonly', width=18)
+        self.filter_fabric_combo.grid(row=1, column=1, padx=5, pady=3, sticky='w')
+        
+        # Row 3 - Product name filter
+        tk.Label(filters_frame, text="שם מוצר:", font=('Arial', 9, 'bold')).grid(row=2, column=0, sticky='e', padx=5, pady=3)
+        self.filter_product_var = tk.StringVar(value="הכל")
+        self.filter_product_combo = ttk.Combobox(filters_frame, textvariable=self.filter_product_var, 
+                                                 state='readonly', width=18)
+        self.filter_product_combo.grid(row=2, column=1, padx=5, pady=3, sticky='w')
+        self.filter_product_combo.bind('<<ComboboxSelected>>', self._on_product_filter_changed)
+        
+        # Row 4 - Size filter
+        tk.Label(filters_frame, text="מידה:", font=('Arial', 9, 'bold')).grid(row=3, column=0, sticky='e', padx=5, pady=3)
+        self.filter_size_var = tk.StringVar(value="הכל")
+        self.filter_size_combo = ttk.Combobox(filters_frame, textvariable=self.filter_size_var, 
+                                              state='disabled', width=18)
+        self.filter_size_combo.grid(row=3, column=1, padx=5, pady=3, sticky='w')
+        self.filter_size_combo['values'] = ["הכל"]
+        
+        # Row 5 - Filter buttons
+        btn_frame = tk.Frame(filters_frame)
+        btn_frame.grid(row=4, column=0, columnspan=2, pady=8)
+        
+        filter_btn = tk.Button(btn_frame, text="🔍 סנן", command=self._apply_drawing_filters,
+                              bg='#27ae60', fg='white', font=('Arial', 9, 'bold'))
+        filter_btn.pack(side='right', padx=3)
+        
+        clear_filter_btn = tk.Button(btn_frame, text="🗑️ נקה סינון", command=self._clear_drawing_filters,
+                                    bg='#95a5a6', fg='white', font=('Arial', 9, 'bold'))
+        clear_filter_btn.pack(side='right', padx=3)
         
         # Weight input frame
         weight_frame = ttk.LabelFrame(scrollable_frame, text="נתוני הפריסה", padding=15)
@@ -396,6 +424,12 @@ class FormulasTabMixin:
         self.layer_weight_var = tk.StringVar()
         weight_entry = tk.Entry(weight_frame, textvariable=self.layer_weight_var, width=15, font=('Arial', 10))
         weight_entry.grid(row=1, column=1, padx=5, pady=5)
+        
+        # Weight source indicator
+        self.weight_source_var = tk.StringVar(value="")
+        self.weight_source_label = tk.Label(weight_frame, textvariable=self.weight_source_var, 
+                                            font=('Arial', 8), fg='#27ae60')
+        self.weight_source_label.grid(row=1, column=2, sticky='w', padx=5)
         
         # Price per kg row
         tk.Label(weight_frame, text="מחיר ל-1 ק\"ג בד (₪):", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
@@ -567,19 +601,17 @@ class FormulasTabMixin:
                 drawing_display_names.append(display_name)
                 self.drawings_dict[display_name] = drawing
             
-            # Update combobox
-            self.drawing_combobox['values'] = drawing_display_names
+            # Update listbox
+            self.drawings_listbox.delete(0, tk.END)
+            for display_name in drawing_display_names:
+                self.drawings_listbox.insert(tk.END, display_name)
             
             # Update count label
             total_count = len(drawings)
             filtered_count = len(filtered_drawings)
             self.drawing_count_var.set(f"מציג {filtered_count} מתוך {total_count} ציורים")
             
-            if drawing_display_names:
-                self.drawing_combobox.set(drawing_display_names[0])
-                self._on_drawing_selected()
-            else:
-                self.drawing_combobox.set('')
+            if not drawing_display_names:
                 self.drawing_info_text.config(state='normal')
                 self.drawing_info_text.delete(1.0, tk.END)
                 self.drawing_info_text.insert(tk.END, "לא נמצאו ציורים התואמים לסינון")
@@ -630,10 +662,167 @@ class FormulasTabMixin:
         self.filter_size_combo.configure(state='disabled')
         self._apply_drawing_filters()
     
-    def _on_drawing_selected(self, event=None):
-        """Handle drawing selection."""
+    def _add_drawing_to_selection(self):
+        """Add selected drawings from listbox to calculation list."""
         try:
-            selected_name = self.selected_drawing_var.get()
+            selected_indices = self.drawings_listbox.curselection()
+            if not selected_indices:
+                messagebox.showinfo("הודעה", "נא לבחור ציורים מהרשימה")
+                return
+            
+            for idx in selected_indices:
+                display_name = self.drawings_listbox.get(idx)
+                
+                # Check if already added
+                if display_name in [d['display_name'] for d in self.selected_weight_drawings]:
+                    continue
+                
+                drawing = self.drawings_dict.get(display_name)
+                if drawing:
+                    self.selected_weight_drawings.append({
+                        'display_name': display_name,
+                        'drawing': drawing
+                    })
+            
+            self._update_selected_drawings_display()
+            
+            # If only one drawing selected, show its details
+            if len(self.selected_weight_drawings) == 1:
+                self._show_drawing_info_in_panel(self.selected_weight_drawings[0]['drawing'])
+            else:
+                self._show_multi_drawing_info()
+                
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בהוספת ציורים: {str(e)}")
+    
+    def _remove_drawing_from_selection(self):
+        """Remove selected drawings from calculation list."""
+        selected_indices = self.selected_drawings_listbox.curselection()
+        if not selected_indices:
+            messagebox.showinfo("הודעה", "נא לבחור ציורים להסרה")
+            return
+        
+        # Get names to remove (in reverse order to maintain indices)
+        names_to_remove = [self.selected_drawings_listbox.get(i) for i in selected_indices]
+        
+        # Remove from list
+        self.selected_weight_drawings = [d for d in self.selected_weight_drawings 
+                                         if d['display_name'] not in names_to_remove]
+        
+        self._update_selected_drawings_display()
+        
+        # Update info display
+        if len(self.selected_weight_drawings) == 1:
+            self._show_drawing_info_in_panel(self.selected_weight_drawings[0]['drawing'])
+        elif len(self.selected_weight_drawings) > 1:
+            self._show_multi_drawing_info()
+        else:
+            self.drawing_info_text.config(state='normal')
+            self.drawing_info_text.delete(1.0, tk.END)
+            self.drawing_info_text.insert(tk.END, "בחר ציורים לחישוב")
+            self.drawing_info_text.config(state='disabled')
+    
+    def _update_selected_drawings_display(self):
+        """Update the selected drawings listbox."""
+        self.selected_drawings_listbox.delete(0, tk.END)
+        for d in self.selected_weight_drawings:
+            self.selected_drawings_listbox.insert(tk.END, d['display_name'])
+        self.selected_count_var.set(f"נבחרו: {len(self.selected_weight_drawings)} ציורים")
+    
+    def _show_multi_drawing_info(self):
+        """Show summary info when multiple drawings selected."""
+        self.drawing_info_text.config(state='normal')
+        self.drawing_info_text.delete(1.0, tk.END)
+        
+        info_text = f"נבחרו {len(self.selected_weight_drawings)} ציורים לחישוב\n\n"
+        
+        product_filter = self.filter_product_var.get()
+        if product_filter != "הכל":
+            info_text += f"מסנן לפי מוצר: {product_filter}\n"
+            size_filter = self.filter_size_var.get()
+            if size_filter != "הכל":
+                info_text += f"מסנן לפי מידה: {size_filter}\n"
+            info_text += "\nלחץ 'חשב חלוקת משקל' לחישוב ממוצע עלות ליחידה"
+        else:
+            info_text += "⚠️ לחישוב ממוצע מרובה ציורים\nיש לבחור קודם שם מוצר בסינון"
+        
+        self.drawing_info_text.insert(tk.END, info_text)
+        self.drawing_info_text.config(state='disabled')
+    
+    def _on_available_drawing_selected(self, event=None):
+        """Show details when a drawing is selected in the available drawings list."""
+        try:
+            selected_indices = self.drawings_listbox.curselection()
+            if not selected_indices:
+                return
+            
+            # Show details for the first selected drawing
+            idx = selected_indices[0]
+            display_name = self.drawings_listbox.get(idx)
+            
+            if display_name in self.drawings_dict:
+                drawing = self.drawings_dict[display_name]
+                self._show_drawing_info_in_panel(drawing)
+        except Exception:
+            pass
+    
+    def _show_drawing_info_in_panel(self, drawing):
+        """Show details for a single drawing."""
+        self.drawing_info_text.config(state='normal')
+        self.drawing_info_text.delete(1.0, tk.END)
+        
+        info_text = f"שם הקובץ: {drawing.get('שם הקובץ', 'לא ידוע')}\n"
+        info_text += f"תאריך יצירה: {drawing.get('תאריך יצירה', 'לא ידוע')}\n"
+        info_text += f"ID: {drawing.get('id', 'לא ידוע')}\n"
+        
+        status = drawing.get('status', 'לא ידוע')
+        info_text += f"סטטוס: {status}\n"
+        
+        layers = drawing.get('שכבות') or drawing.get('כמות שכבות משוערת')
+        if layers is not None:
+            info_text += f"כמות שכבות: {layers}\n"
+        
+        total_weight = drawing.get('משקל כולל') or drawing.get('משקל_כולל_נגזר')
+        if total_weight is not None:
+            info_text += f"משקל כולל: {total_weight} ק\"ג\n"
+        
+        # Add products information
+        products = drawing.get('מוצרים', [])
+        if products:
+            info_text += f"\n{'─' * 30}\n"
+            info_text += f"מוצרים בציור ({len(products)}):\n"
+            for product in products:
+                product_name = product.get('שם המוצר', 'לא ידוע')
+                sizes = product.get('מידות', [])
+                total_qty = sum(s.get('כמות', 0) for s in sizes)
+                info_text += f"  • {product_name}: {total_qty} יח'\n"
+                for size_info in sizes:
+                    size = size_info.get('מידה', '')
+                    qty = size_info.get('כמות', 0)
+                    info_text += f"      {size}: {qty}\n"
+        
+        self.drawing_info_text.insert(tk.END, info_text)
+        self.drawing_info_text.config(state='disabled')
+        
+        # Auto-fill weight fields if drawing is cut
+        if status == "נחתך" and layers and total_weight:
+            try:
+                total_weight_val = float(total_weight)
+                layers_val = int(layers)
+                if layers_val > 0:
+                    weight_per_layer_grams = (total_weight_val * 1000) / layers_val
+                    self.layers_count_var.set(str(layers))
+                    self.layer_weight_var.set(f"{weight_per_layer_grams:.2f}")
+                    # Update weight source indicator
+                    drawing_id = drawing.get('id', '')
+                    self.weight_source_var.set(f"⬅ מציור ID: {drawing_id}")
+            except (ValueError, TypeError):
+                pass
+    
+    def _on_drawing_selected(self, event=None):
+        """Handle drawing selection - legacy method for compatibility."""
+        try:
+            selected_name = getattr(self, 'selected_drawing_var', tk.StringVar()).get()
             if not selected_name or selected_name not in self.drawings_dict:
                 return
                 
@@ -703,6 +892,7 @@ class FormulasTabMixin:
                 
                 # Fill weight if available - calculate weight per layer in grams
                 # total_weight is in KG, we need grams per single layer
+                drawing_id = drawing.get('id', '')
                 if total_weight is not None and layers is not None:
                     try:
                         total_weight_val = float(total_weight)
@@ -711,21 +901,26 @@ class FormulasTabMixin:
                             # Convert KG to grams and divide by number of layers
                             weight_per_layer_grams = (total_weight_val * 1000) / layers_val
                             self.layer_weight_var.set(f"{weight_per_layer_grams:.2f}")
+                            self.weight_source_var.set(f"⬅ מציור ID: {drawing_id}")
                             layer_desc = "שכבות" if drawing.get('שכבות') else "שכבות משוערת"
                             self.summary_var.set(f"ציור נחתך זוהה! {layers} {layer_desc}, משקל לשכבה: {weight_per_layer_grams:.2f} גרם (חושב מ-{total_weight_val:.2f} ק\"ג)")
                         else:
                             self.layer_weight_var.set("")
+                            self.weight_source_var.set("")
                             self.summary_var.set("ציור נחתך זוהה! הזן נתונים נוספים לחישוב")
                     except (ValueError, TypeError):
                         self.layer_weight_var.set("")
+                        self.weight_source_var.set("")
                         self.summary_var.set("ציור נחתך זוהה! הזן נתונים נוספים לחישוב")
                 elif total_weight is not None:
                     # If we have weight but no layers, can't calculate per-layer weight
                     self.layer_weight_var.set("")
+                    self.weight_source_var.set("")
                     weight_desc = "משקל כולל" if drawing.get('משקל כולל') else "משקל נגזר"
                     self.summary_var.set(f"ציור נחתך זוהה! {weight_desc}: {total_weight} ק\"ג - הזן כמות שכבות לחישוב")
                 else:
                     self.layer_weight_var.set("")
+                    self.weight_source_var.set("")
                     if layers is not None:
                         layer_desc = "שכבות" if drawing.get('שכבות') else "שכבות משוערת"
                         self.summary_var.set(f"ציור נחתך זוהה! כמות {layer_desc} מולאה אוטומטית: {layers}")
@@ -735,6 +930,7 @@ class FormulasTabMixin:
                 # Clear fields for non-cut drawings
                 self.layers_count_var.set("")
                 self.layer_weight_var.set("")
+                self.weight_source_var.set("")
                 self.summary_var.set("הזן כמות שכבות ומשקל השכבה וחץ על 'חשב חלוקת משקל'")
             
             # Clear previous results
@@ -747,24 +943,27 @@ class FormulasTabMixin:
     def _calculate_weight_distribution(self):
         """Calculate weight distribution based on square areas."""
         try:
-            selected_name = self.selected_drawing_var.get()
-            if not selected_name or selected_name not in self.drawings_dict:
-                messagebox.showwarning("אזהרה", "אנא בחר ציור תחילה")
+            # Check for multi-drawing mode
+            product_filter = self.filter_product_var.get()
+            size_filter = self.filter_size_var.get()
+            multi_drawing_mode = (len(self.selected_weight_drawings) > 1 and product_filter != "הכל")
+            
+            # If no drawings selected, show error
+            if not self.selected_weight_drawings:
+                messagebox.showwarning("אזהרה", "אנא הוסף ציורים לחישוב")
                 return
             
-            weight_str = self.layer_weight_var.get().strip()
-            if not weight_str:
-                messagebox.showwarning("אזהרה", "אנא הזן משקל השכבה")
-                return
-            
-            try:
-                total_weight = float(weight_str)
-                if total_weight <= 0:
-                    messagebox.showwarning("אזהרה", "משקל השכבה חייב להיות מספר חיובי")
+            # Warning when multiple drawings selected without product filter
+            if len(self.selected_weight_drawings) > 1 and product_filter == "הכל":
+                result = messagebox.askyesno(
+                    "שים לב",
+                    f"בחרת {len(self.selected_weight_drawings)} ציורים אבל לא סיננת לפי שם מוצר.\n\n"
+                    "במצב הנוכחי, החישוב ישתמש רק בציור הראשון ברשימה.\n\n"
+                    "לחישוב ממוצע מכל הציורים - יש לסנן לפי שם מוצר.\n\n"
+                    "האם להמשיך עם הציור הראשון בלבד?"
+                )
+                if not result:
                     return
-            except ValueError:
-                messagebox.showwarning("אזהרה", "אנא הזן משקל תקין")
-                return
             
             # Get price per kg (optional)
             price_per_kg = 0.0
@@ -777,13 +976,8 @@ class FormulasTabMixin:
                 except ValueError:
                     price_per_kg = 0.0
             
-            drawing = self.drawings_dict[selected_name]
-            products = drawing.get('מוצרים', [])
-            
             # Get products catalog for square area lookup
             products_catalog = getattr(self.data_processor, 'products_catalog', [])
-            
-            # Build lookup dictionary for square areas
             square_area_lookup = {}
             for catalog_item in products_catalog:
                 product_name = catalog_item.get('name', '')
@@ -792,79 +986,238 @@ class FormulasTabMixin:
                 key = f"{product_name}_{size}"
                 square_area_lookup[key] = square_area
             
-            # Calculate total square area and collect items
-            total_square_area = 0.0
-            calculation_items = []
+            # Clear previous results
+            for item in self.results_tree.get_children():
+                self.results_tree.delete(item)
             
+            if multi_drawing_mode:
+                # Multi-drawing average mode
+                self._calculate_multi_drawing_average(product_filter, size_filter, price_per_kg, square_area_lookup)
+            else:
+                # Single drawing mode
+                self._calculate_single_drawing(price_per_kg, square_area_lookup)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב חלוקת המשקל: {str(e)}")
+    
+    def _calculate_single_drawing(self, price_per_kg, square_area_lookup):
+        """Calculate weight distribution for a single drawing."""
+        if not self.selected_weight_drawings:
+            messagebox.showwarning("אזהרה", "אנא הוסף ציור לחישוב")
+            return
+        
+        weight_str = self.layer_weight_var.get().strip()
+        if not weight_str:
+            messagebox.showwarning("אזהרה", "אנא הזן משקל השכבה")
+            return
+        
+        try:
+            total_weight = float(weight_str)
+            if total_weight <= 0:
+                messagebox.showwarning("אזהרה", "משקל השכבה חייב להיות מספר חיובי")
+                return
+        except ValueError:
+            messagebox.showwarning("אזהרה", "אנא הזן משקל תקין")
+            return
+        
+        drawing = self.selected_weight_drawings[0]['drawing']
+        products = drawing.get('מוצרים', [])
+        
+        # Calculate total square area and collect items
+        total_square_area = 0.0
+        calculation_items = []
+        
+        for product in products:
+            product_name = product.get('שם המוצר', '')
+            sizes = product.get('מידות', [])
+            
+            for size_info in sizes:
+                size = size_info.get('מידה', '')
+                quantity = size_info.get('כמות', 0)
+                
+                # Look up square area
+                lookup_key = f"{product_name}_{size}"
+                square_area = square_area_lookup.get(lookup_key, 0.0)
+                
+                if square_area > 0:
+                    total_area_for_item = square_area * quantity
+                    total_square_area += total_area_for_item
+                    
+                    calculation_items.append({
+                        'product_name': product_name,
+                        'size': size,
+                        'quantity': quantity,
+                        'square_area': square_area,
+                        'total_area': total_area_for_item
+                    })
+        
+        if total_square_area == 0:
+            messagebox.showwarning("אזהרה", "לא נמצאו נתוני שטח רבוע עבור הפריטים בציור.\nוודא שהפריטים קיימים בקטלוג המוצרים עם ערכי שטח רבוע.")
+            return
+        
+        # Calculate and display results
+        total_calculated_weight = 0.0
+        total_cost = 0.0
+        
+        for item in calculation_items:
+            percentage = (item['total_area'] / total_square_area) * 100
+            weight_total = total_weight * (percentage / 100)
+            weight_per_unit = weight_total / item['quantity'] if item['quantity'] > 0 else 0
+            total_calculated_weight += weight_total
+            
+            # Calculate cost: (weight in grams / 1000) * price per kg
+            cost_total = (weight_total / 1000) * price_per_kg if price_per_kg > 0 else 0
+            cost_per_unit = (weight_per_unit / 1000) * price_per_kg if price_per_kg > 0 else 0
+            total_cost += cost_total
+            
+            # Insert into table
+            self.results_tree.insert('', 'end', values=(
+                item['product_name'],
+                item['size'],
+                item['quantity'],
+                f"{item['square_area']:.6f}",
+                f"{percentage:.2f}%",
+                f"{weight_total:.2f}",
+                f"{weight_per_unit:.2f}",
+                f"{cost_total:.2f}" if price_per_kg > 0 else "--",
+                f"{cost_per_unit:.2f}" if price_per_kg > 0 else "--"
+            ))
+        
+        # Update summary with mode indicator
+        drawing_name = drawing.get('שם הקובץ', 'לא ידוע')
+        drawing_id = drawing.get('id', '')
+        mode_text = f"📊 חישוב ציור בודד: ID {drawing_id}"
+        
+        if price_per_kg > 0:
+            summary_text = f"{mode_text} | שטח: {total_square_area:.4f} מ״ר | משקל: {total_weight:.2f}g | עלות: {total_cost:.2f}₪ | {len(calculation_items)} פריטים"
+        else:
+            summary_text = f"{mode_text} | שטח: {total_square_area:.4f} מ״ר | משקל: {total_weight:.2f}g | {len(calculation_items)} פריטים"
+        self.summary_var.set(summary_text)
+    
+    def _calculate_multi_drawing_average(self, product_filter, size_filter, price_per_kg, square_area_lookup):
+        """Calculate average cost per unit across multiple drawings."""
+        # Dictionary to collect costs per size: {size: [cost1, cost2, ...]}
+        size_costs = {}
+        drawings_processed = 0
+        
+        for drawing_entry in self.selected_weight_drawings:
+            drawing = drawing_entry['drawing']
+            
+            # Get layer weight for this drawing
+            layers = drawing.get('שכבות') or drawing.get('כמות שכבות משוערת') or 1
+            total_weight_kg = drawing.get('משקל כולל') or drawing.get('משקל_כולל_נגזר') or 0
+            
+            try:
+                layers = int(layers)
+                total_weight_kg = float(total_weight_kg)
+                if layers <= 0 or total_weight_kg <= 0:
+                    continue
+                layer_weight_grams = (total_weight_kg * 1000) / layers
+            except (ValueError, TypeError):
+                continue
+            
+            products = drawing.get('מוצרים', [])
+            
+            # Calculate total square area for ALL products in drawing (not just filtered)
+            # This ensures proper percentage calculation
+            total_square_area = 0.0
             for product in products:
-                product_name = product.get('שם המוצר', '')
+                pname = product.get('שם המוצר', '')
+                for size_info in product.get('מידות', []):
+                    size = size_info.get('מידה', '')
+                    quantity = size_info.get('כמות', 0)
+                    lookup_key = f"{pname}_{size}"
+                    square_area = square_area_lookup.get(lookup_key, 0.0)
+                    if square_area > 0:
+                        total_square_area += square_area * quantity
+            
+            if total_square_area == 0:
+                continue
+            
+            # Now collect ONLY filtered items for calculation
+            calculation_items = []
+            for product in products:
+                pname = product.get('שם המוצר', '')
+                
+                # Filter by product name
+                if product_filter != "הכל" and pname != product_filter:
+                    continue
+                
                 sizes = product.get('מידות', [])
                 
                 for size_info in sizes:
                     size = size_info.get('מידה', '')
-                    quantity = size_info.get('כמות', 0)
                     
-                    # Look up square area
-                    lookup_key = f"{product_name}_{size}"
+                    # Filter by size if specified
+                    if size_filter != "הכל" and size != size_filter:
+                        continue
+                    
+                    quantity = size_info.get('כמות', 0)
+                    lookup_key = f"{pname}_{size}"
                     square_area = square_area_lookup.get(lookup_key, 0.0)
                     
                     if square_area > 0:
                         total_area_for_item = square_area * quantity
-                        total_square_area += total_area_for_item
                         
                         calculation_items.append({
-                            'product_name': product_name,
+                            'product_name': pname,
                             'size': size,
                             'quantity': quantity,
                             'square_area': square_area,
                             'total_area': total_area_for_item
                         })
             
-            if total_square_area == 0:
-                messagebox.showwarning("אזהרה", "לא נמצאו נתוני שטח רבוע עבור הפריטים בציור.\nוודא שהפריטים קיימים בקטלוג המוצרים עם ערכי שטח רבוע.")
-                return
+            if not calculation_items:
+                continue
             
-            # Clear previous results
-            for item in self.results_tree.get_children():
-                self.results_tree.delete(item)
-            
-            # Calculate and display results
-            total_calculated_weight = 0.0
-            total_cost = 0.0
-            
+            # Calculate cost per unit for each item in this drawing
             for item in calculation_items:
                 percentage = (item['total_area'] / total_square_area) * 100
-                weight_total = total_weight * (percentage / 100)
+                weight_total = layer_weight_grams * (percentage / 100)
                 weight_per_unit = weight_total / item['quantity'] if item['quantity'] > 0 else 0
-                total_calculated_weight += weight_total
                 
-                # Calculate cost: (weight in grams / 1000) * price per kg
-                cost_total = (weight_total / 1000) * price_per_kg if price_per_kg > 0 else 0
+                # Calculate cost per unit
                 cost_per_unit = (weight_per_unit / 1000) * price_per_kg if price_per_kg > 0 else 0
-                total_cost += cost_total
                 
-                # Insert into table
-                self.results_tree.insert('', 'end', values=(
-                    item['product_name'],
-                    item['size'],
-                    item['quantity'],
-                    f"{item['square_area']:.6f}",
-                    f"{percentage:.2f}%",
-                    f"{weight_total:.2f}",
-                    f"{weight_per_unit:.2f}",
-                    f"{cost_total:.2f}" if price_per_kg > 0 else "--",
-                    f"{cost_per_unit:.2f}" if price_per_kg > 0 else "--"
-                ))
+                size_key = f"{item['product_name']}_{item['size']}"
+                if size_key not in size_costs:
+                    size_costs[size_key] = {
+                        'product_name': item['product_name'],
+                        'size': item['size'],
+                        'costs': []
+                    }
+                size_costs[size_key]['costs'].append(cost_per_unit)
             
-            # Update summary
-            if price_per_kg > 0:
-                summary_text = f"סה״כ שטח רבוע: {total_square_area:.6f} מ״ר | משקל כולל: {total_weight:.2f} גרמים | עלות כוללת: {total_cost:.2f} ₪ | חולק ל-{len(calculation_items)} פריטים"
-            else:
-                summary_text = f"סה״כ שטח רבוע: {total_square_area:.6f} מ״ר | משקל כולל: {total_weight:.2f} גרמים | חולק ל-{len(calculation_items)} פריטים"
-            self.summary_var.set(summary_text)
+            drawings_processed += 1
+        
+        if not size_costs:
+            messagebox.showwarning("אזהרה", "לא נמצאו נתונים לחישוב.\nוודא שהציורים שנבחרו מכילים את המוצר שסוננת.")
+            return
+        
+        # Display average results
+        for size_key, data in sorted(size_costs.items(), key=lambda x: x[1]['size']):
+            costs = data['costs']
+            avg_cost = sum(costs) / len(costs) if costs else 0
+            num_drawings = len(costs)
             
-        except Exception as e:
-            messagebox.showerror("שגיאה", f"שגיאה בחישוב חלוקת המשקל: {str(e)}")
+            # Insert into table with average mode display
+            self.results_tree.insert('', 'end', values=(
+                data['product_name'],
+                data['size'],
+                f"{num_drawings} ציורים",  # Show number of drawings instead of quantity
+                "--",  # square area not relevant for average
+                "--",  # percentage not relevant for average
+                "--",  # weight total not relevant
+                "--",  # weight per unit not relevant
+                "--",  # total cost not relevant
+                f"{avg_cost:.2f}" if price_per_kg > 0 else "--"  # average cost per unit
+            ))
+        
+        # Update summary with mode indicator
+        total_sizes = len(size_costs)
+        summary_text = f"📈 חישוב ממוצע מ-{drawings_processed} ציורים | {total_sizes} מידות | מסנן: {product_filter}"
+        if size_filter != "הכל":
+            summary_text += f" | מידה: {size_filter}"
+        self.summary_var.set(summary_text)
     
     def _export_weight_results(self):
         """Export weight calculation results to Excel."""
