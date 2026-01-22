@@ -320,22 +320,28 @@ class FormulasTabMixin:
         weight_entry = tk.Entry(weight_frame, textvariable=self.layer_weight_var, width=15, font=('Arial', 10))
         weight_entry.grid(row=1, column=1, padx=5, pady=5)
         
+        # Price per kg row
+        tk.Label(weight_frame, text="מחיר ל-1 ק\"ג בד (₪):", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        self.fabric_weight_price_var = tk.StringVar()
+        price_entry = tk.Entry(weight_frame, textvariable=self.fabric_weight_price_var, width=15, font=('Arial', 10))
+        price_entry.grid(row=2, column=1, padx=5, pady=5)
+        
         # Calculate button
         calc_btn = tk.Button(weight_frame, text="חשב חלוקת משקל", command=self._calculate_weight_distribution,
                            bg='#27ae60', fg='white', font=('Arial', 10, 'bold'))
-        calc_btn.grid(row=1, column=2, padx=20, pady=5)
+        calc_btn.grid(row=2, column=2, padx=20, pady=5)
         
         # Export button
         export_btn = tk.Button(weight_frame, text="ייצא ל-Excel", command=self._export_weight_results,
                              bg='#2c3e50', fg='white', font=('Arial', 10, 'bold'))
-        export_btn.grid(row=1, column=3, padx=5, pady=5)
+        export_btn.grid(row=2, column=3, padx=5, pady=5)
         
         # Results frame
         results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=15)
         results_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
         # Results table
-        cols = ('product_name', 'size', 'quantity', 'square_area', 'percentage', 'weight_total', 'weight_per_unit')
+        cols = ('product_name', 'size', 'quantity', 'square_area', 'percentage', 'weight_total', 'weight_per_unit', 'cost_total', 'cost_per_unit')
         self.results_tree = ttk.Treeview(results_frame, columns=cols, show='headings', height=12)
         
         headers = {
@@ -345,17 +351,21 @@ class FormulasTabMixin:
             'square_area': 'שטח רבוע (מ״ר)',
             'percentage': 'אחוז (%)',
             'weight_total': 'משקל כולל (גרמים)',
-            'weight_per_unit': 'משקל ליחידה (גרמים)'
+            'weight_per_unit': 'משקל ליחידה (גרמים)',
+            'cost_total': 'עלות כוללת (₪)',
+            'cost_per_unit': 'עלות ליחידה (₪)'
         }
         
         widths = {
-            'product_name': 160,
-            'size': 60,
-            'quantity': 60,
-            'square_area': 120,
-            'percentage': 80,
-            'weight_total': 120,
-            'weight_per_unit': 140
+            'product_name': 120,
+            'size': 50,
+            'quantity': 50,
+            'square_area': 90,
+            'percentage': 65,
+            'weight_total': 100,
+            'weight_per_unit': 110,
+            'cost_total': 85,
+            'cost_per_unit': 90
         }
         
         for col in cols:
@@ -437,7 +447,7 @@ class FormulasTabMixin:
             total_weight = drawing.get('משקל כולל') or drawing.get('משקל_כולל_נגזר')
             if total_weight is not None:
                 weight_type = "משקל כולל" if drawing.get('משקל כולל') else "משקל כולל נגזר"
-                info_text += f"{weight_type}: {total_weight} גרם\n"
+                info_text += f"{weight_type}: {total_weight} ק\"ג\n"
             
             info_text += "\n"
             
@@ -478,17 +488,29 @@ class FormulasTabMixin:
                 else:
                     self.layers_count_var.set("")
                 
-                # Fill weight if available
-                if total_weight is not None:
-                    self.layer_weight_var.set(str(total_weight))
-                    # If both fields are filled, show message about automatic calculation
-                    if layers is not None:
-                        layer_desc = "שכבות" if drawing.get('שכבות') else "שכבות משוערת"
-                        weight_desc = "משקל כולל" if drawing.get('משקל כולל') else "משקל נגזר"
-                        self.summary_var.set(f"ציור נחתך זוהה! נתונים מולאו אוטומטית: {layers} {layer_desc}, {total_weight} גרם ({weight_desc})")
-                    else:
-                        weight_desc = "משקל כולל" if drawing.get('משקל כולל') else "משקל נגזר"
-                        self.summary_var.set(f"ציור נחתך זוהה! {weight_desc} מולא אוטומטית: {total_weight} גרם")
+                # Fill weight if available - calculate weight per layer in grams
+                # total_weight is in KG, we need grams per single layer
+                if total_weight is not None and layers is not None:
+                    try:
+                        total_weight_val = float(total_weight)
+                        layers_val = int(layers)
+                        if layers_val > 0:
+                            # Convert KG to grams and divide by number of layers
+                            weight_per_layer_grams = (total_weight_val * 1000) / layers_val
+                            self.layer_weight_var.set(f"{weight_per_layer_grams:.2f}")
+                            layer_desc = "שכבות" if drawing.get('שכבות') else "שכבות משוערת"
+                            self.summary_var.set(f"ציור נחתך זוהה! {layers} {layer_desc}, משקל לשכבה: {weight_per_layer_grams:.2f} גרם (חושב מ-{total_weight_val:.2f} ק\"ג)")
+                        else:
+                            self.layer_weight_var.set("")
+                            self.summary_var.set("ציור נחתך זוהה! הזן נתונים נוספים לחישוב")
+                    except (ValueError, TypeError):
+                        self.layer_weight_var.set("")
+                        self.summary_var.set("ציור נחתך זוהה! הזן נתונים נוספים לחישוב")
+                elif total_weight is not None:
+                    # If we have weight but no layers, can't calculate per-layer weight
+                    self.layer_weight_var.set("")
+                    weight_desc = "משקל כולל" if drawing.get('משקל כולל') else "משקל נגזר"
+                    self.summary_var.set(f"ציור נחתך זוהה! {weight_desc}: {total_weight} ק\"ג - הזן כמות שכבות לחישוב")
                 else:
                     self.layer_weight_var.set("")
                     if layers is not None:
@@ -530,6 +552,17 @@ class FormulasTabMixin:
             except ValueError:
                 messagebox.showwarning("אזהרה", "אנא הזן משקל תקין")
                 return
+            
+            # Get price per kg (optional)
+            price_per_kg = 0.0
+            price_str = self.fabric_weight_price_var.get().strip()
+            if price_str:
+                try:
+                    price_per_kg = float(price_str)
+                    if price_per_kg < 0:
+                        price_per_kg = 0.0
+                except ValueError:
+                    price_per_kg = 0.0
             
             drawing = self.drawings_dict[selected_name]
             products = drawing.get('מוצרים', [])
@@ -584,12 +617,18 @@ class FormulasTabMixin:
             
             # Calculate and display results
             total_calculated_weight = 0.0
+            total_cost = 0.0
             
             for item in calculation_items:
                 percentage = (item['total_area'] / total_square_area) * 100
                 weight_total = total_weight * (percentage / 100)
                 weight_per_unit = weight_total / item['quantity'] if item['quantity'] > 0 else 0
                 total_calculated_weight += weight_total
+                
+                # Calculate cost: (weight in grams / 1000) * price per kg
+                cost_total = (weight_total / 1000) * price_per_kg if price_per_kg > 0 else 0
+                cost_per_unit = (weight_per_unit / 1000) * price_per_kg if price_per_kg > 0 else 0
+                total_cost += cost_total
                 
                 # Insert into table
                 self.results_tree.insert('', 'end', values=(
@@ -599,11 +638,16 @@ class FormulasTabMixin:
                     f"{item['square_area']:.6f}",
                     f"{percentage:.2f}%",
                     f"{weight_total:.2f}",
-                    f"{weight_per_unit:.2f}"
+                    f"{weight_per_unit:.2f}",
+                    f"{cost_total:.2f}" if price_per_kg > 0 else "--",
+                    f"{cost_per_unit:.2f}" if price_per_kg > 0 else "--"
                 ))
             
             # Update summary
-            summary_text = f"סה״כ שטח רבוע: {total_square_area:.6f} מ״ר | משקל כולל: {total_weight:.2f} גרמים | חולק ל-{len(calculation_items)} פריטים"
+            if price_per_kg > 0:
+                summary_text = f"סה״כ שטח רבוע: {total_square_area:.6f} מ״ר | משקל כולל: {total_weight:.2f} גרמים | עלות כוללת: {total_cost:.2f} ₪ | חולק ל-{len(calculation_items)} פריטים"
+            else:
+                summary_text = f"סה״כ שטח רבוע: {total_square_area:.6f} מ״ר | משקל כולל: {total_weight:.2f} גרמים | חולק ל-{len(calculation_items)} פריטים"
             self.summary_var.set(summary_text)
             
         except Exception as e:
