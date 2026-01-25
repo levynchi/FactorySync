@@ -976,6 +976,9 @@ class ProductsCatalogMethodsMixin:
                     if is_cost_view:
                         # תצוגת עלויות - חישוב עלויות
                         costs = self.data_processor.calculate_item_cost(rec)
+                        # בדיקה אם יש עלות בד ישירה (מסומן ב-*)
+                        has_direct_fabric_cost = rec.get('fabric_cost') is not None and rec.get('fabric_cost') != ''
+                        fabric_cost_display = f"₪{costs['fabric_cost']:.2f}" + (" *" if has_direct_fabric_cost else "")
                         self.products_tree.insert('', 'end', values=(
                             rec.get('barcode', ''),
                             rec.get('name', ''),
@@ -983,7 +986,7 @@ class ProductsCatalogMethodsMixin:
                             rec.get('fabric_category', ''),
                             rec.get('fabric_color', ''),
                             rec.get('print_name', ''),
-                            f"₪{costs['fabric_cost']:.2f}",
+                            fabric_cost_display,
                             f"₪{costs['ticks_cost']:.2f}",
                             f"₪{costs['elastic_cost']:.2f}",
                             f"₪{costs['ribbon_cost']:.2f}",

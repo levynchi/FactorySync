@@ -1,4 +1,4 @@
-﻿"""Formulas and calculations tab for weight and measurements calculations."""
+"""Formulas and calculations tab for weight and measurements calculations."""
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -488,6 +488,21 @@ class FormulasTabMixin:
         self.results_tree.configure(yscrollcommand=results_scrollbar.set)
         self.results_tree.pack(side='left', fill='both', expand=True)
         results_scrollbar.pack(side='right', fill='y')
+        
+        # Update fabric cost button frame
+        update_cost_frame = tk.Frame(scrollable_frame, bg='#f7f9fa')
+        update_cost_frame.pack(fill='x', padx=20, pady=5)
+        
+        update_cost_btn = tk.Button(update_cost_frame, text="עדכן עלות בד לפריט נבחר", 
+                                   command=self._update_fabric_cost_for_selected,
+                                   bg='#e67e22', fg='white', font=('Arial', 10, 'bold'))
+        update_cost_btn.pack(side='right', padx=5)
+        
+        # Instruction label for update
+        update_info_label = tk.Label(update_cost_frame, 
+                                    text="בחר שורה בטבלה ולחץ לעדכון עלות הבד בקטלוג המוצרים",
+                                    font=('Arial', 9), fg='#7f8c8d', bg='#f7f9fa')
+        update_info_label.pack(side='right', padx=10)
         
         # Summary frame
         summary_frame = ttk.LabelFrame(scrollable_frame, text="סיכום", padding=10)
@@ -1218,6 +1233,80 @@ class FormulasTabMixin:
         if size_filter != "הכל":
             summary_text += f" | מידה: {size_filter}"
         self.summary_var.set(summary_text)
+    
+    def _update_fabric_cost_for_selected(self):
+        """Update fabric cost for the selected row in the results table."""
+        try:
+            # Check if there are any drawings selected
+            if not self.selected_weight_drawings:
+                messagebox.showwarning("אזהרה", "אנא בחר ציור תחילה")
+                return
+            
+            # Get selected row from results tree
+            selected_items = self.results_tree.selection()
+            if not selected_items:
+                messagebox.showwarning("אזהרה", "אנא בחר שורה בטבלת התוצאות")
+                return
+            
+            # Get fabric category from the first selected drawing
+            drawing = self.selected_weight_drawings[0]['drawing']
+            fabric_category = drawing.get('סוג בד', '')
+            
+            if not fabric_category:
+                messagebox.showwarning("אזהרה", "לא נמצא סוג בד בציור הנבחר")
+                return
+            
+            # Process each selected row
+            updated_count = 0
+            not_found_items = []
+            
+            for item in selected_items:
+                values = self.results_tree.item(item, 'values')
+                product_name = values[0]
+                size = values[1]
+                cost_per_unit_str = values[8]  # cost_per_unit column
+                
+                # Skip if cost is not calculated (--) or invalid
+                if cost_per_unit_str == "--" or not cost_per_unit_str:
+                    continue
+                
+                try:
+                    # Remove % sign if present and convert to float
+                    cost_per_unit = float(cost_per_unit_str.replace('%', '').strip())
+                except ValueError:
+                    continue
+                
+                # Update fabric cost in catalog
+                success = self.data_processor.update_product_fabric_cost(
+                    product_name=product_name,
+                    size=size,
+                    fabric_category=fabric_category,
+                    fabric_cost=cost_per_unit
+                )
+                
+                if success:
+                    updated_count += 1
+                else:
+                    not_found_items.append(f"{product_name} מידה {size}")
+            
+            # Show result message
+            if updated_count > 0:
+                msg = f"עלות הבד עודכנה בהצלחה עבור {updated_count} פריט(ים)"
+                if not_found_items:
+                    msg += f"\n\nלא נמצאו בקטלוג ({len(not_found_items)}):\n" + "\n".join(not_found_items[:5])
+                    if len(not_found_items) > 5:
+                        msg += f"\n...ועוד {len(not_found_items) - 5}"
+                messagebox.showinfo("הצלחה", msg)
+            else:
+                if not_found_items:
+                    messagebox.showwarning("אזהרה", 
+                        f"לא נמצאו פריטים מתאימים בקטלוג עבור קטגוריית בד '{fabric_category}'.\n\n"
+                        f"פריטים שנבדקו:\n" + "\n".join(not_found_items[:5]))
+                else:
+                    messagebox.showwarning("אזהרה", "לא נמצאו פריטים לעדכון. וודא שחישבת עלויות וששורה נבחרה.")
+                    
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בעדכון עלות הבד: {str(e)}")
     
     def _export_weight_results(self):
         """Export weight calculation results to Excel."""

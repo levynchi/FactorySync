@@ -1702,21 +1702,26 @@ class DataProcessor:
 		"""חישוב עלות פריט"""
 		try:
 			settings = self.load_item_cost_settings()
-			# מציאת מחיר בד
-			fabric_price_rec = self.find_fabric_price(
-				item.get('fabric_category', ''),
-				item.get('fabric_color', ''),
-				item.get('print_name', '')
-			)
 			
-			square_area = float(item.get('square_area', 0) or 0)
 			ticks_qty = float(item.get('ticks_qty', 0) or 0)
 			elastic_qty = float(item.get('elastic_qty', 0) or 0)
 			ribbon_qty = float(item.get('ribbon_qty', 0) or 0)
 			
-			# חישוב עלות בד: שטח_רבוע × מחיר_למ"ר
-			price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
-			fabric_cost = square_area * price_per_sqm
+			# בדיקה האם קיים שדה fabric_cost ישיר בפריט
+			direct_fabric_cost = item.get('fabric_cost')
+			if direct_fabric_cost is not None and direct_fabric_cost != '':
+				# שימוש בעלות בד ישירה (מחושבת לפי משקל)
+				fabric_cost = float(direct_fabric_cost)
+			else:
+				# חישוב עלות בד לפי מ"ר: שטח_רבוע × מחיר_למ"ר
+				fabric_price_rec = self.find_fabric_price(
+					item.get('fabric_category', ''),
+					item.get('fabric_color', ''),
+					item.get('print_name', '')
+				)
+				square_area = float(item.get('square_area', 0) or 0)
+				price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
+				fabric_cost = square_area * price_per_sqm
 			
 			# חישוב עלויות אביזרים
 			tick_price = float(settings.get('tick_price', 0) or 0)
@@ -1753,3 +1758,28 @@ class DataProcessor:
 				'sewing_cost': 0,
 				'total_cost': 0
 			}
+
+	def update_product_fabric_cost(self, product_name: str, size: str, fabric_category: str, fabric_cost: float) -> bool:
+		"""Update fabric cost for a product in the catalog by name, size, and fabric category.
+		
+		Args:
+			product_name: The product name to match
+			size: The size to match
+			fabric_category: The fabric category to match
+			fabric_cost: The new fabric cost value to set
+			
+		Returns:
+			True if product was found and updated, False otherwise
+		"""
+		try:
+			for product in self.products_catalog:
+				if (product.get('name') == product_name and 
+					product.get('size') == size and 
+					product.get('fabric_category') == fabric_category):
+					product['fabric_cost'] = round(fabric_cost, 2)
+					self.save_products_catalog()
+					return True
+			return False
+		except Exception as e:
+			print(f"שגיאה בעדכון עלות בד: {e}")
+			return False
