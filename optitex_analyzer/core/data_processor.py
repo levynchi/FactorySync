@@ -1093,18 +1093,19 @@ class DataProcessor:
 		self.products_catalog = self.load_products_catalog()
 
 	def export_products_catalog_to_excel(self, file_path: str) -> bool:
-		"""ייצוא קטלוג מוצרים ל-Excel."""
+		"""ייצוא קטלוג מוצרים ל-Excel עם 3 גליונות: תצוגה רגילה, עלויות לפי משקל, עלויות לפי מ"ר."""
 		try:
 			if not self.products_catalog:
 				raise ValueError("אין מוצרים לייצוא")
-			# בונים DataFrame מסודר עם עמודות קבועות, כולל barcode, fabric_category ו-square_area
-			columns = [
+			
+			# גליון 1: תצוגה רגילה - נתוני המוצרים הגולמיים
+			regular_columns = [
 				'barcode','id','name','category','size','fabric_type','fabric_color','fabric_category',
-				'print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at'
+				'print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','fabric_cost','created_at'
 			]
-			rows = []
+			regular_rows = []
 			for rec in self.products_catalog:
-				rows.append({
+				regular_rows.append({
 					'barcode': rec.get('barcode',''),
 					'id': rec.get('id'),
 					'name': rec.get('name',''),
@@ -1112,23 +1113,74 @@ class DataProcessor:
 					'size': rec.get('size',''),
 					'fabric_type': rec.get('fabric_type',''),
 					'fabric_color': rec.get('fabric_color',''),
-					# ברירת מחדל: "בלי קטגוריה" אם חסר
 					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
 					'print_name': rec.get('print_name',''),
 					'square_area': rec.get('square_area', 0.0),
 					'ticks_qty': rec.get('ticks_qty', 0),
 					'elastic_qty': rec.get('elastic_qty', 0),
 					'ribbon_qty': rec.get('ribbon_qty', 0),
+					'fabric_cost': rec.get('fabric_cost', ''),
 					'created_at': rec.get('created_at','')
 				})
-			df = pd.DataFrame(rows, columns=columns)
-			df.to_excel(file_path, index=False)
+			df_regular = pd.DataFrame(regular_rows, columns=regular_columns)
+			
+			# גליון 2 ו-3: תצוגת עלויות
+			cost_columns = ['barcode','name','size','fabric_category','fabric_color','print_name',
+						   'fabric_cost','ticks_cost','elastic_cost','ribbon_cost','sewing_cost','total_cost']
+			
+			# גליון 2: עלויות לפי משקל
+			weight_rows = []
+			for rec in self.products_catalog:
+				costs = self.calculate_item_cost(rec, 'weight')
+				weight_rows.append({
+					'barcode': rec.get('barcode',''),
+					'name': rec.get('name',''),
+					'size': rec.get('size',''),
+					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
+					'fabric_color': rec.get('fabric_color',''),
+					'print_name': rec.get('print_name',''),
+					'fabric_cost': costs['fabric_cost'],
+					'ticks_cost': costs['ticks_cost'],
+					'elastic_cost': costs['elastic_cost'],
+					'ribbon_cost': costs['ribbon_cost'],
+					'sewing_cost': costs['sewing_cost'],
+					'total_cost': costs['total_cost']
+				})
+			df_weight = pd.DataFrame(weight_rows, columns=cost_columns)
+			
+			# גליון 3: עלויות לפי מ"ר
+			sqm_rows = []
+			for rec in self.products_catalog:
+				costs = self.calculate_item_cost(rec, 'sqm')
+				sqm_rows.append({
+					'barcode': rec.get('barcode',''),
+					'name': rec.get('name',''),
+					'size': rec.get('size',''),
+					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
+					'fabric_color': rec.get('fabric_color',''),
+					'print_name': rec.get('print_name',''),
+					'fabric_cost': costs['fabric_cost'],
+					'ticks_cost': costs['ticks_cost'],
+					'elastic_cost': costs['elastic_cost'],
+					'ribbon_cost': costs['ribbon_cost'],
+					'sewing_cost': costs['sewing_cost'],
+					'total_cost': costs['total_cost']
+				})
+			df_sqm = pd.DataFrame(sqm_rows, columns=cost_columns)
+			
+			# שמירת כל הגליונות בקובץ אחד
+			with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+				df_regular.to_excel(writer, sheet_name='תצוגה רגילה', index=False)
+				df_weight.to_excel(writer, sheet_name='עלויות לפי משקל', index=False)
+				df_sqm.to_excel(writer, sheet_name='עלויות לפי מר', index=False)
+			
 			return True
 		except Exception as e:
 			raise Exception(f"שגיאה בייצוא קטלוג מוצרים: {str(e)}")
 
 	def import_products_catalog_from_excel(self, file_path: str, mode: str = 'append') -> dict:
 		"""יבוא קטלוג מוצרים מ‑Excel בפורמט זהה לייצוא.
+		תומך בקבצים עם 3 גליונות - קורא מגליון 'תצוגה רגילה' או מהגליון הראשון.
 
 		:param file_path: נתיב לקובץ xlsx
 		:param mode: 'append' להוספה לקיים (עם מניעת כפילויות), או 'overwrite' לדריסה מלאה
@@ -1137,7 +1189,14 @@ class DataProcessor:
 		try:
 			if not os.path.exists(file_path):
 				raise Exception("קובץ לא נמצא")
-			df = pd.read_excel(file_path)
+			
+			# נסה לקרוא מגליון "תצוגה רגילה", אם לא קיים - קרא מהגליון הראשון
+			try:
+				df = pd.read_excel(file_path, sheet_name='תצוגה רגילה')
+			except ValueError:
+				# גליון "תצוגה רגילה" לא קיים, קורא מהגליון הראשון
+				df = pd.read_excel(file_path, sheet_name=0)
+			
 			# נוודא קיום עמודות נדרשות
 			required = {'name','category','size','fabric_type','fabric_color','fabric_category','print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','created_at'}
 			cols = {str(c).strip() for c in df.columns}
@@ -1171,6 +1230,15 @@ class DataProcessor:
 					return float(x)
 				except Exception:
 					return 0.0
+			
+			def _to_fabric_cost(x):
+				"""המרת עלות בד - מחזיר None אם ריק, אחרת float"""
+				try:
+					if x is None or x == '' or (isinstance(x, float) and pd.isna(x)):
+						return None
+					return float(x)
+				except Exception:
+					return None
 
 			imported = 0
 			skipped = 0
@@ -1193,6 +1261,7 @@ class DataProcessor:
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
+					fabric_cost = _to_fabric_cost(row.get('fabric_cost'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -1213,6 +1282,9 @@ class DataProcessor:
 						'ribbon_qty': ribbon,
 						'created_at': created_str
 					}
+					# הוסף fabric_cost רק אם יש ערך
+					if fabric_cost is not None:
+						rec['fabric_cost'] = fabric_cost
 					self.products_catalog.append(rec)
 					existing_keys.add(key)
 					next_id += 1; imported += 1
@@ -1233,6 +1305,7 @@ class DataProcessor:
 					ticks = _to_int(row.get('ticks_qty'))
 					elastic = _to_int(row.get('elastic_qty'))
 					ribbon = _to_int(row.get('ribbon_qty'))
+					fabric_cost = _to_fabric_cost(row.get('fabric_cost'))
 					created = row.get('created_at')
 					created_str = str(created) if created is not None else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 					key = (name, size, ft, fc, pn)
@@ -1253,6 +1326,9 @@ class DataProcessor:
 						'ribbon_qty': ribbon,
 						'created_at': created_str
 					}
+					# הוסף fabric_cost רק אם יש ערך
+					if fabric_cost is not None:
+						rec['fabric_cost'] = fabric_cost
 					self.products_catalog.append(rec)
 					existing_keys.add(key)
 					next_id += 1; imported += 1
@@ -1698,8 +1774,16 @@ class DataProcessor:
 			print(f"שגיאה בשמירת הגדרות עלויות: {e}")
 			return False
 
-	def calculate_item_cost(self, item: Dict) -> Dict:
-		"""חישוב עלות פריט"""
+	def calculate_item_cost(self, item: Dict, fabric_cost_method: str = 'auto') -> Dict:
+		"""חישוב עלות פריט
+		
+		Args:
+			item: פריט מהקטלוג
+			fabric_cost_method: שיטת חישוב עלות בד
+				- 'auto': אוטומטי - אם יש fabric_cost ישיר ישתמש בו, אחרת לפי מ"ר
+				- 'sqm': תמיד לפי מ"ר (שטח רבוע × מחיר למ"ר)
+				- 'weight': תמיד לפי משקל (fabric_cost ישיר, אם אין - 0)
+		"""
 		try:
 			settings = self.load_item_cost_settings()
 			
@@ -1707,13 +1791,15 @@ class DataProcessor:
 			elastic_qty = float(item.get('elastic_qty', 0) or 0)
 			ribbon_qty = float(item.get('ribbon_qty', 0) or 0)
 			
-			# בדיקה האם קיים שדה fabric_cost ישיר בפריט
+			# קביעת עלות בד לפי השיטה הנבחרת
 			direct_fabric_cost = item.get('fabric_cost')
-			if direct_fabric_cost is not None and direct_fabric_cost != '':
-				# שימוש בעלות בד ישירה (מחושבת לפי משקל)
-				fabric_cost = float(direct_fabric_cost)
-			else:
-				# חישוב עלות בד לפי מ"ר: שטח_רבוע × מחיר_למ"ר
+			has_direct_cost = direct_fabric_cost is not None and direct_fabric_cost != ''
+			
+			if fabric_cost_method == 'weight':
+				# תמיד לפי משקל - משתמש בעלות ישירה אם יש, אחרת 0
+				fabric_cost = float(direct_fabric_cost) if has_direct_cost else 0
+			elif fabric_cost_method == 'sqm':
+				# תמיד לפי מ"ר - מחשב מחדש
 				fabric_price_rec = self.find_fabric_price(
 					item.get('fabric_category', ''),
 					item.get('fabric_color', ''),
@@ -1722,6 +1808,19 @@ class DataProcessor:
 				square_area = float(item.get('square_area', 0) or 0)
 				price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
 				fabric_cost = square_area * price_per_sqm
+			else:  # auto
+				# אוטומטי - אם יש עלות ישירה משתמש בה, אחרת מחשב לפי מ"ר
+				if has_direct_cost:
+					fabric_cost = float(direct_fabric_cost)
+				else:
+					fabric_price_rec = self.find_fabric_price(
+						item.get('fabric_category', ''),
+						item.get('fabric_color', ''),
+						item.get('print_name', '')
+					)
+					square_area = float(item.get('square_area', 0) or 0)
+					price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
+					fabric_cost = square_area * price_per_sqm
 			
 			# חישוב עלויות אביזרים
 			tick_price = float(settings.get('tick_price', 0) or 0)

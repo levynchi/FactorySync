@@ -1717,5 +1717,73 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-01-21 08:58:11"
+  },
+  {
+    "id": 48,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-01-25",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 96,
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 96,
+        "note": ""
+      },
+      {
+        "product": "אוברול וורוד 0-3",
+        "size": "",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 82,
+        "note": ""
+      },
+      {
+        "product": "אוברול וורוד 3-6",
+        "size": "",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 82,
+        "note": ""
+      }
+    ],
+    "total_quantity": 356,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "תוויות דגל",
+        "unit": "",
+        "quantity": 1000.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-01-25 14:24:28"
   }
 ]

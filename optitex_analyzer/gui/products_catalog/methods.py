@@ -156,6 +156,19 @@ class ProductsCatalogMethodsMixin:
         )
         self.toggle_view_btn.pack(side='left', padx=4)
         
+        # טוגל שיטת חישוב עלות בד (מ"ר או משקל)
+        self.fabric_cost_method = tk.StringVar(value='weight')  # 'sqm' = לפי מ"ר, 'weight' = לפי משקל
+        self.toggle_fabric_method_btn = tk.Button(
+            filter_frame, 
+            text='⚖️ עלות בד: לפי משקל', 
+            command=self._toggle_fabric_cost_method,
+            bg='#e67e22', 
+            fg='white', 
+            font=('Arial', 10, 'bold'),
+            width=18
+        )
+        self.toggle_fabric_method_btn.pack(side='left', padx=4)
+        
         # חיפוש (בצד ימין)
         tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=(8, 4))
         self.product_filter_var = tk.StringVar()
@@ -716,6 +729,23 @@ class ProductsCatalogMethodsMixin:
         # טעינת הנתונים מחדש
         self._filter_products_tree()
 
+    def _toggle_fabric_cost_method(self):
+        """החלפה בין שיטת חישוב עלות בד לפי מ"ר או לפי משקל"""
+        current_method = self.fabric_cost_method.get()
+        
+        if current_method == 'sqm':
+            # עבור לחישוב לפי משקל
+            self.fabric_cost_method.set('weight')
+            self.toggle_fabric_method_btn.config(text='⚖️ עלות בד: לפי משקל', bg='#e67e22')
+        else:
+            # עבור לחישוב לפי מ"ר
+            self.fabric_cost_method.set('sqm')
+            self.toggle_fabric_method_btn.config(text='📐 עלות בד: לפי מ"ר', bg='#9b59b6')
+        
+        # אם בתצוגת עלויות, טען מחדש
+        if self.cost_view_mode.get():
+            self._filter_products_tree()
+
     # ===== Fabric Prices Section =====
     def _build_fabric_prices_section(self, parent):
         """בניית טאב מחירי בדים"""
@@ -962,6 +992,10 @@ class ProductsCatalogMethodsMixin:
         # בדיקת מצב תצוגה
         is_cost_view = getattr(self, 'cost_view_mode', None) and self.cost_view_mode.get()
         
+        # קבלת שיטת חישוב עלות בד
+        fabric_cost_method = getattr(self, 'fabric_cost_method', None)
+        fabric_cost_method = fabric_cost_method.get() if fabric_cost_method else 'sqm'
+        
         # ניקוי הטבלה
         for item in self.products_tree.get_children():
             self.products_tree.delete(item)
@@ -974,11 +1008,17 @@ class ProductsCatalogMethodsMixin:
                 # אם אין סינון או שם המוצר מכיל את טקסט החיפוש
                 if not filter_text or filter_text in product_name:
                     if is_cost_view:
-                        # תצוגת עלויות - חישוב עלויות
-                        costs = self.data_processor.calculate_item_cost(rec)
-                        # בדיקה אם יש עלות בד ישירה (מסומן ב-*)
+                        # תצוגת עלויות - חישוב עלויות לפי השיטה הנבחרת
+                        costs = self.data_processor.calculate_item_cost(rec, fabric_cost_method)
+                        # בדיקה אם יש עלות בד ישירה (מסומן ב-* במצב משקל)
                         has_direct_fabric_cost = rec.get('fabric_cost') is not None and rec.get('fabric_cost') != ''
-                        fabric_cost_display = f"₪{costs['fabric_cost']:.2f}" + (" *" if has_direct_fabric_cost else "")
+                        # הצגת סימון * רק במצב משקל ואם יש עלות ישירה
+                        if fabric_cost_method == 'weight' and has_direct_fabric_cost:
+                            fabric_cost_display = f"₪{costs['fabric_cost']:.2f} *"
+                        elif fabric_cost_method == 'weight' and not has_direct_fabric_cost:
+                            fabric_cost_display = "₪0.00 (לא הוגדר)"
+                        else:
+                            fabric_cost_display = f"₪{costs['fabric_cost']:.2f}"
                         self.products_tree.insert('', 'end', values=(
                             rec.get('barcode', ''),
                             rec.get('name', ''),
