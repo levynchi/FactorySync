@@ -1041,6 +1041,14 @@ class FormulasTabMixin:
         total_square_area = 0.0
         calculation_items = []
         
+        def normalize_size(size_str):
+            """נרמול מידה - הסרת 'm' מפורמטים כמו '12m-18m' ל-'12-18'"""
+            if not size_str:
+                return size_str
+            import re
+            # הסרת 'm' אחרי מספרים (לדוגמה: "12m-18m" -> "12-18")
+            return re.sub(r'(\d+)m', r'\1', size_str)
+        
         for product in products:
             product_name = product.get('שם המוצר', '')
             sizes = product.get('מידות', [])
@@ -1049,8 +1057,9 @@ class FormulasTabMixin:
                 size = size_info.get('מידה', '')
                 quantity = size_info.get('כמות', 0)
                 
-                # Look up square area
-                lookup_key = f"{product_name}_{size}"
+                # Look up square area - נרמול המידה לפני חיפוש
+                normalized_size = normalize_size(size)
+                lookup_key = f"{product_name}_{normalized_size}"
                 square_area = square_area_lookup.get(lookup_key, 0.0)
                 
                 if square_area > 0:
@@ -1110,6 +1119,13 @@ class FormulasTabMixin:
     
     def _calculate_multi_drawing_average(self, product_filter, size_filter, price_per_kg, square_area_lookup):
         """Calculate average cost per unit across multiple drawings."""
+        import re
+        def normalize_size(size_str):
+            """נרמול מידה - הסרת 'm' מפורמטים כמו '12m-18m' ל-'12-18'"""
+            if not size_str:
+                return size_str
+            return re.sub(r'(\d+)m', r'\1', size_str)
+        
         # Dictionary to collect costs per size: {size: [cost1, cost2, ...]}
         size_costs = {}
         drawings_processed = 0
@@ -1140,7 +1156,8 @@ class FormulasTabMixin:
                 for size_info in product.get('מידות', []):
                     size = size_info.get('מידה', '')
                     quantity = size_info.get('כמות', 0)
-                    lookup_key = f"{pname}_{size}"
+                    normalized_size = normalize_size(size)
+                    lookup_key = f"{pname}_{normalized_size}"
                     square_area = square_area_lookup.get(lookup_key, 0.0)
                     if square_area > 0:
                         total_square_area += square_area * quantity
@@ -1167,7 +1184,8 @@ class FormulasTabMixin:
                         continue
                     
                     quantity = size_info.get('כמות', 0)
-                    lookup_key = f"{pname}_{size}"
+                    normalized_size = normalize_size(size)
+                    lookup_key = f"{pname}_{normalized_size}"
                     square_area = square_area_lookup.get(lookup_key, 0.0)
                     
                     if square_area > 0:
@@ -1236,6 +1254,13 @@ class FormulasTabMixin:
     
     def _update_fabric_cost_for_selected(self):
         """Update fabric cost for the selected row in the results table."""
+        import re
+        def normalize_size(size_str):
+            """נרמול מידה - הסרת 'm' מפורמטים כמו '12m-18m' ל-'12-18'"""
+            if not size_str:
+                return size_str
+            return re.sub(r'(\d+)m', r'\1', size_str)
+        
         try:
             # Check if there are any drawings selected
             if not self.selected_weight_drawings:
@@ -1263,7 +1288,7 @@ class FormulasTabMixin:
             for item in selected_items:
                 values = self.results_tree.item(item, 'values')
                 product_name = values[0]
-                size = values[1]
+                size = normalize_size(values[1])  # נרמול המידה לפני חיפוש בקטלוג
                 cost_per_unit_str = values[8]  # cost_per_unit column
                 
                 # Skip if cost is not calculated (--) or invalid

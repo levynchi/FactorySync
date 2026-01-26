@@ -135,9 +135,10 @@ class ProductsCatalogMethodsMixin:
 
         # actions moved to their own row to avoid horizontal clipping
         tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=8, column=0, padx=12, pady=6, sticky='w')
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=8, column=1, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="✏️ ערוך נבחר", command=self._edit_selected_product, bg='#3498db', fg='white').grid(row=8, column=1, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=4, padx=4, pady=6, sticky='w')
 
         # סרגל סינון לפי שם הדגם + טוגל תצוגה
         filter_frame = ttk.Frame(parent, padding=4)
@@ -168,6 +169,17 @@ class ProductsCatalogMethodsMixin:
             width=18
         )
         self.toggle_fabric_method_btn.pack(side='left', padx=4)
+        
+        # סינון לפי קטגוריית בד (באמצע השורה)
+        tk.Label(filter_frame, text="קטגוריית בד:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='left', padx=(20, 4))
+        self.filter_fabric_category_var = tk.StringVar(value="הכל")
+        fabric_categories = ["הכל"] + [c.get('name') for c in getattr(self.data_processor, 'product_fabric_categories', [])]
+        self.filter_fabric_category_combo = ttk.Combobox(filter_frame, textvariable=self.filter_fabric_category_var, values=fabric_categories, state='readonly', width=15)
+        self.filter_fabric_category_combo.pack(side='left', padx=2)
+        self.filter_fabric_category_combo.bind('<<ComboboxSelected>>', lambda e: self._filter_products_tree())
+        
+        # כפתור נקה סינון
+        tk.Button(filter_frame, text='נקה סינון', command=self._clear_product_filters, bg='#95a5a6', fg='white', width=10).pack(side='left', padx=4)
         
         # חיפוש (בצד ימין)
         tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=(8, 4))
@@ -982,12 +994,23 @@ class ProductsCatalogMethodsMixin:
         except Exception:
             pass
 
+    def _clear_product_filters(self):
+        """איפוס כל הסינונים"""
+        self.product_filter_var.set('')
+        if hasattr(self, 'filter_fabric_category_var'):
+            self.filter_fabric_category_var.set('הכל')
+        self._filter_products_tree()
+
     def _filter_products_tree(self):
-        """סינון טבלת הפריטים לפי שם הדגם בזמן אמת - תומך בשתי תצוגות"""
+        """סינון טבלת הפריטים לפי שם הדגם וקטגוריית בד בזמן אמת - תומך בשתי תצוגות"""
         if not hasattr(self, 'products_tree'): return
         
-        # קבלת ערך החיפוש
+        # קבלת ערך החיפוש לפי שם
         filter_text = self.product_filter_var.get().strip().lower()
+        
+        # קבלת סינון קטגוריית בד
+        fabric_cat_filter = getattr(self, 'filter_fabric_category_var', None)
+        fabric_cat_filter = fabric_cat_filter.get() if fabric_cat_filter else "הכל"
         
         # בדיקת מצב תצוגה
         is_cost_view = getattr(self, 'cost_view_mode', None) and self.cost_view_mode.get()
@@ -1004,9 +1027,15 @@ class ProductsCatalogMethodsMixin:
             # טעינת כל הפריטים ממאגר הנתונים
             for rec in getattr(self.data_processor, 'products_catalog', []):
                 product_name = rec.get('name', '').lower()
+                product_fabric_cat = rec.get('fabric_category', '') or 'בלי קטגוריה'
                 
-                # אם אין סינון או שם המוצר מכיל את טקסט החיפוש
-                if not filter_text or filter_text in product_name:
+                # בדיקת סינון שם
+                name_match = not filter_text or filter_text in product_name
+                # בדיקת סינון קטגוריית בד
+                fabric_cat_match = fabric_cat_filter == "הכל" or product_fabric_cat == fabric_cat_filter
+                
+                # אם עובר את כל הסינונים
+                if name_match and fabric_cat_match:
                     if is_cost_view:
                         # תצוגת עלויות - חישוב עלויות לפי השיטה הנבחרת
                         costs = self.data_processor.calculate_item_cost(rec, fabric_cost_method)
@@ -1483,6 +1512,97 @@ class ProductsCatalogMethodsMixin:
                 deleted_any = True
         if deleted_any:
             self._load_products_catalog_into_tree()
+
+    def _edit_selected_product(self):
+        """פתיחת חלון עריכה לפריט נבחר - עריכת כמויות טיקטקים, גומי וסרט"""
+        # בדיקה שנבחר פריט
+        sel = self.products_tree.selection()
+        if not sel:
+            messagebox.showwarning("אזהרה", "אנא בחר פריט לעריכה")
+            return
+        
+        # קבלת הערכים מהשורה הנבחרת (תצוגה רגילה בלבד)
+        is_cost_view = getattr(self, 'cost_view_mode', None) and self.cost_view_mode.get()
+        if is_cost_view:
+            messagebox.showwarning("אזהרה", "עריכה זמינה רק בתצוגה רגילה.\nעבור לתצוגה רגילה תחילה.")
+            return
+        
+        vals = self.products_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        
+        # vals בתצוגה רגילה: barcode, id, name, main_category, category, size, fabric_type, fabric_color, print_name, fabric_category, square_area, ticks_qty, elastic_qty, ribbon_qty, created_at
+        try:
+            product_id = int(vals[1])
+            product_name = vals[2]
+            product_size = vals[5]
+            current_ticks = int(vals[11]) if vals[11] else 0
+            current_elastic = int(vals[12]) if vals[12] else 0
+            current_ribbon = int(vals[13]) if vals[13] else 0
+        except (ValueError, IndexError) as e:
+            messagebox.showerror("שגיאה", f"שגיאה בקריאת נתוני הפריט: {e}")
+            return
+        
+        # יצירת חלון עריכה
+        top = tk.Toplevel(self.notebook)
+        top.title("עריכת כמויות פריט")
+        top.grab_set()
+        top.resizable(False, False)
+        
+        frm = ttk.Frame(top, padding=15)
+        frm.pack(fill='both', expand=True)
+        
+        # כותרת עם שם הפריט
+        ttk.Label(frm, text=f"פריט: {product_name}", font=('Arial', 11, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 5))
+        ttk.Label(frm, text=f"מידה: {product_size}", font=('Arial', 10)).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 15))
+        
+        # משתנים לשדות
+        ticks_var = tk.StringVar(value=str(current_ticks))
+        elastic_var = tk.StringVar(value=str(current_elastic))
+        ribbon_var = tk.StringVar(value=str(current_ribbon))
+        
+        # שדות עריכה
+        ttk.Label(frm, text="כמות טיקטקים:", font=('Arial', 10)).grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        ttk.Entry(frm, textvariable=ticks_var, width=10).grid(row=2, column=1, sticky='w', padx=5, pady=5)
+        
+        ttk.Label(frm, text="כמות גומי:", font=('Arial', 10)).grid(row=3, column=0, sticky='e', padx=5, pady=5)
+        ttk.Entry(frm, textvariable=elastic_var, width=10).grid(row=3, column=1, sticky='w', padx=5, pady=5)
+        
+        ttk.Label(frm, text="כמות סרט:", font=('Arial', 10)).grid(row=4, column=0, sticky='e', padx=5, pady=5)
+        ttk.Entry(frm, textvariable=ribbon_var, width=10).grid(row=4, column=1, sticky='w', padx=5, pady=5)
+        
+        # כפתורים
+        btn_frame = ttk.Frame(frm)
+        btn_frame.grid(row=5, column=0, columnspan=2, pady=(15, 0))
+        
+        def _save():
+            try:
+                new_ticks = int(ticks_var.get()) if ticks_var.get() else 0
+                new_elastic = int(elastic_var.get()) if elastic_var.get() else 0
+                new_ribbon = int(ribbon_var.get()) if ribbon_var.get() else 0
+                
+                if new_ticks < 0 or new_elastic < 0 or new_ribbon < 0:
+                    messagebox.showerror("שגיאה", "הכמויות חייבות להיות מספרים חיוביים")
+                    return
+                
+                success = self.data_processor.update_product_quantities(
+                    product_id=product_id,
+                    ticks_qty=new_ticks,
+                    elastic_qty=new_elastic,
+                    ribbon_qty=new_ribbon
+                )
+                
+                if success:
+                    self._load_products_catalog_into_tree()
+                    messagebox.showinfo("הצלחה", "הפריט עודכן בהצלחה")
+                    top.destroy()
+                else:
+                    messagebox.showerror("שגיאה", "לא נמצא פריט לעדכון")
+            except ValueError:
+                messagebox.showerror("שגיאה", "אנא הזן מספרים שלמים בלבד")
+        
+        ttk.Button(btn_frame, text="שמור", command=_save).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="ביטול", command=top.destroy).pack(side='left', padx=5)
 
     def _export_products_catalog(self):
         if not getattr(self.data_processor, 'products_catalog', []):

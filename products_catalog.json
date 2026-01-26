@@ -534,7 +534,8 @@
     "ticks_qty": 0,
     "elastic_qty": 1,
     "ribbon_qty": 0,
-    "created_at": "2025-08-13 14:46:04"
+    "created_at": "2025-08-13 14:46:04",
+    "fabric_cost": 1.94
   },
   {
     "id": 36,
@@ -549,7 +550,8 @@
     "ticks_qty": 0,
     "elastic_qty": 1,
     "ribbon_qty": 0,
-    "created_at": "2025-08-13 14:46:04"
+    "created_at": "2025-08-13 14:46:04",
+    "fabric_cost": 2.23
   },
   {
     "id": 37,
@@ -564,7 +566,8 @@
     "ticks_qty": 0,
     "elastic_qty": 1,
     "ribbon_qty": 0,
-    "created_at": "2025-08-13 14:46:04"
+    "created_at": "2025-08-13 14:46:04",
+    "fabric_cost": 2.54
   },
   {
     "id": 38,
@@ -579,7 +582,8 @@
     "ticks_qty": 0,
     "elastic_qty": 1,
     "ribbon_qty": 0,
-    "created_at": "2025-08-13 14:46:04"
+    "created_at": "2025-08-13 14:46:04",
+    "fabric_cost": 2.88
   },
   {
     "id": 39,
@@ -594,7 +598,8 @@
     "ticks_qty": 0,
     "elastic_qty": 1,
     "ribbon_qty": 0,
-    "created_at": "2025-08-13 14:46:04"
+    "created_at": "2025-08-13 14:46:04",
+    "fabric_cost": 3.23
   },
   {
     "id": 40,
@@ -819,7 +824,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 3.79
   },
   {
     "id": 55,
@@ -834,7 +840,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 5.4
   },
   {
     "id": 56,
@@ -864,7 +871,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 6.71
   },
   {
     "id": 58,
@@ -879,7 +887,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 5.84
   },
   {
     "id": 59,
@@ -894,7 +903,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 6.59
   },
   {
     "id": 60,
@@ -909,7 +919,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 7.39
   },
   {
     "id": 61,
@@ -924,7 +935,8 @@
     "ticks_qty": 0,
     "elastic_qty": 0,
     "ribbon_qty": 1,
-    "created_at": "2025-08-13 14:48:24"
+    "created_at": "2025-08-13 14:48:24",
+    "fabric_cost": 8.23
   },
   {
     "id": 62,
@@ -1566,10 +1578,11 @@
     "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
     "fabric_category": "פלנל לבן",
     "square_area": 0.3337584943986605,
-    "ticks_qty": 0,
+    "ticks_qty": 2,
     "elastic_qty": 0,
     "ribbon_qty": 0,
-    "created_at": "2025-09-25 11:10:35"
+    "created_at": "2025-09-25 11:10:35",
+    "fabric_cost": 2.36
   },
   {
     "id": 105,
@@ -1581,7 +1594,7 @@
     "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
     "fabric_category": "פלנל לבן",
     "square_area": 0.3018079904762355,
-    "ticks_qty": 0,
+    "ticks_qty": 2,
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2025-09-25 11:10:35"
@@ -1596,10 +1609,11 @@
     "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
     "fabric_category": "פלנל לבן",
     "square_area": 0.3671826155386732,
-    "ticks_qty": 0,
+    "ticks_qty": 2,
     "elastic_qty": 0,
     "ribbon_qty": 0,
-    "created_at": "2025-09-25 11:10:35"
+    "created_at": "2025-09-25 11:10:35",
+    "fabric_cost": 2.59
   },
   {
     "id": 107,
@@ -1611,10 +1625,11 @@
     "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
     "fabric_category": "פלנל לבן",
     "square_area": 0.402080298858506,
-    "ticks_qty": 0,
+    "ticks_qty": 2,
     "elastic_qty": 0,
     "ribbon_qty": 0,
-    "created_at": "2025-09-25 11:10:35"
+    "created_at": "2025-09-25 11:10:35",
+    "fabric_cost": 2.84
   },
   {
     "id": 108,
@@ -1626,7 +1641,7 @@
     "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
     "fabric_category": "פלנל לבן",
     "square_area": 0.438449862666791,
-    "ticks_qty": 0,
+    "ticks_qty": 2,
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2025-09-25 11:10:35"

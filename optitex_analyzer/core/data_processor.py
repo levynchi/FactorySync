@@ -1882,3 +1882,28 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה בעדכון עלות בד: {e}")
 			return False
+
+	def update_product_quantities(self, product_id: int, ticks_qty: int, elastic_qty: int, ribbon_qty: int) -> bool:
+		"""Update quantities (ticks, elastic, ribbon) for a product by ID.
+		
+		Args:
+			product_id: The product ID to update
+			ticks_qty: New quantity of ticks
+			elastic_qty: New quantity of elastic
+			ribbon_qty: New quantity of ribbon
+			
+		Returns:
+			True if product was found and updated, False otherwise
+		"""
+		try:
+			for product in self.products_catalog:
+				if product.get('id') == product_id:
+					product['ticks_qty'] = ticks_qty
+					product['elastic_qty'] = elastic_qty
+					product['ribbon_qty'] = ribbon_qty
+					self.save_products_catalog()
+					return True
+			return False
+		except Exception as e:
+			print(f"שגיאה בעדכון כמויות פריט: {e}")
+			return False
