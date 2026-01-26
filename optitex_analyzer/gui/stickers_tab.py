@@ -1,15 +1,14 @@
-"""Stickers tab: input row (product name, qty per package, size, fabric type) + table with persistence."""
+"""Stickers tab: Label printing system with paths configuration and print queue."""
 import os
 import json
+import subprocess
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-
-import pandas as pd
 
 
 class StickersTabMixin:
     def _create_stickers_tab(self):
-        """Create the 'מדבקות' tab UI and load persisted data."""
+        """Create the 'מדבקות' tab UI with printing and paths configuration."""
         # Notebook must be defined by MainWindow
         self.stickers_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.stickers_tab, text="מדבקות")
@@ -20,372 +19,614 @@ class StickersTabMixin:
         self.stickers_sub_notebook = ttk.Notebook(container)
         self.stickers_sub_notebook.pack(fill="both", expand=True)
 
-        # First sub-tab: existing form/table UI
-        form_tab = ttk.Frame(self.stickers_sub_notebook)
-        self.stickers_sub_notebook.add(form_tab, text="טופס")
+        # First sub-tab: Print (הדפסה)
+        self._create_print_tab()
 
-        # Second sub-tab: Mapping (מיפוי)
-        self.stickers_mapping_tab = ttk.Frame(self.stickers_sub_notebook)
-        self.stickers_sub_notebook.add(self.stickers_mapping_tab, text="מיפוי")
-        # Placeholder content for mapping tab (can be replaced later)
-        tk.Label(self.stickers_mapping_tab, text="מסך מיפוי", font=('Arial', 12, 'bold')).pack(pady=12)
+        # Second sub-tab: Paths Settings (הגדרת נתיבים)
+        self._create_paths_tab()
 
-        # Header (in form tab)
-        tk.Label(
-            form_tab,
-            text="ניהול מדבקות למוצרים",
-            font=('Arial', 14, 'bold')
-        ).pack(pady=(10, 5))
+        # Load saved data
+        self._label_paths_load()
 
-        # Input row
-        frm = ttk.LabelFrame(form_tab, text="שורת קליטה", padding=10)
-        frm.pack(fill="x", padx=15, pady=10)
+        # Refresh print products when switching tabs
+        self.stickers_sub_notebook.bind('<<NotebookTabChanged>>', lambda e: self._on_stickers_tab_change())
 
-        self._stk_main_category_var = tk.StringVar()
-        self._stk_product_var = tk.StringVar()
-        self._stk_qty_var = tk.StringVar()
-        self._stk_size_var = tk.StringVar()
-        self._stk_fabric_var = tk.StringVar()
-
-        # Main category (default: בגדים)
-        tk.Label(frm, text="קטגוריה ראשית:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+    def _on_stickers_tab_change(self):
+        """Handle tab change - refresh data as needed."""
         try:
-            cats = self._stk_get_main_categories()
-        except Exception:
-            cats = []
-        if 'בגדים' not in cats:
-            cats = ['בגדים'] + [c for c in cats if c != 'בגדים']
-        if not self._stk_main_category_var.get():
-            self._stk_main_category_var.set('בגדים')
-        self._stk_main_category_cb = ttk.Combobox(frm, textvariable=self._stk_main_category_var, values=cats, width=18, state='readonly')
-        self._stk_main_category_cb.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        try:
-            self._stk_main_category_cb.bind('<<ComboboxSelected>>', lambda e: self._stk_on_main_category_change())
+            current_tab = self.stickers_sub_notebook.index(self.stickers_sub_notebook.select())
+            if current_tab == 0:  # Print tab
+                self._refresh_print_products()
+            elif current_tab == 1:  # Paths tab
+                self._refresh_path_comboboxes()
         except Exception:
             pass
 
-        # Product name (filtered by selected main category)
-        tk.Label(frm, text="שם המוצר:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        self._stk_product_cb = ttk.Combobox(frm, textvariable=self._stk_product_var, values=[], width=30)
-        self._stk_product_cb.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-        # Initialize product options for default category
-        try:
-            self._stk_refresh_product_options()
-        except Exception:
-            pass
+    # ==================== PATHS TAB ====================
+    def _create_paths_tab(self):
+        """Create the paths configuration tab."""
+        paths_tab = ttk.Frame(self.stickers_sub_notebook)
+        self.stickers_sub_notebook.add(paths_tab, text="הגדרת נתיבים")
 
-        # Qty per package
-        tk.Label(frm, text="כמות באריזה:").grid(row=0, column=4, padx=5, pady=5, sticky="e")
-        tk.Entry(frm, textvariable=self._stk_qty_var, width=10).grid(row=0, column=5, padx=5, pady=5, sticky="w")
+        # Header
+        tk.Label(paths_tab, text="הגדרת נתיבים למדבקות", font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+
+        # Mapping input frame
+        input_frame = ttk.LabelFrame(paths_tab, text="הוספת מיפוי", padding=10)
+        input_frame.pack(fill="x", padx=15, pady=10)
+
+        # Variables for input
+        self._path_product_var = tk.StringVar()
+        self._path_size_var = tk.StringVar()
+        self._path_fabric_var = tk.StringVar()
+        self._path_file_var = tk.StringVar()
+
+        # Product
+        ttk.Label(input_frame, text="מוצר:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        self._path_product_cb = ttk.Combobox(input_frame, textvariable=self._path_product_var, width=20)
+        self._path_product_cb.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
         # Size
-        tk.Label(frm, text="מידה:").grid(row=0, column=6, padx=5, pady=5, sticky="e")
-        tk.Entry(frm, textvariable=self._stk_size_var, width=15).grid(row=0, column=7, padx=5, pady=5, sticky="w")
+        ttk.Label(input_frame, text="מידה:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
+        self._path_size_cb = ttk.Combobox(input_frame, textvariable=self._path_size_var, width=15)
+        self._path_size_cb.grid(row=0, column=3, padx=5, pady=5, sticky="w")
 
         # Fabric type
-        tk.Label(frm, text="סוג הבד:").grid(row=0, column=8, padx=5, pady=5, sticky="e")
-        fabric_types = self._load_fabric_types_for_stickers()
-        self._stk_fabric_cb = ttk.Combobox(frm, textvariable=self._stk_fabric_var, values=fabric_types, width=20)
-        self._stk_fabric_cb.grid(row=0, column=9, padx=5, pady=5, sticky="w")
+        ttk.Label(input_frame, text="סוג בד:").grid(row=0, column=4, padx=5, pady=5, sticky="e")
+        self._path_fabric_cb = ttk.Combobox(input_frame, textvariable=self._path_fabric_var, width=15)
+        self._path_fabric_cb.grid(row=0, column=5, padx=5, pady=5, sticky="w")
 
-        # Buttons
-        btns = tk.Frame(frm)
-        btns.grid(row=0, column=10, padx=10, pady=5, sticky="w")
-        tk.Button(btns, text="➕ הוסף", bg="#27ae60", fg="white", command=self._stk_add).pack(side="left", padx=4)
-        tk.Button(btns, text="🧹 נקה", bg="#95a5a6", fg="white", command=self._stk_clear_inputs).pack(side="left", padx=4)
+        # PDF file
+        ttk.Label(input_frame, text="קובץ PDF:").grid(row=0, column=6, padx=5, pady=5, sticky="e")
+        ttk.Entry(input_frame, textvariable=self._path_file_var, width=20).grid(row=0, column=7, padx=5, pady=5, sticky="w")
+        ttk.Button(input_frame, text="בחר...", command=self._browse_pdf_file).grid(row=0, column=8, padx=5, pady=5)
 
-        # Table
-        tbl_frame = ttk.LabelFrame(form_tab, text="טבלת מדבקות", padding=10)
-        tbl_frame.pack(fill="both", expand=True, padx=15, pady=10)
+        # Add button
+        tk.Button(input_frame, text="➕ הוסף מיפוי", bg="#27ae60", fg="white", command=self._add_path_mapping).grid(row=0, column=9, padx=10, pady=5)
 
-        cols = ("שם המוצר", "כמות באריזה", "מידה", "סוג הבד")
-        self._stk_tree = ttk.Treeview(tbl_frame, columns=cols, show="headings")
+        # Mappings table
+        table_frame = ttk.LabelFrame(paths_tab, text="טבלת מיפויים", padding=10)
+        table_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        cols = ("מוצר", "מידה", "סוג בד", "קובץ PDF")
+        self._paths_tree = ttk.Treeview(table_frame, columns=cols, show="headings")
         for c in cols:
-            self._stk_tree.heading(c, text=c)
-            self._stk_tree.column(c, width=(240 if c == "שם המוצר" else 140), anchor="center")
+            self._paths_tree.heading(c, text=c)
+            self._paths_tree.column(c, width=150, anchor="center")
 
-        vs = ttk.Scrollbar(tbl_frame, orient="vertical", command=self._stk_tree.yview)
-        self._stk_tree.configure(yscrollcommand=vs.set)
-        self._stk_tree.grid(row=0, column=0, sticky="nsew")
+        vs = ttk.Scrollbar(table_frame, orient="vertical", command=self._paths_tree.yview)
+        self._paths_tree.configure(yscrollcommand=vs.set)
+        self._paths_tree.grid(row=0, column=0, sticky="nsew")
         vs.grid(row=0, column=1, sticky="ns")
-        tbl_frame.grid_rowconfigure(0, weight=1)
-        tbl_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
 
-        actions = tk.Frame(form_tab)
+        # Double-click to edit path
+        self._paths_tree.bind('<Double-1>', self._edit_path_mapping)
+
+        # Actions
+        actions = tk.Frame(paths_tab)
         actions.pack(fill="x", padx=15, pady=(0, 10))
-        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._stk_delete_selected).pack(side="left", padx=5)
-        tk.Button(actions, text="💾 שמור ל-Excel", bg="#3498db", fg="white", command=self._stk_export_excel).pack(side="left", padx=5)
+        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_path_mapping).pack(side="left", padx=5)
+        tk.Button(actions, text="💾 שמור", bg="#3498db", fg="white", command=self._label_paths_save).pack(side="left", padx=5)
 
-        # Data
-        self._stickers_data = []
-        self._stk_load()
-        self._stk_refresh()
+        # Initialize data
+        self._label_paths_data = {"mappings": []}
 
-    # ---------- Helpers ----------
-    def _stickers_file_path(self) -> str:
-        return os.path.join(os.getcwd(), "stickers_data.json")
+        # Populate comboboxes
+        self._refresh_path_comboboxes()
 
-    def _load_fabric_types_for_stickers(self):
+    def _browse_pdf_file(self):
+        """Browse for PDF file."""
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ PDF",
+            initialdir=os.getcwd(),
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
+        )
+        if file_path:
+            self._path_file_var.set(file_path)
+
+    def _refresh_path_comboboxes(self):
+        """Refresh product, size, and fabric comboboxes from catalog."""
+        products = []
+        sizes = []
+        fabrics = []
+
         try:
-            # Try project root json
-            p = os.path.join(os.getcwd(), "fabric_types.json")
-            if os.path.exists(p):
-                with open(p, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                if isinstance(data, list):
-                    if data and isinstance(data[0], dict):
-                        keys = list(data[0].keys())
-                        for k in ("name", "שם", "type", "סוג"):
-                            if k in keys:
-                                return [str(d.get(k, "")) for d in data]
-                        return [str(d.get(keys[0], "")) for d in data]
-                    return [str(x) for x in data]
-        except Exception:
-            pass
-        return []
+            dp = getattr(self, 'data_processor', None)
+            if dp:
+                # Get products from model names or catalog
+                model_names = getattr(dp, 'product_model_names', []) or []
+                for r in model_names:
+                    n = (r.get('name') or '').strip()
+                    if n:
+                        products.append(n)
 
-    def _stk_get_main_categories(self):
-        """Return list of main category names from data processor or json file."""
-        # Try data_processor
-        try:
-            mcs = getattr(self, 'data_processor', None)
-            if mcs is not None:
-                lst = getattr(self.data_processor, 'main_categories', []) or []
-                names = []
-                for c in lst:
-                    name = (c.get('name') or c.get('שם') or '').strip()
-                    if name:
-                        names.append(name)
-                if names:
-                    return sorted(set(names), key=lambda x: (x!='בגדים', x))
-        except Exception:
-            pass
-        # Fallback: read from main_categories.json if exists
-        try:
-            p = os.path.join(os.getcwd(), 'main_categories.json')
-            if os.path.exists(p):
-                with open(p, 'r', encoding='utf-8') as f:
-                    data = json.load(f) or []
-                names = []
-                for c in data:
-                    if isinstance(c, dict):
-                        nm = (c.get('name') or c.get('שם') or '').strip()
-                        if nm:
-                            names.append(nm)
-                    elif isinstance(c, str) and c.strip():
-                        names.append(c.strip())
-                if names:
-                    return sorted(set(names), key=lambda x: (x!='בגדים', x))
-        except Exception:
-            pass
-        return ['בגדים']
-
-    def _stk_get_products_for_category(self, main_category: str):
-        """Return product names filtered by main_category from catalog; fallback to all."""
-        names = []
-        try:
-            model_names = getattr(self, 'data_processor', None)
-            if model_names is not None:
-                lst = getattr(self.data_processor, 'product_model_names', []) or []
-                if lst:
-                    for r in lst:
+                if not products:
+                    catalog = getattr(dp, 'products_catalog', []) or []
+                    for r in catalog:
                         n = (r.get('name') or '').strip()
-                        mc = (r.get('main_category') or 'בגדים').strip()
-                        if n and (not main_category or mc == main_category):
-                            names.append(n)
-            if not names:
-                catalog = getattr(self, 'data_processor', None)
-                if catalog is not None:
-                    cl = getattr(self.data_processor, 'products_catalog', []) or []
-                    for r in cl:
-                        n = (r.get('name') or '').strip()
-                        mc = (r.get('main_category') or 'בגדים').strip()
-                        if n and (not main_category or mc == main_category):
-                            names.append(n)
-        except Exception:
-            names = []
-        # Dedup + sort
-        seen = set(); names = [x for x in names if not (x in seen or seen.add(x))]
-        return sorted(names)
+                        if n:
+                            products.append(n)
 
-    def _stk_refresh_product_options(self):
-        cat = (self._stk_main_category_var.get() or '').strip()
-        try:
-            options = self._stk_get_products_for_category(cat)
-        except Exception:
-            options = []
-        try:
-            self._stk_product_cb['values'] = options
+                # Get sizes from catalog
+                catalog = getattr(dp, 'products_catalog', []) or []
+                for r in catalog:
+                    s = (r.get('size') or '').strip()
+                    if s:
+                        sizes.append(s)
+
+                # Get fabric categories (קטגוריות בדים)
+                fabric_categories = getattr(dp, 'product_fabric_categories', []) or []
+                for f in fabric_categories:
+                    n = (f.get('name') or f.get('category') or '').strip()
+                    if n:
+                        fabrics.append(n)
         except Exception:
             pass
 
-    def _stk_on_main_category_change(self):
-        try:
-            self._stk_product_var.set('')
-        except Exception:
-            pass
-        self._stk_refresh_product_options()
+        # Deduplicate and sort
+        products = sorted(set(products))
+        sizes = sorted(set(sizes))
+        fabrics = sorted(set(fabrics))
 
-    def _stk_validate(self):
-        name = (self._stk_product_var.get() or "").strip()
-        qty = (self._stk_qty_var.get() or "").strip()
-        size = (self._stk_size_var.get() or "").strip()
-        fabric = (self._stk_fabric_var.get() or "").strip()
-        # Enforce selection from the filtered list
-        try:
-            allowed = list(self._stk_product_cb['values'] or [])
-        except Exception:
-            allowed = []
-        if not name:
-            try:
-                messagebox.showwarning("אזהרה", "אנא הזן שם מוצר")
-            except Exception:
-                pass
-            return None
-        if allowed and name not in allowed:
-            try:
-                messagebox.showwarning("אזהרה", "יש לבחור מוצר מהרשימה לפי הקטגוריה הראשית")
-            except Exception:
-                pass
-            return None
-        if not qty:
-            try:
-                messagebox.showwarning("אזהרה", "אנא הזן כמות באריזה")
-            except Exception:
-                pass
-            return None
-        try:
-            qty_num = int(qty)
-            if qty_num <= 0:
-                raise ValueError()
-        except Exception:
-            try:
-                messagebox.showwarning("אזהרה", "כמות באריזה חייבת להיות מספר שלם חיובי")
-            except Exception:
-                pass
-            return None
-        if not size:
-            try:
-                messagebox.showwarning("אזהרה", "אנא הזן מידה")
-            except Exception:
-                pass
-            return None
-        if not fabric:
-            try:
-                messagebox.showwarning("אזהרה", "אנא בחר סוג בד")
-            except Exception:
-                pass
-            return None
-        return {"שם המוצר": name, "כמות באריזה": qty_num, "מידה": size, "סוג הבד": fabric}
+        self._path_product_cb['values'] = products
+        self._path_size_cb['values'] = sizes
+        self._path_fabric_cb['values'] = fabrics
 
-    def _stk_add(self):
-        row = self._stk_validate()
-        if not row:
+    def _add_path_mapping(self):
+        """Add a new path mapping."""
+        product = self._path_product_var.get().strip()
+        size = self._path_size_var.get().strip()
+        fabric = self._path_fabric_var.get().strip()
+        pdf_file = self._path_file_var.get().strip()
+
+        if not product:
+            messagebox.showwarning("אזהרה", "אנא בחר מוצר")
             return
-        self._stickers_data.append(row)
-        self._stk_refresh()
-        self._stk_save()
-        self._stk_clear_inputs()
-        try:
-            self._update_status("שורה נוספה לטבלת המדבקות")
-        except Exception:
-            pass
+        if not size:
+            messagebox.showwarning("אזהרה", "אנא בחר מידה")
+            return
+        if not fabric:
+            messagebox.showwarning("אזהרה", "אנא בחר סוג בד")
+            return
+        if not pdf_file:
+            messagebox.showwarning("אזהרה", "אנא בחר קובץ PDF")
+            return
 
-    def _stk_clear_inputs(self):
-        self._stk_product_var.set("")
-        self._stk_qty_var.set("")
-        self._stk_size_var.set("")
-        self._stk_fabric_var.set("")
+        # Check for duplicates
+        for m in self._label_paths_data.get("mappings", []):
+            if m.get("product") == product and m.get("size") == size and m.get("fabric") == fabric:
+                messagebox.showwarning("אזהרה", "מיפוי זה כבר קיים")
+                return
 
-    def _stk_refresh(self):
-        for it in self._stk_tree.get_children():
-            self._stk_tree.delete(it)
-        for r in self._stickers_data:
-            self._stk_tree.insert("", "end", values=(
-                r.get("שם המוצר", ""),
-                r.get("כמות באריזה", ""),
-                r.get("מידה", ""),
-                r.get("סוג הבד", ""),
+        # Add mapping
+        self._label_paths_data["mappings"].append({
+            "product": product,
+            "size": size,
+            "fabric": fabric,
+            "file": pdf_file
+        })
+
+        self._refresh_paths_tree()
+        self._label_paths_save()
+
+        # Clear inputs
+        self._path_product_var.set("")
+        self._path_size_var.set("")
+        self._path_fabric_var.set("")
+        self._path_file_var.set("")
+
+    def _refresh_paths_tree(self):
+        """Refresh the paths table."""
+        for item in self._paths_tree.get_children():
+            self._paths_tree.delete(item)
+
+        for m in self._label_paths_data.get("mappings", []):
+            self._paths_tree.insert("", "end", values=(
+                m.get("product", ""),
+                m.get("size", ""),
+                m.get("fabric", ""),
+                m.get("file", "")
             ))
 
-    def _stk_delete_selected(self):
-        sel = self._stk_tree.selection()
+    def _delete_path_mapping(self):
+        """Delete selected path mapping."""
+        sel = self._paths_tree.selection()
         if not sel:
-            try:
-                messagebox.showwarning("אזהרה", "אנא בחר שורה למחיקה")
-            except Exception:
-                pass
+            messagebox.showwarning("אזהרה", "אנא בחר שורה למחיקה")
             return
-        try:
-            if not messagebox.askyesno("אישור", "למחוק את השורה הנבחרת?"):
-                return
-        except Exception:
-            pass
-        item = self._stk_tree.item(sel[0])
-        vals = item.get('values', [])
+
+        if not messagebox.askyesno("אישור", "למחוק את המיפוי הנבחר?"):
+            return
+
+        vals = self._paths_tree.item(sel[0], 'values')
         if vals:
-            target = {"שם המוצר": vals[0], "כמות באריזה": vals[1], "מידה": vals[2], "סוג הבד": vals[3]}
-            new_data, deleted = [], False
-            for r in self._stickers_data:
-                if (not deleted and r.get("שם המוצר") == target["שם המוצר"] and
-                    r.get("כמות באריזה") == target["כמות באריזה"] and
-                    r.get("מידה") == target["מידה"] and
-                    r.get("סוג הבד") == target["סוג הבד"]):
+            new_mappings = []
+            deleted = False
+            for m in self._label_paths_data.get("mappings", []):
+                if not deleted and m.get("product") == vals[0] and m.get("size") == vals[1] and m.get("fabric") == vals[2]:
                     deleted = True
                     continue
-                new_data.append(r)
-            self._stickers_data = new_data
-            self._stk_refresh()
-            self._stk_save()
-            try:
-                self._update_status("שורה נמחקה מטבלת המדבקות")
-            except Exception:
-                pass
+                new_mappings.append(m)
+            self._label_paths_data["mappings"] = new_mappings
+            self._refresh_paths_tree()
+            self._label_paths_save()
 
-    def _stk_export_excel(self):
-        if not self._stickers_data:
-            try:
-                messagebox.showwarning("אזהרה", "אין נתונים לייצוא")
-            except Exception:
-                pass
+    def _edit_path_mapping(self, event):
+        """Edit PDF path on double-click."""
+        sel = self._paths_tree.selection()
+        if not sel:
             return
-        try:
-            df = pd.DataFrame(self._stickers_data)
-            file_path = filedialog.asksaveasfilename(
-                title="שמור טבלת מדבקות",
-                defaultextension=".xlsx",
-                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")]
+
+        vals = self._paths_tree.item(sel[0], 'values')
+        if not vals:
+            return
+
+        product = vals[0]
+        size = vals[1]
+        fabric = vals[2]
+        current_file = vals[3]
+
+        # Find the mapping index
+        mapping_idx = None
+        for idx, m in enumerate(self._label_paths_data.get("mappings", [])):
+            if m.get("product") == product and m.get("size") == size and m.get("fabric") == fabric:
+                mapping_idx = idx
+                break
+
+        if mapping_idx is None:
+            return
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.stickers_tab)
+        dialog.title("עריכת נתיב PDF")
+        dialog.grab_set()
+        dialog.resizable(False, False)
+
+        frm = ttk.Frame(dialog, padding=15)
+        frm.pack(fill='both', expand=True)
+
+        # Info labels
+        ttk.Label(frm, text=f"מוצר: {product}", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=3, sticky='w', pady=2)
+        ttk.Label(frm, text=f"מידה: {size}  |  סוג בד: {fabric}", font=('Arial', 10)).grid(row=1, column=0, columnspan=3, sticky='w', pady=(0, 10))
+
+        # Path entry
+        ttk.Label(frm, text="נתיב:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        path_var = tk.StringVar(value=current_file)
+        path_entry = ttk.Entry(frm, textvariable=path_var, width=50)
+        path_entry.grid(row=2, column=1, sticky='we', padx=5, pady=5)
+
+        def browse():
+            file_path = filedialog.askopenfilename(
+                title="בחר קובץ PDF",
+                initialdir=os.getcwd(),
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
             )
             if file_path:
-                if file_path.lower().endswith('.csv'):
-                    df.to_csv(file_path, index=False, encoding='utf-8-sig')
-                else:
-                    df.to_excel(file_path, index=False)
-                try:
-                    messagebox.showinfo("הצלחה", f"הטבלה נשמרה בהצלחה:\n{file_path}")
-                except Exception:
-                    pass
-        except Exception as e:
-            try:
-                messagebox.showerror("שגיאה", f"שגיאה בייצוא: {e}")
-            except Exception:
-                pass
+                path_var.set(file_path)
 
-    def _stk_load(self):
+        ttk.Button(frm, text="בחר...", command=browse).grid(row=2, column=2, padx=5, pady=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(frm)
+        btn_frame.grid(row=3, column=0, columnspan=3, pady=(15, 0))
+
+        def save():
+            new_path = path_var.get().strip()
+            if not new_path:
+                messagebox.showwarning("אזהרה", "אנא הזן נתיב")
+                return
+            self._label_paths_data["mappings"][mapping_idx]["file"] = new_path
+            self._refresh_paths_tree()
+            self._label_paths_save()
+            dialog.destroy()
+
+        ttk.Button(btn_frame, text="שמור", command=save).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="ביטול", command=dialog.destroy).pack(side='left', padx=5)
+
+    def _label_paths_file_path(self) -> str:
+        return os.path.join(os.getcwd(), "label_paths.json")
+
+    def _label_paths_load(self):
+        """Load paths data from JSON file."""
         try:
-            p = self._stickers_file_path()
+            p = self._label_paths_file_path()
             if os.path.exists(p):
                 with open(p, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                if isinstance(data, list):
-                    self._stickers_data = data
+                    self._label_paths_data = json.load(f)
+                self._refresh_paths_tree()
         except Exception:
-            self._stickers_data = []
+            self._label_paths_data = {"mappings": []}
 
-    def _stk_save(self):
+    def _label_paths_save(self):
+        """Save paths data to JSON file."""
         try:
-            p = self._stickers_file_path()
+            p = self._label_paths_file_path()
             with open(p, 'w', encoding='utf-8') as f:
-                json.dump(self._stickers_data, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+                json.dump(self._label_paths_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בשמירה: {e}")
+
+    # ==================== PRINT TAB ====================
+    def _create_print_tab(self):
+        """Create the print tab."""
+        print_tab = ttk.Frame(self.stickers_sub_notebook)
+        self.stickers_sub_notebook.add(print_tab, text="הדפסה")
+
+        # Header
+        tk.Label(print_tab, text="הדפסת מדבקות", font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+
+        # Selection frame
+        select_frame = ttk.LabelFrame(print_tab, text="בחירת פריטים להדפסה", padding=10)
+        select_frame.pack(fill="x", padx=15, pady=10)
+
+        # Variables
+        self._print_product_var = tk.StringVar()
+        self._print_fabric_var = tk.StringVar()
+        self._print_qty_var = tk.StringVar(value="1")
+
+        # Row 1: Product and Fabric
+        row1 = tk.Frame(select_frame)
+        row1.pack(fill="x", pady=5)
+
+        ttk.Label(row1, text="מוצר:").pack(side="left", padx=5)
+        self._print_product_cb = ttk.Combobox(row1, textvariable=self._print_product_var, width=25, state='readonly')
+        self._print_product_cb.pack(side="left", padx=5)
+        self._print_product_cb.bind('<<ComboboxSelected>>', lambda e: self._on_print_product_change())
+
+        ttk.Label(row1, text="סוג בד:").pack(side="left", padx=(20, 5))
+        self._print_fabric_cb = ttk.Combobox(row1, textvariable=self._print_fabric_var, width=15, state='readonly')
+        self._print_fabric_cb.pack(side="left", padx=5)
+        self._print_fabric_cb.bind('<<ComboboxSelected>>', lambda e: self._on_print_fabric_change())
+
+        ttk.Label(row1, text="כמות:").pack(side="left", padx=(20, 5))
+        ttk.Entry(row1, textvariable=self._print_qty_var, width=8).pack(side="left", padx=5)
+
+        tk.Button(row1, text="➕ הוסף לרשימה", bg="#27ae60", fg="white", command=self._add_to_print_queue).pack(side="left", padx=20)
+
+        # Row 2: Sizes (checkboxes)
+        sizes_frame = ttk.LabelFrame(select_frame, text="בחר מידות", padding=5)
+        sizes_frame.pack(fill="x", pady=10)
+
+        self._print_size_vars = {}  # Will be populated dynamically
+        self._print_sizes_container = tk.Frame(sizes_frame)
+        self._print_sizes_container.pack(fill="x")
+
+        # Print queue table
+        queue_frame = ttk.LabelFrame(print_tab, text="רשימת הדפסה", padding=10)
+        queue_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        cols = ("מוצר", "סוג בד", "מידה", "כמות", "קובץ PDF")
+        self._print_queue_tree = ttk.Treeview(queue_frame, columns=cols, show="headings")
+        for c in cols:
+            self._print_queue_tree.heading(c, text=c)
+            w = 80 if c == "כמות" else 150
+            self._print_queue_tree.column(c, width=w, anchor="center")
+
+        vs = ttk.Scrollbar(queue_frame, orient="vertical", command=self._print_queue_tree.yview)
+        self._print_queue_tree.configure(yscrollcommand=vs.set)
+        self._print_queue_tree.grid(row=0, column=0, sticky="nsew")
+        vs.grid(row=0, column=1, sticky="ns")
+        queue_frame.grid_rowconfigure(0, weight=1)
+        queue_frame.grid_columnconfigure(0, weight=1)
+
+        # Double-click to edit quantity
+        self._print_queue_tree.bind('<Double-1>', self._edit_print_qty)
+
+        # Actions
+        actions = tk.Frame(print_tab)
+        actions.pack(fill="x", padx=15, pady=(0, 10))
+
+        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_from_print_queue).pack(side="left", padx=5)
+        tk.Button(actions, text="🧹 נקה הכל", bg="#95a5a6", fg="white", command=self._clear_print_queue).pack(side="left", padx=5)
+        tk.Button(actions, text="🖨️ הדפס הכל", bg="#2980b9", fg="white", font=('Arial', 11, 'bold'), command=self._print_all).pack(side="right", padx=5)
+
+        # Print queue data
+        self._print_queue_data = []
+
+    def _on_print_product_change(self):
+        """When product changes, update fabric options."""
+        product = self._print_product_var.get()
+        self._print_fabric_var.set("")
+
+        # Clear sizes
+        for widget in self._print_sizes_container.winfo_children():
+            widget.destroy()
+        self._print_size_vars.clear()
+
+        # Get available fabrics for this product
+        fabrics = set()
+        for m in self._label_paths_data.get("mappings", []):
+            if m.get("product") == product:
+                fabrics.add(m.get("fabric", ""))
+
+        self._print_fabric_cb['values'] = sorted(fabrics)
+
+    def _on_print_fabric_change(self):
+        """When fabric changes, update size checkboxes."""
+        product = self._print_product_var.get()
+        fabric = self._print_fabric_var.get()
+
+        # Clear existing checkboxes
+        for widget in self._print_sizes_container.winfo_children():
+            widget.destroy()
+        self._print_size_vars.clear()
+
+        # Get available sizes for this product+fabric
+        sizes = []
+        for m in self._label_paths_data.get("mappings", []):
+            if m.get("product") == product and m.get("fabric") == fabric:
+                sizes.append(m.get("size", ""))
+
+        # Create checkboxes
+        for size in sorted(sizes):
+            var = tk.BooleanVar(value=False)
+            self._print_size_vars[size] = var
+            cb = ttk.Checkbutton(self._print_sizes_container, text=size, variable=var)
+            cb.pack(side="left", padx=10)
+
+    def _refresh_print_products(self):
+        """Refresh product options from mappings."""
+        products = set()
+        for m in self._label_paths_data.get("mappings", []):
+            products.add(m.get("product", ""))
+        self._print_product_cb['values'] = sorted(products)
+
+    def _add_to_print_queue(self):
+        """Add selected items to print queue."""
+        product = self._print_product_var.get()
+        fabric = self._print_fabric_var.get()
+        qty_str = self._print_qty_var.get().strip()
+
+        if not product:
+            messagebox.showwarning("אזהרה", "אנא בחר מוצר")
+            return
+        if not fabric:
+            messagebox.showwarning("אזהרה", "אנא בחר סוג בד")
+            return
+
+        try:
+            qty = int(qty_str)
+            if qty <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("אזהרה", "כמות חייבת להיות מספר חיובי")
+            return
+
+        # Get selected sizes
+        selected_sizes = [size for size, var in self._print_size_vars.items() if var.get()]
+        if not selected_sizes:
+            messagebox.showwarning("אזהרה", "אנא בחר לפחות מידה אחת")
+            return
+
+        # Find PDF files and add to queue
+        for size in selected_sizes:
+            pdf_file = None
+            for m in self._label_paths_data.get("mappings", []):
+                if m.get("product") == product and m.get("size") == size and m.get("fabric") == fabric:
+                    pdf_file = m.get("file", "")
+                    break
+
+            if pdf_file:
+                self._print_queue_data.append({
+                    "product": product,
+                    "fabric": fabric,
+                    "size": size,
+                    "qty": qty,
+                    "file": pdf_file
+                })
+
+        self._refresh_print_queue_tree()
+
+        # Reset size checkboxes
+        for var in self._print_size_vars.values():
+            var.set(False)
+
+    def _refresh_print_queue_tree(self):
+        """Refresh the print queue table."""
+        for item in self._print_queue_tree.get_children():
+            self._print_queue_tree.delete(item)
+
+        for idx, item in enumerate(self._print_queue_data):
+            self._print_queue_tree.insert("", "end", iid=str(idx), values=(
+                item.get("product", ""),
+                item.get("fabric", ""),
+                item.get("size", ""),
+                item.get("qty", 1),
+                item.get("file", "")
+            ))
+
+    def _edit_print_qty(self, event):
+        """Edit quantity on double-click."""
+        sel = self._print_queue_tree.selection()
+        if not sel:
+            return
+
+        idx = int(sel[0])
+        current_qty = self._print_queue_data[idx].get("qty", 1)
+
+        # Create edit dialog
+        dialog = tk.Toplevel(self.stickers_tab)
+        dialog.title("עריכת כמות")
+        dialog.grab_set()
+        dialog.resizable(False, False)
+
+        frm = ttk.Frame(dialog, padding=15)
+        frm.pack()
+
+        ttk.Label(frm, text="כמות חדשה:").pack(side="left", padx=5)
+        qty_var = tk.StringVar(value=str(current_qty))
+        entry = ttk.Entry(frm, textvariable=qty_var, width=10)
+        entry.pack(side="left", padx=5)
+        entry.focus()
+        entry.select_range(0, tk.END)
+
+        def save():
+            try:
+                new_qty = int(qty_var.get())
+                if new_qty <= 0:
+                    raise ValueError()
+                self._print_queue_data[idx]["qty"] = new_qty
+                self._refresh_print_queue_tree()
+                dialog.destroy()
+            except ValueError:
+                messagebox.showwarning("אזהרה", "כמות חייבת להיות מספר חיובי")
+
+        ttk.Button(frm, text="שמור", command=save).pack(side="left", padx=5)
+        entry.bind('<Return>', lambda e: save())
+
+    def _delete_from_print_queue(self):
+        """Delete selected item from print queue."""
+        sel = self._print_queue_tree.selection()
+        if not sel:
+            messagebox.showwarning("אזהרה", "אנא בחר שורה למחיקה")
+            return
+
+        idx = int(sel[0])
+        del self._print_queue_data[idx]
+        self._refresh_print_queue_tree()
+
+    def _clear_print_queue(self):
+        """Clear all items from print queue."""
+        if not self._print_queue_data:
+            return
+        if messagebox.askyesno("אישור", "לנקות את כל רשימת ההדפסה?"):
+            self._print_queue_data.clear()
+            self._refresh_print_queue_tree()
+
+    def _print_all(self):
+        """Print all items in the queue."""
+        if not self._print_queue_data:
+            messagebox.showwarning("אזהרה", "רשימת ההדפסה ריקה")
+            return
+
+        errors = []
+        printed = 0
+
+        for item in self._print_queue_data:
+            pdf_file = item.get("file", "")
+            qty = item.get("qty", 1)
+
+            if not os.path.exists(pdf_file):
+                errors.append(f"קובץ לא נמצא: {pdf_file}")
+                continue
+
+            try:
+                # Print the file (qty times)
+                for _ in range(qty):
+                    if os.name == 'nt':  # Windows
+                        os.startfile(pdf_file, "print")
+                    else:  # Linux/Mac
+                        subprocess.run(['lpr', pdf_file], check=True)
+                printed += qty
+            except Exception as e:
+                errors.append(f"שגיאה בהדפסת {pdf_file}: {e}")
+
+        if errors:
+            messagebox.showwarning("אזהרות", "\n".join(errors))
+
+        if printed > 0:
+            messagebox.showinfo("הצלחה", f"נשלחו {printed} מדבקות להדפסה")
+            self._print_queue_data.clear()
+            self._refresh_print_queue_tree()

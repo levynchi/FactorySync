@@ -18,6 +18,7 @@ from .business_details_tab import BusinessDetailsTabMixin
 from .formulas_tab import FormulasTabMixin
 from .shipping_costs_tab import ShippingCostsTabMixin
 from .orders_tab import OrdersTabMixin
+from .stickers_tab import StickersTabMixin
 
 
 class MainWindow(
@@ -35,6 +36,7 @@ class MainWindow(
     FormulasTabMixin,
     ShippingCostsTabMixin,
     OrdersTabMixin,
+    StickersTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -160,6 +162,15 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'יצירת הזמנה' נכשלה: {e}")
+            except Exception:
+                pass
+
+        # Stickers/Labels printing tab
+        try:
+            self._create_stickers_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'מדבקות' נכשלה: {e}")
             except Exception:
                 pass
 
