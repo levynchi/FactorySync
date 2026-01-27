@@ -18,6 +18,7 @@ class OptitexFileAnalyzer:
         # Marker meta
         self.marker_width = None
         self.marker_length = None
+        self.efficiency = None
         # Exceptions: style files that should NOT be treated as tubular even if layout reports Tubular
         self._tubular_exceptions = {
             # exact base filename match (case-insensitive compare will be used)
@@ -57,6 +58,7 @@ class OptitexFileAnalyzer:
             # איפוס נתוני מרקר
             self.marker_width = None
             self.marker_length = None
+            self.efficiency = None
             
             # בדיקת Tubular (ברמת הקובץ)
             self.is_tubular = False
@@ -73,7 +75,7 @@ class OptitexFileAnalyzer:
                 # ===== חילוץ Marker Width / Length משורה =====
                 # כדי למנוע NaN נשתמש ברג'קס לזיהוי מספרים גם אם יש טקסט (למשל "180 cm" או "Width: 180")
                 try:
-                    if (self.marker_width is None) or (self.marker_length is None):
+                    if (self.marker_width is None) or (self.marker_length is None) or (self.efficiency is None):
                         # המרה לרשימת תאים (שומרים את האובייקט המקורי לצורך מציאת המספר)
                         row_cells = list(row)
                         # ניצור רשימת מחרוזות נורמליזציה לחיפוש טקסטואלי
@@ -115,7 +117,7 @@ class OptitexFileAnalyzer:
                             return None
 
                         for col_idx, text in enumerate(normalized):
-                            if (self.marker_width is not None) and (self.marker_length is not None):
+                            if (self.marker_width is not None) and (self.marker_length is not None) and (self.efficiency is not None):
                                 break
                             if 'marker' in text and ('width' in text or 'wid' in text):
                                 if self.marker_width is None:
@@ -127,6 +129,11 @@ class OptitexFileAnalyzer:
                                     num = find_number_near(col_idx)
                                     if num is not None:
                                         self.marker_length = num
+                            elif 'efficiency' in text:
+                                if self.efficiency is None:
+                                    num = find_number_near(col_idx)
+                                    if num is not None:
+                                        self.efficiency = num
                 except Exception:
                     # לא נכשיל את הניתוח בגלל שגיאת חילוץ מרקר
                     pass

@@ -192,7 +192,11 @@ class ConverterTabMixin:
 
     # File Selection
     def _select_rib_file(self):
-        file_path = filedialog.askopenfilename(title="בחר קובץ אופטיטקס אקסל אקספורט", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ אופטיטקס אקסל אקספורט",
+            initialdir=r"C:\Users\levyn\OneDrive\שולחן העבודה\optitex excell reports",
+            filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
+        )
         if file_path:
             self.rib_file = file_path
             self.rib_label.config(text=os.path.basename(file_path))
@@ -455,10 +459,13 @@ class ConverterTabMixin:
             # קבלת נתוני מידות ציור מהניתוח
             marker_width = None
             marker_length = None
+            efficiency = None
             if hasattr(self.file_analyzer, 'marker_width'):
                 marker_width = self.file_analyzer.marker_width
             if hasattr(self.file_analyzer, 'marker_length'):
                 marker_length = self.file_analyzer.marker_length
+            if hasattr(self.file_analyzer, 'efficiency'):
+                efficiency = self.file_analyzer.efficiency
             
             record_id = self.data_processor.add_to_local_table(
                 self.current_results, 
@@ -467,7 +474,8 @@ class ConverterTabMixin:
                 recipient_supplier=recipient,
                 estimated_layers=estimated_layers,
                 marker_width=marker_width,
-                marker_length=marker_length
+                marker_length=marker_length,
+                efficiency=efficiency
             )
             # שמירת הנמען (אם יש יכולת ב- data_processor בעתיד; לעת עתה נשמור בלוג בלבד)
             self._log_message(f"\n✅ הציור נוסף לטבלה המקומית!")

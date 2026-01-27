@@ -348,9 +348,15 @@ class FormulasTabMixin:
         self.selected_count_var = tk.StringVar(value="נבחרו: 0 ציורים")
         tk.Label(drawing_frame, textvariable=self.selected_count_var, font=('Arial', 8, 'bold'), fg='#27ae60').pack(anchor='w')
         
-        # Remove button
-        tk.Button(drawing_frame, text="🗑️ הסר נבחרים", command=self._remove_drawing_from_selection,
-                 bg='#e74c3c', fg='white', font=('Arial', 8, 'bold')).pack(anchor='e', pady=2)
+        # Buttons frame
+        btns_frame = tk.Frame(drawing_frame)
+        btns_frame.pack(anchor='e', pady=2)
+        
+        tk.Button(btns_frame, text="🗑️ הסר נבחרים", command=self._remove_drawing_from_selection,
+                 bg='#e74c3c', fg='white', font=('Arial', 8, 'bold')).pack(side='left', padx=2)
+        
+        tk.Button(btns_frame, text="🧹 נקה הכל", command=self._clear_all_selected_drawings,
+                 bg='#95a5a6', fg='white', font=('Arial', 8, 'bold')).pack(side='left', padx=2)
         
         # Middle column - Drawing info frame
         info_frame = ttk.LabelFrame(main_frame, text="פרטי הציור", padding=15)
@@ -736,6 +742,18 @@ class FormulasTabMixin:
             self.drawing_info_text.delete(1.0, tk.END)
             self.drawing_info_text.insert(tk.END, "בחר ציורים לחישוב")
             self.drawing_info_text.config(state='disabled')
+
+    def _clear_all_selected_drawings(self):
+        """Clear all selected drawings at once."""
+        if not self.selected_weight_drawings:
+            return
+        self.selected_weight_drawings.clear()
+        self._update_selected_drawings_display()
+        # Clear info display
+        self.drawing_info_text.config(state='normal')
+        self.drawing_info_text.delete(1.0, tk.END)
+        self.drawing_info_text.insert(tk.END, "בחר ציורים לחישוב")
+        self.drawing_info_text.config(state='disabled')
     
     def _update_selected_drawings_display(self):
         """Update the selected drawings listbox."""

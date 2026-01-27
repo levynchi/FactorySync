@@ -120,7 +120,7 @@ class StickersTabMixin:
         """Browse for PDF file."""
         file_path = filedialog.askopenfilename(
             title="בחר קובץ PDF",
-            initialdir=os.getcwd(),
+            initialdir=r"G:\My Drive\מדבקות\מדבקות PDF מוכן להדפסה",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
         if file_path:
@@ -300,7 +300,7 @@ class StickersTabMixin:
         def browse():
             file_path = filedialog.askopenfilename(
                 title="בחר קובץ PDF",
-                initialdir=os.getcwd(),
+                initialdir=r"G:\My Drive\מדבקות\מדבקות PDF מוכן להדפסה",
                 filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
             )
             if file_path:
