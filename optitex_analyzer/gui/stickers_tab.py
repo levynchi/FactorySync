@@ -5,6 +5,9 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
+# SumatraPDF path for 1:1 scale printing
+SUMATRA_PDF_PATH = r"C:\Users\levyn\AppData\Local\SumatraPDF\SumatraPDF.exe"
+
 
 class StickersTabMixin:
     def _create_stickers_tab(self):
@@ -595,6 +598,28 @@ class StickersTabMixin:
             self._print_queue_data.clear()
             self._refresh_print_queue_tree()
 
+    def _print_pdf_sumatra(self, pdf_path: str) -> bool:
+        """
+        Print PDF at 1:1 scale (actual size) using SumatraPDF.
+        Returns True if successful, False otherwise.
+        """
+        try:
+            if not os.path.exists(SUMATRA_PDF_PATH):
+                return False
+            
+            # SumatraPDF with noscale = actual size (1:1)
+            subprocess.run([
+                SUMATRA_PDF_PATH,
+                "-print-to-default",
+                "-print-settings", "noscale",
+                pdf_path
+            ], check=True)
+            return True
+            
+        except Exception as e:
+            print(f"SumatraPDF print error: {e}")
+            return False
+
     def _print_all(self):
         """Print all items in the queue."""
         if not self._print_queue_data:
@@ -616,7 +641,10 @@ class StickersTabMixin:
                 # Print the file (qty times)
                 for _ in range(qty):
                     if os.name == 'nt':  # Windows
-                        os.startfile(pdf_file, "print")
+                        # Try SumatraPDF for 1:1 scale printing
+                        if not self._print_pdf_sumatra(pdf_file):
+                            # Fallback to default method
+                            os.startfile(pdf_file, "print")
                     else:  # Linux/Mac
                         subprocess.run(['lpr', pdf_file], check=True)
                 printed += qty

@@ -2,10 +2,40 @@
   "labels_folder": "G:\\My Drive\\מדבקות\\מדבקות PDF מוכן להדפסה",
   "mappings": [
     {
+      "product": "בגד גוף מעטפת",
+      "size": "0-3",
+      "fabric": "טריקו לבן",
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/KIMONO/KIMONO-3PACK-RIB-0-3.pdf"
+    },
+    {
+      "product": "בגד גוף מעטפת",
+      "size": "0-3",
+      "fabric": "פלנל לבן",
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/KIMONO/KIMONO-3PACK-INTERLOCK-0-3.pdf"
+    },
+    {
       "product": "בגד גוף ש.א",
       "size": "0-3",
       "fabric": "פלנל לבן",
-      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/INTERLOCK/BODYSUIT-3-INTERLOCK/0-3.pdf"
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/BODYSUIT/INTERLOCK/LONG SLEEV BODYSUIT-3PACK 0-3 INTERLOCK.pdf"
+    },
+    {
+      "product": "בגד גוף ש.א",
+      "size": "0-3",
+      "fabric": "טריקו לבן",
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/BODYSUIT/RIB/BODYSUIT-3PACK-0-3 RIB.pdf"
+    },
+    {
+      "product": "בגד גוף ש.א",
+      "size": "3-6",
+      "fabric": "פלנל לבן",
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/BODYSUIT/RIB/BODYSUIT-3PACK-3-6 RIB.pdf"
+    },
+    {
+      "product": "בגד גוף ש.א",
+      "size": "3-6",
+      "fabric": "טריקו לבן",
+      "file": "G:/My Drive/מדבקות/מדבקות PDF מוכן להדפסה/BODYSUIT/RIB/BODYSUIT-3PACK-3-6 RIB.pdf"
     }
   ]
 }
