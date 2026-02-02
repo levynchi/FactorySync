@@ -1858,5 +1858,50 @@
     "accessories": [],
     "receipt_kind": "delivery_note",
     "created_at": "2026-02-01 14:34:46"
+  },
+  {
+    "id": 50,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-02-02",
+    "lines": [
+      {
+        "product": "כפכפים",
+        "size": "",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "בגד לתיקון",
+        "quantity": 40,
+        "note": ""
+      },
+      {
+        "product": "בד",
+        "size": "",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "בגד לתיקון",
+        "quantity": 1,
+        "note": ""
+      }
+    ],
+    "total_quantity": 41,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      },
+      {
+        "package_type": "בד",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-02-02 12:48:58"
   }
 ]
