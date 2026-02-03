@@ -22,7 +22,6 @@ class OptitexFileAnalyzer:
         # Exceptions: style files that should NOT be treated as tubular even if layout reports Tubular
         self._tubular_exceptions = {
             # exact base filename match (case-insensitive compare will be used)
-            '200 baby leggings close.pds'
         }
         
     def load_products_mapping(self, products_file: str) -> bool:
@@ -201,24 +200,33 @@ class OptitexFileAnalyzer:
                 # ניקוי מידה - הסרת האות 'M' ממידות
                 cleaned_size = self._clean_size_name(size_name)
                 
-                # טיפול ב-Tubular
+                # טיפול ב-Tubular ו-unit_quantity
                 original_quantity = quantity
-                if apply_tubular and quantity > 0:
-                    quantity = quantity / 2
-                    quantity = int(quantity) if quantity == int(quantity) else round(quantity, 1)
+                note_parts = []
                 
-                # כפל לפי unit quantity
-                quantity = quantity * unit_quantity
-                original_quantity = original_quantity * unit_quantity
+                if apply_tubular:
+                    if unit_quantity > 1:
+                        # מוצר עם unit_quantity > 1 (כמו רגליות): לא מחלקים ולא מכפילים
+                        # הכמות נשארת כמו בקובץ
+                        pass
+                    else:
+                        # מוצר רגיל: מחלקים ב-2 בגלל Tubular
+                        if quantity > 0:
+                            quantity = quantity / 2
+                            quantity = int(quantity) if quantity == int(quantity) else round(quantity, 1)
+                            note_parts.append('חולק ב-2 (Tubular)')
+                else:
+                    # לא Tubular
+                    if unit_quantity > 1:
+                        # מכפילים ב-unit_quantity
+                        quantity = quantity * unit_quantity
+                        original_quantity = original_quantity * unit_quantity
+                        note_parts.append(f'כפול {unit_quantity}')
+                
+                note = ' | '.join(note_parts) if note_parts else 'רגיל'
                 
                 # הוספה לתוצאות
                 if not only_positive or quantity > 0:
-                    note_parts = []
-                    if apply_tubular and original_quantity > 0:
-                        note_parts.append('חולק ב-2 (Tubular)')
-                    if unit_quantity > 1:
-                        note_parts.append(f'כפול {unit_quantity}')
-                    note = ' | '.join(note_parts) if note_parts else 'רגיל'
                     
                     self.results.append({
                         'שם המוצר': product_name,
