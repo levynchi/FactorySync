@@ -4,6 +4,7 @@ import json
 import subprocess
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+import pandas as pd
 
 # SumatraPDF path for 1:1 scale printing
 SUMATRA_PDF_PATH = r"C:\Users\levyn\AppData\Local\SumatraPDF\SumatraPDF.exe"
@@ -112,6 +113,8 @@ class StickersTabMixin:
         actions.pack(fill="x", padx=15, pady=(0, 10))
         tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_path_mapping).pack(side="left", padx=5)
         tk.Button(actions, text="💾 שמור", bg="#3498db", fg="white", command=self._label_paths_save).pack(side="left", padx=5)
+        tk.Button(actions, text="📤 ייצא לאקסל", bg="#9b59b6", fg="white", command=self._export_paths_to_excel).pack(side="left", padx=5)
+        tk.Button(actions, text="📥 ייבא מאקסל", bg="#1abc9c", fg="white", command=self._import_paths_from_excel).pack(side="left", padx=5)
 
         # Initialize data
         self._label_paths_data = {"mappings": []}
@@ -350,6 +353,148 @@ class StickersTabMixin:
                 json.dump(self._label_paths_data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בשמירה: {e}")
+
+    def _export_paths_to_excel(self):
+        """Export path mappings to Excel file."""
+        mappings = self._label_paths_data.get("mappings", [])
+        if not mappings:
+            messagebox.showwarning("אזהרה", "אין מיפויים לייצוא")
+            return
+
+        # Ask for save location
+        file_path = filedialog.asksaveasfilename(
+            title="שמור קובץ אקסל",
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+            initialfile="label_paths_export.xlsx"
+        )
+        if not file_path:
+            return
+
+        try:
+            from openpyxl import load_workbook
+            from openpyxl.styles import numbers
+            
+            # Create DataFrame with Hebrew column names
+            data = []
+            for m in mappings:
+                data.append({
+                    "מוצר": m.get("product", ""),
+                    "מידה": m.get("size", ""),
+                    "סוג בד": m.get("fabric", ""),
+                    "קובץ PDF": m.get("file", "")
+                })
+            
+            df = pd.DataFrame(data)
+            df.to_excel(file_path, index=False, engine='openpyxl')
+            
+            # Format size column as text to prevent Excel date conversion
+            wb = load_workbook(file_path)
+            ws = wb.active
+            # Column B is "מידה" (size)
+            for cell in ws['B']:
+                cell.number_format = numbers.FORMAT_TEXT
+            wb.save(file_path)
+            
+            messagebox.showinfo("הצלחה", f"יוצאו {len(mappings)} מיפויים לקובץ:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייצוא: {e}")
+
+    def _import_paths_from_excel(self):
+        """Import path mappings from Excel file."""
+        # Ask for file to import
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ אקסל לייבוא",
+            filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return
+
+        try:
+            # Read Excel file with size column as string to prevent date conversion
+            df = pd.read_excel(file_path, engine='openpyxl', dtype={'מידה': str})
+            
+            # Validate columns
+            required_cols = {"מוצר", "מידה", "סוג בד", "קובץ PDF"}
+            if not required_cols.issubset(set(df.columns)):
+                messagebox.showerror("שגיאה", f"הקובץ חייב להכיל את העמודות:\n{', '.join(required_cols)}")
+                return
+
+            # Create import dialog
+            dialog = tk.Toplevel(self.stickers_tab)
+            dialog.title("ייבוא מאקסל")
+            dialog.grab_set()
+            dialog.resizable(False, False)
+
+            frm = ttk.Frame(dialog, padding=20)
+            frm.pack(fill='both', expand=True)
+
+            ttk.Label(frm, text=f"נמצאו {len(df)} שורות בקובץ", font=('Arial', 11, 'bold')).pack(pady=(0, 15))
+            ttk.Label(frm, text="בחר אופן ייבוא:").pack(pady=(0, 10))
+
+            import_mode = tk.StringVar(value="add")
+
+            ttk.Radiobutton(frm, text="הוספה - הוסף מיפויים חדשים (דלג על כפילויות)", 
+                           variable=import_mode, value="add").pack(anchor='w', pady=2)
+            ttk.Radiobutton(frm, text="דריסה - החלף את כל המיפויים הקיימים", 
+                           variable=import_mode, value="overwrite").pack(anchor='w', pady=2)
+
+            btn_frame = ttk.Frame(frm)
+            btn_frame.pack(pady=(20, 0))
+
+            def do_import():
+                mode = import_mode.get()
+                new_mappings = []
+                
+                for _, row in df.iterrows():
+                    product = str(row.get("מוצר", "")).strip()
+                    size = str(row.get("מידה", "")).strip()
+                    fabric = str(row.get("סוג בד", "")).strip()
+                    file = str(row.get("קובץ PDF", "")).strip()
+                    
+                    if product and size and fabric and file:
+                        new_mappings.append({
+                            "product": product,
+                            "size": size,
+                            "fabric": fabric,
+                            "file": file
+                        })
+
+                if mode == "overwrite":
+                    self._label_paths_data["mappings"] = new_mappings
+                    added = len(new_mappings)
+                    skipped = 0
+                else:  # add mode
+                    existing = self._label_paths_data.get("mappings", [])
+                    existing_keys = {(m["product"], m["size"], m["fabric"]) for m in existing}
+                    
+                    added = 0
+                    skipped = 0
+                    for m in new_mappings:
+                        key = (m["product"], m["size"], m["fabric"])
+                        if key not in existing_keys:
+                            existing.append(m)
+                            existing_keys.add(key)
+                            added += 1
+                        else:
+                            skipped += 1
+                    
+                    self._label_paths_data["mappings"] = existing
+
+                self._refresh_paths_tree()
+                self._label_paths_save()
+                dialog.destroy()
+
+                msg = f"יובאו {added} מיפויים"
+                if skipped > 0:
+                    msg += f"\nדולגו {skipped} כפילויות"
+                messagebox.showinfo("הצלחה", msg)
+
+            ttk.Button(btn_frame, text="ייבא", command=do_import).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="ביטול", command=dialog.destroy).pack(side='left', padx=5)
+
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בייבוא: {e}")
 
     # ==================== PRINT TAB ====================
     def _create_print_tab(self):
