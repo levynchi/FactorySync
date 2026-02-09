@@ -46,6 +46,20 @@ class ShipmentsTabMixin:
         filter_paid_combo['values'] = ['הכל', 'רק שולם', 'רק לא שולם']
         filter_paid_combo.pack(side='right', padx=2)
         filter_paid_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
+
+        tk.Label(filter_row1, text='סוג הובלה:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        self.shipments_filter_kind_var = tk.StringVar(value='הכל')
+        self.shipments_filter_kind_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_kind_var, width=14, state='readonly')
+        self.shipments_filter_kind_combo['values'] = ['הכל', 'קליטה', 'הובלה', 'קליטת בדים', 'שליחת בדים']
+        self.shipments_filter_kind_combo.pack(side='right', padx=2)
+        self.shipments_filter_kind_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
+
+        tk.Label(filter_row1, text='פריט הובלה:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        self.shipments_filter_package_type_var = tk.StringVar(value='הכל')
+        self.shipments_filter_package_type_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_package_type_var, width=14, state='readonly')
+        self.shipments_filter_package_type_combo['values'] = ['הכל']
+        self.shipments_filter_package_type_combo.pack(side='right', padx=2)
+        self.shipments_filter_package_type_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
         
         # שורה שנייה: תאריכים
         filter_row2 = tk.Frame(filter_frame, bg='#f7f9fa')
@@ -95,8 +109,12 @@ class ShipmentsTabMixin:
         sort_combo.current(0)
         sort_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
 
+        # Container for tree + scrollbar
+        tree_container = tk.Frame(shipments_page, bg='#f7f9fa')
+        tree_container.pack(fill='both', expand=True, padx=10, pady=6)
+
         columns = ('id','kind','date','package_type','quantity','driver','paid')
-        self.shipments_tree = ttk.Treeview(shipments_page, columns=columns, show='headings', height=17)
+        self.shipments_tree = ttk.Treeview(tree_container, columns=columns, show='headings', height=17)
         headers = {
             'id': 'מספר תעודה',
             'kind': 'סוג',
@@ -110,10 +128,17 @@ class ShipmentsTabMixin:
         for c in columns:
             self.shipments_tree.heading(c, text=headers[c])
             self.shipments_tree.column(c, width=widths[c], anchor='center')
-        vs = ttk.Scrollbar(shipments_page, orient='vertical', command=self.shipments_tree.yview)
+        vs = ttk.Scrollbar(tree_container, orient='vertical', command=self.shipments_tree.yview)
         self.shipments_tree.configure(yscroll=vs.set)
-        self.shipments_tree.pack(side='left', fill='both', expand=True, padx=(10,0), pady=6)
-        vs.pack(side='left', fill='y', pady=6)
+        self.shipments_tree.pack(side='left', fill='both', expand=True)
+        vs.pack(side='left', fill='y')
+
+        # Summary label below tree
+        self.shipments_summary_var = tk.StringVar(value='')
+        self.shipments_summary_label = tk.Label(shipments_page, textvariable=self.shipments_summary_var,
+            font=('Arial', 11, 'bold'), bg='#f7f9fa', fg='#2c3e50', anchor='e')
+        self.shipments_summary_label.pack(fill='x', padx=15, pady=(2, 6))
+
         self._refresh_shipments_table()
 
         # --- עמוד מובילים ---
@@ -372,6 +397,8 @@ class ShipmentsTabMixin:
         try:
             self.shipments_filter_driver_var.set('הכל')
             self.shipments_filter_paid_var.set('הכל')
+            self.shipments_filter_kind_var.set('הכל')
+            self.shipments_filter_package_type_var.set('הכל')
             self.shipments_filter_date_from_var.set('')
             self.shipments_filter_date_to_var.set('')
             self._refresh_shipments_table()
@@ -494,6 +521,17 @@ class ShipmentsTabMixin:
                     collect([rec], rk)
             except Exception:
                 pass
+            # עדכון רשימת פריטי הובלה לסינון
+            if hasattr(self, 'shipments_filter_package_type_combo'):
+                pkg_types = sorted(set(r.get('package_type', '') for r in rows if r.get('package_type')))
+                current_pt = getattr(self, 'shipments_filter_package_type_var', None)
+                if current_pt:
+                    cur_val = current_pt.get()
+                    self.shipments_filter_package_type_combo['values'] = ['הכל'] + pkg_types
+                    if cur_val in ['הכל'] + pkg_types:
+                        current_pt.set(cur_val)
+                    else:
+                        current_pt.set('הכל')
             # מיון לפי בחירת המשתמש
             sort_mode = getattr(self, 'shipments_sort_var', None)
             if sort_mode:
@@ -518,6 +556,8 @@ class ShipmentsTabMixin:
             filtered_rows = []
             filter_driver = getattr(self, 'shipments_filter_driver_var', None)
             filter_paid = getattr(self, 'shipments_filter_paid_var', None)
+            filter_kind = getattr(self, 'shipments_filter_kind_var', None)
+            filter_package_type = getattr(self, 'shipments_filter_package_type_var', None)
             filter_date_from = getattr(self, 'shipments_filter_date_from_var', None)
             filter_date_to = getattr(self, 'shipments_filter_date_to_var', None)
             
@@ -525,6 +565,16 @@ class ShipmentsTabMixin:
                 # סינון מוביל
                 if filter_driver and filter_driver.get() != 'הכל':
                     if r.get('driver', '') != filter_driver.get():
+                        continue
+                
+                # סינון סוג הובלה
+                if filter_kind and filter_kind.get() != 'הכל':
+                    if r.get('kind', '') != filter_kind.get():
+                        continue
+                
+                # סינון פריט הובלה
+                if filter_package_type and filter_package_type.get() != 'הכל':
+                    if r.get('package_type', '') != filter_package_type.get():
                         continue
                 
                 # סינון מצב תשלום
@@ -576,6 +626,17 @@ class ShipmentsTabMixin:
                     'driver': r.get('driver'),
                     'paid': r.get('paid', False)
                 }
+
+            # סיכום כמות פריטים
+            total_qty = 0
+            for r in rows:
+                q = r.get('quantity', 0)
+                try:
+                    total_qty += int(q) if q not in (None, '') else 0
+                except (TypeError, ValueError):
+                    pass
+            if hasattr(self, 'shipments_summary_var'):
+                self.shipments_summary_var.set(f'סה"כ כמות פריטים: {total_qty}')
 
     def _delete_selected_shipment_row(self):
         """מחק את שורת ההובלה המסומנת מהמקור (קליטה/תעודת משלוח) ושמור."""
