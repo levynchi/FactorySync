@@ -1885,5 +1885,53 @@
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2025-12-15 15:06:17"
+  },
+  {
+    "id": 125,
+    "barcode": "7297555020840",
+    "name": "סט קיץ בייבי בייסיק בנים",
+    "size": "2",
+    "fabric_type": "ופל",
+    "fabric_color": "",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "בד ופל",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2026-02-09 09:27:33"
+  },
+  {
+    "id": 126,
+    "barcode": "7297555020857",
+    "name": "סט קיץ בייבי בייסיק בנים",
+    "size": "3",
+    "fabric_type": "ופל",
+    "fabric_color": "",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "בד ופל",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2026-02-09 09:27:33"
+  },
+  {
+    "id": 127,
+    "barcode": "7297555020864",
+    "name": "סט קיץ בייבי בייסיק בנים",
+    "size": "4",
+    "fabric_type": "ופל",
+    "fabric_color": "",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "בד ופל",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2026-02-09 09:27:33"
   }
 ]
