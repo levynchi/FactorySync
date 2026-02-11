@@ -1933,5 +1933,37 @@
     "elastic_qty": 0,
     "ribbon_qty": 0,
     "created_at": "2026-02-09 09:27:33"
+  },
+  {
+    "id": 128,
+    "barcode": "7297555020871",
+    "name": "רגליות",
+    "size": "פגים",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל לבן",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2026-02-11 14:14:16"
+  },
+  {
+    "id": 129,
+    "barcode": "7297555020888",
+    "name": "בגד גוף מעטפת",
+    "size": "פגים",
+    "fabric_type": "פלנל",
+    "fabric_color": "לבן",
+    "print_name": "חלק",
+    "category": "גזרות לא תפורות,בגד לתיקון,בגדים תפורים",
+    "fabric_category": "פלנל לבן",
+    "square_area": 0.0,
+    "ticks_qty": 0,
+    "elastic_qty": 0,
+    "ribbon_qty": 0,
+    "created_at": "2026-02-11 14:16:00"
   }
 ]

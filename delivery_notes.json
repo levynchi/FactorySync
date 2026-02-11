@@ -2050,5 +2050,73 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-02-09 09:30:47"
+  },
+  {
+    "id": 54,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-02-11",
+    "lines": [
+      {
+        "product": "רגליות",
+        "size": "פגים",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 166,
+        "note": "לשים תוויות של N/B"
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "פגים",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 166,
+        "note": "לשים תוויות של N/B"
+      },
+      {
+        "product": "גטקס",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 124,
+        "note": ""
+      },
+      {
+        "product": "גטקס",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 105,
+        "note": ""
+      }
+    ],
+    "total_quantity": 561,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "תוויות N/B",
+        "unit": "",
+        "quantity": 500.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-02-11 14:21:05"
   }
 ]
