@@ -587,5 +587,30 @@
     "meters": 228.23000000000002,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "created_at": "2026-02-03 14:20:12"
+  },
+  {
+    "id": 23,
+    "date": "2026-02-15",
+    "barcodes": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "count_barcodes": 4,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "fabric_type": "OTHER",
+    "color_name": "אפור",
+    "color_no": "",
+    "net_kg": 70.0,
+    "meters": 100.0,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2026-02-15 13:03:00"
   }
 ]

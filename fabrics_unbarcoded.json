@@ -403,5 +403,41 @@
     "color": "ורוד",
     "shade": "",
     "notes": "Desen: חלק, רוחב: 0cm, ק\"ג: 16.60, מטרים: 45.00, מחיר: 0.00"
+  },
+  {
+    "id": 46,
+    "created_at": "2026-02-15 13:01:35",
+    "fabric_type": "OTHER",
+    "manufacturer": "",
+    "color": "אפור",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 0cm, ק\"ג: 10.00, מטרים: 25.00, מחיר: 0.00"
+  },
+  {
+    "id": 47,
+    "created_at": "2026-02-15 13:01:58",
+    "fabric_type": "OTHER",
+    "manufacturer": "",
+    "color": "ורוד",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 0cm, ק\"ג: 10.00, מטרים: 25.00, מחיר: 0.00"
+  },
+  {
+    "id": 48,
+    "created_at": "2026-02-15 13:02:11",
+    "fabric_type": "OTHER",
+    "manufacturer": "",
+    "color": "אפור",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 0cm, ק\"ג: 25.00, מטרים: 25.00, מחיר: 0.00"
+  },
+  {
+    "id": 49,
+    "created_at": "2026-02-15 13:02:35",
+    "fabric_type": "OTHER",
+    "manufacturer": "",
+    "color": "חום",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 0cm, ק\"ג: 25.00, מטרים: 25.00, מחיר: 0.00"
   }
 ]
