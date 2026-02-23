@@ -20,6 +20,7 @@ class ProductsCatalogTabMixin(ProductsCatalogMethodsMixin):
 		main_categories_tab = tk.Frame(inner_nb, bg='#f7f9fa')
 		attributes_tab = tk.Frame(inner_nb, bg='#f7f9fa')
 		barcodes_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+		cuts_tab = tk.Frame(inner_nb, bg='#f7f9fa')
 
 		inner_nb.add(products_tab, text="פריטים")
 		inner_nb.add(accessories_tab, text="אביזרי תפירה")
@@ -27,6 +28,7 @@ class ProductsCatalogTabMixin(ProductsCatalogMethodsMixin):
 		inner_nb.add(main_categories_tab, text="קטגוריה ראשית")
 		inner_nb.add(attributes_tab, text="תכונות מוצר")
 		inner_nb.add(barcodes_tab, text="ברקודים")
+		inner_nb.add(cuts_tab, text="גזרות")
 
 		# Build each sub-section
 		self._build_products_section(products_tab)
@@ -35,3 +37,4 @@ class ProductsCatalogTabMixin(ProductsCatalogMethodsMixin):
 		self._build_main_categories_section(main_categories_tab)
 		self._build_attributes_section(attributes_tab)
 		self._build_barcodes_section(barcodes_tab)
+		self._build_cuts_section(cuts_tab)

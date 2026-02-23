@@ -2183,3 +2183,201 @@ class ProductsCatalogMethodsMixin:
                 
         except Exception as e:
             messagebox.showerror("שגיאה", f"שגיאה בייצוא לאקסל:\n{str(e)}")
+
+    # ===== Cuts (גזרות) section =====
+    def _build_cuts_section(self, parent):
+        """Build the cuts catalog section: form + table + actions."""
+        form = ttk.LabelFrame(parent, text="הוספת גזרה", padding=10)
+        form.pack(fill='x', padx=10, pady=6)
+
+        self.cut_file_name_var = tk.StringVar()
+        self.cut_file_path_var = tk.StringVar()
+        self.cut_product_name_var = tk.StringVar()
+        self.cut_sizes_var = tk.StringVar()
+        self.cut_category_var = tk.StringVar()
+        self.cut_image_path_var = tk.StringVar()
+
+        row = 0
+        tk.Label(form, text="שם קובץ אופטיטקס:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        tk.Entry(form, textvariable=self.cut_file_name_var, width=28).grid(row=row, column=1, padx=4, pady=4, sticky='w')
+        tk.Label(form, text="נתיב קובץ:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Entry(form, textvariable=self.cut_file_path_var, width=36).grid(row=row, column=3, padx=4, pady=4, sticky='w')
+        tk.Button(form, text="בחר קובץ...", command=self._browse_cut_file).grid(row=row, column=4, padx=4, pady=4)
+        row += 1
+
+        tk.Label(form, text="שם הפריט:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        model_names = [r.get('name', '') for r in getattr(self.data_processor, 'product_model_names', []) if r.get('name')]
+        self.cut_product_combo = ttk.Combobox(form, textvariable=self.cut_product_name_var, values=sorted(set(model_names)), width=26)
+        self.cut_product_combo.grid(row=row, column=1, padx=4, pady=4, sticky='w')
+        tk.Label(form, text="מידות:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Entry(form, textvariable=self.cut_sizes_var, width=36).grid(row=row, column=3, columnspan=2, padx=4, pady=4, sticky='w')
+        row += 1
+
+        tk.Label(form, text="קטגוריה:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        self.cut_category_combo = ttk.Combobox(form, textvariable=self.cut_category_var, width=26)
+        self.cut_category_combo.grid(row=row, column=1, padx=4, pady=4, sticky='w')
+        tk.Label(form, text="תמונה:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Entry(form, textvariable=self.cut_image_path_var, width=32).grid(row=row, column=3, padx=4, pady=4, sticky='w')
+        tk.Button(form, text="בחר תמונה...", command=self._browse_cut_image).grid(row=row, column=4, padx=4, pady=4)
+        row += 1
+
+        tk.Button(form, text="➕ הוסף גזרה", command=self._add_cut, bg='#27ae60', fg='white').grid(row=row, column=1, padx=8, pady=6)
+
+        tree_frame = ttk.LabelFrame(parent, text="טבלת גזרות", padding=6)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
+        cols = ('file_name', 'file_path', 'product_name', 'sizes', 'category', 'image_path')
+        self.cuts_tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=14)
+        headers = {'file_name': 'שם קובץ', 'file_path': 'נתיב קובץ', 'product_name': 'שם פריט', 'sizes': 'מידות', 'category': 'קטגוריה', 'image_path': 'תמונה'}
+        widths = {'file_name': 180, 'file_path': 280, 'product_name': 120, 'sizes': 120, 'category': 120, 'image_path': 200}
+        for c in cols:
+            self.cuts_tree.heading(c, text=headers[c])
+            self.cuts_tree.column(c, width=widths[c], anchor='center')
+        vs = ttk.Scrollbar(tree_frame, orient='vertical', command=self.cuts_tree.yview)
+        self.cuts_tree.configure(yscroll=vs.set)
+        self.cuts_tree.pack(side='left', fill='both', expand=True)
+        vs.pack(side='right', fill='y')
+        self.cuts_tree.bind('<Double-1>', self._on_cuts_tree_double_click)
+
+        actions = tk.Frame(parent, bg='#f7f9fa')
+        actions.pack(fill='x', padx=10, pady=(0, 8))
+        tk.Button(actions, text="🗑 מחק נבחר", command=self._delete_cut, bg='#e67e22', fg='white').pack(side='left', padx=5)
+        tk.Button(actions, text="💾 שמור", command=self._save_cuts_catalog, bg='#3498db', fg='white').pack(side='left', padx=5)
+
+        self._refresh_cuts_tree()
+        self._update_cuts_category_combo()
+
+    def _update_cuts_category_combo(self):
+        """Update category combobox values from existing cuts."""
+        cuts = getattr(self.data_processor, 'cuts_catalog', [])
+        cats = sorted(set(c.get('category', '') for c in cuts if c.get('category')))
+        if hasattr(self, 'cut_category_combo'):
+            self.cut_category_combo['values'] = cats
+
+    def _load_cuts_catalog(self):
+        """Load cuts from data processor (already in memory)."""
+        getattr(self.data_processor, 'cuts_catalog', [])
+
+    def _save_cuts_catalog(self):
+        """Save cuts to JSON file."""
+        try:
+            dp = self.data_processor
+            dp._save_json_list(dp.cuts_catalog_file, dp.cuts_catalog)
+            messagebox.showinfo("שמירה", "גזרות נשמרו בהצלחה")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בשמירת גזרות: {e}")
+
+    def _refresh_cuts_tree(self):
+        """Refresh the cuts tree from data."""
+        if not hasattr(self, 'cuts_tree'):
+            return
+        for iid in self.cuts_tree.get_children():
+            self.cuts_tree.delete(iid)
+        cuts = getattr(self.data_processor, 'cuts_catalog', [])
+        for c in cuts:
+            self.cuts_tree.insert('', 'end', values=(
+                c.get('file_name', ''),
+                c.get('file_path', ''),
+                c.get('product_name', ''),
+                c.get('sizes', ''),
+                c.get('category', ''),
+                c.get('image_path', '')
+            ))
+        self._update_cuts_category_combo()
+
+    def _browse_cut_file(self):
+        """Browse for Optitex .pds file; set file_path and file_name."""
+        path = filedialog.askopenfilename(
+            title="בחר קובץ אופטיטקס",
+            filetypes=[("Optitex PDS", "*.pds"), ("All files", "*.*")]
+        )
+        if path:
+            self.cut_file_path_var.set(path)
+            self.cut_file_name_var.set(os.path.basename(path))
+
+    def _browse_cut_image(self):
+        """Browse for image file."""
+        path = filedialog.askopenfilename(
+            title="בחר תמונה",
+            filetypes=[("Images", "*.png *.jpg *.jpeg *.gif *.bmp"), ("All files", "*.*")]
+        )
+        if path:
+            self.cut_image_path_var.set(path)
+
+    def _add_cut(self):
+        """Add a new cut record."""
+        file_name = (self.cut_file_name_var.get() or '').strip()
+        file_path = (self.cut_file_path_var.get() or '').strip()
+        product_name = (self.cut_product_name_var.get() or '').strip()
+        sizes = (self.cut_sizes_var.get() or '').strip()
+        category = (self.cut_category_var.get() or '').strip()
+        image_path = (self.cut_image_path_var.get() or '').strip()
+
+        if not file_name:
+            messagebox.showwarning("חסר", "אנא הזן שם קובץ אופטיטקס")
+            return
+
+        dp = self.data_processor
+        cuts = getattr(dp, 'cuts_catalog', [])
+        new_id = max([c.get('id', 0) for c in cuts], default=0) + 1
+        record = {
+            'id': new_id,
+            'file_name': file_name,
+            'file_path': file_path,
+            'image_path': image_path,
+            'product_name': product_name,
+            'sizes': sizes,
+            'category': category,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        dp.cuts_catalog = cuts + [record]
+        self._refresh_cuts_tree()
+        self._save_cuts_catalog()
+
+        self.cut_file_name_var.set('')
+        self.cut_file_path_var.set('')
+        self.cut_product_name_var.set('')
+        self.cut_sizes_var.set('')
+        self.cut_category_var.set('')
+        self.cut_image_path_var.set('')
+
+    def _delete_cut(self):
+        """Delete selected cut."""
+        sel = self.cuts_tree.selection()
+        if not sel:
+            messagebox.showwarning("אזהרה", "בחר שורה למחיקה")
+            return
+        if not messagebox.askyesno("אישור", "למחוק את הגזרה הנבחרת?"):
+            return
+        vals = self.cuts_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        file_name, file_path = vals[0], vals[1]
+        dp = self.data_processor
+        dp.cuts_catalog = [c for c in dp.cuts_catalog if c.get('file_name') != file_name or c.get('file_path') != file_path]
+        self._refresh_cuts_tree()
+        self._save_cuts_catalog()
+
+    def _on_cuts_tree_double_click(self, event):
+        """On double-click: show image popup if image path set."""
+        sel = self.cuts_tree.selection()
+        if not sel:
+            return
+        vals = self.cuts_tree.item(sel[0], 'values')
+        if len(vals) < 6:
+            return
+        image_path = (vals[5] or '').strip()
+        if not image_path or not os.path.exists(image_path):
+            messagebox.showinfo("תמונה", "אין תמונה או שהנתיב לא קיים")
+            return
+        try:
+            from PIL import Image, ImageTk
+            win = tk.Toplevel(self.root)
+            win.title("תמונת גזרה")
+            im = Image.open(image_path)
+            im.thumbnail((600, 600))
+            photo = ImageTk.PhotoImage(im)
+            lbl = tk.Label(win, image=photo)
+            lbl.image = photo
+            lbl.pack(padx=10, pady=10)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן להציג תמונה: {e}")

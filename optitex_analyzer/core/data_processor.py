@@ -73,6 +73,9 @@ class DataProcessor:
 		# Barcodes data
 		self.barcodes_data_file = 'barcodes_data.json'
 		self.barcodes_data = self.load_barcodes_data()
+		# Cuts catalog (גזרות)
+		self.cuts_catalog_file = 'cuts_catalog.json'
+		self.cuts_catalog = self._load_json_list(self.cuts_catalog_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
