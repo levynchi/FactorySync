@@ -151,5 +151,22 @@
     "fabric_shipping_cost_percent": 100,
     "packing_list": "arye new_20250911_073328.xls",
     "payment_request": "אריה 816 חדש_20250911_073333.pdf"
+  },
+  {
+    "name": "סאקיס קארגו בע\"מ",
+    "date": "09/04/2026",
+    "cub": 9.0,
+    "total_weight": 502.0,
+    "rolls_quantity": 25,
+    "product_price_usd": 576.0,
+    "usd_rate": 3.14,
+    "final_shipping_cost": 1808.64,
+    "domestic_shipping": 0.0,
+    "final_cost_incl_domestic": 1808.64,
+    "total_price_per_kg": 3.6028685258964144,
+    "total_price_per_cubic": 200.96,
+    "fabric_shipping_cost_percent": 100,
+    "packing_list": "30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
+    "payment_request": "דרישת תשלום_20260409_143003.pdf"
   }
 ]
