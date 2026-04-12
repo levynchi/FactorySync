@@ -8,6 +8,26 @@ import os
 from datetime import datetime
 from typing import Dict, List, Any
 
+
+def parse_numeric_value(val) -> float:
+	"""המרת ערכי מספר מטקסט, כולל פורמטים של מטבע."""
+	try:
+		if val is None:
+			return 0.0
+		v = str(val).strip()
+		if v == '':
+			return 0.0
+		if v.startswith('(') and v.endswith(')'):
+			v = f"-{v[1:-1]}"
+		for token in ('$', '₪', '€', '£'):
+			v = v.replace(token, '')
+		v = v.replace(',', '').replace(' ', '')
+		if v == '':
+			return 0.0
+		return float(v)
+	except Exception:
+		return 0.0
+
 class DataProcessor:
 	"""מעבד נתונים וייצוא"""
     
@@ -785,17 +805,6 @@ class DataProcessor:
 				raise ValueError("לא נקראו רשומות מהקובץ")
 
 			# ניקוי כותרות וטרנספורמציה
-			def to_float(val):
-				try:
-					if val is None:
-						return 0.0
-					v = str(val).strip().replace(',', '')
-					if v == '':
-						return 0.0
-					return float(v)
-				except Exception:
-					return 0.0
-
 			for r in rows:
 				cleaned = { (k.strip() if k else ''): (v.strip() if isinstance(v, str) else v) for k,v in r.items() }
 				record = {
@@ -806,11 +815,11 @@ class DataProcessor:
 					'design_code': cleaned.get('Desen Kodu', ''),
 					'width': cleaned.get('WIDTH', ''),
 					'gr': cleaned.get('GR', ''),
-					'net_kg': to_float(cleaned.get('NET KG')),
-					'gross_kg': to_float(cleaned.get('GROSS KG')),
-					'meters': to_float(cleaned.get('METER')),
-					'price': to_float(cleaned.get('PRICE')) if 'PRICE' in cleaned else to_float(cleaned.get('PRICE ','0')),
-					'total': to_float(cleaned.get('TOTAL')) if 'TOTAL' in cleaned else to_float(cleaned.get('TOTAL  ','0')),
+					'net_kg': parse_numeric_value(cleaned.get('NET KG')),
+					'gross_kg': parse_numeric_value(cleaned.get('GROSS KG')),
+					'meters': parse_numeric_value(cleaned.get('METER')),
+					'price': parse_numeric_value(cleaned.get('PRICE')) if 'PRICE' in cleaned else parse_numeric_value(cleaned.get('PRICE ','0')),
+					'total': parse_numeric_value(cleaned.get('TOTAL')) if 'TOTAL' in cleaned else parse_numeric_value(cleaned.get('TOTAL  ','0')),
 					'location': cleaned.get('location', ''),
 					'last_modified': cleaned.get('Last Modified', ''),
 					'purpose': cleaned.get('מטרה', ''),
