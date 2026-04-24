@@ -2266,5 +2266,129 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-04-19 13:39:25"
+  },
+  {
+    "id": 59,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "20.04.2026",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "4",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 248,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 203,
+        "note": ""
+      }
+    ],
+    "total_quantity": 1443,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-04-24 09:17:08"
+  },
+  {
+    "id": 60,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "23.04.2026",
+    "lines": [
+      {
+        "product": "גופיות סבא",
+        "size": "14",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 184,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "16",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 184,
+        "note": ""
+      }
+    ],
+    "total_quantity": 368,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-04-24 09:18:18"
   }
 ]
