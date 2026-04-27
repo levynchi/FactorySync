@@ -521,6 +521,35 @@
           "ticks": ""
         }
       ]
+    },
+    {
+      "id": "batch_20260427_110556",
+      "created_at": "2026-04-27 11:05:56",
+      "mode": "add",
+      "items": [
+        {
+          "name": "אוברול ארוך סואגי",
+          "main_category": "בגדים",
+          "size": "3-6",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "176",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": "עם טיקטקים"
+        },
+        {
+          "name": "אוברול ארוך סואגי",
+          "main_category": "בגדים",
+          "size": "12-18",
+          "fabric_category": "פלנל לבן",
+          "fabric_type": "פלנל",
+          "quantity": "100",
+          "location": "גלריה 4",
+          "packaging": "תפזורת",
+          "ticks": "עם טיקטקים"
+        }
+      ]
     }
   ]
 }
