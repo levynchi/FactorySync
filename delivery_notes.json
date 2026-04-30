@@ -2452,5 +2452,38 @@
     "accessories": [],
     "receipt_kind": "delivery_note",
     "created_at": "2026-04-27 14:57:10"
+  },
+  {
+    "id": 62,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-04-30",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "תווית 3-6",
+        "unit": "יחידות",
+        "quantity": 5000.0
+      },
+      {
+        "accessory": "תווית 6-12",
+        "unit": "יחידות",
+        "quantity": 2500.0
+      },
+      {
+        "accessory": "טיק טקים קומפלט",
+        "unit": "יחידות",
+        "quantity": 6000.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-04-30 11:58:18"
   }
 ]

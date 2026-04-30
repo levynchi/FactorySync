@@ -706,5 +706,21 @@
     "meters": 61.93,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "created_at": "2026-04-24 09:18:42"
+  },
+  {
+    "id": 28,
+    "date": "2026-04-30",
+    "barcodes": [
+      "26019248"
+    ],
+    "count_barcodes": 1,
+    "packages": [],
+    "fabric_type": "RIB",
+    "color_name": "לבן",
+    "color_no": "110259",
+    "net_kg": 26.4,
+    "meters": 86.27,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2026-04-30 11:59:39"
   }
 ]
