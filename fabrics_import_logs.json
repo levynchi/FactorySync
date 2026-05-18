@@ -33,5 +33,12 @@
     "full_path": "C:\\Users\\levyn\\Downloads\\12.04.26 shipment.csv",
     "records_added": 25,
     "imported_at": "2026-04-12 10:47:51"
+  },
+  {
+    "id": 6,
+    "file_name": "fabrics_shipment_template_for18.05.26 master new new.csv",
+    "full_path": "C:\\Users\\levyn\\Downloads\\fabrics_shipment_template_for18.05.26 master new new.csv",
+    "records_added": 43,
+    "imported_at": "2026-05-18 09:06:47"
   }
 ]
