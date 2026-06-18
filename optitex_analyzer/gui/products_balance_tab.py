@@ -135,6 +135,66 @@ class ProductsBalanceTabMixin:
         
         # כפתור ניקוי סינונים
         tk.Button(cb_filter_bar, text='🗑️ נקה סינונים', command=self._clear_cut_balance_filters, bg='#e74c3c', fg='white').pack(side='left', padx=6)
+
+        # אזור סיכום מרוכז לפי תאריכים ודגם
+        summary_box = ttk.LabelFrame(cut_balance_page, text='סיכום לפי דגם ותאריכים')
+        summary_box.pack(fill='x', padx=10, pady=(0,6))
+        cb_summary_bar = tk.Frame(summary_box, bg='#f7f9fa')
+        cb_summary_bar.pack(fill='x', padx=8, pady=(6,4))
+
+        tk.Label(cb_summary_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_balance_summary_from_date_var = tk.StringVar()
+        cb_summary_from = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_from_date_var, width=12)
+        cb_summary_from.pack(side='right', padx=(0,2))
+        tk.Button(cb_summary_bar, text='📅', width=2, command=lambda e=cb_summary_from,v=self.cut_balance_summary_from_date_var: self._open_date_picker(e, v, self._summarize_cut_balance_grouped)).pack(side='right', padx=(0,6))
+
+        tk.Label(cb_summary_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_balance_summary_to_date_var = tk.StringVar()
+        cb_summary_to = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_to_date_var, width=12)
+        cb_summary_to.pack(side='right', padx=(0,2))
+        tk.Button(cb_summary_bar, text='📅', width=2, command=lambda e=cb_summary_to,v=self.cut_balance_summary_to_date_var: self._open_date_picker(e, v, self._summarize_cut_balance_grouped)).pack(side='right', padx=(0,6))
+
+        tk.Label(cb_summary_bar, text='דגם / חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        self.cut_balance_summary_search_var = tk.StringVar()
+        cb_summary_search = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_search_var, width=34)
+        cb_summary_search.pack(side='right', padx=(0,6))
+        cb_summary_search.bind('<Return>', lambda e: self._summarize_cut_balance_grouped())
+
+        tk.Button(cb_summary_bar, text='סכם הכל', command=self._summarize_cut_balance_grouped, bg='#27ae60', fg='white').pack(side='left', padx=6)
+        tk.Button(cb_summary_bar, text='סכם חיפוש', command=self._summarize_cut_balance, bg='#16a085', fg='white').pack(side='left', padx=6)
+        self.cut_balance_summary_result_var = tk.StringVar(value='בחר טווח תאריכים ולחץ סכם הכל')
+        tk.Label(summary_box, textvariable=self.cut_balance_summary_result_var, bg='#f7f9fa', fg='#2c3e50', font=('Arial',10,'bold')).pack(fill='x', padx=8, pady=(0,4))
+
+        grouped_cols = ('product','size','fabric_category','shipped','received','diff','drawings','status')
+        self.cut_balance_grouped_summary_tree = ttk.Treeview(summary_box, columns=grouped_cols, show='headings', height=8)
+        grouped_headers = {
+            'product':'מוצר','size':'מידה','fabric_category':'קטגורית בד',
+            'shipped':'נשלח (נגזר×שכבות)','received':'נתקבל (חזר מציור)',
+            'diff':'הפרש','drawings':'ציורים','status':'סטטוס'
+        }
+        grouped_widths = {'product':230,'size':70,'fabric_category':130,'shipped':130,'received':130,'diff':90,'drawings':70,'status':130}
+        for c in grouped_cols:
+            self.cut_balance_grouped_summary_tree.heading(c, text=grouped_headers[c])
+            self.cut_balance_grouped_summary_tree.column(c, width=grouped_widths[c], anchor='center')
+        self.cut_balance_grouped_summary_tree.pack(fill='x', padx=8, pady=(0,6))
+        try:
+            self.cut_balance_grouped_summary_tree.bind('<Double-1>', self._on_cut_balance_grouped_row_double_click)
+            self.cut_balance_grouped_summary_tree.bind('<Return>', self._on_cut_balance_grouped_row_double_click)
+        except Exception:
+            pass
+
+        summary_cols = ('type','date','doc','drawing','product','size','fabric_category','quantity','calculation')
+        self.cut_balance_summary_tree = ttk.Treeview(summary_box, columns=summary_cols, show='headings', height=5)
+        summary_headers = {
+            'type':'סוג','date':'תאריך','doc':'מסמך','drawing':'ציור','product':'מוצר',
+            'size':'מידה','fabric_category':'קטגורית בד','quantity':'כמות','calculation':'חישוב'
+        }
+        summary_widths = {'type':90,'date':100,'doc':90,'drawing':70,'product':190,'size':70,'fabric_category':130,'quantity':80,'calculation':160}
+        for c in summary_cols:
+            self.cut_balance_summary_tree.heading(c, text=summary_headers[c])
+            self.cut_balance_summary_tree.column(c, width=summary_widths[c], anchor='center')
+        self.cut_balance_summary_tree.pack(fill='x', padx=8, pady=(0,6))
+
         # טבלה
         cb_cols = ('product','size','fabric_category','drawing_no','shipped','received','diff','status')
         self.cut_balance_tree = ttk.Treeview(cut_balance_page, columns=cb_cols, show='headings', height=18)
@@ -1821,6 +1881,22 @@ class ProductsBalanceTabMixin:
                 self.cut_balance_drawing_to_var.set('')
             if hasattr(self, 'cut_balance_only_pending_var'):
                 self.cut_balance_only_pending_var.set(False)
+            if hasattr(self, 'cut_balance_summary_from_date_var'):
+                self.cut_balance_summary_from_date_var.set('')
+            if hasattr(self, 'cut_balance_summary_to_date_var'):
+                self.cut_balance_summary_to_date_var.set('')
+            if hasattr(self, 'cut_balance_summary_search_var'):
+                self.cut_balance_summary_search_var.set('')
+            if hasattr(self, 'cut_balance_summary_result_var'):
+                self.cut_balance_summary_result_var.set('בחר טווח תאריכים ולחץ סכם הכל')
+            if hasattr(self, 'cut_balance_grouped_summary_tree'):
+                for iid in self.cut_balance_grouped_summary_tree.get_children():
+                    self.cut_balance_grouped_summary_tree.delete(iid)
+            if hasattr(self, '_cut_balance_grouped_summary_rows'):
+                self._cut_balance_grouped_summary_rows = {}
+            if hasattr(self, 'cut_balance_summary_tree'):
+                for iid in self.cut_balance_summary_tree.get_children():
+                    self.cut_balance_summary_tree.delete(iid)
             self._refresh_cut_balance_table()
         except Exception:
             pass
@@ -1888,6 +1964,383 @@ class ProductsBalanceTabMixin:
                 
         except Exception:
             pass
+
+    def _parse_cut_balance_date(self, date_str):
+        """פירוש תאריכים נפוצים במסכי מאזן הסחורות."""
+        s = (date_str or '').strip()
+        if not s:
+            return None
+        if len(s) > 10 and s[4:5] == '-':
+            s = s[:10]
+        for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d'):
+            try:
+                return datetime.strptime(s, fmt)
+            except Exception:
+                pass
+        return None
+
+    def _cut_balance_date_in_range(self, date_str, from_dt=None, to_dt=None):
+        if not (from_dt or to_dt):
+            return True
+        d = self._parse_cut_balance_date(date_str)
+        if d is None:
+            return False
+        if from_dt and d < from_dt:
+            return False
+        if to_dt and d > to_dt:
+            return False
+        return True
+
+    def _normalize_cut_balance_size(self, value):
+        s = (value or '').strip().lower()
+        if s.endswith('m') and any(ch.isdigit() for ch in s[:-1]):
+            s = s[:-1]
+        return s
+
+    def _normalize_cut_balance_text(self, value, compact=False):
+        s = (value or '').strip().lower()
+        if compact:
+            return re.sub(r'[\W_]+', '', s, flags=re.UNICODE)
+        return re.sub(r'[\W_]+', ' ', s, flags=re.UNICODE).strip()
+
+    def _cut_balance_matches_query(self, query, *parts):
+        q = (query or '').strip()
+        if not q:
+            return True
+        hay_raw = ' '.join(str(p or '') for p in parts)
+        hay_spaced = self._normalize_cut_balance_text(hay_raw)
+        hay_compact = self._normalize_cut_balance_text(hay_raw, compact=True)
+        for token in q.split():
+            token_spaced = self._normalize_cut_balance_text(token)
+            token_compact = self._normalize_cut_balance_text(token, compact=True)
+            if token_spaced and token_spaced in hay_spaced:
+                continue
+            if token_compact and token_compact in hay_compact:
+                continue
+            return False
+        return True
+
+    def _calculate_cut_balance_summary(self, supplier, query, from_date_str='', to_date_str=''):
+        """סיכום נשלח מול נתקבל עבור חיפוש דגם בטווח תאריכים."""
+        from_dt = self._parse_cut_balance_date(from_date_str) if from_date_str else None
+        to_dt = self._parse_cut_balance_date(to_date_str) if to_date_str else None
+        if from_date_str and from_dt is None:
+            raise ValueError("תאריך התחלה לא תקין. יש להזין YYYY-MM-DD")
+        if to_date_str and to_dt is None:
+            raise ValueError("תאריך סיום לא תקין. יש להזין YYYY-MM-DD")
+
+        shipped_rows = []
+        received_rows = []
+
+        try:
+            if hasattr(self.data_processor, 'refresh_supplier_receipts'):
+                self.data_processor.refresh_supplier_receipts()
+        except Exception:
+            pass
+        try:
+            if hasattr(self.data_processor, 'refresh_drawings_data'):
+                self.data_processor.refresh_drawings_data()
+        except Exception:
+            pass
+
+        # נשלח: ציורים שנחתכו אצל הספק, כמות בגזרה כפול שכבות.
+        for rec in getattr(self.data_processor, 'drawings_data', []) or []:
+            if rec.get('status') != 'נחתך':
+                continue
+            if (rec.get('נמען') or '').strip() != supplier:
+                continue
+            rec_date = rec.get('תאריך') or rec.get('date') or rec.get('תאריך יצירה') or ''
+            if not self._cut_balance_date_in_range(rec_date, from_dt, to_dt):
+                continue
+            try:
+                layers = int(rec.get('שכבות') or 0)
+            except Exception:
+                layers = 0
+            if layers <= 0:
+                continue
+            fabric_category = (rec.get('סוג בד') or 'טריקו לבן').strip()
+            drawing_no = str(rec.get('מס׳') or rec.get('id') or rec.get('number') or '')
+            for prod in rec.get('מוצרים', []) or []:
+                pname = (prod.get('שם המוצר') or '').strip()
+                for sz in prod.get('מידות', []) or []:
+                    size = (sz.get('מידה') or '').strip()
+                    try:
+                        qty = int(sz.get('כמות', 0) or 0)
+                    except Exception:
+                        qty = 0
+                    if not pname or qty <= 0:
+                        continue
+                    norm_size = self._normalize_cut_balance_size(size)
+                    if not self._cut_balance_matches_query(query, pname, size, norm_size, fabric_category, drawing_no):
+                        continue
+                    total = qty * layers
+                    shipped_rows.append({
+                        'type': 'נשלח',
+                        'date': str(rec_date)[:10],
+                        'doc': '',
+                        'drawing': drawing_no,
+                        'product': pname,
+                        'size': size,
+                        'fabric_category': fabric_category,
+                        'quantity': total,
+                        'calculation': f"{qty} × {layers} = {total}",
+                    })
+
+        # נתקבל: קליטות שסומנו חזר מציור, לפי תאריך הגעה אם קיים.
+        for rec in getattr(self.data_processor, 'supplier_intakes', []) or []:
+            if (rec.get('supplier') or '').strip() != supplier:
+                continue
+            rec_date = rec.get('arrival_date') or rec.get('date') or rec.get('created_at') or ''
+            if not self._cut_balance_date_in_range(rec_date, from_dt, to_dt):
+                continue
+            rec_doc = rec.get('supplier_doc_number') or rec.get('number') or rec.get('id') or ''
+            for ln in rec.get('lines', []) or []:
+                if (ln.get('returned_from_drawing') or '').strip() != 'כן':
+                    continue
+                pname = (ln.get('product') or '').strip()
+                size = (ln.get('size') or '').strip()
+                try:
+                    qty = int(ln.get('quantity', 0) or 0)
+                except Exception:
+                    qty = 0
+                if not pname or qty <= 0:
+                    continue
+                fcat = (ln.get('fabric_category') or '').strip()
+                if not fcat:
+                    try:
+                        fcat = self._get_product_attrs(pname, size, True)[3]
+                    except Exception:
+                        fcat = ''
+                fabric_type = (ln.get('fabric_type') or '').strip()
+                drawing_no = str(ln.get('drawing_id') or '')
+                norm_size = self._normalize_cut_balance_size(size)
+                if not self._cut_balance_matches_query(query, pname, size, norm_size, fcat, fabric_type, drawing_no):
+                    continue
+                received_rows.append({
+                    'type': 'נתקבל',
+                    'date': str(rec_date)[:10],
+                    'doc': str(rec_doc),
+                    'drawing': drawing_no,
+                    'product': pname,
+                    'size': size,
+                    'fabric_category': fcat,
+                    'quantity': qty,
+                    'calculation': 'חזר מציור',
+                })
+
+        shipped_total = sum(int(r.get('quantity') or 0) for r in shipped_rows)
+        received_total = sum(int(r.get('quantity') or 0) for r in received_rows)
+        drawing_count = len({r.get('drawing') for r in shipped_rows if r.get('drawing')})
+        return {
+            'shipped_total': shipped_total,
+            'received_total': received_total,
+            'diff': shipped_total - received_total,
+            'drawing_count': drawing_count,
+            'shipped_rows': shipped_rows,
+            'received_rows': received_rows,
+        }
+
+    def _calculate_cut_balance_grouped_summary(self, supplier, query='', from_date_str='', to_date_str=''):
+        """קיבוץ כל הסחורות שנחתכו לפי מוצר, מידה וקטגורית בד."""
+        raw = self._calculate_cut_balance_summary(supplier, '', from_date_str, to_date_str)
+        grouped = {}
+
+        def _key_for(row):
+            product = (row.get('product') or '').strip()
+            size = self._normalize_cut_balance_size(row.get('size') or '')
+            fabric_category = (row.get('fabric_category') or '').strip()
+            return (product, size, fabric_category)
+
+        def _ensure_group(row):
+            key = _key_for(row)
+            if key not in grouped:
+                grouped[key] = {
+                    'product': key[0],
+                    'size': key[1],
+                    'fabric_category': key[2],
+                    'shipped_total': 0,
+                    'received_total': 0,
+                    'drawings': set(),
+                    'shipped_rows': [],
+                    'received_rows': [],
+                }
+            return grouped[key]
+
+        for row in raw.get('shipped_rows', []) or []:
+            if not self._cut_balance_matches_query(query, row.get('product'), row.get('size'), self._normalize_cut_balance_size(row.get('size')), row.get('fabric_category'), row.get('drawing')):
+                continue
+            group = _ensure_group(row)
+            qty = int(row.get('quantity') or 0)
+            group['shipped_total'] += qty
+            if row.get('drawing'):
+                group['drawings'].add(str(row.get('drawing')))
+            group['shipped_rows'].append(row)
+
+        for row in raw.get('received_rows', []) or []:
+            if not self._cut_balance_matches_query(query, row.get('product'), row.get('size'), self._normalize_cut_balance_size(row.get('size')), row.get('fabric_category'), row.get('drawing')):
+                continue
+            group = _ensure_group(row)
+            qty = int(row.get('quantity') or 0)
+            group['received_total'] += qty
+            group['received_rows'].append(row)
+
+        rows = []
+        for group in grouped.values():
+            shipped_total = group['shipped_total']
+            received_total = group['received_total']
+            diff = shipped_total - received_total
+            status = 'הושלם' if diff <= 0 else f"נותרו {diff} לקבל"
+            group['diff'] = diff
+            group['drawing_count'] = len(group['drawings'])
+            group['status'] = status
+            rows.append(group)
+
+        rows.sort(key=lambda g: (g.get('product') or '', g.get('size') or '', g.get('fabric_category') or ''))
+        return rows
+
+    def _summarize_cut_balance_grouped(self):
+        """מילוי טבלת הסיכום האוטומטית לפי כל הדגמים בטווח."""
+        try:
+            if hasattr(self, 'cut_balance_grouped_summary_tree'):
+                for iid in self.cut_balance_grouped_summary_tree.get_children():
+                    self.cut_balance_grouped_summary_tree.delete(iid)
+            if hasattr(self, 'cut_balance_summary_tree'):
+                for iid in self.cut_balance_summary_tree.get_children():
+                    self.cut_balance_summary_tree.delete(iid)
+            self._cut_balance_grouped_summary_rows = {}
+
+            supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+            if not supplier:
+                try:
+                    self.cut_balance_summary_result_var.set('יש לבחור ספק לפני הסיכום')
+                except Exception:
+                    pass
+                return
+
+            query = (getattr(self, 'cut_balance_summary_search_var', tk.StringVar()).get() or '').strip()
+            from_s = (getattr(self, 'cut_balance_summary_from_date_var', tk.StringVar()).get() or '').strip()
+            to_s = (getattr(self, 'cut_balance_summary_to_date_var', tk.StringVar()).get() or '').strip()
+            rows = self._calculate_cut_balance_grouped_summary(supplier, query, from_s, to_s)
+
+            shipped_total = sum(int(r.get('shipped_total') or 0) for r in rows)
+            received_total = sum(int(r.get('received_total') or 0) for r in rows)
+            diff_total = shipped_total - received_total
+            self.cut_balance_summary_result_var.set(
+                f"שורות: {len(rows)} | נשלח: {shipped_total} | נתקבל: {received_total} | הפרש: {max(diff_total, 0)}"
+            )
+
+            for idx, group in enumerate(rows):
+                iid = f"group_{idx}"
+                self._cut_balance_grouped_summary_rows[iid] = group
+                self.cut_balance_grouped_summary_tree.insert('', 'end', iid=iid, values=(
+                    group.get('product', ''),
+                    group.get('size', ''),
+                    group.get('fabric_category', ''),
+                    group.get('shipped_total', 0),
+                    group.get('received_total', 0),
+                    max(int(group.get('diff') or 0), 0),
+                    group.get('drawing_count', 0),
+                    group.get('status', ''),
+                ))
+        except Exception as e:
+            try:
+                self.cut_balance_summary_result_var.set(f"שגיאה בסיכום הכל: {e}")
+            except Exception:
+                pass
+
+    def _populate_cut_balance_summary_details(self, rows):
+        if not hasattr(self, 'cut_balance_summary_tree'):
+            return
+        for iid in self.cut_balance_summary_tree.get_children():
+            self.cut_balance_summary_tree.delete(iid)
+        rows = list(rows or [])
+        rows.sort(key=lambda r: (r.get('date') or '', r.get('type') or '', str(r.get('drawing') or '')))
+        for r in rows:
+            self.cut_balance_summary_tree.insert('', 'end', values=(
+                r.get('type', ''),
+                r.get('date', ''),
+                r.get('doc', ''),
+                r.get('drawing', ''),
+                r.get('product', ''),
+                r.get('size', ''),
+                r.get('fabric_category', ''),
+                r.get('quantity', 0),
+                r.get('calculation', ''),
+            ))
+
+    def _on_cut_balance_grouped_row_double_click(self, event=None):
+        try:
+            tree = getattr(self, 'cut_balance_grouped_summary_tree', None)
+            if tree is None:
+                return
+            sel = tree.selection()
+            if not sel:
+                return
+            group = getattr(self, '_cut_balance_grouped_summary_rows', {}).get(sel[0])
+            if not group:
+                return
+            detail_rows = (group.get('shipped_rows') or []) + (group.get('received_rows') or [])
+            self._populate_cut_balance_summary_details(detail_rows)
+
+            shipped_terms = [str(r.get('quantity') or 0) for r in group.get('shipped_rows', [])]
+            terms_text = ' + '.join(shipped_terms[:8])
+            if len(shipped_terms) > 8:
+                terms_text += f" + ... ({len(shipped_terms)} שורות)"
+            if not terms_text:
+                terms_text = '0'
+            diff = int(group.get('diff') or 0)
+            self.cut_balance_summary_result_var.set(
+                f"{group.get('product','')} | {group.get('size','')} | {group.get('fabric_category','')} - "
+                f"נשלח: {group.get('shipped_total',0)} ({terms_text}) | "
+                f"נתקבל: {group.get('received_total',0)} | הפרש: {max(diff,0)}"
+            )
+        except Exception:
+            pass
+
+    def _summarize_cut_balance(self):
+        """הצגת סיכום מרוכז בטאב מאזן סחורות שנחתכו."""
+        try:
+            if hasattr(self, 'cut_balance_summary_tree'):
+                for iid in self.cut_balance_summary_tree.get_children():
+                    self.cut_balance_summary_tree.delete(iid)
+
+            supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''
+            if not supplier:
+                try:
+                    self.cut_balance_summary_result_var.set('יש לבחור ספק לפני הסיכום')
+                except Exception:
+                    pass
+                return
+
+            query = (getattr(self, 'cut_balance_summary_search_var', tk.StringVar()).get() or '').strip()
+            from_s = (getattr(self, 'cut_balance_summary_from_date_var', tk.StringVar()).get() or '').strip()
+            to_s = (getattr(self, 'cut_balance_summary_to_date_var', tk.StringVar()).get() or '').strip()
+            summary = self._calculate_cut_balance_summary(supplier, query, from_s, to_s)
+
+            shipped_total = summary['shipped_total']
+            received_total = summary['received_total']
+            diff = summary['diff']
+            shipped_terms = [str(r.get('quantity') or 0) for r in summary['shipped_rows']]
+            terms_text = ' + '.join(shipped_terms[:8])
+            if len(shipped_terms) > 8:
+                terms_text += f" + ... ({len(shipped_terms)} שורות)"
+            if not terms_text:
+                terms_text = '0'
+            result_text = (
+                f"נשלח: {shipped_total} ({terms_text}) | "
+                f"נתקבל: {received_total} | "
+                f"הפרש: {max(diff, 0)} | "
+                f"ציורים שנכללו: {summary['drawing_count']}"
+            )
+            self.cut_balance_summary_result_var.set(result_text)
+
+            rows = summary['shipped_rows'] + summary['received_rows']
+            self._populate_cut_balance_summary_details(rows)
+        except Exception as e:
+            try:
+                self.cut_balance_summary_result_var.set(f"שגיאה בסיכום: {e}")
+            except Exception:
+                pass
 
     def _refresh_cut_balance_table(self):
         supplier = (getattr(self, 'balance_supplier_var', None).get() if hasattr(self, 'balance_supplier_var') else '') or ''

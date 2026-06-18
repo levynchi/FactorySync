@@ -19,6 +19,7 @@ from .formulas_tab import FormulasTabMixin
 from .shipping_costs_tab import ShippingCostsTabMixin
 from .orders_tab import OrdersTabMixin
 from .stickers_tab import StickersTabMixin
+from .rivhit_tab import RivhitTabMixin
 
 
 class MainWindow(
@@ -37,6 +38,7 @@ class MainWindow(
     ShippingCostsTabMixin,
     OrdersTabMixin,
     StickersTabMixin,
+    RivhitTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -171,6 +173,15 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'מדבקות' נכשלה: {e}")
+            except Exception:
+                pass
+
+        # Rivhit products tab
+        try:
+            self._create_rivhit_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'ריווחית' נכשלה: {e}")
             except Exception:
                 pass
 

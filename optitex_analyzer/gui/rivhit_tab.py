@@ -1,0 +1,379 @@
+"""טאב 'ריווחית' - הצגת רשימת מוצרים עדכנית מקובץ הייצוא של ריווחית."""
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+
+
+class RivhitTabMixin:
+    """Mixin לטאב 'ריווחית'."""
+
+    # מיפוי עמודות לכותרות בעברית
+    _RIVHIT_COLS = ('item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'compute_0036')
+    _RIVHIT_HEADERS = {
+        'item_num': 'מספר פריט',
+        'item_name': 'שם הפריט',
+        'item_part_num': 'מק"ט / ברקוד',
+        'item_cost_nis': 'עלות (₪)',
+        'item_sale_nis': 'מחיר מכירה (₪)',
+        'compute_0036': 'עונה / קטגוריה',
+        'digital_price': 'מחיר לצרכן דיגיטלי (₪)',
+    }
+    _RIVHIT_WIDTHS = {
+        'item_num': 80,
+        'item_name': 300,
+        'item_part_num': 150,
+        'item_cost_nis': 100,
+        'item_sale_nis': 110,
+        'compute_0036': 130,
+        'digital_price': 130,
+    }
+
+    def _create_rivhit_tab(self):
+        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        self.notebook.add(tab, text="ריווחית")
+
+        # Inner notebook with two sub-tabs
+        inner = ttk.Notebook(tab)
+        inner.pack(fill='both', expand=True)
+
+        list_frame = tk.Frame(inner, bg='#f7f9fa')
+        add_frame = tk.Frame(inner, bg='#f7f9fa')
+        data_frame = tk.Frame(inner, bg='#f7f9fa')
+        inner.add(list_frame, text="רשימת מוצרים")
+        inner.add(add_frame, text="הוספת מוצרים וייצוא")
+        inner.add(data_frame, text="העלאת נתונים מריווחית")
+
+        self._build_rivhit_list_subtab(list_frame)
+        self._build_rivhit_add_subtab(add_frame)
+        self._build_rivhit_data_subtab(data_frame)
+
+    def _build_rivhit_list_subtab(self, tab):
+        tk.Label(tab, text="רשימת מוצרים מריווחית", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+
+        # Action bar
+        actions = tk.Frame(tab, bg='#f7f9fa')
+        actions.pack(fill='x', padx=15, pady=5)
+        tk.Button(actions, text="🔄 רענן", command=self._refresh_rivhit_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+
+        # Last upload info
+        self.rivhit_meta_var = tk.StringVar(value='')
+        tk.Label(actions, textvariable=self.rivhit_meta_var, bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 9)).pack(side='right', padx=15)
+
+        # Search bar
+        search_frame = tk.Frame(tab, bg='#f7f9fa')
+        search_frame.pack(fill='x', padx=15, pady=(0, 5))
+        tk.Label(search_frame, text='🔍 חיפוש (שם או מק"ט):', bg='#f7f9fa').pack(side='right', padx=(6, 4))
+        self.rivhit_search_var = tk.StringVar()
+        self.rivhit_search_var.trace_add('write', lambda *args: self._filter_rivhit())
+        search_entry = tk.Entry(search_frame, textvariable=self.rivhit_search_var, width=30)
+        search_entry.pack(side='right', padx=(0, 6))
+        tk.Button(search_frame, text='נקה', command=self._clear_rivhit_filters).pack(side='right', padx=4)
+
+        # Category / season selector
+        tk.Label(search_frame, text='🏷️ עונה / קטגוריה:', bg='#f7f9fa').pack(side='right', padx=(14, 4))
+        self.rivhit_category_var = tk.StringVar(value='הכל')
+        self.rivhit_category_combo = ttk.Combobox(search_frame, textvariable=self.rivhit_category_var, state='readonly', width=20, values=['הכל'])
+        self.rivhit_category_combo.pack(side='right', padx=(0, 6))
+        self.rivhit_category_combo.bind('<<ComboboxSelected>>', lambda e: self._filter_rivhit())
+
+        # Table
+        table_frame = tk.Frame(tab, bg='#ffffff')
+        table_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        self.rivhit_tree = ttk.Treeview(table_frame, columns=self._RIVHIT_COLS, show='headings')
+        for c in self._RIVHIT_COLS:
+            self.rivhit_tree.heading(c, text=self._RIVHIT_HEADERS[c])
+            self.rivhit_tree.column(c, width=self._RIVHIT_WIDTHS[c], anchor='center')
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.rivhit_tree.yview)
+        self.rivhit_tree.configure(yscroll=vsb.set)
+        self.rivhit_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+
+        # Footer summary
+        self.rivhit_summary_var = tk.StringVar(value="אין נתונים")
+        tk.Label(tab, textvariable=self.rivhit_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial', 10)).pack(fill='x', side='bottom')
+
+        # Initial population
+        self._update_rivhit_categories()
+        self._populate_rivhit_table()
+        self._update_rivhit_meta_label()
+
+    def _populate_rivhit_table(self, records=None):
+        if records is None:
+            records = list(getattr(self.data_processor, 'rivhit_products', []) or [])
+        for item in self.rivhit_tree.get_children():
+            self.rivhit_tree.delete(item)
+        for rec in records:
+            self.rivhit_tree.insert('', 'end', values=tuple(rec.get(c, '') for c in self._RIVHIT_COLS))
+        self._update_rivhit_summary(len(records))
+
+    def _update_rivhit_summary(self, count):
+        self.rivhit_summary_var.set(f"סה\"כ מוצרים: {count}")
+
+    def _update_rivhit_meta_label(self):
+        meta = getattr(self.data_processor, 'rivhit_meta', {}) or {}
+        if meta.get('file_name'):
+            text = f"קובץ אחרון: {meta.get('file_name', '')} | {meta.get('uploaded_at', '')} | {meta.get('count', 0)} פריטים"
+        else:
+            text = "טרם הועלה קובץ"
+        self.rivhit_meta_var.set(text)
+        if hasattr(self, 'rivhit_data_meta_var'):
+            self.rivhit_data_meta_var.set(text)
+
+    def _update_rivhit_categories(self):
+        """מעדכן את רשימת הערכים בבורר העונה/קטגוריה לפי הנתונים הקיימים."""
+        base = list(getattr(self.data_processor, 'rivhit_products', []) or [])
+        cats = sorted({str(r.get('compute_0036', '')).strip() for r in base if str(r.get('compute_0036', '')).strip()})
+        self.rivhit_category_combo['values'] = ['הכל'] + cats
+        if self.rivhit_category_var.get() not in (['הכל'] + cats):
+            self.rivhit_category_var.set('הכל')
+
+    def _clear_rivhit_filters(self):
+        self.rivhit_search_var.set('')
+        self.rivhit_category_var.set('הכל')
+        self._filter_rivhit()
+
+    def _filter_rivhit(self):
+        q = (self.rivhit_search_var.get() or '').strip().lower()
+        category = self.rivhit_category_var.get() if hasattr(self, 'rivhit_category_var') else 'הכל'
+        base = list(getattr(self.data_processor, 'rivhit_products', []) or [])
+        # סינון לפי עונה/קטגוריה
+        if category and category != 'הכל':
+            base = [r for r in base if str(r.get('compute_0036', '')).strip() == category]
+        # חיפוש לפי שם/מק"ט - תמיכה בכמה מילים (כל המילים חייבות להופיע)
+        if q:
+            terms = q.split()
+            def matches(r):
+                name = str(r.get('item_name', '')).lower()
+                part = str(r.get('item_part_num', '')).lower()
+                return all((t in name) or (t in part) for t in terms)
+            base = [r for r in base if matches(r)]
+        self._populate_rivhit_table(base)
+
+    def _import_rivhit_file(self):
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ ייצוא מריווחית",
+            filetypes=[("Text/CSV", "*.txt;*.csv"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return
+        try:
+            count = self.data_processor.import_rivhit_products(file_path)
+            self.rivhit_search_var.set('')
+            self.rivhit_category_var.set('הכל')
+            self._update_rivhit_categories()
+            self._populate_rivhit_table()
+            self._update_rivhit_meta_label()
+            messagebox.showinfo("הצלחה", f"נטענו {count} מוצרים מריווחית")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _refresh_rivhit_table(self):
+        try:
+            self.data_processor.refresh_rivhit_products()
+        except Exception:
+            pass
+        self.rivhit_search_var.set('')
+        self.rivhit_category_var.set('הכל')
+        self._update_rivhit_categories()
+        self._populate_rivhit_table()
+        self._update_rivhit_meta_label()
+
+    # ===== Add / Export sub-tab =====
+    _RIVHIT_NEW_COLS = ('item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'digital_price', 'compute_0036')
+
+    def _build_rivhit_add_subtab(self, tab):
+        tk.Label(tab, text="הוספת מוצרים וייצוא לריווחית", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+
+        # Add form
+        form = tk.LabelFrame(tab, text="פרטי מוצר חדש", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 10, 'bold'), padx=10, pady=10)
+        form.pack(fill='x', padx=15, pady=5)
+
+        self.rivhit_new_name_var = tk.StringVar()
+        self.rivhit_new_part_var = tk.StringVar()
+        self.rivhit_new_cost_var = tk.StringVar()
+        self.rivhit_new_sale_var = tk.StringVar()
+        self.rivhit_new_digital_var = tk.StringVar()
+        self.rivhit_new_cat_var = tk.StringVar()
+
+        # Row 1
+        r1 = tk.Frame(form, bg='#f7f9fa'); r1.pack(fill='x', pady=3)
+        tk.Label(r1, text='שם הפריט:', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r1, textvariable=self.rivhit_new_name_var, width=40).pack(side='right', padx=(0, 12))
+        tk.Label(r1, text='מק"ט / ברקוד:', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r1, textvariable=self.rivhit_new_part_var, width=22).pack(side='right', padx=(0, 4))
+        tk.Button(r1, text="חולל ברקוד", command=self._generate_rivhit_barcode, bg='#8e44ad', fg='white', font=('Arial', 9, 'bold')).pack(side='right', padx=(0, 12))
+
+        # Row 2
+        r2 = tk.Frame(form, bg='#f7f9fa'); r2.pack(fill='x', pady=3)
+        tk.Label(r2, text='עלות (₪):', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r2, textvariable=self.rivhit_new_cost_var, width=12).pack(side='right', padx=(0, 12))
+        tk.Label(r2, text='מחיר מכירה (₪):', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r2, textvariable=self.rivhit_new_sale_var, width=12).pack(side='right', padx=(0, 12))
+        tk.Label(r2, text='מחיר לצרכן דיגיטלי (₪):', bg='#f7f9fa', width=18, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r2, textvariable=self.rivhit_new_digital_var, width=12).pack(side='right', padx=(0, 12))
+        tk.Label(r2, text='עונה / קטגוריה:', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        groups = sorted((getattr(self.data_processor, 'rivhit_groups', {}) or {}).keys())
+        self.rivhit_new_cat_combo = ttk.Combobox(r2, textvariable=self.rivhit_new_cat_var, values=groups, state='readonly', width=20)
+        self.rivhit_new_cat_combo.pack(side='right', padx=(0, 12))
+
+        tk.Button(form, text="➕ הוסף מוצר", command=self._add_rivhit_product, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(pady=(8, 2))
+
+        # Pending list toolbar
+        toolbar = tk.Frame(tab, bg='#f7f9fa')
+        toolbar.pack(fill='x', padx=15, pady=(8, 2))
+        tk.Label(toolbar, text="מוצרים ממתינים לייצוא:", bg='#f7f9fa', font=('Arial', 11, 'bold')).pack(side='right')
+        tk.Button(toolbar, text="⬇️ ייצא קובץ לריווחית", command=self._export_rivhit_new, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(toolbar, text="🗑️ נקה הכל", command=self._clear_rivhit_new, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(toolbar, text="מחק נבחר", command=self._delete_rivhit_new_selected, bg='#95a5a6', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+
+        # Pending list table
+        table_frame = tk.Frame(tab, bg='#ffffff')
+        table_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        self.rivhit_new_tree = ttk.Treeview(table_frame, columns=self._RIVHIT_NEW_COLS, show='headings')
+        for c in self._RIVHIT_NEW_COLS:
+            self.rivhit_new_tree.heading(c, text=self._RIVHIT_HEADERS[c])
+            self.rivhit_new_tree.column(c, width=self._RIVHIT_WIDTHS[c], anchor='center')
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.rivhit_new_tree.yview)
+        self.rivhit_new_tree.configure(yscroll=vsb.set)
+        self.rivhit_new_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+
+        self.rivhit_new_summary_var = tk.StringVar(value="אין מוצרים ממתינים")
+        tk.Label(tab, textvariable=self.rivhit_new_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial', 10)).pack(fill='x', side='bottom')
+
+        self._refresh_rivhit_new_table()
+
+    def _refresh_rivhit_new_table(self):
+        records = list(getattr(self.data_processor, 'rivhit_new_products', []) or [])
+        for item in self.rivhit_new_tree.get_children():
+            self.rivhit_new_tree.delete(item)
+        for rec in records:
+            self.rivhit_new_tree.insert('', 'end', values=tuple(rec.get(c, '') for c in self._RIVHIT_NEW_COLS))
+        self.rivhit_new_summary_var.set(f"מוצרים ממתינים לייצוא: {len(records)}")
+
+    def _generate_rivhit_barcode(self):
+        try:
+            code = self.data_processor.generate_and_reserve_barcode()
+            self.rivhit_new_part_var.set(code)
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _add_rivhit_product(self):
+        name = (self.rivhit_new_name_var.get() or '').strip()
+        if not name:
+            messagebox.showwarning("שדה חסר", "יש להזין שם פריט")
+            return
+        try:
+            self.data_processor.add_rivhit_new_product(
+                name=name,
+                part_num=self.rivhit_new_part_var.get(),
+                cost_nis=self.rivhit_new_cost_var.get(),
+                sale_nis=self.rivhit_new_sale_var.get(),
+                category=self.rivhit_new_cat_var.get(),
+                digital_price=self.rivhit_new_digital_var.get(),
+            )
+            self.rivhit_new_name_var.set('')
+            self.rivhit_new_part_var.set('')
+            self.rivhit_new_cost_var.set('')
+            self.rivhit_new_sale_var.set('')
+            self.rivhit_new_digital_var.set('')
+            self.rivhit_new_cat_var.set('')
+            self._refresh_rivhit_new_table()
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _delete_rivhit_new_selected(self):
+        sel = self.rivhit_new_tree.selection()
+        if not sel:
+            messagebox.showinfo("לא נבחר", "יש לבחור מוצר למחיקה")
+            return
+        index = self.rivhit_new_tree.index(sel[0])
+        if self.data_processor.delete_rivhit_new_product(index):
+            self._refresh_rivhit_new_table()
+
+    def _clear_rivhit_new(self):
+        if not (getattr(self.data_processor, 'rivhit_new_products', []) or []):
+            return
+        if messagebox.askyesno("ניקוי", "למחוק את כל המוצרים הממתינים?"):
+            self.data_processor.clear_rivhit_new_products()
+            self._refresh_rivhit_new_table()
+
+    def _export_rivhit_new(self):
+        from datetime import datetime
+        if not (getattr(self.data_processor, 'rivhit_new_products', []) or []):
+            messagebox.showinfo("אין מוצרים", "אין מוצרים חדשים לייצוא")
+            return
+        default_name = f"ריווחית_מוצרים_חדשים_{datetime.now().strftime('%d.%m.%y')}.txt"
+        file_path = filedialog.asksaveasfilename(
+            title="שמירת קובץ ייצוא לריווחית",
+            defaultextension=".txt",
+            initialfile=default_name,
+            filetypes=[("Text", "*.txt"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return
+        try:
+            count = self.data_processor.export_rivhit_new_products(file_path)
+            messagebox.showinfo("הצלחה", f"יוצאו {count} מוצרים לקובץ:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    # ===== Data upload sub-tab (יבוא נתונים מריווחית) =====
+    def _build_rivhit_data_subtab(self, tab):
+        tk.Label(tab, text="העלאת נתונים מריווחית", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+
+        # Section 1: items list import
+        items_box = tk.LabelFrame(tab, text="רשימת פריטים מריווחית", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 11, 'bold'), padx=12, pady=12)
+        items_box.pack(fill='x', padx=15, pady=8)
+        tk.Label(items_box, text="העלאת קובץ ייצוא הפריטים מריווחית מחליפה את הרשימה המוצגת בטאב 'רשימת מוצרים'.", bg='#f7f9fa', fg='#555', font=('Arial', 9), justify='right').pack(anchor='e', pady=(0, 6))
+        items_row = tk.Frame(items_box, bg='#f7f9fa'); items_row.pack(fill='x')
+        tk.Button(items_row, text="⬆️ העלה קובץ פריטים מריווחית", command=self._import_rivhit_file, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        self.rivhit_data_meta_var = tk.StringVar(value='')
+        tk.Label(items_box, textvariable=self.rivhit_data_meta_var, bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 9)).pack(anchor='e', pady=(6, 0))
+
+        # Section 2: groups/categories import
+        groups_box = tk.LabelFrame(tab, text="קבוצות / קטגוריות", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 11, 'bold'), padx=12, pady=12)
+        groups_box.pack(fill='x', padx=15, pady=8)
+        tk.Label(groups_box, text="קובץ הקבוצות (מספר<TAB>שם) קובע אילו עונות/קטגוריות זמינות בהוספת מוצר וכיצד הן ממופות בייצוא.", bg='#f7f9fa', fg='#555', font=('Arial', 9), justify='right').pack(anchor='e', pady=(0, 6))
+        groups_row = tk.Frame(groups_box, bg='#f7f9fa'); groups_row.pack(fill='x')
+        tk.Button(groups_row, text="⬆️ העלה קובץ קבוצות", command=self._import_rivhit_groups_file, bg='#8e44ad', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        self.rivhit_groups_meta_var = tk.StringVar(value='')
+        tk.Label(groups_box, textvariable=self.rivhit_groups_meta_var, bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 9)).pack(anchor='e', pady=(6, 0))
+
+        self._update_rivhit_meta_label()
+        self._update_rivhit_groups_meta_label()
+
+    def _update_rivhit_groups_meta_label(self):
+        if not hasattr(self, 'rivhit_groups_meta_var'):
+            return
+        meta = getattr(self.data_processor, 'rivhit_groups_meta', {}) or {}
+        count = len(getattr(self.data_processor, 'rivhit_groups', {}) or {})
+        if meta.get('file_name'):
+            self.rivhit_groups_meta_var.set(
+                f"קובץ אחרון: {meta.get('file_name', '')} | {meta.get('uploaded_at', '')} | {count} קבוצות"
+            )
+        else:
+            self.rivhit_groups_meta_var.set(f"{count} קבוצות טעונות")
+
+    def _import_rivhit_groups_file(self):
+        file_path = filedialog.askopenfilename(
+            title="בחר קובץ קבוצות מריווחית",
+            filetypes=[("Text/CSV", "*.txt;*.csv"), ("All files", "*.*")]
+        )
+        if not file_path:
+            return
+        try:
+            count = self.data_processor.import_rivhit_groups(file_path)
+            self._update_rivhit_groups_meta_label()
+            self._refresh_rivhit_groups_combo()
+            messagebox.showinfo("הצלחה", f"נטענו {count} קבוצות")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _refresh_rivhit_groups_combo(self):
+        if hasattr(self, 'rivhit_new_cat_combo'):
+            groups = sorted((getattr(self.data_processor, 'rivhit_groups', {}) or {}).keys())
+            self.rivhit_new_cat_combo['values'] = groups

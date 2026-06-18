@@ -96,6 +96,19 @@ class DataProcessor:
 		# Cuts catalog (גזרות)
 		self.cuts_catalog_file = 'cuts_catalog.json'
 		self.cuts_catalog = self._load_json_list(self.cuts_catalog_file)
+		# Rivhit products (רשימת מוצרים מריווחית)
+		self.rivhit_products_file = 'rivhit_products.json'
+		self.rivhit_meta_file = 'rivhit_meta.json'
+		self.rivhit_products = self._load_json_list(self.rivhit_products_file)
+		self.rivhit_meta = self.load_rivhit_meta()
+		# מוצרים חדשים שנוספו ידנית וממתינים לייצוא לריווחית
+		self.rivhit_new_products_file = 'rivhit_new_products.json'
+		self.rivhit_new_products = self._load_json_list(self.rivhit_new_products_file)
+		# מיפוי עונה/קטגוריה -> מספר קבוצה (לייצוא בפורמט הייבוא הרשמי)
+		self.rivhit_groups_file = 'item_group.txt'
+		self.rivhit_groups = self.load_rivhit_groups()
+		self.rivhit_groups_meta_file = 'rivhit_groups_meta.json'
+		self.rivhit_groups_meta = self.load_rivhit_groups_meta()
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -239,6 +252,13 @@ class DataProcessor:
 		
 		# Return full 13-digit barcode
 		return new_base_12 + checksum
+
+	def generate_and_reserve_barcode(self) -> str:
+		"""מחולל ברקוד EAN-13 הבא ברצף המשותף, שומר ומקדם אותו, ומחזיר אותו."""
+		last = self.barcodes_data.get('last_barcode', '7297555019592')
+		new_barcode = self.generate_next_barcode(last)
+		self.save_barcodes_data(new_barcode)
+		return new_barcode
     
 	def load_drawings_data(self) -> List[Dict]:
 		"""טעינת נתוני ציורים מקומיים"""
@@ -280,6 +300,307 @@ class DataProcessor:
 			return True
 		except Exception as e:
 			print(f"שגיאה בשמירת קובץ {path}: {e}"); return False
+
+	# ===== Rivhit Products (רשימת מוצרים מריווחית) =====
+	# העמודות שנשמרות מתוך קובץ הייצוא של ריווחית
+	RIVHIT_COLUMNS = ['item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'compute_0036']
+	# כל 37 העמודות בסדר המקורי של קובץ הייצוא של ריווחית (לשחזור פורמט הייצוא)
+	RIVHIT_ALL_COLUMNS = [
+		'item_num', 'item_name', 'item_part_num', 'sapak', 'mtc_code', 'mtc_rate',
+		'item_cost_$', 'item_cost_nis', 'item_rev_prcentg', 'item_sale_$', 'item_sale_nis',
+		'item_serial_num', 'itm_qnt_in', 'itm_qnt_out', 'itm_qnt', 'string1', 'string2',
+		'string3', 'num1', 'num2', 'num3', 'int1', 'int2', 'int3', 'date1', 'date2',
+		'string6', 'int4', 'string8', 'string7', 'avitem', 'string4', 'computing_mode',
+		'compute_0034', 'compute_0035', 'compute_0036', 'string9'
+	]
+	# סדר העמודות לפי תבנית הייבוא הרשמית של ריווחית (יבוא-כרטיסי-פריטים)
+	RIVHIT_IMPORT_COLUMNS = [
+		'item_num', 'item_name', 'item_part_num', 'item_serial_num', 'item_cost_$',
+		'item_cost_nis', 'item_rev_prcentg', 'mtc_code', 'mtc_rate', 'item_sale_$',
+		'item_sale_nis', 'itm_qnt_out', 'itm_qnt_in', 'itm_qnt', 'string1', 'string2',
+		'string3', 'num1', 'num2', 'num3', 'int1', 'int2', 'int3', 'date1', 'date2',
+		'string4', 'string5', 'string6', 'string7', 'sapak'
+	]
+
+	def load_rivhit_meta(self) -> Dict:
+		"""טעינת מטא-נתונים על הקובץ האחרון שהועלה מריווחית."""
+		try:
+			if os.path.exists(self.rivhit_meta_file):
+				with open(self.rivhit_meta_file, 'r', encoding='utf-8') as f:
+					return json.load(f) or {}
+			return {}
+		except Exception as e:
+			print(f"שגיאה בטעינת מטא ריווחית: {e}")
+			return {}
+
+	def load_rivhit_groups(self) -> Dict:
+		"""טעינת מיפוי שם קטגוריה/עונה -> מספר קבוצה מקובץ item_group.txt."""
+		groups = {}
+		try:
+			if not os.path.exists(self.rivhit_groups_file):
+				return groups
+			data = None
+			for enc in ('utf-16', 'cp1255', 'utf-8-sig'):
+				try:
+					with open(self.rivhit_groups_file, 'r', encoding=enc) as f:
+						data = f.read()
+					break
+				except Exception:
+					data = None
+					continue
+			if not data:
+				return groups
+			for line in data.splitlines():
+				if not line.strip():
+					continue
+				parts = line.split('\t')
+				if len(parts) < 2:
+					continue
+				num = parts[0].strip()
+				name = parts[1].strip()
+				if name:
+					groups[name] = num
+			return groups
+		except Exception as e:
+			print(f"שגיאה בטעינת קבוצות ריווחית: {e}")
+			return groups
+
+	def load_rivhit_groups_meta(self) -> Dict:
+		"""טעינת מטא-נתונים על קובץ הקבוצות האחרון שהועלה."""
+		try:
+			if os.path.exists(self.rivhit_groups_meta_file):
+				with open(self.rivhit_groups_meta_file, 'r', encoding='utf-8') as f:
+					return json.load(f) or {}
+			return {}
+		except Exception as e:
+			print(f"שגיאה בטעינת מטא קבוצות: {e}")
+			return {}
+
+	def save_rivhit_groups_meta(self, file_name: str, count: int) -> bool:
+		"""שמירת מטא-נתונים על קובץ הקבוצות האחרון שהועלה."""
+		try:
+			self.rivhit_groups_meta = {
+				'file_name': file_name,
+				'uploaded_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+				'count': count
+			}
+			with open(self.rivhit_groups_meta_file, 'w', encoding='utf-8') as f:
+				json.dump(self.rivhit_groups_meta, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת מטא קבוצות: {e}")
+			return False
+
+	def import_rivhit_groups(self, file_path: str) -> int:
+		"""ייבוא קובץ קבוצות/קטגוריות מריווחית (פורמט: מספר<TAB>שם).
+
+		מנתח לזיהוי תקינות, מעתיק ל-item_group.txt, טוען מחדש את המיפוי,
+		מעדכן meta ומחזיר את מספר הקבוצות.
+		"""
+		import shutil
+		# ניתוח לזיהוי תקינות (זיהוי קידוד)
+		data = None
+		for enc in ('utf-16', 'cp1255', 'utf-8-sig'):
+			try:
+				with open(file_path, 'r', encoding=enc) as f:
+					data = f.read()
+				break
+			except Exception:
+				data = None
+				continue
+		if not data:
+			raise ValueError("לא ניתן לקרוא את קובץ הקבוצות")
+		parsed = 0
+		for line in data.splitlines():
+			if not line.strip():
+				continue
+			parts = line.split('\t')
+			if len(parts) >= 2 and parts[1].strip():
+				parsed += 1
+		if parsed == 0:
+			raise ValueError("לא נמצאו קבוצות תקינות בקובץ (פורמט נדרש: מספר<TAB>שם)")
+		# העתקת הקובץ כפי שהוא לשימור הפורמט המקורי
+		try:
+			if os.path.abspath(file_path) != os.path.abspath(self.rivhit_groups_file):
+				shutil.copyfile(file_path, self.rivhit_groups_file)
+		except shutil.SameFileError:
+			pass
+		self.rivhit_groups = self.load_rivhit_groups()
+		self.save_rivhit_groups_meta(os.path.basename(file_path), len(self.rivhit_groups))
+		return len(self.rivhit_groups)
+
+	def save_rivhit_meta(self, file_name: str, count: int) -> bool:
+		"""שמירת מטא-נתונים על הקובץ האחרון שהועלה מריווחית."""
+		try:
+			self.rivhit_meta = {
+				'file_name': file_name,
+				'uploaded_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+				'count': count
+			}
+			with open(self.rivhit_meta_file, 'w', encoding='utf-8') as f:
+				json.dump(self.rivhit_meta, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת מטא ריווחית: {e}")
+			return False
+
+	def refresh_rivhit_products(self):
+		"""טעינה מחדש של רשימת המוצרים מריווחית מהדיסק."""
+		self.rivhit_products = self._load_json_list(self.rivhit_products_file)
+		self.rivhit_meta = self.load_rivhit_meta()
+
+	def import_rivhit_products(self, file_path: str) -> int:
+		"""ייבוא רשימת מוצרים מקובץ ייצוא של ריווחית (TSV).
+
+		שומר רק את העמודות שב-RIVHIT_COLUMNS, מחליף לגמרי את הרשימה הקיימת,
+		שומר לדיסק ומעדכן את המטא. מחזיר את מספר הרשומות שנשמרו.
+		"""
+		import csv
+		# ניסיון קריאה במספר קידודים (קובץ ריווחית מיוצא בדרך כלל כ-UTF-16)
+		encodings = ['utf-16', 'utf-8-sig', 'cp1255', 'latin-1']
+		rows = []
+		for enc in encodings:
+			try:
+				with open(file_path, 'r', encoding=enc, newline='') as f:
+					reader = csv.DictReader(f, delimiter='\t')
+					rows = list(reader)
+				if rows:
+					break
+			except Exception:
+				rows = []
+				continue
+		if not rows:
+			raise ValueError("לא נקראו רשומות מהקובץ")
+
+		products = []
+		for r in rows:
+			cleaned = {(k.strip() if k else ''): (v.strip() if isinstance(v, str) else v) for k, v in r.items()}
+			# דלג על שורות ריקות (ללא שם וללא מק"ט)
+			if not (cleaned.get('item_name') or cleaned.get('item_part_num')):
+				continue
+			record = {col: cleaned.get(col, '') for col in self.RIVHIT_COLUMNS}
+			products.append(record)
+
+		# החלפה מלאה של הרשימה
+		self.rivhit_products = products
+		self._save_json_list(self.rivhit_products_file, self.rivhit_products)
+		self.save_rivhit_meta(os.path.basename(file_path), len(products))
+		return len(products)
+
+	# ===== Rivhit New Products (מוצרים חדשים לייצוא) =====
+	def get_next_rivhit_item_num(self) -> int:
+		"""מחזיר מספר פריט פנוי הבא (max+1) על פני הרשימה הקיימת והחדשים."""
+		max_num = 0
+		for r in (self.rivhit_products or []) + (self.rivhit_new_products or []):
+			try:
+				n = int(float(str(r.get('item_num', '0')).strip() or 0))
+				if n > max_num:
+					max_num = n
+			except Exception:
+				continue
+		return max_num + 1
+
+	def add_rivhit_new_product(self, name: str, part_num: str = '', cost_nis: str = '',
+								sale_nis: str = '', category: str = '', digital_price: str = '') -> Dict:
+		"""מוסיף מוצר חדש לאזור ההמתנה לייצוא. מחזיר את הרשומה שנוצרה.
+
+		אם לא הוזן מק"ט/ברקוד - מחולל ברקוד EAN-13 אוטומטית מהרצף המשותף.
+		'digital_price' (מחיר לצרכן דיגיטלי) נשמר לתצוגה פנימית בלבד ואינו נכלל בייצוא לריווחית.
+		"""
+		part_num = (part_num or '').strip()
+		if not part_num:
+			part_num = self.generate_and_reserve_barcode()
+		record = {
+			'item_num': str(self.get_next_rivhit_item_num()),
+			'item_name': (name or '').strip(),
+			'item_part_num': part_num,
+			'item_cost_nis': (str(cost_nis) or '').strip(),
+			'item_sale_nis': (str(sale_nis) or '').strip(),
+			'digital_price': (str(digital_price) or '').strip(),
+			'compute_0036': (category or '').strip(),
+		}
+		self.rivhit_new_products.append(record)
+		self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
+		return record
+
+	def delete_rivhit_new_product(self, index: int) -> bool:
+		"""מוחק מוצר חדש לפי אינדקס."""
+		try:
+			if 0 <= index < len(self.rivhit_new_products):
+				del self.rivhit_new_products[index]
+				self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
+				return True
+			return False
+		except Exception:
+			return False
+
+	def clear_rivhit_new_products(self) -> bool:
+		"""מנקה את כל המוצרים החדשים הממתינים."""
+		self.rivhit_new_products = []
+		return self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
+
+	def _parse_num(self, val) -> float:
+		try:
+			v = str(val).strip().replace(',', '')
+			return float(v) if v else 0.0
+		except Exception:
+			return 0.0
+
+	def _build_rivhit_export_row(self, product: Dict) -> Dict:
+		"""בונה שורה לפי תבנית הייבוא הרשמית של ריווחית (RIVHIT_IMPORT_COLUMNS).
+
+		ממיר את הקטגוריה/עונה (compute_0036) למספר קבוצה (int1) דרך self.rivhit_groups.
+		"""
+		cost = self._parse_num(product.get('item_cost_nis'))
+		sale = self._parse_num(product.get('item_sale_nis'))
+		# אחוז רווח: (מכירה-עלות)/מכירה * 100 אם שניהם > 0
+		rev_pct = 0.0
+		if cost > 0 and sale > 0:
+			rev_pct = round((sale - cost) / sale * 100, 2)
+		# המרת קטגוריה -> מספר קבוצה (ברירת מחדל '1' אם לא נמצא)
+		category = str(product.get('compute_0036', '')).strip()
+		group_num = (self.rivhit_groups or {}).get(category, '1') if category else '1'
+		row = {col: '' for col in self.RIVHIT_IMPORT_COLUMNS}
+		row.update({
+			'item_num': str(product.get('item_num', '')).strip(),
+			'item_name': str(product.get('item_name', '')).strip(),
+			'item_part_num': str(product.get('item_part_num', '')).strip(),
+			'item_serial_num': '',
+			'item_cost_$': '0',
+			'item_cost_nis': f"{cost:.2f}",
+			'item_rev_prcentg': f"{rev_pct:.2f}",
+			'mtc_code': '1',
+			'mtc_rate': '0',
+			'item_sale_$': '0',
+			'item_sale_nis': f"{sale:.2f}",
+			# כמויות - "לא להזין" -> ריק
+			'itm_qnt_out': '',
+			'itm_qnt_in': '',
+			'itm_qnt': '',
+			'num1': '0', 'num2': '0', 'num3': '0',
+			'int1': str(group_num),  # מס' קבוצה (עונה/קטגוריה)
+			'int2': '1',             # מס' מחסן
+			'int3': '0',
+			# תאריכים - "לא להזין" -> ריק
+			'date1': '', 'date2': '',
+			'sapak': '',
+		})
+		return row
+
+	def export_rivhit_new_products(self, file_path: str) -> int:
+		"""מייצא את המוצרים החדשים בפורמט תבנית הייבוא הרשמית של ריווחית.
+
+		30 עמודות בסדר RIVHIT_IMPORT_COLUMNS, ללא שורת כותרת, cp1255, מופרד טאבים.
+		"""
+		import csv
+		if not self.rivhit_new_products:
+			raise ValueError("אין מוצרים חדשים לייצוא")
+		with open(file_path, 'w', encoding='cp1255', errors='replace', newline='') as f:
+			writer = csv.writer(f, delimiter='\t')
+			for product in self.rivhit_new_products:
+				row = self._build_rivhit_export_row(product)
+				writer.writerow([row[col] for col in self.RIVHIT_IMPORT_COLUMNS])
+		return len(self.rivhit_new_products)
 
 	def _migrate_legacy_supplier_receipts(self):
 		"""אם הקובץ הישן קיים ויש בו רשומות – מפצל אותן לשני הקבצים החדשים.
