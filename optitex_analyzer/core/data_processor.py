@@ -500,18 +500,36 @@ class DataProcessor:
 				continue
 		return max_num + 1
 
+	def _resolve_next_item_num(self, last_item_num=None) -> int:
+		"""מחשב את מספר הפריט הבא להקצאה.
+
+		אם נמסר last_item_num (מספר הפריט האחרון בריווחית) - המספור ימשיך ממנו+1
+		(אך לעולם לא נמוך מהמקסימום ברשימות הקיימות/הממתינות).
+		אחרת - max+1 מהרשימה העדכנית (פריטים שיובאו + ממתינים).
+		"""
+		next_num = self.get_next_rivhit_item_num()
+		if last_item_num not in (None, ''):
+			try:
+				candidate = int(float(str(last_item_num).strip())) + 1
+				next_num = max(next_num, candidate)
+			except Exception:
+				pass
+		return next_num
+
 	def add_rivhit_new_product(self, name: str, part_num: str = '', cost_nis: str = '',
-								sale_nis: str = '', category: str = '', digital_price: str = '') -> Dict:
+								sale_nis: str = '', category: str = '', digital_price: str = '',
+								last_item_num=None) -> Dict:
 		"""מוסיף מוצר חדש לאזור ההמתנה לייצוא. מחזיר את הרשומה שנוצרה.
 
 		אם לא הוזן מק"ט/ברקוד - מחולל ברקוד EAN-13 אוטומטית מהרצף המשותף.
 		'digital_price' (מחיר לצרכן דיגיטלי) נשמר לתצוגה פנימית בלבד ואינו נכלל בייצוא לריווחית.
+		'last_item_num' (אופציונלי) - מספר הפריט האחרון בריווחית, ממנו ימשיך המספור.
 		"""
 		part_num = (part_num or '').strip()
 		if not part_num:
 			part_num = self.generate_and_reserve_barcode()
 		record = {
-			'item_num': str(self.get_next_rivhit_item_num()),
+			'item_num': str(self._resolve_next_item_num(last_item_num)),
 			'item_name': (name or '').strip(),
 			'item_part_num': part_num,
 			'item_cost_nis': (str(cost_nis) or '').strip(),
@@ -522,6 +540,35 @@ class DataProcessor:
 		self.rivhit_new_products.append(record)
 		self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
 		return record
+
+	def add_rivhit_new_products_by_sizes(self, base_name: str, sizes, cost_nis: str = '',
+										sale_nis: str = '', category: str = '', digital_price: str = '',
+										last_item_num=None) -> list:
+		"""יוצר מוצר חדש לכל מידה שנבחרה, על בסיס שם פריט משותף.
+
+		שם כל מוצר = "<שם בסיס> (<מידה>)", וכל מוצר מקבל ברקוד EAN-13 חדש משלו.
+		'last_item_num' (אופציונלי) - מספר הפריט האחרון בריווחית, ממנו ימשיך המספור.
+		מחזיר רשימת הרשומות שנוצרו.
+		"""
+		base_name = (base_name or '').strip()
+		if not base_name:
+			raise ValueError("יש להזין שם פריט")
+		clean_sizes = [str(s).strip() for s in (sizes or []) if str(s).strip()]
+		if not clean_sizes:
+			raise ValueError("יש לבחור לפחות מידה אחת")
+		created = []
+		for size in clean_sizes:
+			rec = self.add_rivhit_new_product(
+				name=f"{base_name} ({size})",
+				part_num='',
+				cost_nis=cost_nis,
+				sale_nis=sale_nis,
+				category=category,
+				digital_price=digital_price,
+				last_item_num=last_item_num,
+			)
+			created.append(rec)
+		return created
 
 	def delete_rivhit_new_product(self, index: int) -> bool:
 		"""מוחק מוצר חדש לפי אינדקס."""
@@ -546,10 +593,26 @@ class DataProcessor:
 		except Exception:
 			return 0.0
 
-	def _build_rivhit_export_row(self, product: Dict) -> Dict:
+	def _rivhit_existing_max_item_num(self) -> int:
+		"""מחזיר את מספר הפריט הגבוה ביותר ברשימת הפריטים שיובאה מריווחית בלבד.
+
+		משמש כבסיס למספור פריטים חדשים בייצוא, כדי שלא יתנגשו עם פריטים קיימים.
+		"""
+		max_num = 0
+		for r in (self.rivhit_products or []):
+			try:
+				n = int(float(str(r.get('item_num', '0')).strip() or 0))
+				if n > max_num:
+					max_num = n
+			except Exception:
+				continue
+		return max_num
+
+	def _build_rivhit_export_row(self, product: Dict, item_num=None) -> Dict:
 		"""בונה שורה לפי תבנית הייבוא הרשמית של ריווחית (RIVHIT_IMPORT_COLUMNS).
 
 		ממיר את הקטגוריה/עונה (compute_0036) למספר קבוצה (int1) דרך self.rivhit_groups.
+		item_num: אם נמסר, משמש כמספר הפריט בשורה (אחרת נלקח מהמוצר).
 		"""
 		cost = self._parse_num(product.get('item_cost_nis'))
 		sale = self._parse_num(product.get('item_sale_nis'))
@@ -560,9 +623,11 @@ class DataProcessor:
 		# המרת קטגוריה -> מספר קבוצה (ברירת מחדל '1' אם לא נמצא)
 		category = str(product.get('compute_0036', '')).strip()
 		group_num = (self.rivhit_groups or {}).get(category, '1') if category else '1'
+		# מספר הפריט: שימוש בערך שנמסר (מספור רץ מעל המקסימום הקיים) או מהמוצר
+		num = item_num if item_num is not None else product.get('item_num', '')
 		row = {col: '' for col in self.RIVHIT_IMPORT_COLUMNS}
 		row.update({
-			'item_num': str(product.get('item_num', '')).strip(),
+			'item_num': str(num).strip(),
 			'item_name': str(product.get('item_name', '')).strip(),
 			'item_part_num': str(product.get('item_part_num', '')).strip(),
 			'item_serial_num': '',
@@ -595,6 +660,7 @@ class DataProcessor:
 		import csv
 		if not self.rivhit_new_products:
 			raise ValueError("אין מוצרים חדשים לייצוא")
+		# משתמשים במספרי הפריט שהוקצו בזמן ההוספה (לפי 'מספר פריט אחרון' / הרשימה העדכנית)
 		with open(file_path, 'w', encoding='cp1255', errors='replace', newline='') as f:
 			writer = csv.writer(f, delimiter='\t')
 			for product in self.rivhit_new_products:

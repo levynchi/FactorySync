@@ -20622,5 +20622,149 @@
     "item_cost_nis": "0",
     "item_sale_nis": "0",
     "compute_0036": "גזרות"
+  },
+  {
+    "item_num": "2585",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (0-3)",
+    "item_part_num": "7297555020987",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2586",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (3-6)",
+    "item_part_num": "7297555020994",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2587",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (6-12)",
+    "item_part_num": "7297555021007",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2588",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (12-18)",
+    "item_part_num": "7297555021014",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2589",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (18-24)",
+    "item_part_num": "7297555021021",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2590",
+    "item_name": "שלישיית בגדי גוף פלנל לבן (24-30)",
+    "item_part_num": "7297555021038",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2591",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (0-3)",
+    "item_part_num": "7297555021045",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2592",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (3-6)",
+    "item_part_num": "7297555021052",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2593",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (6-12)",
+    "item_part_num": "7297555021069",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2594",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (12-18)",
+    "item_part_num": "7297555021076",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2595",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (18-24)",
+    "item_part_num": "7297555021083",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2596",
+    "item_name": "שלישיית בגדי גוף גופיה לבן (24-30)",
+    "item_part_num": "7297555021090",
+    "item_cost_nis": "18.00",
+    "item_sale_nis": "36.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2597",
+    "item_name": "שלישיית בגדי גוף קצר לבן (0-3)",
+    "item_part_num": "7297555021106",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2598",
+    "item_name": "שלישיית בגדי גוף קצר לבן (3-6)",
+    "item_part_num": "7297555021113",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2599",
+    "item_name": "שלישיית בגדי גוף קצר לבן (6-12)",
+    "item_part_num": "7297555021120",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2600",
+    "item_name": "שלישיית בגדי גוף קצר לבן (12-18)",
+    "item_part_num": "7297555021137",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2601",
+    "item_name": "שלישיית בגדי גוף קצר לבן (18-24)",
+    "item_part_num": "7297555021144",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2602",
+    "item_name": "שלישיית בגדי גוף קצר לבן (24-30)",
+    "item_part_num": "7297555021151",
+    "item_cost_nis": "24.00",
+    "item_sale_nis": "38.40",
+    "compute_0036": "שלישיות"
   }
 ]

@@ -121,11 +121,17 @@ class RivhitTabMixin:
             self.rivhit_data_meta_var.set(text)
 
     def _update_rivhit_categories(self):
-        """מעדכן את רשימת הערכים בבורר העונה/קטגוריה לפי הנתונים הקיימים."""
+        """מעדכן את רשימת הערכים בבורר העונה/קטגוריה.
+
+        מאחד את הקטגוריות מהמוצרים שיובאו עם כל הקבוצות מקובץ הקבוצות
+        (item_group.txt), כך שגם קבוצות ללא מוצרים (כמו 'שלישיות') יופיעו.
+        """
         base = list(getattr(self.data_processor, 'rivhit_products', []) or [])
-        cats = sorted({str(r.get('compute_0036', '')).strip() for r in base if str(r.get('compute_0036', '')).strip()})
-        self.rivhit_category_combo['values'] = ['הכל'] + cats
-        if self.rivhit_category_var.get() not in (['הכל'] + cats):
+        cats = {str(r.get('compute_0036', '')).strip() for r in base if str(r.get('compute_0036', '')).strip()}
+        groups = set((getattr(self.data_processor, 'rivhit_groups', {}) or {}).keys())
+        all_cats = sorted(cats | groups)
+        self.rivhit_category_combo['values'] = ['הכל'] + all_cats
+        if self.rivhit_category_var.get() not in (['הכל'] + all_cats):
             self.rivhit_category_var.set('הכל')
 
     def _clear_rivhit_filters(self):
@@ -195,6 +201,7 @@ class RivhitTabMixin:
         self.rivhit_new_sale_var = tk.StringVar()
         self.rivhit_new_digital_var = tk.StringVar()
         self.rivhit_new_cat_var = tk.StringVar()
+        self.rivhit_new_last_item_var = tk.StringVar()
 
         # Row 1
         r1 = tk.Frame(form, bg='#f7f9fa'); r1.pack(fill='x', pady=3)
@@ -217,7 +224,25 @@ class RivhitTabMixin:
         self.rivhit_new_cat_combo = ttk.Combobox(r2, textvariable=self.rivhit_new_cat_var, values=groups, state='readonly', width=20)
         self.rivhit_new_cat_combo.pack(side='right', padx=(0, 12))
 
-        tk.Button(form, text="➕ הוסף מוצר", command=self._add_rivhit_product, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(pady=(8, 2))
+        # Row 3 - starting item number control
+        r3 = tk.Frame(form, bg='#f7f9fa'); r3.pack(fill='x', pady=3)
+        tk.Label(r3, text='מספר פריט אחרון:', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(r3, textvariable=self.rivhit_new_last_item_var, width=12).pack(side='right', padx=(0, 6))
+        tk.Label(r3, text='(המספור יתחיל ממספר זה +1. ריק = לפי רשימת המוצרים העדכנית)', bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(side='right', padx=(0, 12))
+
+        # Sizes multi-select for batch creation
+        sizes_box = tk.LabelFrame(form, text="יצירת מוצרים לפי מידות (מוצר לכל מידה, עם ברקוד חדש)", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 9, 'bold'), padx=8, pady=6)
+        sizes_box.pack(fill='x', pady=(8, 2))
+        sizes_actions = tk.Frame(sizes_box, bg='#f7f9fa'); sizes_actions.pack(fill='x', anchor='e')
+        tk.Button(sizes_actions, text="נקה בחירה", command=self._clear_rivhit_size_selection, bg='#95a5a6', fg='white', font=('Arial', 8)).pack(side='right', padx=3)
+        tk.Button(sizes_actions, text="סמן הכל", command=self._select_all_rivhit_sizes, bg='#3498db', fg='white', font=('Arial', 8)).pack(side='right', padx=3)
+        self.rivhit_sizes_grid = tk.Frame(sizes_box, bg='#f7f9fa'); self.rivhit_sizes_grid.pack(fill='x', pady=(4, 0))
+        self.rivhit_size_vars = {}
+        self._build_rivhit_sizes_checkboxes()
+
+        btns = tk.Frame(form, bg='#f7f9fa'); btns.pack(pady=(8, 2))
+        tk.Button(btns, text="➕ הוסף מוצר", command=self._add_rivhit_product, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=4)
+        tk.Button(btns, text="🧩 צור מוצרים לפי מידות", command=self._create_rivhit_products_by_sizes, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=4)
 
         # Pending list toolbar
         toolbar = tk.Frame(tab, bg='#f7f9fa')
@@ -274,6 +299,7 @@ class RivhitTabMixin:
                 sale_nis=self.rivhit_new_sale_var.get(),
                 category=self.rivhit_new_cat_var.get(),
                 digital_price=self.rivhit_new_digital_var.get(),
+                last_item_num=(self.rivhit_new_last_item_var.get() or '').strip() or None,
             )
             self.rivhit_new_name_var.set('')
             self.rivhit_new_part_var.set('')
@@ -282,6 +308,57 @@ class RivhitTabMixin:
             self.rivhit_new_digital_var.set('')
             self.rivhit_new_cat_var.set('')
             self._refresh_rivhit_new_table()
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    def _build_rivhit_sizes_checkboxes(self):
+        for w in self.rivhit_sizes_grid.winfo_children():
+            w.destroy()
+        self.rivhit_size_vars = {}
+        sizes = [str(s.get('name', '')).strip() for s in (getattr(self.data_processor, 'product_sizes', []) or []) if str(s.get('name', '')).strip()]
+        cols = 6
+        for i, size in enumerate(sizes):
+            var = tk.BooleanVar(value=False)
+            self.rivhit_size_vars[size] = var
+            cb = tk.Checkbutton(self.rivhit_sizes_grid, text=size, variable=var, bg='#f7f9fa', anchor='w')
+            cb.grid(row=i // cols, column=i % cols, sticky='w', padx=4, pady=1)
+
+    def _select_all_rivhit_sizes(self):
+        for var in self.rivhit_size_vars.values():
+            var.set(True)
+
+    def _clear_rivhit_size_selection(self):
+        for var in self.rivhit_size_vars.values():
+            var.set(False)
+
+    def _create_rivhit_products_by_sizes(self):
+        name = (self.rivhit_new_name_var.get() or '').strip()
+        if not name:
+            messagebox.showwarning("שדה חסר", "יש להזין שם פריט")
+            return
+        selected = [size for size, var in self.rivhit_size_vars.items() if var.get()]
+        if not selected:
+            messagebox.showwarning("לא נבחרו מידות", "יש לבחור לפחות מידה אחת")
+            return
+        try:
+            created = self.data_processor.add_rivhit_new_products_by_sizes(
+                base_name=name,
+                sizes=selected,
+                cost_nis=self.rivhit_new_cost_var.get(),
+                sale_nis=self.rivhit_new_sale_var.get(),
+                category=self.rivhit_new_cat_var.get(),
+                digital_price=self.rivhit_new_digital_var.get(),
+                last_item_num=(self.rivhit_new_last_item_var.get() or '').strip() or None,
+            )
+            self.rivhit_new_name_var.set('')
+            self.rivhit_new_part_var.set('')
+            self.rivhit_new_cost_var.set('')
+            self.rivhit_new_sale_var.set('')
+            self.rivhit_new_digital_var.set('')
+            self.rivhit_new_cat_var.set('')
+            self._clear_rivhit_size_selection()
+            self._refresh_rivhit_new_table()
+            messagebox.showinfo("הצלחה", f"נוצרו {len(created)} מוצרים לפי המידות שנבחרו")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
@@ -369,6 +446,8 @@ class RivhitTabMixin:
             count = self.data_processor.import_rivhit_groups(file_path)
             self._update_rivhit_groups_meta_label()
             self._refresh_rivhit_groups_combo()
+            if hasattr(self, 'rivhit_category_combo'):
+                self._update_rivhit_categories()
             messagebox.showinfo("הצלחה", f"נטענו {count} קבוצות")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
