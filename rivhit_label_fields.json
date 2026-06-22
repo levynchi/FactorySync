@@ -108,5 +108,21 @@
     "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021090.png"
+  },
+  "7297555021168": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021168.png"
+  },
+  "7297555021175": {
+    "print_name": "רגליות לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021175.png"
   }
 }

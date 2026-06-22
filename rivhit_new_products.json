@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "item_num": "2603",
+    "item_name": "שלישיית רגליות טריקו (0-3)",
+    "item_part_num": "7297555021168",
+    "item_cost_nis": "6",
+    "item_sale_nis": "18",
+    "digital_price": "34.2",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2604",
+    "item_name": "שלישיית רגליות טריקו (3-6)",
+    "item_part_num": "7297555021175",
+    "item_cost_nis": "6",
+    "item_sale_nis": "18",
+    "digital_price": "34.2",
+    "compute_0036": "שלישיות"
+  }
+]
