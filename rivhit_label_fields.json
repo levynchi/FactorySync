@@ -12,5 +12,101 @@
     "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021151.png"
+  },
+  "7297555021144": {
+    "print_name": "בגד גוף קצר",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021144.png"
+  },
+  "7297555021137": {
+    "print_name": "בגד גוף קצר",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021137.png"
+  },
+  "7297555021120": {
+    "print_name": "בגד גוף קצר",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021120.png"
+  },
+  "7297555021113": {
+    "print_name": "בגד גוף קצר",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021113.png"
+  },
+  "7297555021106": {
+    "print_name": "בגד גוף קצר",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021106.png"
+  },
+  "7297555021045": {
+    "print_name": "בגד גוף גופיה",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021045.png"
+  },
+  "7297555000118": {
+    "print_name": "רגליות פלנל מודפס\\פסים N.B",
+    "size": "",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 1,
+    "image": "assets\\labels\\products\\7297555000118.png"
+  },
+  "7297555021052": {
+    "print_name": "בגד גוף גופיה",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021052.png"
+  },
+  "7297555021069": {
+    "print_name": "בגד גוף גופיה",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021069.png"
+  },
+  "7297555021076": {
+    "print_name": "בגד גוף גופיה",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021076.png"
+  },
+  "7297555021083": {
+    "print_name": "בגד גוף גופיה",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021083.png"
+  },
+  "7297555021090": {
+    "print_name": "בגד גוף גופיה",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021090.png"
   }
 }

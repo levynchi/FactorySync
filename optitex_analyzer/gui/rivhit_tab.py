@@ -378,6 +378,33 @@ class RivhitTabMixin:
         self.rivhit_size_vars = {}
         self._build_rivhit_sizes_checkboxes()
 
+        # Print (label) details - applied to the created product(s)
+        self.rivhit_print_name_var = tk.StringVar()
+        self.rivhit_print_size_var = tk.StringVar()
+        self.rivhit_print_unit_var = tk.StringVar(value='חודשים')
+        self.rivhit_print_fabric_var = tk.StringVar()
+        self.rivhit_print_pack_var = tk.StringVar(value='3')
+        self.rivhit_print_image_src_var = tk.StringVar()
+        self.rivhit_print_image_label_var = tk.StringVar(value='ללא תמונה')
+
+        print_box = tk.LabelFrame(form, text="פרטי הדפסה למדבקה (יחולו על כל המוצרים שייווצרו)", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 9, 'bold'), padx=8, pady=6)
+        print_box.pack(fill='x', pady=(8, 2))
+        pr1 = tk.Frame(print_box, bg='#f7f9fa'); pr1.pack(fill='x', pady=2)
+        tk.Label(pr1, text='שם להדפסה:', bg='#f7f9fa', width=12, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(pr1, textvariable=self.rivhit_print_name_var, width=26).pack(side='right', padx=(0, 12))
+        tk.Label(pr1, text='סוג בד:', bg='#f7f9fa', width=8, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(pr1, textvariable=self.rivhit_print_fabric_var, width=14).pack(side='right', padx=(0, 12))
+        tk.Label(pr1, text='כמות במארז:', bg='#f7f9fa', width=10, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(pr1, textvariable=self.rivhit_print_pack_var, width=6).pack(side='right', padx=(0, 12))
+        pr2 = tk.Frame(print_box, bg='#f7f9fa'); pr2.pack(fill='x', pady=2)
+        tk.Label(pr2, text='מידה (למוצר בודד):', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        tk.Entry(pr2, textvariable=self.rivhit_print_size_var, width=10).pack(side='right', padx=(0, 12))
+        tk.Label(pr2, text='יחידת מידה:', bg='#f7f9fa', width=10, anchor='e').pack(side='right', padx=(6, 2))
+        ttk.Combobox(pr2, textvariable=self.rivhit_print_unit_var, values=['', 'חודשים', 'שנים'], state='readonly', width=10).pack(side='right', padx=(0, 12))
+        tk.Button(pr2, text='בחר תמונה…', command=self._choose_rivhit_print_image, bg='#8e44ad', fg='white', font=('Arial', 8)).pack(side='right', padx=(0, 6))
+        tk.Label(pr2, textvariable=self.rivhit_print_image_label_var, bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(side='right', padx=(0, 12))
+        tk.Label(print_box, text="(ביצירה לפי מידות - המידה נלקחת מכל מידה שנבחרה; שדה 'מידה' משמש להוספת מוצר בודד)", bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(anchor='e', pady=(2, 0))
+
         btns = tk.Frame(form, bg='#f7f9fa'); btns.pack(pady=(8, 2))
         tk.Button(btns, text="➕ הוסף מוצר", command=self._add_rivhit_product, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=4)
         tk.Button(btns, text="🧩 צור מוצרים לפי מידות", command=self._create_rivhit_products_by_sizes, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=4)
@@ -424,13 +451,68 @@ class RivhitTabMixin:
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
 
+    def _choose_rivhit_print_image(self):
+        path = filedialog.askopenfilename(
+            title='בחר תמונת מוצר למדבקה',
+            filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp'), ('כל הקבצים', '*.*')],
+        )
+        if not path:
+            return
+        self.rivhit_print_image_src_var.set(path)
+        self.rivhit_print_image_label_var.set(os.path.basename(path))
+
+    def _apply_rivhit_print_fields(self, barcode, size=''):
+        """שומר פרטי הדפסה (מדבקה) למוצר שנוצר לפי הברקוד שלו.
+
+        מועתק מהשדות בטופס; התמונה (אם נבחרה) מועתקת לקובץ פר-ברקוד.
+        """
+        barcode = str(barcode or '').strip()
+        if not barcode:
+            return
+        print_name = (self.rivhit_print_name_var.get() or '').strip()
+        fabric = (self.rivhit_print_fabric_var.get() or '').strip()
+        size_unit = (self.rivhit_print_unit_var.get() or '').strip()
+        pack = (self.rivhit_print_pack_var.get() or '').strip()
+        img_src = (self.rivhit_print_image_src_var.get() or '').strip()
+        size = str(size or '').strip()
+        # החל רק אם המשתמש הזין פרט הדפסה כלשהו
+        if not (print_name or fabric or img_src or size or size_unit):
+            return
+        image_rel = ''
+        if img_src and os.path.exists(img_src):
+            try:
+                ext = os.path.splitext(img_src)[1].lower() or '.png'
+                dest_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
+                os.makedirs(dest_dir, exist_ok=True)
+                safe_bc = ''.join(ch for ch in barcode if ch.isalnum()) or 'product'
+                dest = os.path.join(dest_dir, f"{safe_bc}{ext}")
+                shutil.copyfile(img_src, dest)
+                image_rel = os.path.relpath(dest, os.getcwd())
+            except Exception:
+                image_rel = ''
+        self.data_processor.set_rivhit_label_fields(barcode, {
+            'print_name': print_name,
+            'size': size,
+            'size_unit': size_unit,
+            'fabric': fabric,
+            'pack_qty': pack or 1,
+            'image': image_rel,
+        })
+
+    def _reset_rivhit_print_fields(self):
+        self.rivhit_print_name_var.set('')
+        self.rivhit_print_size_var.set('')
+        self.rivhit_print_fabric_var.set('')
+        self.rivhit_print_image_src_var.set('')
+        self.rivhit_print_image_label_var.set('ללא תמונה')
+
     def _add_rivhit_product(self):
         name = (self.rivhit_new_name_var.get() or '').strip()
         if not name:
             messagebox.showwarning("שדה חסר", "יש להזין שם פריט")
             return
         try:
-            self.data_processor.add_rivhit_new_product(
+            record = self.data_processor.add_rivhit_new_product(
                 name=name,
                 part_num=self.rivhit_new_part_var.get(),
                 cost_nis=self.rivhit_new_cost_var.get(),
@@ -439,12 +521,17 @@ class RivhitTabMixin:
                 digital_price=self.rivhit_new_digital_var.get(),
                 last_item_num=(self.rivhit_new_last_item_var.get() or '').strip() or None,
             )
+            self._apply_rivhit_print_fields(
+                record.get('item_part_num', ''),
+                size=(self.rivhit_print_size_var.get() or '').strip(),
+            )
             self.rivhit_new_name_var.set('')
             self.rivhit_new_part_var.set('')
             self.rivhit_new_cost_var.set('')
             self.rivhit_new_sale_var.set('')
             self.rivhit_new_digital_var.set('')
             self.rivhit_new_cat_var.set('')
+            self._reset_rivhit_print_fields()
             self._refresh_rivhit_new_table()
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))
@@ -488,12 +575,16 @@ class RivhitTabMixin:
                 digital_price=self.rivhit_new_digital_var.get(),
                 last_item_num=(self.rivhit_new_last_item_var.get() or '').strip() or None,
             )
+            # החל פרטי הדפסה לכל מוצר שנוצר, עם המידה התואמת שלו
+            for rec, size in zip(created, selected):
+                self._apply_rivhit_print_fields(rec.get('item_part_num', ''), size=size)
             self.rivhit_new_name_var.set('')
             self.rivhit_new_part_var.set('')
             self.rivhit_new_cost_var.set('')
             self.rivhit_new_sale_var.set('')
             self.rivhit_new_digital_var.set('')
             self.rivhit_new_cat_var.set('')
+            self._reset_rivhit_print_fields()
             self._clear_rivhit_size_selection()
             self._refresh_rivhit_new_table()
             messagebox.showinfo("הצלחה", f"נוצרו {len(created)} מוצרים לפי המידות שנבחרו")

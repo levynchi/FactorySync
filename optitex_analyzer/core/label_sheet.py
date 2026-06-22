@@ -41,9 +41,9 @@ ROW_SHIFT_DOWN_MM = [2.0, 1.5, 1.0, 0.0, 0.0]
 # ===== פריסת תוכן המדבקה (ניתן לכיול) =====
 BORDER_INSET = 0.05 * cm        # מרחק המסגרת המקווקוות מקצה התא (קטן - שהמסגרת תתאים לגודל הייחוס)
 CONTENT_PAD = 0.20 * cm         # ריפוד פנימי בין המסגרת לתוכן
-HEADER_H = 1.02 * cm            # אזור הלוגו (עליון)
+HEADER_H = 1.12 * cm            # אזור הלוגו (עליון)
 FOOTER_H = 1.28 * cm            # אזור הברקוד + תיבת היחידות (תחתון)
-IMG_W_RATIO = 0.40              # רוחב תמונת המוצר ביחס לרוחב התוכן
+IMG_W_RATIO = 0.44              # רוחב תמונת המוצר ביחס לרוחב התוכן
 IMG_TEXT_GAP = 0.18 * cm        # רווח בין תמונת המוצר לטקסט
 LOGO_BOX_W = 3.6 * cm           # רוחב תיבת הלוגו
 UNITS_BOX_W = 2.05 * cm         # רוחב תיבת היחידות השחורה
@@ -247,21 +247,24 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
     body_top = header_bottom
     body_bottom = footer_top
 
-    # ----- כותרת: לוגו בפינה הימנית-עליונה -----
-    logo = _get_logo()
-    if logo is not None:
-        _draw_image_fit(c, logo, x1 - LOGO_BOX_W, header_bottom,
-                        LOGO_BOX_W, HEADER_H, anchor='ne')
-
     # ----- גוף: תמונת מוצר משמאל, טקסט מימין -----
     img_w = content_w * IMG_W_RATIO
+    img_raise = 0.25 * cm           # הרמת תמונת המוצר מעט כלפי מעלה
+    # מרכז התמונה מיושר למרכז תיבת "היחידות" שמתחתיה
+    img_cx = x0 + UNITS_BOX_W / 2.0
     img_reader = _image_reader(image_rel)
     if img_reader is not None:
-        _draw_image_fit(c, img_reader, x0, body_bottom, img_w, body_top - body_bottom,
-                        anchor='c')
+        _draw_image_fit(c, img_reader, img_cx - img_w / 2.0, body_bottom + img_raise,
+                        img_w, body_top - body_bottom, anchor='c')
 
     text_left = x0 + img_w + IMG_TEXT_GAP
     text_w = x1 - text_left
+
+    # ----- כותרת: לוגו ממורכז מעל קו הכותרת (באמצע עמודת הטקסט) -----
+    logo = _get_logo()
+    if logo is not None:
+        # תיבת הלוגו תופסת את רוחב הקו (text_left..x1) וממורכזת עליו, מיושרת לראש
+        _draw_image_fit(c, logo, text_left, header_bottom, text_w, HEADER_H, anchor='n')
 
     # בלוק הטקסט ממורכז אנכית באזור הגוף
     name_size = _fit_font_size(c, _shape(print_name), _FONT_BOLD, 15, 9, text_w) if print_name else 0
