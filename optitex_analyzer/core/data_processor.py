@@ -109,6 +109,9 @@ class DataProcessor:
 		self.rivhit_groups = self.load_rivhit_groups()
 		self.rivhit_groups_meta_file = 'rivhit_groups_meta.json'
 		self.rivhit_groups_meta = self.load_rivhit_groups_meta()
+		# שדות הדפסת מדבקה לכל מוצר (נשמרים לפי ברקוד כדי לשרוד יבוא רשימת מוצרים)
+		self.rivhit_label_fields_file = 'rivhit_label_fields.json'
+		self.rivhit_label_fields = self.load_rivhit_label_fields()
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -428,6 +431,115 @@ class DataProcessor:
 		self.rivhit_groups = self.load_rivhit_groups()
 		self.save_rivhit_groups_meta(os.path.basename(file_path), len(self.rivhit_groups))
 		return len(self.rivhit_groups)
+
+	# ===== שדות הדפסת מדבקה (לפי ברקוד) =====
+	# מיפוי מילת מארז -> כמות יחידות
+	RIVHIT_PACK_WORDS = {
+		'זוג': 2, 'זוגית': 2, 'זוגי': 2, 'שתי': 2, 'שתיי': 2, 'שניים': 2,
+		'שלישיית': 3, 'שלישייה': 3, 'שלישיה': 3,
+		'רביעיית': 4, 'רביעייה': 4, 'רביעיה': 4,
+		'חמישיית': 5, 'חמישייה': 5, 'חמישיה': 5,
+	}
+	# מילות מפתח לזיהוי סוג בד
+	RIVHIT_FABRIC_WORDS = ['טריקו', 'פלנל', 'ריב', 'וופל', 'פוטר', 'כותנה', 'מאחרא', 'אינטרלוק']
+
+	def load_rivhit_label_fields(self) -> Dict:
+		"""טעינת שדות הדפסת מדבקה (מילון לפי ברקוד)."""
+		try:
+			if os.path.exists(self.rivhit_label_fields_file):
+				with open(self.rivhit_label_fields_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					return data if isinstance(data, dict) else {}
+			return {}
+		except Exception as e:
+			print(f"שגיאה בטעינת שדות מדבקה: {e}")
+			return {}
+
+	def save_rivhit_label_fields(self) -> bool:
+		"""שמירת שדות הדפסת מדבקה."""
+		try:
+			with open(self.rivhit_label_fields_file, 'w', encoding='utf-8') as f:
+				json.dump(self.rivhit_label_fields, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת שדות מדבקה: {e}")
+			return False
+
+	def _parse_label_defaults_from_name(self, name: str) -> Dict:
+		"""ניחוש ראשוני של שדות המדבקה מתוך שם המוצר.
+
+		- pack_qty ממילת הפתיח (שלישיית=3 וכו'), והסרתה מהשם.
+		- size מתוך הסוגריים (אם כמה - מחורז בפסיק).
+		- fabric ממילת מפתח אם מופיעה.
+		- print_name = יתרת השם לאחר הסרת מילת המארז והסוגריים.
+		"""
+		import re
+		raw = (name or '').strip()
+		pack_qty = 1
+		# מילת מארז בתחילת השם
+		if raw:
+			first = raw.split()[0]
+			if first in self.RIVHIT_PACK_WORDS:
+				pack_qty = self.RIVHIT_PACK_WORDS[first]
+				raw = raw[len(first):].strip()
+		# מידות מתוך סוגריים
+		sizes = re.findall(r'\(([^)]*)\)', raw)
+		size = ', '.join(s.strip() for s in sizes if s.strip())
+		# הסרת הסוגריים מהשם
+		name_no_paren = re.sub(r'\([^)]*\)', '', raw).strip()
+		name_no_paren = re.sub(r'\s{2,}', ' ', name_no_paren).strip()
+		# סוג בד לפי מילת מפתח
+		fabric = ''
+		for fw in self.RIVHIT_FABRIC_WORDS:
+			if fw in name_no_paren:
+				fabric = fw
+				break
+		return {
+			'print_name': name_no_paren,
+			'size': size,
+			'size_unit': 'חודשים',
+			'fabric': fabric,
+			'pack_qty': pack_qty,
+			'image': '',
+		}
+
+	def get_rivhit_label_fields(self, barcode: str, product: Dict = None) -> Dict:
+		"""מחזיר שדות מדבקה שמורים לפי ברקוד; אם אין - ניחוש מהשם."""
+		barcode = str(barcode or '').strip()
+		stored = self.rivhit_label_fields.get(barcode)
+		if stored:
+			# השלמת מפתחות חסרים
+			return {
+				'print_name': stored.get('print_name', ''),
+				'size': stored.get('size', ''),
+				'size_unit': stored.get('size_unit', ''),
+				'fabric': stored.get('fabric', ''),
+				'pack_qty': stored.get('pack_qty', 1),
+				'image': stored.get('image', ''),
+			}
+		name = ''
+		if product:
+			name = product.get('item_name', '')
+		return self._parse_label_defaults_from_name(name)
+
+	def set_rivhit_label_fields(self, barcode: str, fields: Dict) -> bool:
+		"""שמירת שדות מדבקה לפי ברקוד."""
+		barcode = str(barcode or '').strip()
+		if not barcode:
+			return False
+		try:
+			pack_qty = int(float(str(fields.get('pack_qty', 1)).strip() or 1))
+		except Exception:
+			pack_qty = 1
+		self.rivhit_label_fields[barcode] = {
+			'print_name': str(fields.get('print_name', '')).strip(),
+			'size': str(fields.get('size', '')).strip(),
+			'size_unit': str(fields.get('size_unit', '')).strip(),
+			'fabric': str(fields.get('fabric', '')).strip(),
+			'pack_qty': pack_qty,
+			'image': str(fields.get('image', '')).strip(),
+		}
+		return self.save_rivhit_label_fields()
 
 	def save_rivhit_meta(self, file_name: str, count: int) -> bool:
 		"""שמירת מטא-נתונים על הקובץ האחרון שהועלה מריווחית."""

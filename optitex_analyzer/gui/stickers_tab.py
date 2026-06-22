@@ -29,6 +29,9 @@ class StickersTabMixin:
         # Second sub-tab: Paths Settings (הגדרת נתיבים)
         self._create_paths_tab()
 
+        # Third sub-tab: Label generator from Rivhit products (יצירת מדבקות)
+        self._create_label_generator_tab()
+
         # Load saved data
         self._label_paths_load()
 
@@ -43,6 +46,8 @@ class StickersTabMixin:
                 self._refresh_print_products()
             elif current_tab == 1:  # Paths tab
                 self._refresh_path_comboboxes()
+            elif current_tab == 2:  # Label generator tab
+                self._refresh_label_gen_products()
         except Exception:
             pass
 
@@ -803,3 +808,238 @@ class StickersTabMixin:
             messagebox.showinfo("הצלחה", f"נשלחו {printed} מדבקות להדפסה")
             self._print_queue_data.clear()
             self._refresh_print_queue_tree()
+
+    # ==================== LABEL GENERATOR TAB ====================
+    def _create_label_generator_tab(self):
+        """סאב-טאב ליצירת מדבקות מתבנית, ממוצרי ריווחית."""
+        gen_tab = ttk.Frame(self.stickers_sub_notebook)
+        self.stickers_sub_notebook.add(gen_tab, text="יצירת מדבקות")
+
+        tk.Label(gen_tab, text="יצירת דף מדבקות מתבנית", font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+
+        # Selection frame
+        sel = ttk.LabelFrame(gen_tab, text="בחירת מוצר מריווחית", padding=10)
+        sel.pack(fill="x", padx=15, pady=10)
+
+        row1 = tk.Frame(sel)
+        row1.pack(fill="x", pady=5)
+        ttk.Label(row1, text="מוצר:").pack(side="right", padx=5)
+        self._lg_product_var = tk.StringVar()
+        self._lg_product_cb = ttk.Combobox(row1, textvariable=self._lg_product_var, width=45)
+        self._lg_product_cb.pack(side="right", padx=5)
+        self._lg_product_cb.bind('<<ComboboxSelected>>', lambda e: self._on_lg_product_change())
+        self._lg_product_cb.bind('<KeyRelease>', lambda e: self._filter_lg_products())
+
+        ttk.Label(row1, text="כמות:").pack(side="right", padx=(20, 5))
+        self._lg_qty_var = tk.StringVar(value="1")
+        ttk.Entry(row1, textvariable=self._lg_qty_var, width=8).pack(side="right", padx=5)
+
+        tk.Button(row1, text="➕ הוסף לתור", bg="#27ae60", fg="white", command=self._lg_add_to_queue).pack(side="right", padx=20)
+
+        # Preview of label fields for the selected product
+        self._lg_preview_var = tk.StringVar(value="בחר מוצר כדי לראות את שדות המדבקה")
+        tk.Label(sel, textvariable=self._lg_preview_var, fg="#7f8c8d", justify="right", anchor="e").pack(fill="x", pady=(6, 0))
+        tk.Label(sel, text="טיפ: לעריכת שדות המדבקה (שם להדפסה/מידה/סוג בד/מארז) - בטאב ריווחית, דאבל-קליק על מוצר.",
+                 fg="#95a5a6", font=('Arial', 8), justify="right", anchor="e").pack(fill="x")
+
+        # Queue table
+        queue_frame = ttk.LabelFrame(gen_tab, text="תור מדבקות", padding=10)
+        queue_frame.pack(fill="both", expand=True, padx=15, pady=10)
+
+        cols = ("print_name", "size", "fabric", "pack", "barcode", "qty")
+        headers = {"print_name": "שם להדפסה", "size": "מידה", "fabric": "סוג בד",
+                   "pack": "מארז", "barcode": "ברקוד", "qty": "כמות"}
+        self._lg_tree = ttk.Treeview(queue_frame, columns=cols, show="headings")
+        for c in cols:
+            self._lg_tree.heading(c, text=headers[c])
+            w = 70 if c in ("size", "pack", "qty") else 160
+            self._lg_tree.column(c, width=w, anchor="center")
+        vs = ttk.Scrollbar(queue_frame, orient="vertical", command=self._lg_tree.yview)
+        self._lg_tree.configure(yscrollcommand=vs.set)
+        self._lg_tree.grid(row=0, column=0, sticky="nsew")
+        vs.grid(row=0, column=1, sticky="ns")
+        queue_frame.grid_rowconfigure(0, weight=1)
+        queue_frame.grid_columnconfigure(0, weight=1)
+
+        # Actions
+        actions = tk.Frame(gen_tab)
+        actions.pack(fill="x", padx=15, pady=(0, 10))
+        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._lg_delete_selected).pack(side="left", padx=5)
+        tk.Button(actions, text="🧹 נקה הכל", bg="#95a5a6", fg="white", command=self._lg_clear).pack(side="left", padx=5)
+        tk.Button(actions, text="🖨️ הדפס", bg="#2980b9", fg="white", font=('Arial', 11, 'bold'), command=self._lg_print).pack(side="right", padx=5)
+        tk.Button(actions, text="🧾 צור דף מדבקות (PDF)", bg="#27ae60", fg="white", font=('Arial', 11, 'bold'), command=self._lg_generate_pdf).pack(side="right", padx=5)
+
+        # State
+        self._lg_queue_data = []          # [{print_name,size,fabric,pack_qty,barcode,qty}]
+        self._lg_all_products = []        # [(label, product_dict)]
+        self._lg_last_pdf = None
+        self._refresh_label_gen_products()
+
+    def _rivhit_products(self):
+        dp = getattr(self, 'data_processor', None)
+        return list(getattr(dp, 'rivhit_products', []) or []) if dp else []
+
+    def _refresh_label_gen_products(self):
+        """רענון רשימת המוצרים בבורר מתוך מוצרי ריווחית."""
+        items = self._rivhit_products()
+        pairs = []
+        for p in items:
+            name = str(p.get('item_name', '')).strip()
+            bc = str(p.get('item_part_num', '')).strip()
+            if not name and not bc:
+                continue
+            label = f"{name} | {bc}" if bc else name
+            pairs.append((label, p))
+        self._lg_all_products = pairs
+        if hasattr(self, '_lg_product_cb'):
+            self._lg_product_cb['values'] = [lbl for lbl, _ in pairs]
+
+    def _filter_lg_products(self):
+        """סינון הבורר לפי הטקסט שהוקלד (שם או ברקוד)."""
+        q = (self._lg_product_var.get() or '').strip().lower()
+        if not q:
+            values = [lbl for lbl, _ in self._lg_all_products]
+        else:
+            terms = q.split()
+            values = [lbl for lbl, _ in self._lg_all_products if all(t in lbl.lower() for t in terms)]
+        self._lg_product_cb['values'] = values
+
+    def _selected_lg_product(self):
+        """מחזיר את מילון המוצר שנבחר בבורר (לפי הלייבל)."""
+        label = (self._lg_product_var.get() or '').strip()
+        for lbl, p in self._lg_all_products:
+            if lbl == label:
+                return p
+        return None
+
+    def _on_lg_product_change(self):
+        p = self._selected_lg_product()
+        if not p:
+            self._lg_preview_var.set("בחר מוצר כדי לראות את שדות המדבקה")
+            return
+        bc = str(p.get('item_part_num', '')).strip()
+        f = self.data_processor.get_rivhit_label_fields(bc, product=p)
+        parts = [f"שם: {f.get('print_name','')}"]
+        if f.get('size'):
+            parts.append(f"מידה: {f.get('size')}")
+        if f.get('fabric'):
+            parts.append(f"בד: {f.get('fabric')}")
+        if f.get('pack_qty', 1) and int(f.get('pack_qty', 1)) > 1:
+            parts.append(f"מארז: {f.get('pack_qty')}")
+        self._lg_preview_var.set("   |   ".join(parts))
+
+    def _lg_add_to_queue(self):
+        p = self._selected_lg_product()
+        if not p:
+            messagebox.showwarning("אזהרה", "אנא בחר מוצר מהרשימה")
+            return
+        try:
+            qty = int(self._lg_qty_var.get())
+            if qty <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("אזהרה", "כמות חייבת להיות מספר חיובי")
+            return
+        bc = str(p.get('item_part_num', '')).strip()
+        if not bc:
+            messagebox.showwarning("אין ברקוד", "למוצר זה אין מק\"ט/ברקוד; לא ניתן ליצור מדבקה סרוקה")
+            return
+        f = self.data_processor.get_rivhit_label_fields(bc, product=p)
+        self._lg_queue_data.append({
+            "print_name": f.get('print_name', ''),
+            "size": f.get('size', ''),
+            "size_unit": f.get('size_unit', ''),
+            "fabric": f.get('fabric', ''),
+            "pack_qty": int(f.get('pack_qty', 1) or 1),
+            "image": f.get('image', ''),
+            "barcode": bc,
+            "qty": qty,
+        })
+        self._refresh_lg_tree()
+
+    def _refresh_lg_tree(self):
+        for item in self._lg_tree.get_children():
+            self._lg_tree.delete(item)
+        for idx, it in enumerate(self._lg_queue_data):
+            self._lg_tree.insert("", "end", iid=str(idx), values=(
+                it.get("print_name", ""), it.get("size", ""), it.get("fabric", ""),
+                it.get("pack_qty", 1), it.get("barcode", ""), it.get("qty", 1),
+            ))
+
+    def _lg_delete_selected(self):
+        sel = self._lg_tree.selection()
+        if not sel:
+            messagebox.showwarning("אזהרה", "אנא בחר שורה למחיקה")
+            return
+        idx = int(sel[0])
+        del self._lg_queue_data[idx]
+        self._refresh_lg_tree()
+
+    def _lg_clear(self):
+        if not self._lg_queue_data:
+            return
+        if messagebox.askyesno("אישור", "לנקות את כל התור?"):
+            self._lg_queue_data.clear()
+            self._refresh_lg_tree()
+
+    def _lg_expand_items(self):
+        """מרחיב את התור לרשימת מדבקות בודדות לפי כמות."""
+        expanded = []
+        for it in self._lg_queue_data:
+            for _ in range(int(it.get("qty", 1) or 1)):
+                expanded.append({
+                    "print_name": it.get("print_name", ""),
+                    "size": it.get("size", ""),
+                    "size_unit": it.get("size_unit", ""),
+                    "fabric": it.get("fabric", ""),
+                    "pack_qty": it.get("pack_qty", 1),
+                    "image": it.get("image", ""),
+                    "barcode": it.get("barcode", ""),
+                })
+        return expanded
+
+    def _lg_generate_pdf(self):
+        if not self._lg_queue_data:
+            messagebox.showwarning("אזהרה", "התור ריק")
+            return
+        from datetime import datetime
+        from optitex_analyzer.core.label_sheet import build_label_sheet_pdf
+        out_dir = os.path.join(os.getcwd(), "exports", "labels")
+        file_path = os.path.join(out_dir, f"labels_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+        try:
+            items = self._lg_expand_items()
+            count = build_label_sheet_pdf(items, file_path)
+            self._lg_last_pdf = file_path
+            messagebox.showinfo("הצלחה", f"נוצרו {count} מדבקות בקובץ:\n{file_path}")
+            try:
+                os.startfile(file_path)  # תצוגה מקדימה
+            except Exception:
+                pass
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה ביצירת הקובץ:\n{e}")
+
+    def _lg_print(self):
+        """מייצר (אם צריך) ומדפיס את דף המדבקות בקנה מידה 1:1."""
+        if not self._lg_queue_data:
+            messagebox.showwarning("אזהרה", "התור ריק")
+            return
+        from datetime import datetime
+        from optitex_analyzer.core.label_sheet import build_label_sheet_pdf
+        out_dir = os.path.join(os.getcwd(), "exports", "labels")
+        file_path = os.path.join(out_dir, f"labels_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+        try:
+            items = self._lg_expand_items()
+            build_label_sheet_pdf(items, file_path)
+            self._lg_last_pdf = file_path
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה ביצירת הקובץ:\n{e}")
+            return
+        try:
+            if os.name == 'nt':
+                if not self._print_pdf_sumatra(file_path):
+                    os.startfile(file_path, "print")
+            else:
+                subprocess.run(['lpr', file_path], check=True)
+            messagebox.showinfo("הצלחה", "דף המדבקות נשלח להדפסה")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בהדפסה:\n{e}")

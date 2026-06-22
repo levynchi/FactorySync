@@ -1,4 +1,6 @@
 """טאב 'ריווחית' - הצגת רשימת מוצרים עדכנית מקובץ הייצוא של ריווחית."""
+import os
+import shutil
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -53,6 +55,7 @@ class RivhitTabMixin:
         actions = tk.Frame(tab, bg='#f7f9fa')
         actions.pack(fill='x', padx=15, pady=5)
         tk.Button(actions, text="🔄 רענן", command=self._refresh_rivhit_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="✏️ עריכת מדבקה", command=self._edit_rivhit_label_fields, bg='#8e44ad', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
 
         # Last upload info
         self.rivhit_meta_var = tk.StringVar(value='')
@@ -88,6 +91,7 @@ class RivhitTabMixin:
         vsb.grid(row=0, column=1, sticky='ns')
         table_frame.grid_columnconfigure(0, weight=1)
         table_frame.grid_rowconfigure(0, weight=1)
+        self.rivhit_tree.bind('<Double-1>', self._edit_rivhit_label_fields)
 
         # Footer summary
         self.rivhit_summary_var = tk.StringVar(value="אין נתונים")
@@ -109,6 +113,140 @@ class RivhitTabMixin:
 
     def _update_rivhit_summary(self, count):
         self.rivhit_summary_var.set(f"סה\"כ מוצרים: {count}")
+
+    def _edit_rivhit_label_fields(self, event=None):
+        """עריכת שדות הדפסת המדבקה של המוצר הנבחר (לפי ברקוד)."""
+        sel = self.rivhit_tree.selection()
+        if not sel:
+            messagebox.showinfo("לא נבחר", "יש לבחור מוצר מהרשימה")
+            return
+        vals = self.rivhit_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        # סדר העמודות: item_num, item_name, item_part_num, ...
+        name = vals[1] if len(vals) > 1 else ''
+        barcode = str(vals[2]).strip() if len(vals) > 2 else ''
+        if not barcode:
+            messagebox.showwarning("אין ברקוד", "למוצר זה אין מק\"ט/ברקוד; לא ניתן לשמור שדות מדבקה")
+            return
+        fields = self.data_processor.get_rivhit_label_fields(barcode, product={'item_name': name})
+
+        dlg = tk.Toplevel(self.notebook)
+        dlg.title("עריכת שדות מדבקה")
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        frm = tk.Frame(dlg, padx=15, pady=15)
+        frm.pack(fill='both', expand=True)
+
+        tk.Label(frm, text=f'מוצר: {name}', font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, sticky='e', pady=(0, 2))
+        tk.Label(frm, text=f'ברקוד: {barcode}', font=('Arial', 9), fg='#7f8c8d').grid(row=1, column=0, columnspan=2, sticky='e', pady=(0, 10))
+
+        name_var = tk.StringVar(value=fields.get('print_name', ''))
+        size_var = tk.StringVar(value=fields.get('size', ''))
+        size_unit_var = tk.StringVar(value=fields.get('size_unit', ''))
+        fabric_var = tk.StringVar(value=fields.get('fabric', ''))
+        pack_var = tk.StringVar(value=str(fields.get('pack_qty', 1)))
+        image_var = tk.StringVar(value=fields.get('image', ''))
+
+        rows = [
+            ('שם להדפסה:', name_var, 32, False),
+            ('מידה:', size_var, 20, False),
+            ('סוג בד:', fabric_var, 20, False),
+            ('כמות במארז:', pack_var, 8, True),
+        ]
+        for i, (lbl, var, width, is_spin) in enumerate(rows, start=2):
+            tk.Label(frm, text=lbl, anchor='e').grid(row=i, column=1, sticky='e', padx=(6, 2), pady=3)
+            if is_spin:
+                tk.Spinbox(frm, from_=1, to=99, textvariable=var, width=width, justify='center').grid(row=i, column=0, sticky='w', pady=3)
+            else:
+                tk.Entry(frm, textvariable=var, width=width).grid(row=i, column=0, sticky='w', pady=3)
+
+        # שורת יחידת מידה (חודשים/שנים) - מוצגת משמאל למידה במדבקה
+        unit_row = len(rows) + 2
+        tk.Label(frm, text='יחידת מידה:', anchor='e').grid(row=unit_row, column=1, sticky='e', padx=(6, 2), pady=3)
+        ttk.Combobox(frm, textvariable=size_unit_var, width=18,
+                     values=['', 'חודשים', 'שנים']).grid(row=unit_row, column=0, sticky='w', pady=3)
+
+        # שורת תמונת מוצר: תצוגה מקדימה + בחירה + הסרה
+        img_row = len(rows) + 3
+        tk.Label(frm, text='תמונת מוצר:', anchor='e').grid(row=img_row, column=1, sticky='ne', padx=(6, 2), pady=3)
+        img_frame = tk.Frame(frm)
+        img_frame.grid(row=img_row, column=0, sticky='w', pady=3)
+        preview_lbl = tk.Label(img_frame, text='(אין תמונה)', width=14, height=6,
+                               relief='solid', bd=1, bg='#f7f7f7', compound='center')
+        preview_lbl.grid(row=0, column=0, columnspan=2, pady=(0, 4))
+        # שמירת רפרנס לתמונה כדי שלא תימחק ע"י garbage collector
+        self._label_img_ref = None
+
+        def _abs_image_path(rel):
+            rel = (rel or '').strip()
+            if not rel:
+                return ''
+            if os.path.isabs(rel):
+                return rel
+            return os.path.join(os.getcwd(), rel)
+
+        def _update_preview():
+            rel = image_var.get().strip()
+            abs_path = _abs_image_path(rel)
+            if rel and os.path.exists(abs_path):
+                try:
+                    from PIL import Image, ImageTk
+                    im = Image.open(abs_path)
+                    im.thumbnail((96, 96))
+                    self._label_img_ref = ImageTk.PhotoImage(im)
+                    preview_lbl.config(image=self._label_img_ref, text='')
+                    return
+                except Exception:
+                    pass
+            self._label_img_ref = None
+            preview_lbl.config(image='', text='(אין תמונה)')
+
+        def _choose_image():
+            path = filedialog.askopenfilename(
+                title='בחר תמונת מוצר',
+                filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp'), ('כל הקבצים', '*.*')],
+            )
+            if not path:
+                return
+            try:
+                ext = os.path.splitext(path)[1].lower() or '.png'
+                dest_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
+                os.makedirs(dest_dir, exist_ok=True)
+                safe_bc = ''.join(ch for ch in barcode if ch.isalnum()) or 'product'
+                dest = os.path.join(dest_dir, f"{safe_bc}{ext}")
+                shutil.copyfile(path, dest)
+                rel = os.path.relpath(dest, os.getcwd())
+                image_var.set(rel)
+                _update_preview()
+            except Exception as e:
+                messagebox.showerror('שגיאה', f'שגיאה בשמירת התמונה:\n{e}')
+
+        def _remove_image():
+            image_var.set('')
+            _update_preview()
+
+        tk.Button(img_frame, text='בחר תמונה…', command=_choose_image).grid(row=1, column=0, padx=(0, 4))
+        tk.Button(img_frame, text='הסר', command=_remove_image).grid(row=1, column=1)
+        _update_preview()
+
+        btns = tk.Frame(frm)
+        btns.grid(row=img_row + 1, column=0, columnspan=2, pady=(12, 0))
+
+        def save():
+            self.data_processor.set_rivhit_label_fields(barcode, {
+                'print_name': name_var.get(),
+                'size': size_var.get(),
+                'size_unit': size_unit_var.get(),
+                'fabric': fabric_var.get(),
+                'pack_qty': pack_var.get(),
+                'image': image_var.get(),
+            })
+            dlg.destroy()
+            messagebox.showinfo("נשמר", "שדות המדבקה נשמרו")
+
+        tk.Button(btns, text="שמור", command=save, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
 
     def _update_rivhit_meta_label(self):
         meta = getattr(self.data_processor, 'rivhit_meta', {}) or {}
