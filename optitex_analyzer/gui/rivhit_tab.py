@@ -203,8 +203,11 @@ class RivhitTabMixin:
             preview_lbl.config(image='', text='(אין תמונה)')
 
         def _choose_image():
+            products_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
+            os.makedirs(products_dir, exist_ok=True)
             path = filedialog.askopenfilename(
                 title='בחר תמונת מוצר',
+                initialdir=products_dir,
                 filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp'), ('כל הקבצים', '*.*')],
             )
             if not path:
@@ -452,8 +455,11 @@ class RivhitTabMixin:
             messagebox.showerror("שגיאה", str(e))
 
     def _choose_rivhit_print_image(self):
+        products_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
+        os.makedirs(products_dir, exist_ok=True)
         path = filedialog.askopenfilename(
             title='בחר תמונת מוצר למדבקה',
+            initialdir=products_dir,
             filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp'), ('כל הקבצים', '*.*')],
         )
         if not path:

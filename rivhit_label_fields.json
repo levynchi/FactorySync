@@ -124,5 +124,205 @@
     "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021175.png"
+  },
+  "7297555021182": {
+    "print_name": "בגד גוף ארוך",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021182.png"
+  },
+  "7297555021199": {
+    "print_name": "בגד גוף ארוך",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021199.png"
+  },
+  "7297555021205": {
+    "print_name": "בגד גוף ארוך",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021205.png"
+  },
+  "7297555021212": {
+    "print_name": "בגד גוף ארוך",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021212.png"
+  },
+  "7297555021229": {
+    "print_name": "בגד גוף ארוך",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021229.png"
+  },
+  "7297555021236": {
+    "print_name": "בגד גוף ארוך",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021236.png"
+  },
+  "7297555021243": {
+    "print_name": "בגד גוף ארוך",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021243.png"
+  },
+  "7297555021250": {
+    "print_name": "בגד גוף ארוך",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021250.png"
+  },
+  "7297555021267": {
+    "print_name": "בגד גוף ארוך",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021267.png"
+  },
+  "7297555021274": {
+    "print_name": "בגד גוף ארוך",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021274.png"
+  },
+  "7297555021281": {
+    "print_name": "בגד גוף ארוך",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021281.png"
+  },
+  "7297555021298": {
+    "print_name": "בגד גוף ארוך",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021298.png"
+  },
+  "7297555021304": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021304.png"
+  },
+  "7297555021311": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021311.png"
+  },
+  "7297555021328": {
+    "print_name": "גופיות סבא",
+    "size": "3",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021328.png"
+  },
+  "7297555021335": {
+    "print_name": "גופיות סבא",
+    "size": "4",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021335.png"
+  },
+  "7297555021342": {
+    "print_name": "גופיות סבא",
+    "size": "5",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021342.png"
+  },
+  "7297555021359": {
+    "print_name": "גופיות סבא",
+    "size": "6",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021359.png"
+  },
+  "7297555021366": {
+    "print_name": "גופיות סבא",
+    "size": "8",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021366.png"
+  },
+  "7297555021373": {
+    "print_name": "גופיות סבא",
+    "size": "10",
+    "size_unit": "",
+    "fabric": "",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021373.png"
+  },
+  "7297555021380": {
+    "print_name": "גופיות סבא",
+    "size": "12",
+    "size_unit": "",
+    "fabric": "",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021380.png"
+  },
+  "7297555021397": {
+    "print_name": "גופיות סבא",
+    "size": "14",
+    "size_unit": "",
+    "fabric": "",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021397.png"
+  },
+  "7297555021403": {
+    "print_name": "גופיות סבא",
+    "size": "16",
+    "size_unit": "",
+    "fabric": "",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021403.png"
+  },
+  "7297555021410": {
+    "print_name": "גופיות סבא",
+    "size": "14",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021410.png"
+  },
+  "7297555021427": {
+    "print_name": "גופיות סבא",
+    "size": "16",
+    "size_unit": "",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021427.png"
   }
 }

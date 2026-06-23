@@ -20766,5 +20766,101 @@
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
     "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2603",
+    "item_name": "שלישיית רגליות טריקו (0-3)",
+    "item_part_num": "7297555021168",
+    "item_cost_nis": "6.00",
+    "item_sale_nis": "18.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2604",
+    "item_name": "שלישיית רגליות טריקו (3-6)",
+    "item_part_num": "7297555021175",
+    "item_cost_nis": "6.00",
+    "item_sale_nis": "18.00",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2605",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (0-3)",
+    "item_part_num": "7297555021243",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2606",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (3-6)",
+    "item_part_num": "7297555021250",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2607",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (6-12)",
+    "item_part_num": "7297555021267",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2608",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (12-18)",
+    "item_part_num": "7297555021274",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2609",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (18-24)",
+    "item_part_num": "7297555021281",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2610",
+    "item_name": "שלישיית בגד גוף ארוך טריקו (24-30)",
+    "item_part_num": "7297555021298",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "41.40",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2611",
+    "item_name": "שליישית בגדי גוף מעטפת טריקו (0-3)",
+    "item_part_num": "7297555021311",
+    "item_cost_nis": "25.50",
+    "item_sale_nis": "44.10",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2612",
+    "item_name": "שליישית גופיות סבא (3)",
+    "item_part_num": "7297555021328",
+    "item_cost_nis": "13.80",
+    "item_sale_nis": "25.50",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2613",
+    "item_name": "שליישית גופיות סבא (4)",
+    "item_part_num": "7297555021335",
+    "item_cost_nis": "13.80",
+    "item_sale_nis": "25.50",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2614",
+    "item_name": "שליישית גופיות סבא (5)",
+    "item_part_num": "7297555021342",
+    "item_cost_nis": "13.80",
+    "item_sale_nis": "25.50",
+    "compute_0036": "שלישיות"
   }
 ]

@@ -1,20 +1,56 @@
 [
   {
-    "item_num": "2603",
-    "item_name": "שלישיית רגליות טריקו (0-3)",
-    "item_part_num": "7297555021168",
-    "item_cost_nis": "6",
-    "item_sale_nis": "18",
-    "digital_price": "34.2",
+    "item_num": "2615",
+    "item_name": "שלישיית גופיות סבא (6)",
+    "item_part_num": "7297555021359",
+    "item_cost_nis": "15.9",
+    "item_sale_nis": "28.5",
+    "digital_price": "",
     "compute_0036": "שלישיות"
   },
   {
-    "item_num": "2604",
-    "item_name": "שלישיית רגליות טריקו (3-6)",
-    "item_part_num": "7297555021175",
-    "item_cost_nis": "6",
-    "item_sale_nis": "18",
-    "digital_price": "34.2",
+    "item_num": "2616",
+    "item_name": "שלישיית גופיות סבא (8)",
+    "item_part_num": "7297555021366",
+    "item_cost_nis": "15.9",
+    "item_sale_nis": "28.5",
+    "digital_price": "",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2617",
+    "item_name": "שלישיית גופיות סבא (10)",
+    "item_part_num": "7297555021373",
+    "item_cost_nis": "17.7",
+    "item_sale_nis": "31.5",
+    "digital_price": "",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2618",
+    "item_name": "שלישיית גופיות סבא (12)",
+    "item_part_num": "7297555021380",
+    "item_cost_nis": "17.7",
+    "item_sale_nis": "31.5",
+    "digital_price": "",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2619",
+    "item_name": "שליישית גופיות סבא (14)",
+    "item_part_num": "7297555021410",
+    "item_cost_nis": "19.5",
+    "item_sale_nis": "34.5",
+    "digital_price": "",
+    "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2620",
+    "item_name": "שליישית גופיות סבא (16)",
+    "item_part_num": "7297555021427",
+    "item_cost_nis": "19.5",
+    "item_sale_nis": "34.5",
+    "digital_price": "",
     "compute_0036": "שלישיות"
   }
 ]

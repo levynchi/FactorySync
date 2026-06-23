@@ -46,7 +46,8 @@ FOOTER_H = 1.28 * cm            # אזור הברקוד + תיבת היחידו�
 IMG_W_RATIO = 0.44              # רוחב תמונת המוצר ביחס לרוחב התוכן
 IMG_TEXT_GAP = 0.18 * cm        # רווח בין תמונת המוצר לטקסט
 LOGO_BOX_W = 3.6 * cm           # רוחב תיבת הלוגו
-UNITS_BOX_W = 2.05 * cm         # רוחב תיבת היחידות השחורה
+IMG_VPAD = 0.3 * cm             # ריפוד עליון/תחתון לתמונת המוצר (מקטין תמונה גדולה)
+UNITS_BOX_W = 2.4 * cm          # רוחב תיבת היחידות השחורה
 UNITS_BOX_H = 0.60 * cm         # גובה תיבת היחידות
 BC_HEIGHT = 0.88 * cm           # גובה הברקוד הסרוק
 
@@ -214,6 +215,9 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
     if size and size_unit:
         # "0-3 חודשים" - ב-RTL היחידה מופיעה משמאל למספר המידה
         size = f"{size} {size_unit}"
+    elif size:
+        # ללא יחידה (חודשים/שנים) - מוסיפים "מידה:" כדי שיובן שמדובר במידה
+        size = f"מידה: {size}"
     fabric = _format_fabric(item.get('fabric', ''))
     try:
         pack_qty = int(float(str(item.get('pack_qty', 1)) or 1))
@@ -247,17 +251,18 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
     body_top = header_bottom
     body_bottom = footer_top
 
-    # ----- גוף: תמונת מוצר משמאל, טקסט מימין -----
-    img_w = content_w * IMG_W_RATIO
-    img_raise = 0.25 * cm           # הרמת תמונת המוצר מעט כלפי מעלה
-    # מרכז התמונה מיושר למרכז תיבת "היחידות" שמתחתיה
-    img_cx = x0 + UNITS_BOX_W / 2.0
+    # ----- גוף: תמונת מוצר משמאל ברוחב תיבת "היחידות", טקסט מימין -----
+    # רוחב התמונה = רוחב תיבת היחידות; מיושרת מעליה (אותו קצה שמאלי), יחס נשמר.
+    img_col_w = UNITS_BOX_W
+    units_box_top = footer_bottom + (FOOTER_H - UNITS_BOX_H) / 2.0 + UNITS_BOX_H
+    img_region_top = cell_y + LABEL_H - BORDER_INSET - 0.06 * cm - IMG_VPAD   # ריפוד עליון
+    img_region_bottom = units_box_top + 0.06 * cm + IMG_VPAD                 # ריפוד תחתון מעל תיבת היחידות
     img_reader = _image_reader(image_rel)
     if img_reader is not None:
-        _draw_image_fit(c, img_reader, img_cx - img_w / 2.0, body_bottom + img_raise,
-                        img_w, body_top - body_bottom, anchor='c')
+        _draw_image_fit(c, img_reader, x0, img_region_bottom,
+                        img_col_w, img_region_top - img_region_bottom, anchor='c')
 
-    text_left = x0 + img_w + IMG_TEXT_GAP
+    text_left = x0 + img_col_w + IMG_TEXT_GAP
     text_w = x1 - text_left
 
     # ----- כותרת: לוגו ממורכז מעל קו הכותרת (באמצע עמודת הטקסט) -----
