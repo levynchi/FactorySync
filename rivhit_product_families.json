@@ -1,0 +1,83 @@
+{
+  "baby_basic:204": {
+    "brand": "baby_basic",
+    "model_code": "204",
+    "print_name": "גופיות פלנל",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "size_unit": "",
+    "image": "assets\\labels\\products\\family_baby_basic_204.png"
+  },
+  "baby_basic:201": {
+    "brand": "baby_basic",
+    "model_code": "201",
+    "print_name": "בגד גוף מעטפת",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\family_baby_basic_201.png"
+  },
+  "baby_basic:200": {
+    "brand": "baby_basic",
+    "model_code": "200",
+    "print_name": "רגליות לתינוק",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\family_baby_basic_200.png"
+  },
+  "baby_basic:202": {
+    "brand": "baby_basic",
+    "model_code": "202",
+    "print_name": "גטקס פתוח",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\family_baby_basic_202.png"
+  },
+  "arie:025": {
+    "brand": "arie",
+    "model_code": "025",
+    "print_name": "בגד גוף ארוך",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "size_unit": "",
+    "image": "assets\\labels\\products\\7297555020987.png"
+  },
+  "arie:204": {
+    "brand": "arie",
+    "model_code": "204",
+    "print_name": "גופיות פלנל",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "size_unit": "",
+    "image": "assets\\labels\\products\\family_arie_204.png"
+  },
+  "arie:201": {
+    "brand": "arie",
+    "model_code": "201",
+    "print_name": "בגד גוף מעטפת",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\family_arie_201.png"
+  },
+  "arie:202": {
+    "brand": "arie",
+    "model_code": "202",
+    "print_name": "גטקס לתינוק",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\7297555021748.png"
+  },
+  "arie:200": {
+    "brand": "arie",
+    "model_code": "200",
+    "print_name": "רגליות לתינוק",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "size_unit": "חודשים",
+    "image": "assets\\labels\\products\\7297555021779.png"
+  }
+}

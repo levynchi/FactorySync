@@ -1,9 +1,13 @@
 {
   "7297555020987": {
-    "print_name": "בגדי גוף פלנל לבן",
+    "print_name": "בגד גוף ארוך",
     "size": "0-3",
+    "size_unit": "",
     "fabric": "פלנל",
-    "pack_qty": 3
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
   },
   "7297555021151": {
     "print_name": "בגד גוף קצר",
@@ -281,7 +285,7 @@
     "print_name": "גופיות סבא",
     "size": "10",
     "size_unit": "",
-    "fabric": "",
+    "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021373.png"
   },
@@ -289,7 +293,7 @@
     "print_name": "גופיות סבא",
     "size": "12",
     "size_unit": "",
-    "fabric": "",
+    "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021380.png"
   },
@@ -324,5 +328,845 @@
     "fabric": "טריקו",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\7297555021427.png"
+  },
+  "7297555021434": {
+    "print_name": "בגד גוף ארוך",
+    "size": "",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021434.png"
+  },
+  "7297555021441": {
+    "print_name": "בגד גוף ארוך",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021441.png"
+  },
+  "7297555021458": {
+    "print_name": "בגד גוף ארוך",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021458.png"
+  },
+  "7297555021465": {
+    "print_name": "בגד גוף ארוך",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021465.png"
+  },
+  "7297555021472": {
+    "print_name": "בגד גוף ארוך",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021472.png"
+  },
+  "7297555021489": {
+    "print_name": "בגד גוף ארוך",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021489.png"
+  },
+  "7297555021496": {
+    "print_name": "בגד גוף ארוך",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021496.png"
+  },
+  "7297555021502": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021502.png"
+  },
+  "7297555021519": {
+    "print_name": "בגד גוף גופיה",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021519.png"
+  },
+  "7297555021526": {
+    "print_name": "בגד גוף גופיה",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021526.png"
+  },
+  "7297555021533": {
+    "print_name": "בגד גוף גופיה",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021533.png"
+  },
+  "7297555021540": {
+    "print_name": "בגד גוף גופיה",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021540.png"
+  },
+  "7297555021557": {
+    "print_name": "בגד גוף גופיה",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021557.png"
+  },
+  "7297555021564": {
+    "print_name": "בגד גוף גופיה",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021564.png"
+  },
+  "7297555021571": {
+    "print_name": "בגד גוף קצר",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021571.png"
+  },
+  "7297555021588": {
+    "print_name": "בגד גוף קצר",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021588.png"
+  },
+  "7297555021595": {
+    "print_name": "בגד גוף קצר",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021595.png"
+  },
+  "7297555021601": {
+    "print_name": "בגד גוף קצר",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021601.png"
+  },
+  "7297555021618": {
+    "print_name": "בגד גוף קצר",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021618.png"
+  },
+  "7297555021625": {
+    "print_name": "בגד גוף קצר",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021625.png"
+  },
+  "7297555021632": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021632.png"
+  },
+  "7297555021649": {
+    "print_name": "רגליות לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021649.png"
+  },
+  "7297555021656": {
+    "print_name": "גופיות סבא",
+    "size": "16",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021656.png"
+  },
+  "7297555021663": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021663.png"
+  },
+  "7297555000200": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555000200.png"
+  },
+  "7297555021670": {
+    "print_name": "גטקס לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021748.png",
+    "model_code": "202",
+    "brand": "arie"
+  },
+  "7297555021687": {
+    "print_name": "גטקס לתינוק",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021748.png",
+    "model_code": "202",
+    "brand": "arie"
+  },
+  "7297555021694": {
+    "print_name": "גטקס לתינוק",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021748.png",
+    "model_code": "202",
+    "brand": "arie"
+  },
+  "7297555021700": {
+    "print_name": "גטקס לתינוק",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021748.png",
+    "model_code": "202",
+    "brand": "arie"
+  },
+  "7297555021717": {
+    "print_name": "גטקס לתינוק",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021748.png",
+    "model_code": "202",
+    "brand": "arie"
+  },
+  "7297555021724": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021731": {
+    "print_name": "רגליות לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021748": {
+    "print_name": "רגליות לתינוק",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021755": {
+    "print_name": "רגליות לתינוק",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021762": {
+    "print_name": "רגליות לתינוק",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021779": {
+    "print_name": "רגליות לתינוק",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555021779.png",
+    "model_code": "200",
+    "brand": "arie"
+  },
+  "7297555021786": {
+    "print_name": "בגד גוף ארוך",
+    "size": "0-3",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021793": {
+    "print_name": "בגד גוף ארוך",
+    "size": "3-6",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021809": {
+    "print_name": "בגד גוף ארוך",
+    "size": "6-12",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021816": {
+    "print_name": "בגד גוף ארוך",
+    "size": "12-18",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021823": {
+    "print_name": "בגד גוף ארוך",
+    "size": "18-24",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021830": {
+    "print_name": "בגד גוף ארוך",
+    "size": "24-30",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555020994": {
+    "print_name": "בגד גוף ארוך",
+    "size": "3-6",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021007": {
+    "print_name": "בגד גוף ארוך",
+    "size": "6-12",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021014": {
+    "print_name": "בגד גוף ארוך",
+    "size": "12-18",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021021": {
+    "print_name": "בגד גוף ארוך",
+    "size": "18-24",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021038": {
+    "print_name": "בגד גוף ארוך",
+    "size": "24-30",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\7297555020987.png",
+    "model_code": "025",
+    "brand": "arie"
+  },
+  "7297555021847": {
+    "print_name": "גופיות פלנל",
+    "size": "2",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021854": {
+    "print_name": "גופיות פלנל",
+    "size": "4",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021861": {
+    "print_name": "גופיות פלנל",
+    "size": "6",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021878": {
+    "print_name": "גופיות פלנל",
+    "size": "8",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021885": {
+    "print_name": "גופיות פלנל",
+    "size": "10",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021892": {
+    "print_name": "גופיות פלנל",
+    "size": "12",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555021908": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_201.png",
+    "model_code": "201",
+    "brand": "baby_basic"
+  },
+  "7297555021915": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021922": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021939": {
+    "print_name": "רגליות לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021946": {
+    "print_name": "רגליות לתינוק",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021953": {
+    "print_name": "רגליות לתינוק",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021960": {
+    "print_name": "רגליות לתינוק",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021977": {
+    "print_name": "רגליות לתינוק",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555021984": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_201.png",
+    "model_code": "201",
+    "brand": "baby_basic"
+  },
+  "7297555021991": {
+    "print_name": "גופיות פלנל",
+    "size": "2",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022004": {
+    "print_name": "גופיות פלנל",
+    "size": "4",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022011": {
+    "print_name": "גופיות פלנל",
+    "size": "6",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022028": {
+    "print_name": "גופיות פלנל",
+    "size": "8",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022035": {
+    "print_name": "גופיות פלנל",
+    "size": "10",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022042": {
+    "print_name": "גופיות פלנל",
+    "size": "12",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_204.png",
+    "model_code": "204",
+    "brand": "baby_basic"
+  },
+  "7297555022059": {
+    "print_name": "רגליות לתינוק",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022066": {
+    "print_name": "רגליות לתינוק",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022073": {
+    "print_name": "רגליות לתינוק",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022080": {
+    "print_name": "רגליות לתינוק",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022097": {
+    "print_name": "רגליות לתינוק",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022103": {
+    "print_name": "רגליות לתינוק",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_200.png",
+    "model_code": "200",
+    "brand": "baby_basic"
+  },
+  "7297555022110": {
+    "print_name": "גטקס פתוח",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_202.png",
+    "model_code": "202",
+    "brand": "baby_basic"
+  },
+  "7297555022127": {
+    "print_name": "גטקס פתוח",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_202.png",
+    "model_code": "202",
+    "brand": "baby_basic"
+  },
+  "7297555022134": {
+    "print_name": "גטקס פתוח",
+    "size": "12-18",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_202.png",
+    "model_code": "202",
+    "brand": "baby_basic"
+  },
+  "7297555022141": {
+    "print_name": "גטקס פתוח",
+    "size": "18-24",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_202.png",
+    "model_code": "202",
+    "brand": "baby_basic"
+  },
+  "7297555022158": {
+    "print_name": "גטקס פתוח",
+    "size": "24-30",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 5,
+    "image": "assets\\labels\\products\\family_baby_basic_202.png",
+    "model_code": "202",
+    "brand": "baby_basic"
+  },
+  "7297555022165": {
+    "print_name": "גופיות פלנל",
+    "size": "2",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022172": {
+    "print_name": "גופיות פלנל",
+    "size": "4",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022189": {
+    "print_name": "גופיות פלנל",
+    "size": "6",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022196": {
+    "print_name": "גופיות פלנל",
+    "size": "8",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022202": {
+    "print_name": "גופיות פלנל",
+    "size": "10",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022219": {
+    "print_name": "גופיות פלנל",
+    "size": "12",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022226": {
+    "print_name": "גופיות פלנל",
+    "size": "14",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022233": {
+    "print_name": "גופיות פלנל",
+    "size": "16",
+    "size_unit": "",
+    "fabric": "פלנל",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_204.png",
+    "model_code": "204",
+    "brand": "arie"
+  },
+  "7297555022240": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_201.png",
+    "model_code": "201",
+    "brand": "arie"
+  },
+  "7297555022257": {
+    "print_name": "בגד גוף מעטפת",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 3,
+    "image": "assets\\labels\\products\\family_arie_201.png",
+    "model_code": "201",
+    "brand": "arie"
   }
 }

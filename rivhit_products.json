@@ -20625,242 +20625,642 @@
   },
   {
     "item_num": "2585",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (0-3)",
+    "item_name": "בגד גוף פלנל לבן (0-3)",
     "item_part_num": "7297555020987",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2586",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (3-6)",
+    "item_name": "בגד גוף פלנל לבן (3-6)",
     "item_part_num": "7297555020994",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2587",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (6-12)",
+    "item_name": "בגד גוף פלנל לבן (6-12)",
     "item_part_num": "7297555021007",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2588",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (12-18)",
+    "item_name": "בגד גוף פלנל לבן (12-18)",
     "item_part_num": "7297555021014",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2589",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (18-24)",
+    "item_name": "בגד גוף פלנל לבן (18-24)",
     "item_part_num": "7297555021021",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2590",
-    "item_name": "שלישיית בגדי גוף פלנל לבן (24-30)",
+    "item_name": "בגד גוף פלנל לבן (24-30)",
     "item_part_num": "7297555021038",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה חורף"
   },
   {
     "item_num": "2591",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (0-3)",
+    "item_name": "בגד גוף גופיה לבן (0-3)",
     "item_part_num": "7297555021045",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2592",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (3-6)",
+    "item_name": "בגד גוף גופיה לבן (3-6)",
     "item_part_num": "7297555021052",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2593",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (6-12)",
+    "item_name": "בגד גוף גופיה לבן (6-12)",
     "item_part_num": "7297555021069",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2594",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (12-18)",
+    "item_name": "בגד גוף גופיה לבן (12-18)",
     "item_part_num": "7297555021076",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2595",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (18-24)",
+    "item_name": "בגד גוף גופיה לבן (18-24)",
     "item_part_num": "7297555021083",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2596",
-    "item_name": "שלישיית בגדי גוף גופיה לבן (24-30)",
+    "item_name": "בגד גוף גופיה לבן (24-30)",
     "item_part_num": "7297555021090",
     "item_cost_nis": "18.00",
     "item_sale_nis": "36.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2597",
-    "item_name": "שלישיית בגדי גוף קצר לבן (0-3)",
+    "item_name": "בגד גוף קצר לבן (0-3)",
     "item_part_num": "7297555021106",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2598",
-    "item_name": "שלישיית בגדי גוף קצר לבן (3-6)",
+    "item_name": "בגד גוף קצר לבן (3-6)",
     "item_part_num": "7297555021113",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2599",
-    "item_name": "שלישיית בגדי גוף קצר לבן (6-12)",
+    "item_name": "בגד גוף קצר לבן (6-12)",
     "item_part_num": "7297555021120",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2600",
-    "item_name": "שלישיית בגדי גוף קצר לבן (12-18)",
+    "item_name": "בגד גוף קצר לבן (12-18)",
     "item_part_num": "7297555021137",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2601",
-    "item_name": "שלישיית בגדי גוף קצר לבן (18-24)",
+    "item_name": "בגד גוף קצר לבן (18-24)",
     "item_part_num": "7297555021144",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2602",
-    "item_name": "שלישיית בגדי גוף קצר לבן (24-30)",
+    "item_name": "בגד גוף קצר לבן (24-30)",
     "item_part_num": "7297555021151",
     "item_cost_nis": "24.00",
     "item_sale_nis": "38.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2603",
-    "item_name": "שלישיית רגליות טריקו (0-3)",
+    "item_name": "רגליות טריקו (0-3)",
     "item_part_num": "7297555021168",
     "item_cost_nis": "6.00",
     "item_sale_nis": "18.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2604",
-    "item_name": "שלישיית רגליות טריקו (3-6)",
+    "item_name": "רגליות טריקו (3-6)",
     "item_part_num": "7297555021175",
     "item_cost_nis": "6.00",
     "item_sale_nis": "18.00",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2605",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (0-3)",
+    "item_name": "בגד גוף ארוך טריקו (0-3)",
     "item_part_num": "7297555021243",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2606",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (3-6)",
+    "item_name": "בגד גוף ארוך טריקו (3-6)",
     "item_part_num": "7297555021250",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2607",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (6-12)",
+    "item_name": "בגד גוף ארוך טריקו (6-12)",
     "item_part_num": "7297555021267",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2608",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (12-18)",
+    "item_name": "בגד גוף ארוך טריקו (12-18)",
     "item_part_num": "7297555021274",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2609",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (18-24)",
+    "item_name": "בגד גוף ארוך טריקו (18-24)",
     "item_part_num": "7297555021281",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2610",
-    "item_name": "שלישיית בגד גוף ארוך טריקו (24-30)",
+    "item_name": "בגד גוף ארוך טריקו (24-30)",
     "item_part_num": "7297555021298",
     "item_cost_nis": "25.50",
     "item_sale_nis": "41.40",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2611",
-    "item_name": "שליישית בגדי גוף מעטפת טריקו (0-3)",
+    "item_name": "בגד גוף מעטפת טריקו (0-3)",
     "item_part_num": "7297555021311",
     "item_cost_nis": "25.50",
     "item_sale_nis": "44.10",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2612",
-    "item_name": "שליישית גופיות סבא (3)",
+    "item_name": "גופיות סבא (3)",
     "item_part_num": "7297555021328",
     "item_cost_nis": "13.80",
     "item_sale_nis": "25.50",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2613",
-    "item_name": "שליישית גופיות סבא (4)",
+    "item_name": "גופיות סבא (4)",
     "item_part_num": "7297555021335",
     "item_cost_nis": "13.80",
     "item_sale_nis": "25.50",
-    "compute_0036": "שלישיות"
+    "compute_0036": "אריה קיץ/מעבר"
   },
   {
     "item_num": "2614",
-    "item_name": "שליישית גופיות סבא (5)",
+    "item_name": "גופיות סבא (5)",
     "item_part_num": "7297555021342",
     "item_cost_nis": "13.80",
     "item_sale_nis": "25.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2615",
+    "item_name": "גופיות סבא (6)",
+    "item_part_num": "7297555021359",
+    "item_cost_nis": "15.90",
+    "item_sale_nis": "28.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2616",
+    "item_name": "גופיות סבא (8)",
+    "item_part_num": "7297555021366",
+    "item_cost_nis": "15.90",
+    "item_sale_nis": "28.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2617",
+    "item_name": "גופיות סבא (10)",
+    "item_part_num": "7297555021373",
+    "item_cost_nis": "17.70",
+    "item_sale_nis": "31.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2618",
+    "item_name": "גופיות סבא (12)",
+    "item_part_num": "7297555021380",
+    "item_cost_nis": "17.70",
+    "item_sale_nis": "31.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2619",
+    "item_name": "גופיות סבא (14)",
+    "item_part_num": "7297555021410",
+    "item_cost_nis": "19.50",
+    "item_sale_nis": "34.50",
+    "compute_0036": "אריה קיץ/מעבר"
+  },
+  {
+    "item_num": "2620",
+    "item_name": "גטקס לתינוק (3-6)",
+    "item_part_num": "7297555021670",
+    "item_cost_nis": "19.50",
+    "item_sale_nis": "34.50",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2621",
+    "item_name": "גטקס לתינוק (6-12)",
+    "item_part_num": "7297555021687",
+    "item_cost_nis": "5.58",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2622",
+    "item_name": "גטקס לתינוק (12-18)",
+    "item_part_num": "7297555021694",
+    "item_cost_nis": "5.58",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2623",
+    "item_name": "גטקס לתינוק (18-24)",
+    "item_part_num": "7297555021700",
+    "item_cost_nis": "5.58",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2624",
+    "item_name": "גטקס לתינוק (24-30)",
+    "item_part_num": "7297555021717",
+    "item_cost_nis": "5.58",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2625",
+    "item_name": "גופיות סבא (16)",
+    "item_part_num": "7297555021656",
+    "item_cost_nis": "19.50",
+    "item_sale_nis": "34.50",
     "compute_0036": "שלישיות"
+  },
+  {
+    "item_num": "2626",
+    "item_name": "רגליות פלנל (0-3)",
+    "item_part_num": "7297555021724",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2627",
+    "item_name": "רגליות פלנל (3-6)",
+    "item_part_num": "7297555021731",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2628",
+    "item_name": "רגליות פלנל (6-12)",
+    "item_part_num": "7297555021748",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2629",
+    "item_name": "רגליות פלנל (12-18)",
+    "item_part_num": "7297555021755",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2630",
+    "item_name": "רגליות פלנל (18-24)",
+    "item_part_num": "7297555021762",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2631",
+    "item_name": "רגליות פלנל (24-30)",
+    "item_part_num": "7297555021779",
+    "item_cost_nis": "5.60",
+    "item_sale_nis": "11.40",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2632",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (0-3)",
+    "item_part_num": "7297555021786",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2633",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (3-6)",
+    "item_part_num": "7297555021793",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2634",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (6-12)",
+    "item_part_num": "7297555021809",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2635",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (12-18)",
+    "item_part_num": "7297555021816",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2636",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (18-24)",
+    "item_part_num": "7297555021823",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2637",
+    "item_name": "בייבי בייסיק בגד גוף שרוול ארוך פלנל לבן (24-30)",
+    "item_part_num": "7297555021830",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2638",
+    "item_name": "בייבי בייסיק  בגד גוף מעטפת פלנל (0-3)",
+    "item_part_num": "7297555021984",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2639",
+    "item_name": "בייבי בייסיק גופיות פלנל (2)",
+    "item_part_num": "7297555021991",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2640",
+    "item_name": "בייבי בייסיק גופיות פלנל (4)",
+    "item_part_num": "7297555022004",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2641",
+    "item_name": "בייבי בייסיק גופיות פלנל (6)",
+    "item_part_num": "7297555022011",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2642",
+    "item_name": "בייבי בייסיק גופיות פלנל (8)",
+    "item_part_num": "7297555022028",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2643",
+    "item_name": "בייבי בייסיק גופיות פלנל (10)",
+    "item_part_num": "7297555022035",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2644",
+    "item_name": "בייבי בייסיק גופיות פלנל (12)",
+    "item_part_num": "7297555022042",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2645",
+    "item_name": "בייבי בייסיק רגליות פלנל (0-3)",
+    "item_part_num": "7297555022059",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2646",
+    "item_name": "בייבי בייסיק רגליות פלנל (3-6)",
+    "item_part_num": "7297555022066",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2647",
+    "item_name": "בייבי בייסיק רגליות פלנל (6-12)",
+    "item_part_num": "7297555022073",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2648",
+    "item_name": "בייבי בייסיק רגליות פלנל (12-18)",
+    "item_part_num": "7297555022080",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2649",
+    "item_name": "בייבי בייסיק רגליות פלנל (18-24)",
+    "item_part_num": "7297555022097",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2650",
+    "item_name": "בייבי בייסיק רגליות פלנל (24-30)",
+    "item_part_num": "7297555022103",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2651",
+    "item_name": "בייבי בייסיק גטקס פתוח (3-6)",
+    "item_part_num": "7297555022110",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2652",
+    "item_name": "בייבי בייסיק גטקס פתוח (6-12)",
+    "item_part_num": "7297555022127",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2653",
+    "item_name": "בייבי בייסיק גטקס פתוח (12-18)",
+    "item_part_num": "7297555022134",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2654",
+    "item_name": "בייבי בייסיק גטקס פתוח (18-24)",
+    "item_part_num": "7297555022141",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2655",
+    "item_name": "בייבי בייסיק גטקס פתוח (24-30)",
+    "item_part_num": "7297555022158",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "בייבי בייסיק חמישיות"
+  },
+  {
+    "item_num": "2656",
+    "item_name": "גופיות פלנל (2)",
+    "item_part_num": "7297555022165",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2657",
+    "item_name": "גופיות פלנל (4)",
+    "item_part_num": "7297555022172",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2658",
+    "item_name": "גופיות פלנל (6)",
+    "item_part_num": "7297555022189",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2659",
+    "item_name": "גופיות פלנל (8)",
+    "item_part_num": "7297555022196",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2660",
+    "item_name": "גופיות פלנל (10)",
+    "item_part_num": "7297555022202",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2661",
+    "item_name": "גופיות פלנל (12)",
+    "item_part_num": "7297555022219",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2662",
+    "item_name": "גופיות פלנל (14)",
+    "item_part_num": "7297555022226",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2663",
+    "item_name": "גופיות פלנל (16)",
+    "item_part_num": "7297555022233",
+    "item_cost_nis": "0",
+    "item_sale_nis": "0",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2664",
+    "item_name": "בגד גוף מעטפת פלנל",
+    "item_part_num": "7297555022240",
+    "item_cost_nis": "7.80",
+    "item_sale_nis": "14.80",
+    "compute_0036": "אריה חורף"
   }
 ]

@@ -3809,5 +3809,2202 @@
     ],
     "receipt_kind": "supplier_intake",
     "created_at": "2026-01-13 09:44:40"
+  },
+  {
+    "id": 48,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2025-12-24",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 74,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 434,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 434,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 942,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:34:36"
+  },
+  {
+    "id": 49,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2025-12-24",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "תוויות מולי",
+        "size": "nan",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "nan",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 1,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 1,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:35:56"
+  },
+  {
+    "id": 50,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2025-12-29",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 200,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 74,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 274,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:38:28"
+  },
+  {
+    "id": 51,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2025-12-30",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "43",
+        "quantity": 156,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "43",
+        "quantity": 128,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 50,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 334,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:40:34"
+  },
+  {
+    "id": 52,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-11-01",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 607,
+        "label_status": "עם תווית",
+        "note": "בייבי לייס"
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 1527,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 2134,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 4,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:42:05"
+  },
+  {
+    "id": 53,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 293,
+        "label_status": "עם תווית",
+        "note": "בייבי לייס"
+      }
+    ],
+    "total_quantity": 293,
+    "packages": [],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:50:52"
+  },
+  {
+    "id": 54,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-11",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "גופיות פלנל",
+        "size": "8",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 216,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 411,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 627,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:51:39"
+  },
+  {
+    "id": 55,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-13",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 112,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 120,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 232,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:52:20"
+  },
+  {
+    "id": 56,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-13",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "42",
+        "quantity": 235,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "42",
+        "quantity": 138,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "42",
+        "quantity": 240,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 105,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 164,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 882,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:53:27"
+  },
+  {
+    "id": 57,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-18",
+    "supplier_doc_number": "",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:54:24"
+  },
+  {
+    "id": 58,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-22",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 163,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 155,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 185,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 61,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 564,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:55:13"
+  },
+  {
+    "id": 59,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-01-25",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "49",
+        "quantity": 269,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 269,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 13:56:04"
+  },
+  {
+    "id": 60,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-07-28",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "כחול",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "49",
+        "quantity": 411,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 411,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 822,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:40:14"
+  },
+  {
+    "id": 61,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-02",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 30,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 60,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 90,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      },
+      {
+        "package_type": "בד",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:41:50"
+  },
+  {
+    "id": 62,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-04",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 82,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 100,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 182,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      },
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      },
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:42:55"
+  },
+  {
+    "id": 63,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-10",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 146,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "אוברול",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 78,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 133,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 125,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 129,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "18-24",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 134,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 745,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:44:46"
+  },
+  {
+    "id": 64,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-15",
+    "supplier_doc_number": "",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:45:23"
+  },
+  {
+    "id": 65,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-17",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "51",
+        "quantity": 264,
+        "label_status": "עם תווית",
+        "note": "בייבי לייס"
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 150,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 220,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 634,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:47:46"
+  },
+  {
+    "id": 66,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-24",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 256,
+        "label_status": "עם תווית",
+        "note": "בייבי לייס"
+      }
+    ],
+    "total_quantity": 256,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:48:43"
+  },
+  {
+    "id": 67,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-02-26",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "רגליות",
+        "size": "פגים",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 168,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "פגים",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 167,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 335,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 4,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:49:48"
+  },
+  {
+    "id": 68,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-03-10",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "53",
+        "quantity": 235,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 233,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 468,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:50:50"
+  },
+  {
+    "id": 69,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-03-12",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "52",
+        "quantity": 266,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 266,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:51:32"
+  },
+  {
+    "id": 70,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-03-15",
+    "supplier_doc_number": "",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:51:58"
+  },
+  {
+    "id": 71,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-03-25",
+    "supplier_doc_number": "",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:52:27"
+  },
+  {
+    "id": 72,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-03-25",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 177,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 126,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 303,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:53:18"
+  },
+  {
+    "id": 73,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-04-08",
+    "supplier_doc_number": "",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:54:13"
+  },
+  {
+    "id": 74,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-04-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "54",
+        "quantity": 130,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "54",
+        "quantity": 195,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 325,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:55:23"
+  },
+  {
+    "id": 75,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-04-13",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "54",
+        "quantity": 235,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 220,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 66,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 521,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:56:45"
+  },
+  {
+    "id": 76,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-04-19",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "54",
+        "quantity": 156,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "כן",
+        "drawing_id": "54",
+        "quantity": 171,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 327,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 3,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 14:59:04"
+  },
+  {
+    "id": 77,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-12",
+    "arrival_date": "2026-04-26",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "גופיות סבא",
+        "size": "4",
+        "fabric_type": "",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 60,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "6",
+        "fabric_type": "",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 207,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 302,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 569,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-12 15:00:34"
+  },
+  {
+    "id": 78,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-04-27",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "גופיות סבא",
+        "size": "4",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 194,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 70,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 251,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 135,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 650,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:18:05"
+  },
+  {
+    "id": 79,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-04-27",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 251,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 184,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 435,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:19:28"
+  },
+  {
+    "id": 80,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-05-04",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 184,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "14",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 183,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 367,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:21:10"
+  },
+  {
+    "id": 81,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-05-05",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 181,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 184,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 243,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 233,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 841,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:23:16"
+  },
+  {
+    "id": 82,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-05-15",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.א",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 253,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.א",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 20,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 188,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 461,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:24:22"
+  },
+  {
+    "id": 83,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-05-15",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "3-6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 171,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 171,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:25:02"
+  },
+  {
+    "id": 84,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-04",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "גופיות סבא",
+        "size": "4",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 121,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "6",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 121,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 120,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 222,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף גופייה",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 117,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 701,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:26:40"
+  },
+  {
+    "id": 85,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף גופייה",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 116,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 101,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "פגים",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 96,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 313,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:27:33"
+  },
+  {
+    "id": 86,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף גופייה",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 163,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 239,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 402,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:28:39"
+  },
+  {
+    "id": 87,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 118,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 118,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "12-18",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 118,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "18-24",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 119,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 473,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:29:55"
+  },
+  {
+    "id": 88,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-08",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 170,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 150,
+        "label_status": "עם תווית",
+        "note": ""
+      },
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "24-30",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 150,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 470,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:30:55"
+  },
+  {
+    "id": 89,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-13",
+    "arrival_date": "2026-06-20",
+    "supplier_doc_number": "",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "barcode": "",
+        "category": "בגדים תפורים",
+        "returned_from_drawing": "לא",
+        "drawing_id": "",
+        "quantity": 170,
+        "label_status": "עם תווית",
+        "note": ""
+      }
+    ],
+    "total_quantity": 170,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "receipt_kind": "supplier_intake",
+    "created_at": "2026-07-13 09:32:17"
   }
 ]
