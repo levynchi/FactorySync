@@ -65,16 +65,9 @@ class DeliveryNoteMethodsMixin:
                     return (base, s)
                 sizes = sorted({s for s in sizes}, key=_size_key)
             except Exception: sizes = []
-        if hasattr(self, 'dn_size_combo'):
+        if hasattr(self, 'dn_size_matrix'):
             try:
-                self.dn_size_combo['values'] = sizes
-                if sizes:
-                    self.dn_size_combo.state(['!disabled','readonly'])
-                    if self.dn_size_var.get() not in sizes: self.dn_size_var.set('')
-                else:
-                    self.dn_size_var.set(''); self.dn_size_combo.set('')
-                    try: self.dn_size_combo.state(['disabled'])
-                    except Exception: pass
+                self.dn_size_matrix.set_sizes(sizes)
             except Exception: pass
 
     def _update_delivery_fabric_type_options(self):
@@ -164,12 +157,15 @@ class DeliveryNoteMethodsMixin:
 
     # ---- Lines ops ----
     def _add_delivery_line(self):
-        product = self.dn_product_var.get().strip(); size = self.dn_size_var.get().strip(); qty_raw = self.dn_qty_var.get().strip(); note = self.dn_note_var.get().strip()
+        product = self.dn_product_var.get().strip(); note = self.dn_note_var.get().strip()
         fabric_type = self.dn_fabric_type_var.get().strip(); fabric_color = self.dn_fabric_color_var.get().strip(); print_name = self.dn_print_name_var.get().strip() or 'חלק'
         fabric_category = getattr(self, 'dn_fabric_category_var', None)
         fabric_category = fabric_category.get().strip() if fabric_category else ''
-        if not product or not qty_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות"); return
+        if not product:
+            messagebox.showerror("שגיאה", "חובה לבחור מוצר"); return
+        quantities = self.dn_size_matrix.get_quantities()
+        if not quantities:
+            messagebox.showerror("שגיאה", "יש להזין כמות לפחות למידה אחת"); return
         if self._delivery_products_allowed and product not in self._delivery_products_allowed:
             proceed = messagebox.askyesno(
                 "אזהרה",
@@ -177,18 +173,16 @@ class DeliveryNoteMethodsMixin:
             )
             if not proceed:
                 return
-        try:
-            qty = int(qty_raw); assert qty > 0
-        except Exception:
-            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
         category = getattr(self, 'dn_category_var', None)
         category = category.get().strip() if category else ''
-        line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
-        self._delivery_lines.append(line)
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,quantity,note
-        # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
-        self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
-        self.dn_size_var.set(''); self.dn_qty_var.set(''); self.dn_note_var.set('')
+        # שורה אחת לכל מידה עם כמות
+        for size, qty in quantities.items():
+            line = {'product': product, 'size': size, 'fabric_type': fabric_type, 'fabric_color': fabric_color, 'fabric_category': fabric_category, 'print_name': print_name, 'category': category, 'quantity': qty, 'note': note}
+            self._delivery_lines.append(line)
+            # columns: product,size,fabric_type,fabric_color,fabric_category,print_name,category,quantity,note
+            self.delivery_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,category,qty,note))
+        self.dn_size_matrix.clear_quantities()
+        self.dn_note_var.set('')
         try: self.dn_product_combo['values'] = self._delivery_products_allowed_full
         except Exception: pass
         self._update_delivery_summary()

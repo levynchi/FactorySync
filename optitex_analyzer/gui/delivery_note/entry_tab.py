@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
+from optitex_analyzer.gui.size_matrix import SizeMatrixFrame
+
 # This module defines a function that builds the Entry sub-tab UI on a given container.
 
 def build_entry_tab(ctx, container: tk.Frame):
@@ -39,10 +41,11 @@ def build_entry_tab(ctx, container: tk.Frame):
     
     canvas.bind('<Configure>', configure_scroll_region)
     
-    # Bind mousewheel to canvas
+    # Mouse wheel scrolls only while the cursor is over this tab (no global hijack)
     def _on_mousewheel(event):
         canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    canvas.bind('<Enter>', lambda e: canvas.bind_all('<MouseWheel>', _on_mousewheel))
+    canvas.bind('<Leave>', lambda e: canvas.unbind_all('<MouseWheel>'))
     
     # Use scrollable_frame as the new container
     container = scrollable_frame
@@ -108,8 +111,7 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx.dn_product_var.set(val)
             _hide_popup()
             try:
-                size_entry = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)][0]
-                size_entry.focus_set()
+                ctx.dn_size_matrix.focus_first()
             except Exception:
                 pass
         lb.bind('<Return>', _choose)
@@ -182,19 +184,15 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     def _product_chosen(event=None):
         try:
-            widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
+            ctx.dn_size_matrix.focus_first()
         except Exception:
-            widgets_after = []
-        for w in widgets_after:
-            if hasattr(w,'cget') and w.cget('textvariable') == str(ctx.dn_size_var):
-                w.focus_set(); break
+            pass
     ctx.dn_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    lbls = ["מוצר","מידה","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","כמות","הערה"]
+    lbls = ["מוצר","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","הערה"]
     for i,lbl in enumerate(lbls):
         tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
 
-    ctx.dn_size_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_size_var, width=10, state='readonly')
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
     # Fabric category is auto-filled from products_catalog match; show as read-only entry (not user-selectable)
@@ -223,17 +221,21 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     widgets = [
         ctx.dn_product_combo,
-        ctx.dn_size_combo,
         ctx.dn_fabric_type_combo,
         ctx.dn_fabric_color_combo,
         ctx.dn_fabric_category_entry,
         dn_print_entry,
         ctx.dn_category_combo,
-        tk.Entry(entry_bar, textvariable=ctx.dn_qty_var, width=7),
         tk.Entry(entry_bar, textvariable=ctx.dn_note_var, width=18)
     ]
     for i,w in enumerate(widgets):
         w.grid(row=1,column=i*2,sticky='w',padx=2)
+
+    # Size matrix: quantity box per size (replaces size combobox + single qty entry)
+    matrix_frame = ttk.LabelFrame(lines_frame, text="מידות וכמויות", padding=6)
+    matrix_frame.pack(fill='x', pady=(0,6))
+    ctx.dn_size_matrix = SizeMatrixFrame(matrix_frame, allow_free_entry=True)
+    ctx.dn_size_matrix.pack(anchor='e')
 
     def _on_product_change(*_a):
         try:
@@ -276,7 +278,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    for combo in (ctx.dn_size_combo, ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo):
+    for combo in (ctx.dn_fabric_type_combo, ctx.dn_fabric_color_combo):
         try: combo.state(['disabled'])
         except Exception: pass
 

@@ -82,20 +82,9 @@ class SupplierIntakeMethodsMixin:
                 sizes = sorted({s for s in sizes}, key=_size_key)
             except Exception:
                 sizes = []
-        if hasattr(self, 'sup_size_combo'):
+        if hasattr(self, 'sup_size_matrix'):
             try:
-                self.sup_size_combo['values'] = sizes
-                if sizes:
-                    self.sup_size_combo.state(['!disabled','readonly'])
-                    if self.sup_size_var.get() not in sizes:
-                        self.sup_size_var.set('')
-                else:
-                    self.sup_size_var.set('')
-                    self.sup_size_combo.set('')
-                    try:
-                        self.sup_size_combo.state(['disabled'])
-                    except Exception:
-                        pass
+                self.sup_size_matrix.set_sizes(sizes)
             except Exception:
                 pass
 
@@ -263,7 +252,7 @@ class SupplierIntakeMethodsMixin:
                 pass
 
     def _add_supplier_line(self):
-        product = self.sup_product_var.get().strip(); qty_raw = self.sup_qty_var.get().strip(); note = self.sup_note_var.get().strip()
+        product = self.sup_product_var.get().strip(); note = self.sup_note_var.get().strip()
         fabric_type = self.sup_fabric_type_var.get().strip(); fabric_color = self.sup_fabric_color_var.get().strip(); print_name = self.sup_print_name_var.get().strip() or 'חלק'
         # Optional barcode per main category fields
         try:
@@ -272,33 +261,41 @@ class SupplierIntakeMethodsMixin:
             barcode = ''
         fabric_category = getattr(self, 'sup_fabric_category_var', None)
         fabric_category = fabric_category.get().strip() if fabric_category else ''
-        if not product or not qty_raw:
-            messagebox.showerror("שגיאה", "חובה לבחור מוצר ולהזין כמות")
+        if not product:
+            messagebox.showerror("שגיאה", "חובה לבחור מוצר")
             return
         if hasattr(self, '_supplier_products_allowed') and self._supplier_products_allowed and product not in self._supplier_products_allowed:
             messagebox.showerror("שגיאה", "יש לבחור מוצר מהרשימה בלבד"); return
-        try:
-            qty = int(qty_raw); assert qty > 0
-        except Exception:
-            messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
         returned_from_drawing = (getattr(self, 'sup_returned_from_drawing_var', tk.StringVar(value='לא')).get() or 'לא').strip()
         drawing_id = (getattr(self, 'sup_drawing_id_var', tk.StringVar()).get() or '').strip()
         # if not returned, ignore drawing_id
         if returned_from_drawing != 'כן':
             drawing_id = ''
         category = (getattr(self, 'sup_category_var', tk.StringVar(value='')).get() or '').strip()
-        
-        # Handle multiple sizes
-        selected_sizes = getattr(self, '_selected_sizes', [])
-        if not selected_sizes:
-            messagebox.showerror("שגיאה", "חובה לבחור לפחות מידה אחת")
-            return
-        
+
+        # Quantities: from the size matrix (per-size), or from the single qty field for no-sizes categories
+        matrix_active = bool(getattr(self, '_sup_sizes_field_visible', False)) and hasattr(self, 'sup_size_matrix')
+        if matrix_active:
+            quantities = self.sup_size_matrix.get_quantities()
+            if not quantities:
+                messagebox.showerror("שגיאה", "יש להזין כמות לפחות למידה אחת")
+                return
+        else:
+            qty_raw = self.sup_qty_var.get().strip()
+            if not qty_raw:
+                messagebox.showerror("שגיאה", "חובה להזין כמות")
+                return
+            try:
+                qty = int(qty_raw); assert qty > 0
+            except Exception:
+                messagebox.showerror("שגיאה", "כמות חייבת להיות מספר חיובי"); return
+            quantities = {'': qty}
+
         # Get label status
         label_status = (getattr(self, 'sup_label_status_var', tk.StringVar(value='עם תווית')).get() or 'עם תווית').strip()
-        
-        # Add a line for each selected size
-        for size in selected_sizes:
+
+        # Add a line for each size with a quantity
+        for size, qty in quantities.items():
             line = {
                 'product': product,
                 'size': size,
@@ -316,13 +313,13 @@ class SupplierIntakeMethodsMixin:
             }
             self._supplier_lines.append(line)
             self.supplier_tree.insert('', 'end', values=(product,size,fabric_type,fabric_color,fabric_category,print_name,barcode,category,returned_from_drawing,drawing_id,qty,label_status,note))
-        
+
         # Clear form after adding
-        self.sup_size_var.set(''); self.sup_qty_var.set(''); self.sup_note_var.set('')
-        # Clear selected sizes
-        self._selected_sizes = []
-        if hasattr(self, 'sup_selected_sizes_var'):
-            self.sup_selected_sizes_var.set('')
+        self.sup_qty_var.set(''); self.sup_note_var.set('')
+        try:
+            self.sup_size_matrix.clear_quantities()
+        except Exception:
+            pass
         try:
             self.sup_returned_from_drawing_var.set('לא')
             self.sup_drawing_id_var.set('')
@@ -351,10 +348,10 @@ class SupplierIntakeMethodsMixin:
     def _clear_supplier_lines(self):
         self._supplier_lines = []
         for item in self.supplier_tree.get_children(): self.supplier_tree.delete(item)
-        # Clear selected sizes as well
-        self._selected_sizes = []
-        if hasattr(self, 'sup_selected_sizes_var'):
-            self.sup_selected_sizes_var.set('')
+        try:
+            self.sup_size_matrix.clear_quantities()
+        except Exception:
+            pass
         self._update_supplier_summary()
 
     def _update_supplier_summary(self):
@@ -367,7 +364,6 @@ class SupplierIntakeMethodsMixin:
         valid_names = set(self._get_supplier_names()) if hasattr(self,'_get_supplier_names') else set()
         if not supplier or (valid_names and supplier not in valid_names):
             messagebox.showerror("שגיאה", "יש לבחור שם ספק מהרשימה"); return
-        if not self._supplier_lines: messagebox.showerror("שגיאה", "אין שורות לשמירה"); return
         # שחזור רשימת פריטי הובלה מהטבלה אם הרשימה בזיכרון ריקה
         try:
             if (not self._supplier_packages) and hasattr(self, 'sup_packages_tree'):
@@ -384,6 +380,17 @@ class SupplierIntakeMethodsMixin:
                     self._supplier_packages = rebuilt
         except Exception:
             pass
+        if not self._supplier_lines and not self._supplier_packages:
+            messagebox.showerror("שגיאה", "אין שורות מוצרים או פריטי הובלה לשמירה"); return
+        packages_only = bool(self._supplier_packages) and not self._supplier_lines
+        if packages_only:
+            # קליטה של פריטי הובלה בלבד - יידוע ואישור המשתמש
+            proceed = messagebox.askyesno(
+                "אישור",
+                "לא הוזנו שורות מוצרים, רק פריטי הובלה.\nהאם לשמור קליטה עם פריטי הובלה בלבד (לדו\"ח שקים מול מובילים)?"
+            )
+            if not proceed:
+                return
         try:
             if not self._supplier_packages:
                 proceed = messagebox.askyesno(

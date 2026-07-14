@@ -112,6 +112,9 @@ class DataProcessor:
 		# שדות הדפסת מדבקה לכל מוצר (נשמרים לפי ברקוד כדי לשרוד יבוא רשימת מוצרים)
 		self.rivhit_label_fields_file = 'rivhit_label_fields.json'
 		self.rivhit_label_fields = self.load_rivhit_label_fields()
+		# דגמי אב (משפחות מוצרים) - ממופתח לפי קוד דגם; פרטי הדפסה משותפים לכל הוואריאנטים
+		self.rivhit_families_file = 'rivhit_product_families.json'
+		self.rivhit_families = self.load_rivhit_families()
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -501,6 +504,8 @@ class DataProcessor:
 			'fabric': fabric,
 			'pack_qty': pack_qty,
 			'image': '',
+			'model_code': '',
+			'brand': 'arie',
 		}
 
 	def get_rivhit_label_fields(self, barcode: str, product: Dict = None) -> Dict:
@@ -516,6 +521,8 @@ class DataProcessor:
 				'fabric': stored.get('fabric', ''),
 				'pack_qty': stored.get('pack_qty', 1),
 				'image': stored.get('image', ''),
+				'model_code': stored.get('model_code', ''),
+				'brand': stored.get('brand', 'arie'),
 			}
 		name = ''
 		if product:
@@ -538,8 +545,133 @@ class DataProcessor:
 			'fabric': str(fields.get('fabric', '')).strip(),
 			'pack_qty': pack_qty,
 			'image': str(fields.get('image', '')).strip(),
+			'model_code': str(fields.get('model_code', '')).strip(),
+			'brand': (str(fields.get('brand', '')).strip() or 'arie'),
 		}
 		return self.save_rivhit_label_fields()
+
+	# ===== דגמי אב (משפחות מוצרים) - ממופתח לפי מותג+קוד דגם =====
+	# שדות הדפסה המשותפים לכל הוואריאנטים באותה משפחה (size נשאר אישי)
+	RIVHIT_FAMILY_SHARED_FIELDS = ('print_name', 'fabric', 'pack_qty', 'size_unit', 'image')
+	# מותג נקבע לפי קטגוריה: 'בייבי בייסיק חמישיות' = בייבי בייסיק, אחרת אריה
+	RIVHIT_BABY_BASIC_CATEGORY = 'בייבי בייסיק חמישיות'
+	RIVHIT_BRAND_NAMES = {'arie': 'אריה', 'baby_basic': 'בייבי בייסיק'}
+
+	@classmethod
+	def brand_key_from_category(cls, category: str) -> str:
+		"""מחזיר מזהה מותג ('arie'/'baby_basic') לפי הקטגוריה."""
+		return 'baby_basic' if str(category or '').strip() == cls.RIVHIT_BABY_BASIC_CATEGORY else 'arie'
+
+	@staticmethod
+	def _family_key(brand: str, model_code: str) -> str:
+		"""מפתח משפחה משולב מותג:קוד."""
+		b = (str(brand or '').strip() or 'arie')
+		c = str(model_code or '').strip()
+		return f"{b}:{c}"
+
+	def load_rivhit_families(self) -> Dict:
+		"""טעינת דגמי אב (מילון לפי מפתח מותג:קוד)."""
+		try:
+			if os.path.exists(self.rivhit_families_file):
+				with open(self.rivhit_families_file, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					return data if isinstance(data, dict) else {}
+			return {}
+		except Exception as e:
+			print(f"שגיאה בטעינת דגמי אב: {e}")
+			return {}
+
+	def save_rivhit_families(self) -> bool:
+		"""שמירת דגמי אב לדיסק."""
+		try:
+			with open(self.rivhit_families_file, 'w', encoding='utf-8') as f:
+				json.dump(self.rivhit_families, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת דגמי אב: {e}")
+			return False
+
+	def get_rivhit_family(self, model_code: str, brand: str = 'arie') -> Dict:
+		"""מחזיר את פרטי ההדפסה של דגם אב לפי מותג+קוד דגם (או dict ריק)."""
+		code = str(model_code or '').strip()
+		if not code:
+			return {}
+		return dict(self.rivhit_families.get(self._family_key(brand, code), {}) or {})
+
+	def list_rivhit_family_codes(self, brand: str = None) -> list:
+		"""מחזיר רשימת קודי דגם קיימים, אופציונלית מסונן למותג מסוים."""
+		codes = set()
+		for fam in self.rivhit_families.values():
+			if brand and str((fam or {}).get('brand', 'arie')).strip() != brand:
+				continue
+			c = str((fam or {}).get('model_code', '')).strip()
+			if c:
+				codes.add(c)
+		return sorted(codes)
+
+	def list_rivhit_families(self) -> list:
+		"""מחזיר רשימת דגמי אב כ-(brand, model_code, fields), ממויין."""
+		out = []
+		for fam in self.rivhit_families.values():
+			out.append((str((fam or {}).get('brand', 'arie')).strip(),
+			            str((fam or {}).get('model_code', '')).strip(),
+			            dict(fam or {})))
+		return sorted(out, key=lambda t: (t[0], t[1]))
+
+	def _barcodes_in_family(self, model_code: str, brand: str = 'arie') -> list:
+		"""מחזיר את כל הברקודים ב-rivhit_label_fields עם אותו מותג+קוד דגם."""
+		code = str(model_code or '').strip()
+		if not code:
+			return []
+		b = (str(brand or '').strip() or 'arie')
+		out = []
+		for bc, fld in (self.rivhit_label_fields or {}).items():
+			if str((fld or {}).get('model_code', '')).strip() != code:
+				continue
+			if str((fld or {}).get('brand', 'arie')).strip() != b:
+				continue
+			out.append(bc)
+		return out
+
+	def rivhit_family_variant_count(self, model_code: str, brand: str = 'arie') -> int:
+		"""מספר הוואריאנטים המשויכים לדגם (מותג+קוד)."""
+		return len(self._barcodes_in_family(model_code, brand))
+
+	def set_rivhit_family(self, model_code: str, fields: Dict, brand: str = 'arie', propagate: bool = True) -> bool:
+		"""יוצר/מעדכן דגם אב (מותג+קוד) ומחיל את השדות המשותפים על כל הוואריאנטים.
+
+		שומר את פרטי הדגם ב-rivhit_families תחת מפתח מותג:קוד, וכן, אם
+		propagate=True, מעדכן את כל הברקודים ב-rivhit_label_fields עם אותו
+		מותג+קוד דגם (למעט size שנשאר אישי).
+		"""
+		code = str(model_code or '').strip()
+		if not code:
+			return False
+		b = (str(brand or '').strip() or 'arie')
+		try:
+			pack_qty = int(float(str(fields.get('pack_qty', 1)).strip() or 1))
+		except Exception:
+			pack_qty = 1
+		family = {
+			'brand': b,
+			'model_code': code,
+			'print_name': str(fields.get('print_name', '')).strip(),
+			'fabric': str(fields.get('fabric', '')).strip(),
+			'pack_qty': pack_qty,
+			'size_unit': str(fields.get('size_unit', '')).strip(),
+			'image': str(fields.get('image', '')).strip(),
+		}
+		self.rivhit_families[self._family_key(b, code)] = family
+		if propagate:
+			for bc in self._barcodes_in_family(code, b):
+				existing = dict(self.rivhit_label_fields.get(bc, {}) or {})
+				for k in self.RIVHIT_FAMILY_SHARED_FIELDS:
+					existing[k] = family[k]
+				existing['model_code'] = code
+				existing['brand'] = b
+				self.rivhit_label_fields[bc] = existing
+			self.save_rivhit_label_fields()
+		return self.save_rivhit_families()
 
 	def save_rivhit_meta(self, file_name: str, count: int) -> bool:
 		"""שמירת מטא-נתונים על הקובץ האחרון שהועלה מריווחית."""
@@ -818,7 +950,8 @@ class DataProcessor:
 	def add_supplier_intake(self, supplier: str, date_str: str, lines: List[Dict], packages: List[Dict] | None = None, arrival_date: str = '', supplier_doc_number: str = '') -> int:
 		try:
 			if not supplier: raise ValueError("חסר שם ספק")
-			if not lines: raise ValueError("אין שורות לקליטה")
+			# מותרת קליטה של פריטי הובלה בלבד (לדו"ח שקים מול מובילים)
+			if not lines and not packages: raise ValueError("אין שורות או פריטי הובלה לקליטה")
 			new_id = self._next_id(self.supplier_intakes)
 			total_quantity = sum(int(l.get('quantity',0)) for l in lines)
 			record = {

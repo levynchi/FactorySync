@@ -41,7 +41,7 @@ ROW_SHIFT_DOWN_MM = [2.0, 1.5, 1.0, 0.0, 0.0]
 # ===== פריסת תוכן המדבקה (ניתן לכיול) =====
 BORDER_INSET = 0.05 * cm        # מרחק המסגרת המקווקוות מקצה התא (קטן - שהמסגרת תתאים לגודל הייחוס)
 CONTENT_PAD = 0.20 * cm         # ריפוד פנימי בין המסגרת לתוכן
-HEADER_H = 1.12 * cm            # אזור הלוגו (עליון)
+HEADER_H = 1.0 * cm             # אזור הלוגו (עליון); הלוגו רחב ולכן רוחב העמודה חוסם אותו (~0.95 ס"מ גובה)
 FOOTER_H = 1.28 * cm            # אזור הברקוד + תיבת היחידות (תחתון)
 IMG_W_RATIO = 0.44              # רוחב תמונת המוצר ביחס לרוחב התוכן
 IMG_TEXT_GAP = 0.18 * cm        # רווח בין תמונת המוצר לטקסט
@@ -52,6 +52,7 @@ UNITS_BOX_H = 0.60 * cm         # גובה תיבת היחידות
 BC_HEIGHT = 0.88 * cm           # גובה הברקוד הסרוק
 
 LOGO_PATH = os.path.join('assets', 'labels', 'logo.png')
+LOGO_BABY_BASIC_PATH = os.path.join('assets', 'labels', 'logo_baby_basic.png')
 
 # פונט עברי: Heebo-Medium (תואם לתבנית הבוטיק). נפילה ל-Arial אם חסר.
 _FONT_NAME = 'LabelHe'
@@ -138,7 +139,7 @@ def _make_barcode(value: str):
     return None
 
 
-_LOGO_CACHE = {'path': None, 'reader': None}
+_LOGO_CACHE = {}  # {resolved_path: ImageReader}
 
 # שורש הפרויקט (assets/ נמצא כאן) - גיבוי אם ספריית העבודה שונה
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -159,17 +160,17 @@ def _abs_path(rel: str) -> str:
     return p_cwd
 
 
-def _get_logo():
-    """טוען את לוגו החנות (מ-assets/labels/logo.png). מנסה מחדש עד שיצליח."""
-    path = _abs_path(LOGO_PATH)
+def _get_logo(logo_path=None):
+    """טוען לוגו מדבקה. ברירת מחדל: assets/labels/logo.png (אריה)."""
+    rel = logo_path or LOGO_PATH
+    path = _abs_path(rel)
     if not path or not os.path.exists(path):
         return None
-    if _LOGO_CACHE['reader'] is not None and _LOGO_CACHE['path'] == path:
-        return _LOGO_CACHE['reader']
+    if path in _LOGO_CACHE:
+        return _LOGO_CACHE[path]
     try:
         reader = ImageReader(path)
-        _LOGO_CACHE['reader'] = reader
-        _LOGO_CACHE['path'] = path
+        _LOGO_CACHE[path] = reader
         return reader
     except Exception:
         return None
@@ -207,7 +208,8 @@ def _fit_font_size(c: canvas.Canvas, text: str, font: str, max_size: float,
     return size
 
 
-def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
+def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
+                logo_path=None, draw_border=True):
     """מצייר מדבקה אחת בעיצוב מותג בתוך תא הממוקם ב-(x_left, y_bottom)."""
     print_name = str(item.get('print_name', '')).strip()
     size = str(item.get('size', '')).strip()
@@ -229,14 +231,15 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
     # ----- גבולות התא והתוכן -----
     cell_x = x_left
     cell_y = y_bottom
-    # מסגרת מקווקוות מעוגלת
-    c.saveState()
-    c.setLineWidth(0.7)
-    c.setDash(3, 2)
-    c.roundRect(cell_x + BORDER_INSET, cell_y + BORDER_INSET,
-                LABEL_W - 2 * BORDER_INSET, LABEL_H - 2 * BORDER_INSET,
-                radius=0.28 * cm, stroke=1, fill=0)
-    c.restoreState()
+    # מסגרת מקווקוות מעוגלת (אופציונלית)
+    if draw_border:
+        c.saveState()
+        c.setLineWidth(0.7)
+        c.setDash(3, 2)
+        c.roundRect(cell_x + BORDER_INSET, cell_y + BORDER_INSET,
+                    LABEL_W - 2 * BORDER_INSET, LABEL_H - 2 * BORDER_INSET,
+                    radius=0.28 * cm, stroke=1, fill=0)
+        c.restoreState()
 
     x0 = cell_x + BORDER_INSET + CONTENT_PAD            # שמאל התוכן
     x1 = cell_x + LABEL_W - BORDER_INSET - CONTENT_PAD  # ימין התוכן
@@ -266,7 +269,7 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
     text_w = x1 - text_left
 
     # ----- כותרת: לוגו ממורכז מעל קו הכותרת (באמצע עמודת הטקסט) -----
-    logo = _get_logo()
+    logo = _get_logo(logo_path)
     if logo is not None:
         # תיבת הלוגו תופסת את רוחב הקו (text_left..x1) וממורכזת עליו, מיושרת לראש
         _draw_image_fit(c, logo, text_left, header_bottom, text_w, HEADER_H, anchor='n')
@@ -362,10 +365,29 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict):
             bc.drawOn(c, bc_xl, bc_bottom)
 
 
-def build_label_sheet_pdf(items, file_path: str) -> int:
+def build_single_label_pdf(item: dict, file_path: str, logo_path=None, draw_border=True) -> str:
+    """בונה PDF של מדבקה בודדת - עמוד בגודל המדבקה עצמה (5.91x5.05 ס"מ).
+
+    item: dict {print_name,size,size_unit,fabric,pack_qty,barcode,image}.
+    מחזיר את נתיב הקובץ שנכתב.
+    """
+    if not item:
+        raise ValueError("אין נתוני מדבקה לייצוא")
+    _register_fonts()
+    os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+    c = canvas.Canvas(file_path, pagesize=(LABEL_W, LABEL_H))
+    _draw_label(c, 0, 0, item, logo_path=logo_path, draw_border=draw_border)
+    c.showPage()
+    c.save()
+    return file_path
+
+
+def build_label_sheet_pdf(items, file_path: str, logo_path=None, draw_border=True) -> int:
     """בונה דף/דפי A4 של מדבקות.
 
     items: רשימת dict {print_name,size,fabric,pack_qty,barcode} (כבר מורחבת לפי כמות).
+    logo_path: נתיב יחסי/מוחלט ללוגו; None = logo.png (אריה).
+    draw_border: האם לצייר מסגרת מקווקוות סביב כל מדבקה.
     מחזיר את מספר המדבקות שנכתבו.
     """
     if not items:
@@ -389,7 +411,7 @@ def build_label_sheet_pdf(items, file_path: str) -> int:
         # כיול מדפסת: הזזת השורה כלפי מטה (הורדת y)
         shift_mm = ROW_SHIFT_DOWN_MM[row] if row < len(ROW_SHIFT_DOWN_MM) else 0.0
         y_bottom -= shift_mm * mm
-        _draw_label(c, x_left, y_bottom, item)
+        _draw_label(c, x_left, y_bottom, item, logo_path=logo_path, draw_border=draw_border)
 
     c.showPage()
     c.save()

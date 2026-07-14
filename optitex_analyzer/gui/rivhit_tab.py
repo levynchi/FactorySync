@@ -56,6 +56,7 @@ class RivhitTabMixin:
         actions.pack(fill='x', padx=15, pady=5)
         tk.Button(actions, text="🔄 רענן", command=self._refresh_rivhit_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
         tk.Button(actions, text="✏️ עריכת מדבקה", command=self._edit_rivhit_label_fields, bg='#8e44ad', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="🧬 ניהול דגמים", command=self._open_rivhit_family_manager, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
 
         # Last upload info
         self.rivhit_meta_var = tk.StringVar(value='')
@@ -91,7 +92,7 @@ class RivhitTabMixin:
         vsb.grid(row=0, column=1, sticky='ns')
         table_frame.grid_columnconfigure(0, weight=1)
         table_frame.grid_rowconfigure(0, weight=1)
-        self.rivhit_tree.bind('<Double-1>', self._edit_rivhit_label_fields)
+        self.rivhit_tree.bind('<Double-1>', self._on_rivhit_tree_double_click)
 
         # Footer summary
         self.rivhit_summary_var = tk.StringVar(value="אין נתונים")
@@ -114,6 +115,24 @@ class RivhitTabMixin:
     def _update_rivhit_summary(self, count):
         self.rivhit_summary_var.set(f"סה\"כ מוצרים: {count}")
 
+    def _on_rivhit_tree_double_click(self, event):
+        """דאבל-קליק על עמודת מק\"ט מעתיק את הברקוד; אחרת פותח עריכת מדבקה."""
+        tree = self.rivhit_tree
+        row = tree.identify_row(event.y)
+        col = tree.identify_column(event.x)
+        # item_part_num הוא העמודה השלישית ב-_RIVHIT_COLS => '#3'
+        if row and col == '#3':
+            vals = tree.item(row, 'values')
+            barcode = str(vals[2]).strip() if len(vals) > 2 else ''
+            if barcode:
+                tree.clipboard_clear()
+                tree.clipboard_append(barcode)
+                prev = self.rivhit_summary_var.get()
+                self.rivhit_summary_var.set(f'הועתק מק"ט: {barcode}')
+                tree.after(2000, lambda: self.rivhit_summary_var.set(prev))
+            return
+        self._edit_rivhit_label_fields(event)
+
     def _edit_rivhit_label_fields(self, event=None):
         """עריכת שדות הדפסת המדבקה של המוצר הנבחר (לפי ברקוד)."""
         sel = self.rivhit_tree.selection()
@@ -123,9 +142,11 @@ class RivhitTabMixin:
         vals = self.rivhit_tree.item(sel[0], 'values')
         if not vals:
             return
-        # סדר העמודות: item_num, item_name, item_part_num, ...
+        # סדר העמודות: item_num, item_name, item_part_num, ..., compute_0036 (קטגוריה)
         name = vals[1] if len(vals) > 1 else ''
         barcode = str(vals[2]).strip() if len(vals) > 2 else ''
+        category = str(vals[5]).strip() if len(vals) > 5 else ''
+        brand = self.data_processor.brand_key_from_category(category)
         if not barcode:
             messagebox.showwarning("אין ברקוד", "למוצר זה אין מק\"ט/ברקוד; לא ניתן לשמור שדות מדבקה")
             return
@@ -147,9 +168,11 @@ class RivhitTabMixin:
         fabric_var = tk.StringVar(value=fields.get('fabric', ''))
         pack_var = tk.StringVar(value=str(fields.get('pack_qty', 1)))
         image_var = tk.StringVar(value=fields.get('image', ''))
+        model_code_var = tk.StringVar(value=fields.get('model_code', ''))
 
         rows = [
             ('שם להדפסה:', name_var, 32, False),
+            ('קוד דגם (באנגלית):', model_code_var, 20, False),
             ('מידה:', size_var, 20, False),
             ('סוג בד:', fabric_var, 20, False),
             ('כמות במארז:', pack_var, 8, True),
@@ -237,6 +260,7 @@ class RivhitTabMixin:
         btns.grid(row=img_row + 1, column=0, columnspan=2, pady=(12, 0))
 
         def save():
+            model_code = (model_code_var.get() or '').strip()
             self.data_processor.set_rivhit_label_fields(barcode, {
                 'print_name': name_var.get(),
                 'size': size_var.get(),
@@ -244,11 +268,195 @@ class RivhitTabMixin:
                 'fabric': fabric_var.get(),
                 'pack_qty': pack_var.get(),
                 'image': image_var.get(),
+                'model_code': model_code,
+                'brand': brand,
             })
+            # אם למוצר יש קוד דגם - עדכון דגם האב (מותג+קוד) והפצה לכל הוואריאנטים
+            propagated = 0
+            if model_code:
+                self.data_processor.set_rivhit_family(model_code, {
+                    'print_name': name_var.get(),
+                    'fabric': fabric_var.get(),
+                    'pack_qty': pack_var.get(),
+                    'size_unit': size_unit_var.get(),
+                    'image': image_var.get(),
+                }, brand=brand)
+                propagated = self.data_processor.rivhit_family_variant_count(model_code, brand)
             dlg.destroy()
-            messagebox.showinfo("נשמר", "שדות המדבקה נשמרו")
+            if propagated > 1:
+                brand_name = self.data_processor.RIVHIT_BRAND_NAMES.get(brand, brand)
+                messagebox.showinfo("נשמר", f"שדות המדבקה נשמרו והופצו ל-{propagated} וואריאנטים של דגם {model_code} ({brand_name})")
+            else:
+                messagebox.showinfo("נשמר", "שדות המדבקה נשמרו")
 
         tk.Button(btns, text="שמור", command=save, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
+
+    # ===== ניהול דגמי אב (משפחות מוצרים) =====
+    def _open_rivhit_family_manager(self):
+        """דיאלוג לניהול דגמי אב: רשימה + עריכה מרכזית עם הפצה לכל הוואריאנטים."""
+        dlg = tk.Toplevel(self.notebook)
+        dlg.title("ניהול דגמים (משפחות מוצרים)")
+        dlg.geometry("640x420")
+        dlg.grab_set()
+
+        tk.Label(dlg, text="דגמי אב - עריכה מרכזית מפיצה לכל הוואריאנטים עם אותו קוד דגם",
+                 font=('Arial', 11, 'bold')).pack(pady=(10, 4))
+
+        table_frame = tk.Frame(dlg)
+        table_frame.pack(fill='both', expand=True, padx=12, pady=6)
+        cols = ('brand', 'model_code', 'print_name', 'variants', 'fabric', 'pack')
+        headers = {'brand': 'מותג', 'model_code': 'קוד דגם', 'print_name': 'שם להדפסה', 'variants': 'וואריאנטים', 'fabric': 'סוג בד', 'pack': 'מארז'}
+        tree = ttk.Treeview(table_frame, columns=cols, show='headings')
+        for c in cols:
+            tree.heading(c, text=headers[c])
+            tree.column(c, width=110 if c != 'print_name' else 200, anchor='center')
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscroll=vsb.set)
+        tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+
+        def refresh():
+            for it in tree.get_children():
+                tree.delete(it)
+            for brand, code, fam in self.data_processor.list_rivhit_families():
+                brand_name = self.data_processor.RIVHIT_BRAND_NAMES.get(brand, brand)
+                tree.insert('', 'end', iid=self.data_processor._family_key(brand, code), values=(
+                    brand_name, code, fam.get('print_name', ''),
+                    self.data_processor.rivhit_family_variant_count(code, brand),
+                    fam.get('fabric', ''), fam.get('pack_qty', ''),
+                ))
+
+        def edit_selected(event=None):
+            sel = tree.selection()
+            if not sel:
+                messagebox.showinfo("לא נבחר", "יש לבחור דגם לעריכה", parent=dlg)
+                return
+            v = tree.item(sel[0], 'values')
+            # brand הוא שם תצוגה - נמיר חזרה למזהה
+            brand_key = next((k for k, nm in self.data_processor.RIVHIT_BRAND_NAMES.items() if nm == v[0]), v[0])
+            self._edit_rivhit_family(v[1], brand=brand_key, on_saved=refresh, parent=dlg)
+
+        tree.bind('<Double-1>', edit_selected)
+
+        btns = tk.Frame(dlg)
+        btns.pack(fill='x', padx=12, pady=(0, 10))
+        tk.Button(btns, text="✏️ ערוך דגם נבחר", command=edit_selected, bg='#8e44ad', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="🔄 רענן", command=refresh, bg='#3498db', fg='white').pack(side='right', padx=5)
+        tk.Button(btns, text="סגור", command=dlg.destroy).pack(side='left', padx=5)
+
+        refresh()
+
+    def _edit_rivhit_family(self, model_code, brand='arie', on_saved=None, parent=None):
+        """עריכת פרטי דגם אב (שם להדפסה, בד, מארז, יחידה, תמונה) והפצה לכל הוואריאנטים."""
+        code = str(model_code or '').strip()
+        if not code:
+            return
+        brand = (str(brand or '').strip() or 'arie')
+        brand_name = self.data_processor.RIVHIT_BRAND_NAMES.get(brand, brand)
+        fam = self.data_processor.get_rivhit_family(code, brand=brand)
+        dlg = tk.Toplevel(parent or self.notebook)
+        dlg.title(f"עריכת דגם {code} ({brand_name})")
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        frm = tk.Frame(dlg, padx=15, pady=15)
+        frm.pack(fill='both', expand=True)
+
+        n = self.data_processor.rivhit_family_variant_count(code, brand)
+        tk.Label(frm, text=f'קוד דגם: {code} | מותג: {brand_name}', font=('Arial', 11, 'bold')).grid(row=0, column=0, columnspan=2, sticky='e', pady=(0, 2))
+        tk.Label(frm, text=f'{n} וואריאנטים ישתנו', font=('Arial', 9), fg='#7f8c8d').grid(row=1, column=0, columnspan=2, sticky='e', pady=(0, 10))
+
+        name_var = tk.StringVar(value=fam.get('print_name', ''))
+        fabric_var = tk.StringVar(value=fam.get('fabric', ''))
+        pack_var = tk.StringVar(value=str(fam.get('pack_qty', 1)))
+        size_unit_var = tk.StringVar(value=fam.get('size_unit', ''))
+        image_var = tk.StringVar(value=fam.get('image', ''))
+
+        rows = [('שם להדפסה:', name_var, 32, False), ('סוג בד:', fabric_var, 20, False), ('כמות במארז:', pack_var, 8, True)]
+        for i, (lbl, var, width, is_spin) in enumerate(rows, start=2):
+            tk.Label(frm, text=lbl, anchor='e').grid(row=i, column=1, sticky='e', padx=(6, 2), pady=3)
+            if is_spin:
+                tk.Spinbox(frm, from_=1, to=99, textvariable=var, width=width, justify='center').grid(row=i, column=0, sticky='w', pady=3)
+            else:
+                tk.Entry(frm, textvariable=var, width=width).grid(row=i, column=0, sticky='w', pady=3)
+
+        unit_row = len(rows) + 2
+        tk.Label(frm, text='יחידת מידה:', anchor='e').grid(row=unit_row, column=1, sticky='e', padx=(6, 2), pady=3)
+        ttk.Combobox(frm, textvariable=size_unit_var, width=18, values=['', 'חודשים', 'שנים']).grid(row=unit_row, column=0, sticky='w', pady=3)
+
+        img_row = unit_row + 1
+        tk.Label(frm, text='תמונת דגם:', anchor='e').grid(row=img_row, column=1, sticky='ne', padx=(6, 2), pady=3)
+        img_frame = tk.Frame(frm)
+        img_frame.grid(row=img_row, column=0, sticky='w', pady=3)
+        preview_lbl = tk.Label(img_frame, text='(אין תמונה)', width=14, height=6, relief='solid', bd=1, bg='#f7f7f7', compound='center')
+        preview_lbl.grid(row=0, column=0, columnspan=2, pady=(0, 4))
+        self._family_img_ref = None
+
+        def _abs_path(rel):
+            rel = (rel or '').strip()
+            if not rel:
+                return ''
+            return rel if os.path.isabs(rel) else os.path.join(os.getcwd(), rel)
+
+        def _update_preview():
+            abs_path = _abs_path(image_var.get())
+            if abs_path and os.path.exists(abs_path):
+                try:
+                    from PIL import Image, ImageTk
+                    im = Image.open(abs_path)
+                    im.thumbnail((96, 96))
+                    self._family_img_ref = ImageTk.PhotoImage(im)
+                    preview_lbl.config(image=self._family_img_ref, text='')
+                    return
+                except Exception:
+                    pass
+            self._family_img_ref = None
+            preview_lbl.config(image='', text='(אין תמונה)')
+
+        def _choose_image():
+            products_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
+            os.makedirs(products_dir, exist_ok=True)
+            path = filedialog.askopenfilename(title='בחר תמונת דגם', initialdir=products_dir,
+                                              filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp'), ('כל הקבצים', '*.*')])
+            if not path:
+                return
+            try:
+                ext = os.path.splitext(path)[1].lower() or '.png'
+                safe = ''.join(ch for ch in f"{brand}_{code}" if ch.isalnum() or ch == '_') or 'family'
+                dest = os.path.join(products_dir, f"family_{safe}{ext}")
+                shutil.copyfile(path, dest)
+                image_var.set(os.path.relpath(dest, os.getcwd()))
+                _update_preview()
+            except Exception as e:
+                messagebox.showerror('שגיאה', f'שגיאה בשמירת התמונה:\n{e}', parent=dlg)
+
+        def _remove_image():
+            image_var.set('')
+            _update_preview()
+
+        tk.Button(img_frame, text='בחר תמונה…', command=_choose_image).grid(row=1, column=0, padx=(0, 4))
+        tk.Button(img_frame, text='הסר', command=_remove_image).grid(row=1, column=1)
+        _update_preview()
+
+        def save():
+            self.data_processor.set_rivhit_family(code, {
+                'print_name': name_var.get(),
+                'fabric': fabric_var.get(),
+                'pack_qty': pack_var.get(),
+                'size_unit': size_unit_var.get(),
+                'image': image_var.get(),
+            }, brand=brand)
+            dlg.destroy()
+            messagebox.showinfo("נשמר", f"הדגם עודכן והופץ ל-{self.data_processor.rivhit_family_variant_count(code, brand)} וואריאנטים",
+                                parent=parent or self.notebook)
+            if callable(on_saved):
+                on_saved()
+
+        btns = tk.Frame(frm)
+        btns.grid(row=img_row + 1, column=0, columnspan=2, pady=(12, 0))
+        tk.Button(btns, text="שמור והפץ", command=save, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
         tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
 
     def _update_rivhit_meta_label(self):
@@ -389,6 +597,7 @@ class RivhitTabMixin:
         self.rivhit_print_pack_var = tk.StringVar(value='3')
         self.rivhit_print_image_src_var = tk.StringVar()
         self.rivhit_print_image_label_var = tk.StringVar(value='ללא תמונה')
+        self.rivhit_print_model_code_var = tk.StringVar()
 
         print_box = tk.LabelFrame(form, text="פרטי הדפסה למדבקה (יחולו על כל המוצרים שייווצרו)", bg='#f7f9fa', fg='#2c3e50', font=('Arial', 9, 'bold'), padx=8, pady=6)
         print_box.pack(fill='x', pady=(8, 2))
@@ -406,6 +615,13 @@ class RivhitTabMixin:
         ttk.Combobox(pr2, textvariable=self.rivhit_print_unit_var, values=['', 'חודשים', 'שנים'], state='readonly', width=10).pack(side='right', padx=(0, 12))
         tk.Button(pr2, text='בחר תמונה…', command=self._choose_rivhit_print_image, bg='#8e44ad', fg='white', font=('Arial', 8)).pack(side='right', padx=(0, 6))
         tk.Label(pr2, textvariable=self.rivhit_print_image_label_var, bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(side='right', padx=(0, 12))
+        pr3 = tk.Frame(print_box, bg='#f7f9fa'); pr3.pack(fill='x', pady=2)
+        tk.Label(pr3, text='קוד דגם (באנגלית):', bg='#f7f9fa', width=14, anchor='e').pack(side='right', padx=(6, 2))
+        family_codes = self.data_processor.list_rivhit_family_codes() if hasattr(self.data_processor, 'list_rivhit_family_codes') else []
+        self.rivhit_print_model_code_combo = ttk.Combobox(pr3, textvariable=self.rivhit_print_model_code_var, values=family_codes, width=16)
+        self.rivhit_print_model_code_combo.pack(side='right', padx=(0, 6))
+        self.rivhit_print_model_code_combo.bind('<<ComboboxSelected>>', lambda e: self._on_rivhit_family_code_selected())
+        tk.Label(pr3, text="(קוד דגם משותף לכל הוואריאנטים; בחירת קוד קיים תטען את פרטי הדגם)", bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(side='right', padx=(0, 12))
         tk.Label(print_box, text="(ביצירה לפי מידות - המידה נלקחת מכל מידה שנבחרה; שדה 'מידה' משמש להוספת מוצר בודד)", bg='#f7f9fa', fg='#7f8c8d', font=('Arial', 8)).pack(anchor='e', pady=(2, 0))
 
         btns = tk.Frame(form, bg='#f7f9fa'); btns.pack(pady=(8, 2))
@@ -467,10 +683,33 @@ class RivhitTabMixin:
         self.rivhit_print_image_src_var.set(path)
         self.rivhit_print_image_label_var.set(os.path.basename(path))
 
+    def _current_add_brand(self):
+        """מזהה מותג לפי הקטגוריה שנבחרה בטופס ההוספה."""
+        return self.data_processor.brand_key_from_category(self.rivhit_new_cat_var.get())
+
+    def _on_rivhit_family_code_selected(self):
+        """בחירת קוד דגם קיים - טעינת פרטי ההדפסה של הדגם לשדות הטופס (לפי מותג הקטגוריה)."""
+        code = (self.rivhit_print_model_code_var.get() or '').strip()
+        if not code:
+            return
+        fam = self.data_processor.get_rivhit_family(code, brand=self._current_add_brand())
+        if not fam:
+            return
+        self.rivhit_print_name_var.set(fam.get('print_name', ''))
+        self.rivhit_print_fabric_var.set(fam.get('fabric', ''))
+        self.rivhit_print_pack_var.set(str(fam.get('pack_qty', '') or ''))
+        self.rivhit_print_unit_var.set(fam.get('size_unit', ''))
+        img = fam.get('image', '')
+        if img:
+            self.rivhit_print_image_label_var.set(os.path.basename(img) + ' (מהדגם)')
+        else:
+            self.rivhit_print_image_label_var.set('ללא תמונה')
+
     def _apply_rivhit_print_fields(self, barcode, size=''):
         """שומר פרטי הדפסה (מדבקה) למוצר שנוצר לפי הברקוד שלו.
 
-        מועתק מהשדות בטופס; התמונה (אם נבחרה) מועתקת לקובץ פר-ברקוד.
+        אם הוזן קוד דגם - התמונה נשמרת פעם אחת ברמת הדגם (family_<code>) והשדות
+        המשותפים מופצים לכל הוואריאנטים באותו קוד דגם.
         """
         barcode = str(barcode or '').strip()
         if not barcode:
@@ -480,22 +719,33 @@ class RivhitTabMixin:
         size_unit = (self.rivhit_print_unit_var.get() or '').strip()
         pack = (self.rivhit_print_pack_var.get() or '').strip()
         img_src = (self.rivhit_print_image_src_var.get() or '').strip()
+        model_code = (self.rivhit_print_model_code_var.get() or '').strip()
+        brand = self._current_add_brand()
         size = str(size or '').strip()
         # החל רק אם המשתמש הזין פרט הדפסה כלשהו
-        if not (print_name or fabric or img_src or size or size_unit):
+        if not (print_name or fabric or img_src or size or size_unit or model_code):
             return
+        # תמונה: אם יש קוד דגם - שם קובץ לפי המותג+הדגם; אחרת לפי הברקוד
         image_rel = ''
         if img_src and os.path.exists(img_src):
             try:
                 ext = os.path.splitext(img_src)[1].lower() or '.png'
                 dest_dir = os.path.join(os.getcwd(), 'assets', 'labels', 'products')
                 os.makedirs(dest_dir, exist_ok=True)
-                safe_bc = ''.join(ch for ch in barcode if ch.isalnum()) or 'product'
-                dest = os.path.join(dest_dir, f"{safe_bc}{ext}")
+                if model_code:
+                    safe = ''.join(ch for ch in f"{brand}_{model_code}" if ch.isalnum() or ch == '_') or 'family'
+                    fname = f"family_{safe}{ext}"
+                else:
+                    fname = (''.join(ch for ch in barcode if ch.isalnum()) or 'product') + ext
+                dest = os.path.join(dest_dir, fname)
                 shutil.copyfile(img_src, dest)
                 image_rel = os.path.relpath(dest, os.getcwd())
             except Exception:
                 image_rel = ''
+        # אם נבחר קוד דגם קיים בלי תמונה חדשה - השתמש בתמונת הדגם הקיימת
+        if not image_rel and model_code:
+            fam = self.data_processor.get_rivhit_family(model_code, brand=brand)
+            image_rel = fam.get('image', '') if fam else ''
         self.data_processor.set_rivhit_label_fields(barcode, {
             'print_name': print_name,
             'size': size,
@@ -503,14 +753,31 @@ class RivhitTabMixin:
             'fabric': fabric,
             'pack_qty': pack or 1,
             'image': image_rel,
+            'model_code': model_code,
+            'brand': brand,
         })
+        # יצירה/עדכון של דגם האב והפצה לכל הוואריאנטים (מותג+קוד)
+        if model_code:
+            self.data_processor.set_rivhit_family(model_code, {
+                'print_name': print_name,
+                'fabric': fabric,
+                'pack_qty': pack or 1,
+                'size_unit': size_unit,
+                'image': image_rel,
+            }, brand=brand)
 
     def _reset_rivhit_print_fields(self):
         self.rivhit_print_name_var.set('')
         self.rivhit_print_size_var.set('')
         self.rivhit_print_fabric_var.set('')
+        self.rivhit_print_model_code_var.set('')
         self.rivhit_print_image_src_var.set('')
         self.rivhit_print_image_label_var.set('ללא תמונה')
+        if hasattr(self, 'rivhit_print_model_code_combo'):
+            try:
+                self.rivhit_print_model_code_combo['values'] = self.data_processor.list_rivhit_family_codes()
+            except Exception:
+                pass
 
     def _add_rivhit_product(self):
         name = (self.rivhit_new_name_var.get() or '').strip()

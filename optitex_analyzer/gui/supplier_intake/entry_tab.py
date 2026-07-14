@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from optitex_analyzer.gui.size_matrix import SizeMatrixFrame
+
 def build_entry_tab(ctx, container: tk.Frame):
     # Reuse the original UI construction from SupplierIntakeTabMixin
     # Header form
@@ -9,6 +11,31 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx._supplier_lines = []
     if not hasattr(ctx, '_supplier_packages'):
         ctx._supplier_packages = []
+
+    # Scrollable wrapper so the full form is reachable on smaller screens
+    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame.pack(fill='both', expand=True)
+    canvas = tk.Canvas(main_frame, bg='#f7f9fa', highlightthickness=0)
+    scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+    _win_id = canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.pack(side='left', fill='both', expand=True)
+    scrollbar.pack(side='right', fill='y')
+
+    def _configure_scroll_region(event):
+        canvas.configure(scrollregion=canvas.bbox('all'))
+        canvas.itemconfig(_win_id, width=event.width)
+    canvas.bind('<Configure>', _configure_scroll_region)
+
+    # Mouse wheel scrolls only while the cursor is over this tab (no global hijack)
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+    canvas.bind('<Enter>', lambda e: canvas.bind_all('<MouseWheel>', _on_mousewheel))
+    canvas.bind('<Leave>', lambda e: canvas.unbind_all('<MouseWheel>'))
+
+    container = scrollable_frame
 
     form = ttk.LabelFrame(container, text="פרטי קליטה", padding=10)
     form.pack(fill='x', padx=10, pady=6)
@@ -28,7 +55,29 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx.supplier_date_var.set(datetime.now().strftime('%Y-%m-%d'))
     except Exception:
         ctx.supplier_date_var.set('')
-    tk.Entry(form, textvariable=ctx.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
+    # DateEntry if available; else plain Entry with a calendar button using ctx._open_date_picker
+    try:
+        DateEntry = None
+        try:
+            from tkcalendar import DateEntry  # type: ignore
+        except Exception:
+            DateEntry = None
+        if DateEntry is not None:
+            sup_date_entry = DateEntry(form, textvariable=ctx.supplier_date_var, width=12, date_pattern='yyyy-mm-dd', locale='he_IL')
+            try:
+                from datetime import datetime as _dt
+                sup_date_entry.set_date(_dt.now())
+            except Exception:
+                pass
+        else:
+            sup_date_entry = tk.Entry(form, textvariable=ctx.supplier_date_var, width=12)
+        sup_date_entry.grid(row=0,column=3,sticky='w',padx=(4,0),pady=4)
+        try:
+            tk.Button(form, text='📅', width=2, command=lambda e=sup_date_entry,v=ctx.supplier_date_var: ctx._open_date_picker(e, v)).grid(row=0,column=3,sticky='w',padx=(120,0),pady=4)
+        except Exception:
+            pass
+    except Exception:
+        tk.Entry(form, textvariable=ctx.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
     # New fields: Arrival date and supplier document number
     tk.Label(form, text="תאריך הגעה:", font=('Arial',10,'bold')).grid(row=1,column=0,sticky='w',padx=4,pady=4)
@@ -122,8 +171,7 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx.sup_product_var.set(val)
             _hide_popup()
             try:
-                size_entry = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)][0]
-                size_entry.focus_set()
+                ctx.sup_size_matrix.focus_first()
             except Exception:
                 pass
         lb.bind('<Return>', _choose)
@@ -196,65 +244,16 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     def _product_chosen(event=None):
         try:
-            widgets_after = [w for w in entry_bar.grid_slaves(row=1) if isinstance(w, tk.Entry)]
+            ctx.sup_size_matrix.focus_first()
         except Exception:
-            widgets_after = []
-        for w in widgets_after:
-            if hasattr(w,'cget') and w.cget('textvariable') == str(ctx.sup_size_var):
-                w.focus_set(); break
+            pass
     ctx.sup_product_combo.bind('<<ComboboxSelected>>', _product_chosen)
 
-    # Multi-size selection controls
-    # Create a frame for size selection
-    size_frame = tk.Frame(entry_bar)
-    
-    # Size selection combobox
-    ctx.sup_size_combo = ttk.Combobox(size_frame, textvariable=ctx.sup_size_var, width=8, state='readonly')
-    
-    # Selected sizes display field
-    ctx.sup_selected_sizes_var = tk.StringVar()
-    ctx.sup_selected_sizes_entry = tk.Entry(size_frame, textvariable=ctx.sup_selected_sizes_var, width=12, state='readonly', bg='#f0f0f0')
-    
-    # Multi-select buttons
-    ctx.sup_add_size_btn = tk.Button(size_frame, text="+", command=lambda: _add_size_to_selection(ctx), 
-                                   bg='#3498db', fg='white', width=3, font=('Arial', 8, 'bold'))
-    ctx.sup_remove_size_btn = tk.Button(size_frame, text="-", command=lambda: _remove_last_size(ctx), 
-                                      bg='#e74c3c', fg='white', width=3, font=('Arial', 8, 'bold'))
-    ctx.sup_clear_sizes_btn = tk.Button(size_frame, text="×", command=lambda: _clear_selected_sizes(ctx), 
-                                      bg='#95a5a6', fg='white', width=3, font=('Arial', 8, 'bold'))
-    
-    # Arrange components in size_frame
-    ctx.sup_size_combo.grid(row=0, column=0, padx=2)
-    ctx.sup_add_size_btn.grid(row=0, column=1, padx=2)
-    ctx.sup_selected_sizes_entry.grid(row=0, column=2, padx=2)
-    ctx.sup_remove_size_btn.grid(row=0, column=3, padx=2)
-    ctx.sup_clear_sizes_btn.grid(row=0, column=4, padx=2)
-    
-    # Initialize selected sizes list
-    if not hasattr(ctx, '_selected_sizes'):
-        ctx._selected_sizes = []
-    
-    def _add_size_to_selection(ctx):
-        """Add selected size to the multi-size selection"""
-        selected_size = ctx.sup_size_var.get().strip()
-        if selected_size and selected_size not in ctx._selected_sizes:
-            ctx._selected_sizes.append(selected_size)
-            # Update display
-            ctx.sup_selected_sizes_var.set(', '.join(ctx._selected_sizes))
-            # Clear the combobox
-            ctx.sup_size_var.set('')
-    
-    def _clear_selected_sizes(ctx):
-        """Clear all selected sizes"""
-        ctx._selected_sizes = []
-        ctx.sup_selected_sizes_var.set('')
-    
-    def _remove_last_size(ctx):
-        """Remove the last selected size"""
-        if ctx._selected_sizes:
-            ctx._selected_sizes.pop()
-            ctx.sup_selected_sizes_var.set(', '.join(ctx._selected_sizes))
-    
+    # Size matrix: quantity box per size (replaces multi-size selection controls)
+    ctx.sup_size_matrix_frame = ttk.LabelFrame(lines_frame, text="מידות וכמויות", padding=6)
+    ctx.sup_size_matrix = SizeMatrixFrame(ctx.sup_size_matrix_frame, allow_free_entry=True)
+    ctx.sup_size_matrix.pack(anchor='e')
+
     def _edit_quantity_in_tree(ctx, event):
         """Handle double-click editing of quantity in tree"""
         # Get the item that was clicked
@@ -472,7 +471,6 @@ def build_entry_tab(ctx, container: tk.Frame):
     field_pairs = {
         'main_category': (label_widgets['main_category'], ctx.sup_main_category_combo),
         'model_name': (label_widgets['model_name'], ctx.sup_product_combo),
-        'sizes': (label_widgets['sizes'], size_frame),
         'fabric_type': (label_widgets['fabric_type'], ctx.sup_fabric_type_combo),
         'fabric_color': (label_widgets['fabric_color'], ctx.sup_fabric_color_combo),
         'fabric_category': (label_widgets['fabric_category'], ctx.sup_fabric_category_entry),
@@ -485,6 +483,34 @@ def build_entry_tab(ctx, container: tk.Frame):
         'note': (label_widgets['note'], note_entry),
         'label_status': (label_widgets['label_status'], ctx.sup_label_status_combo),
     }
+
+    # Read-only info: fabric type recorded on the selected drawing (does not change any field)
+    ctx.sup_drawing_fabric_info_var = tk.StringVar()
+    ctx.sup_drawing_fabric_info_lbl = tk.Label(entry_bar, textvariable=ctx.sup_drawing_fabric_info_var,
+                                               bg='#f7f9fa', fg='#2980b9', font=('Arial', 9, 'bold'))
+
+    def _update_drawing_fabric_info(*_a):
+        try:
+            returned = (ctx.sup_returned_from_drawing_var.get() or '').strip()
+            did = (ctx.sup_drawing_id_var.get() or '').strip()
+            if returned != 'כן' or not did:
+                ctx.sup_drawing_fabric_info_var.set('')
+                return
+            fabric = ''
+            for d in getattr(ctx.data_processor, 'drawings_data', []) or []:
+                if str(d.get('id')) == did:
+                    fabric = (d.get('סוג בד') or '').strip()
+                    break
+            ctx.sup_drawing_fabric_info_var.set(f'בד בציור: {fabric}' if fabric else '')
+        except Exception:
+            try:
+                ctx.sup_drawing_fabric_info_var.set('')
+            except Exception:
+                pass
+    try:
+        ctx.sup_drawing_id_var.trace_add('write', _update_drawing_fabric_info)
+    except Exception:
+        pass
 
     # Action buttons placed after fields dynamically
     btn_add = tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white')
@@ -502,8 +528,9 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     def _apply_layout_for_main_category():
         selected = (ctx.sup_main_category_var.get() or '').strip()
-        order = ['main_category','model_name','sizes','fabric_type','fabric_color','fabric_category','print_name','barcode']
+        order = ['main_category','model_name','fabric_type','fabric_color','fabric_category','print_name','barcode']
         mc_has_barcode = False
+        sizes_visible = False
         if selected:
             rec = _find_main_category_by_name(selected)
             fields = []
@@ -515,12 +542,17 @@ def build_entry_tab(ctx, container: tk.Frame):
                     except Exception:
                         fields = []
             mc_has_barcode = ('barcode' in (fields or []))
+            sizes_visible = ('sizes' in (fields or []))
             visible_keys = ['main_category','model_name'] + [k for k in order if k in fields]
         else:
             visible_keys = ['main_category','model_name']
 
-        # Always keep sub_category, returned-from-drawing, drawing_id, quantity, label_status, note
-        tail = ['sub_category','returned_from_drawing','drawing_id','quantity','label_status','note']
+        # Sizes handled via the size matrix (own row); quantity entry shown only when no matrix
+        ctx._sup_sizes_field_visible = sizes_visible
+
+        # Always keep sub_category, returned-from-drawing, drawing_id, label_status, note.
+        # quantity shows only when there is no size matrix (per-size quantities replace it).
+        tail = ['sub_category','returned_from_drawing','drawing_id'] + ([] if sizes_visible else ['quantity']) + ['label_status','note']
 
         # Hide all first
         for key,(lbl,inp) in field_pairs.items():
@@ -530,15 +562,39 @@ def build_entry_tab(ctx, container: tk.Frame):
                 pass
 
         col = 0
+        drawing_col = None
         for key in visible_keys + tail:
             lbl, inp = field_pairs[key]
             lbl.grid(row=0, column=col, sticky='w', padx=2)
             inp.grid(row=1, column=col, sticky='w', padx=2)
+            if key == 'drawing_id':
+                drawing_col = col
             col += 2
 
         btn_add.grid(row=1, column=col, padx=6)
         btn_del.grid(row=1, column=col+1, padx=4)
         btn_clr.grid(row=1, column=col+2, padx=4)
+
+        # Info label under the drawing selector (shows the drawing's fabric type)
+        try:
+            ctx.sup_drawing_fabric_info_lbl.grid_remove()
+            if drawing_col is not None:
+                ctx.sup_drawing_fabric_info_lbl.grid(row=2, column=drawing_col, columnspan=4, sticky='w', padx=2)
+        except Exception:
+            pass
+
+        # Show/hide the size matrix row
+        try:
+            if sizes_visible:
+                if not ctx.sup_size_matrix_frame.winfo_ismapped():
+                    kw = {}
+                    if hasattr(ctx, 'supplier_tree'):
+                        kw['before'] = ctx.supplier_tree
+                    ctx.sup_size_matrix_frame.pack(fill='x', pady=(0,6), **kw)
+            else:
+                ctx.sup_size_matrix_frame.pack_forget()
+        except Exception:
+            pass
 
         # If barcode isn't enabled for this main category, clear it
         try:
@@ -574,12 +630,16 @@ def build_entry_tab(ctx, container: tk.Frame):
             ctx.sup_fabric_category_var.set('')
         except Exception:
             pass
-        for combo in (ctx.sup_size_combo, ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):
+        for combo in (ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):
             try:
                 combo.set('')
                 combo.state(['disabled'])
             except Exception:
                 pass
+        try:
+            ctx.sup_size_matrix.set_sizes([])
+        except Exception:
+            pass
         # Reset qty label (product cleared)
         try:
             _update_qty_label()
@@ -606,6 +666,10 @@ def build_entry_tab(ctx, container: tk.Frame):
             else:
                 ctx.sup_drawing_id_var.set('')
                 ctx.sup_drawing_id_combo.config(state='disabled')
+        except Exception:
+            pass
+        try:
+            _update_drawing_fabric_info()
         except Exception:
             pass
     try:
@@ -653,7 +717,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception: pass
 
     # Disable combos until product chosen
-    for combo in (ctx.sup_size_combo, ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):
+    for combo in (ctx.sup_fabric_type_combo, ctx.sup_fabric_color_combo, ctx.sup_print_name_combo):
         try: combo.state(['disabled'])
         except Exception: pass
 
