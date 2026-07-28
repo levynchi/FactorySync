@@ -25,6 +25,11 @@ class SettingsManager:
                 "repo_url": "",
                 "branch": "main",
                 "last_sync": ""
+            },
+            "website": {
+                "local_url": "http://127.0.0.1:8000",
+                "prod_url": "https://arye-textil.co.il",
+                "api_token": ""
             }
         }
         print("✅ הגדרות ברירת מחדל נקבעו")
