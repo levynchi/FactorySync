@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from .. import theme
 
 
 def build_list_tab(ctx, container: tk.Frame):
@@ -35,7 +36,7 @@ def build_list_tab(ctx, container: tk.Frame):
         container,
         text="🔄 רענן",
         command=ctx._refresh_supplier_intake_list,
-        bg='#3498db',
+        bg=theme.PRIMARY,
         fg='white'
     ).grid(row=1, column=0, sticky='e', padx=6, pady=(0, 6))
 

@@ -6,13 +6,14 @@ import json
 import os
 import subprocess
 from .shipping_companies_tab import ShippingCompaniesTabMixin
+from . import theme
 
 class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
     """Mixin for shipping costs and fabrics management tab."""
     
     def _create_shipping_costs_tab(self):
         """Create the shipping costs and fabrics tab."""
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="עלויות משלוחים ובדים")
         
         # Create inner notebook for sub-tabs
@@ -20,12 +21,12 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         inner_nb.pack(fill='both', expand=True, padx=4, pady=4)
         
         # Shipping costs sub-tab
-        shipping_costs_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        shipping_costs_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(shipping_costs_page, text="עלויות משלוחים")
         self._build_shipping_costs_content(shipping_costs_page)
         
         # Shipping companies sub-tab
-        shipping_companies_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        shipping_companies_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(shipping_companies_page, text="חברות עמילות/שילוח")
         self._build_shipping_companies_content(shipping_companies_page)
     
@@ -35,9 +36,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         title_label = tk.Label(
             container, 
             text="ניהול עלויות משלוחים ובדים", 
-            font=('Arial', 16, 'bold'), 
-            bg='#f7f9fa', 
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 16, 'bold'), 
+            bg=theme.PAGE_BG, 
+            fg=theme.DARK
         )
         title_label.pack(pady=(10, 20))
         
@@ -46,61 +47,61 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         input_frame.pack(fill='x', padx=20, pady=10)
         
         # Row 1 - Name and Date
-        tk.Label(input_frame, text="שם:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="שם:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.shipping_name_var = tk.StringVar()
-        self.shipping_name_combo = ttk.Combobox(input_frame, textvariable=self.shipping_name_var, width=18, font=('Arial', 10), state='readonly')
+        self.shipping_name_combo = ttk.Combobox(input_frame, textvariable=self.shipping_name_var, width=18, font=(theme.FONT_FAMILY, 10), state='readonly')
         self.shipping_name_combo.grid(row=0, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="תאריך משלוח:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="תאריך משלוח:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
         self.shipping_date_var = tk.StringVar(value=datetime.now().strftime('%d/%m/%Y'))
-        tk.Entry(input_frame, textvariable=self.shipping_date_var, width=15, font=('Arial', 10)).grid(row=0, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.shipping_date_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=0, column=3, padx=5, pady=5)
         
         # Row 2 - Cub and Total Weight
-        tk.Label(input_frame, text="Cub:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="Cub:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.cub_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.cub_var, width=20, font=('Arial', 10)).grid(row=1, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.cub_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="משקל כולל:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="משקל כולל:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
         self.total_weight_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.total_weight_var, width=15, font=('Arial', 10)).grid(row=1, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.total_weight_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=3, padx=5, pady=5)
         
         # Row 3 - Quantity and Product Price in USD
-        tk.Label(input_frame, text="כמות גלילים:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="כמות גלילים:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.rolls_quantity_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=('Arial', 10)).grid(row=2, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="מחיר סחורה בדולר:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="מחיר סחורה בדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
         self.product_price_usd_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.product_price_usd_var, width=15, font=('Arial', 10)).grid(row=2, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.product_price_usd_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=3, padx=5, pady=5)
         
         # Row 3 - USD Exchange Rate
-        tk.Label(input_frame, text="שער הדולר:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="שער הדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=5)
         self.usd_rate_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.usd_rate_var, width=15, font=('Arial', 10)).grid(row=3, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.usd_rate_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=3, column=1, padx=5, pady=5)
         
         # Row 4 - Shipping costs
-        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=5)
         self.final_shipping_cost_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=('Arial', 10)).grid(row=4, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="משלוח פנימי:", font=('Arial', 10, 'bold')).grid(row=4, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="משלוח פנימי:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=2, sticky='w', padx=5, pady=5)
         self.domestic_shipping_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=('Arial', 10)).grid(row=4, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=3, padx=5, pady=5)
         
         
         # Row 5 - Packing List Upload
-        tk.Label(input_frame, text="PACKING LIST:", font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="PACKING LIST:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=5, column=0, sticky='w', padx=5, pady=5)
         self.packing_list_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.packing_list_var, width=30, font=('Arial', 10), state='readonly').grid(row=5, column=1, padx=5, pady=5)
-        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_packing_list_file, bg='#3498db', fg='white', font=('Arial', 9)).grid(row=5, column=2, padx=5, pady=5)
-        tk.Button(input_frame, text="🗑 נקה", command=self._clear_packing_list, bg='#e74c3c', fg='white', font=('Arial', 9)).grid(row=5, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.packing_list_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=5, column=1, padx=5, pady=5)
+        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_packing_list_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=2, padx=5, pady=5)
+        tk.Button(input_frame, text="🗑 נקה", command=self._clear_packing_list, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=3, padx=5, pady=5)
         
         # Row 6 - Payment Request Upload
-        tk.Label(input_frame, text="דרישת תשלום:", font=('Arial', 10, 'bold')).grid(row=6, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="דרישת תשלום:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=6, column=0, sticky='w', padx=5, pady=5)
         self.payment_request_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.payment_request_var, width=30, font=('Arial', 10), state='readonly').grid(row=6, column=1, padx=5, pady=5)
-        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_payment_request_file, bg='#3498db', fg='white', font=('Arial', 9)).grid(row=6, column=2, padx=5, pady=5)
-        tk.Button(input_frame, text="🗑 נקה", command=self._clear_payment_request, bg='#e74c3c', fg='white', font=('Arial', 9)).grid(row=6, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.payment_request_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=6, column=1, padx=5, pady=5)
+        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_payment_request_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=2, padx=5, pady=5)
+        tk.Button(input_frame, text="🗑 נקה", command=self._clear_payment_request, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=3, padx=5, pady=5)
         
         # Buttons
         buttons_frame = tk.Frame(input_frame)
@@ -110,9 +111,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             buttons_frame,
             text="הוסף משלוח",
             command=self._add_shipping_record,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -120,9 +121,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             buttons_frame,
             text="נקה שדות",
             command=self._clear_shipping_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -130,9 +131,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             buttons_frame,
             text="ייצא לאקסל",
             command=self._export_to_excel,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -144,9 +145,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         title_label = tk.Label(
             table_frame, 
             text="מחירים ללא המע״מ של ישראל", 
-            font=('Arial', 12, 'bold'), 
-            bg='#f7f9fa', 
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 12, 'bold'), 
+            bg=theme.PAGE_BG, 
+            fg=theme.DARK
         )
         title_label.pack(pady=(0, 10))
         
@@ -157,9 +158,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             sort_frame,
             text="📅 מיין לפי תאריך (חדש למעלה)",
             command=self._sort_shipping_table_by_date,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         ).pack(side='right')
         
         # Treeview for data display
@@ -651,95 +652,95 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
         dialog.grab_set()
         
         # Main frame
-        main_frame = tk.Frame(dialog, bg='#f7f9fa')
+        main_frame = tk.Frame(dialog, bg=theme.PAGE_BG)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
         # Title
         title_label = tk.Label(
             main_frame,
             text=f"קבצים עבור {record_name}",
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         )
         title_label.pack(pady=(0, 20))
         
         # Packing list section
-        packing_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        packing_frame = tk.Frame(main_frame, bg=theme.PAGE_BG)
         packing_frame.pack(fill='x', pady=10)
         
         tk.Label(
             packing_frame,
             text="Packing List:",
-            font=('Arial', 12, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 12, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack(anchor='w')
         
         if packing_list and os.path.exists(os.path.join("packing_lists", packing_list)):
             tk.Label(
                 packing_frame,
                 text=f"📄 {packing_list}",
-                font=('Arial', 10),
-                bg='#f7f9fa',
-                fg='#27ae60'
+                font=(theme.FONT_FAMILY, 10),
+                bg=theme.PAGE_BG,
+                fg=theme.SUCCESS
             ).pack(anchor='w', pady=(5, 0))
             
             tk.Button(
                 packing_frame,
                 text="פתח Packing List",
                 command=lambda: self._open_file(os.path.join("packing_lists", packing_list)),
-                bg='#3498db',
+                bg=theme.PRIMARY,
                 fg='white',
-                font=('Arial', 10, 'bold'),
+                font=(theme.FONT_FAMILY, 10, 'bold'),
                 width=20
             ).pack(anchor='w', pady=(5, 0))
         else:
             tk.Label(
                 packing_frame,
                 text="אין קובץ Packing List",
-                font=('Arial', 10),
-                bg='#f7f9fa',
-                fg='#e74c3c'
+                font=(theme.FONT_FAMILY, 10),
+                bg=theme.PAGE_BG,
+                fg=theme.DANGER
             ).pack(anchor='w', pady=(5, 0))
         
         # Payment request section
-        payment_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        payment_frame = tk.Frame(main_frame, bg=theme.PAGE_BG)
         payment_frame.pack(fill='x', pady=10)
         
         tk.Label(
             payment_frame,
             text="דרישת תשלום:",
-            font=('Arial', 12, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 12, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack(anchor='w')
         
         if payment_request and os.path.exists(os.path.join("payment_requests", payment_request)):
             tk.Label(
                 payment_frame,
                 text=f"📄 {payment_request}",
-                font=('Arial', 10),
-                bg='#f7f9fa',
-                fg='#27ae60'
+                font=(theme.FONT_FAMILY, 10),
+                bg=theme.PAGE_BG,
+                fg=theme.SUCCESS
             ).pack(anchor='w', pady=(5, 0))
             
             tk.Button(
                 payment_frame,
                 text="פתח דרישת תשלום",
                 command=lambda: self._open_file(os.path.join("payment_requests", payment_request)),
-                bg='#e74c3c',
+                bg=theme.DANGER,
                 fg='white',
-                font=('Arial', 10, 'bold'),
+                font=(theme.FONT_FAMILY, 10, 'bold'),
                 width=20
             ).pack(anchor='w', pady=(5, 0))
         else:
             tk.Label(
                 payment_frame,
                 text="אין קובץ דרישת תשלום",
-                font=('Arial', 10),
-                bg='#f7f9fa',
-                fg='#e74c3c'
+                font=(theme.FONT_FAMILY, 10),
+                bg=theme.PAGE_BG,
+                fg=theme.DANGER
             ).pack(anchor='w', pady=(5, 0))
         
         # Close button
@@ -747,9 +748,9 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             main_frame,
             text="סגור",
             command=dialog.destroy,
-            bg='#95a5a6',
+            bg=theme.MUTED,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         close_button.pack(pady=(20, 0))

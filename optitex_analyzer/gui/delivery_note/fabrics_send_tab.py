@@ -1,17 +1,18 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from .. import theme
 
 # UI builder for the "שליחת בדים" sub-tab under Delivery Note
 
 def build_fabrics_send_tab(ctx, container: tk.Frame):
     # Create a main frame with scrollbar
-    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame = tk.Frame(container, bg=theme.PAGE_BG)
     main_frame.pack(fill='both', expand=True)
     
     # Create canvas and scrollbar
-    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    canvas = tk.Canvas(main_frame, bg=theme.PAGE_BG)
     scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
     
     scrollable_frame.bind(
         "<Configure>",
@@ -42,12 +43,12 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     # Use scrollable_frame as the new container
     container = scrollable_frame
     
-    header = tk.Frame(container, bg='#f7f9fa'); header.pack(fill='x', padx=10, pady=(8,4))
-    tk.Label(header, text='שליחת בדים', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+    header = tk.Frame(container, bg=theme.PAGE_BG); header.pack(fill='x', padx=10, pady=(8,4))
+    tk.Label(header, text='שליחת בדים', font=(theme.FONT_FAMILY,12,'bold'), bg=theme.PAGE_BG).pack(side='right')
 
     # Supplier selection (required)
-    sup_bar = tk.Frame(container, bg='#f7f9fa'); sup_bar.pack(fill='x', padx=10, pady=(0,4))
-    tk.Label(sup_bar, text='ספק יעד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+    sup_bar = tk.Frame(container, bg=theme.PAGE_BG); sup_bar.pack(fill='x', padx=10, pady=(0,4))
+    tk.Label(sup_bar, text='ספק יעד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
     ctx.fs_supplier_var = tk.StringVar()
     ctx.fs_supplier_combo = ttk.Combobox(sup_bar, textvariable=ctx.fs_supplier_var, state='readonly', width=30)
     try:
@@ -58,8 +59,8 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     ctx.fs_supplier_combo.pack(side='right')
 
     # Barcode scan bar
-    bar = tk.Frame(container, bg='#f7f9fa'); bar.pack(fill='x', padx=10, pady=(0,6))
-    tk.Label(bar, text='בר קוד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+    bar = tk.Frame(container, bg=theme.PAGE_BG); bar.pack(fill='x', padx=10, pady=(0,6))
+    tk.Label(bar, text='בר קוד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
     ctx.fs_barcode_var = tk.StringVar()
     entry = tk.Entry(bar, textvariable=ctx.fs_barcode_var, width=24)
     entry.pack(side='right')
@@ -67,14 +68,14 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
         entry.bind('<Return>', lambda e: ctx._fs_add_fabric_by_barcode())
     except Exception:
         pass
-    tk.Button(bar, text='➕ הוסף', command=ctx._fs_add_fabric_by_barcode, bg='#27ae60', fg='white').pack(side='right', padx=6)
-    tk.Button(bar, text='✏️ הוסף בד ידנית', command=ctx._fs_add_manual_fabric, bg='#8e44ad', fg='white').pack(side='right', padx=6)
-    tk.Button(bar, text='� ייבוא ברקודים', command=ctx._fs_import_barcodes_from_file, bg='#16a085', fg='white').pack(side='right', padx=6)
+    tk.Button(bar, text='➕ הוסף', command=ctx._fs_add_fabric_by_barcode, bg=theme.SUCCESS, fg='white').pack(side='right', padx=6)
+    tk.Button(bar, text='✏️ הוסף בד ידנית', command=ctx._fs_add_manual_fabric, bg=theme.PURPLE, fg='white').pack(side='right', padx=6)
+    tk.Button(bar, text='� ייבוא ברקודים', command=ctx._fs_import_barcodes_from_file, bg=theme.TEAL, fg='white').pack(side='right', padx=6)
     tk.Button(bar, text='�🗑️ הסר נבחר', command=ctx._fs_remove_selected).pack(side='left', padx=6)
     tk.Button(bar, text='🧹 נקה הכל', command=ctx._fs_clear_all).pack(side='left')
 
     # Table of selected fabrics to ship
-    table_wrap = tk.Frame(container, bg='#ffffff', relief='groove', bd=1)
+    table_wrap = tk.Frame(container, bg=theme.CARD_BG, relief='groove', bd=1)
     table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
     cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
     headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','status':'סטטוס'}
@@ -116,9 +117,9 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
         ctx.fs_pkg_driver_combo.bind('<Button-1>', lambda e: ctx.fs_pkg_driver_combo.event_generate('<Down>'))
     except Exception:
         pass
-    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._fs_add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._fs_delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-    tk.Button(pkg_frame, text="❌ נקה", command=ctx._fs_clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._fs_add_package_line, bg=theme.SUCCESS, fg='white').grid(row=0,column=6,padx=8)
+    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._fs_delete_selected_package, bg=theme.WARNING, fg='white').grid(row=0,column=7,padx=4)
+    tk.Button(pkg_frame, text="❌ נקה", command=ctx._fs_clear_packages, bg=theme.DANGER, fg='white').grid(row=0,column=8,padx=4)
     ctx.fs_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
     ctx.fs_packages_tree.heading('type', text='פריט הובלה')
     ctx.fs_packages_tree.heading('quantity', text='כמות')
@@ -128,14 +129,14 @@ def build_fabrics_send_tab(ctx, container: tk.Frame):
     ctx.fs_packages_tree.column('driver', width=110, anchor='center')
     ctx.fs_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
 
-    actions = tk.Frame(container, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,8))
-    tk.Button(actions, text='💾 שמור שליחת בדים', command=ctx._fs_save_shipment, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
+    actions = tk.Frame(container, bg=theme.PAGE_BG); actions.pack(fill='x', padx=10, pady=(0,8))
+    tk.Button(actions, text='💾 שמור שליחת בדים', command=ctx._fs_save_shipment, bg=theme.DARK, fg='white', font=(theme.FONT_FAMILY,11,'bold')).pack(side='right')
     ctx.fs_summary_var = tk.StringVar(value='0 בדים')
     ctx.fs_supplier_summary_var = tk.StringVar(value='ספק: -')
     status_bar = tk.Frame(container)
     status_bar.pack(fill='x', side='bottom')
-    tk.Label(status_bar, textvariable=ctx.fs_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='left', expand=True)
-    tk.Label(status_bar, textvariable=ctx.fs_supplier_summary_var, bg='#2c3e50', fg='white', anchor='e', padx=10).pack(fill='x', side='right')
+    tk.Label(status_bar, textvariable=ctx.fs_summary_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10).pack(fill='x', side='left', expand=True)
+    tk.Label(status_bar, textvariable=ctx.fs_supplier_summary_var, bg=theme.DARK, fg='white', anchor='e', padx=10).pack(fill='x', side='right')
     # Update supplier summary on change
     try:
         def _on_sup_change(event=None):

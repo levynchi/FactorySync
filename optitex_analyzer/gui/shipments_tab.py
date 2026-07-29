@@ -4,6 +4,11 @@ from datetime import datetime
 import json
 import os
 import calendar as _cal
+from . import theme
+
+# מע״מ ישראל
+SHIPMENT_VAT_RATE = 0.18
+
 
 class ShipmentsTabMixin:
     """Mixin לטאב 'הובלות' המציג שורות אריזה מכל הקליטות והתעודות.
@@ -13,7 +18,7 @@ class ShipmentsTabMixin:
     """
 
     def _create_shipments_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="הובלות")
 
         # פנימי: Notebook לתת-טאבים (סיכום / מובילים)
@@ -21,40 +26,40 @@ class ShipmentsTabMixin:
         inner_nb.pack(fill='both', expand=True, padx=5, pady=5)
 
         # --- עמוד סיכום הובלות ---
-        shipments_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        shipments_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(shipments_page, text='סיכום הובלות')
-        tk.Label(shipments_page, text="הובלות - סיכום הובלה מקליטות ותעודות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        tk.Label(shipments_page, text="הובלות - סיכום הובלה מקליטות ותעודות", font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=6)
 
         # פריים סינון
-        filter_frame = tk.LabelFrame(shipments_page, text='סינון', bg='#f7f9fa', font=('Arial',9,'bold'))
+        filter_frame = tk.LabelFrame(shipments_page, text='סינון', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9,'bold'))
         filter_frame.pack(fill='x', padx=8, pady=(0,4))
         
         # שורה ראשונה: מוביל ומצב תשלום
-        filter_row1 = tk.Frame(filter_frame, bg='#f7f9fa')
+        filter_row1 = tk.Frame(filter_frame, bg=theme.PAGE_BG)
         filter_row1.pack(fill='x', padx=4, pady=4)
         
-        tk.Label(filter_row1, text='מוביל:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(4,2))
+        tk.Label(filter_row1, text='מוביל:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(4,2))
         self.shipments_filter_driver_var = tk.StringVar(value='הכל')
         self.shipments_filter_driver_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_driver_var, width=15, state='readonly')
         self.shipments_filter_driver_combo['values'] = ['הכל']
         self.shipments_filter_driver_combo.pack(side='right', padx=2)
         self.shipments_filter_driver_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
         
-        tk.Label(filter_row1, text='מצב תשלום:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        tk.Label(filter_row1, text='מצב תשלום:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(10,2))
         self.shipments_filter_paid_var = tk.StringVar(value='הכל')
         filter_paid_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_paid_var, width=12, state='readonly')
         filter_paid_combo['values'] = ['הכל', 'רק שולם', 'רק לא שולם']
         filter_paid_combo.pack(side='right', padx=2)
         filter_paid_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
 
-        tk.Label(filter_row1, text='סוג הובלה:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        tk.Label(filter_row1, text='סוג הובלה:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(10,2))
         self.shipments_filter_kind_var = tk.StringVar(value='הכל')
         self.shipments_filter_kind_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_kind_var, width=14, state='readonly')
         self.shipments_filter_kind_combo['values'] = ['הכל', 'קליטה', 'הובלה', 'קליטת בדים', 'שליחת בדים']
         self.shipments_filter_kind_combo.pack(side='right', padx=2)
         self.shipments_filter_kind_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
 
-        tk.Label(filter_row1, text='פריט הובלה:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        tk.Label(filter_row1, text='פריט הובלה:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(10,2))
         self.shipments_filter_package_type_var = tk.StringVar(value='הכל')
         self.shipments_filter_package_type_combo = ttk.Combobox(filter_row1, textvariable=self.shipments_filter_package_type_var, width=14, state='readonly')
         self.shipments_filter_package_type_combo['values'] = ['הכל']
@@ -62,36 +67,36 @@ class ShipmentsTabMixin:
         self.shipments_filter_package_type_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
         
         # שורה שנייה: תאריכים
-        filter_row2 = tk.Frame(filter_frame, bg='#f7f9fa')
+        filter_row2 = tk.Frame(filter_frame, bg=theme.PAGE_BG)
         filter_row2.pack(fill='x', padx=4, pady=4)
         
-        tk.Label(filter_row2, text='תאריך מ:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(4,2))
+        tk.Label(filter_row2, text='תאריך מ:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(4,2))
         self.shipments_filter_date_from_var = tk.StringVar()
-        date_from_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_from_var, width=12, font=('Arial',9))
+        date_from_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_from_var, width=12, font=(theme.FONT_FAMILY,9))
         date_from_entry.pack(side='right', padx=2)
         date_from_entry.bind('<KeyRelease>', lambda e: self._refresh_shipments_table())
         tk.Button(filter_row2, text='📅', width=2, command=lambda: self._open_date_picker(date_from_entry, self.shipments_filter_date_from_var)).pack(side='right', padx=2)
         
-        tk.Label(filter_row2, text='עד:', bg='#f7f9fa', font=('Arial',9)).pack(side='right', padx=(10,2))
+        tk.Label(filter_row2, text='עד:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='right', padx=(10,2))
         self.shipments_filter_date_to_var = tk.StringVar()
-        date_to_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_to_var, width=12, font=('Arial',9))
+        date_to_entry = tk.Entry(filter_row2, textvariable=self.shipments_filter_date_to_var, width=12, font=(theme.FONT_FAMILY,9))
         date_to_entry.pack(side='right', padx=2)
         date_to_entry.bind('<KeyRelease>', lambda e: self._refresh_shipments_table())
         tk.Button(filter_row2, text='📅', width=2, command=lambda: self._open_date_picker(date_to_entry, self.shipments_filter_date_to_var)).pack(side='right', padx=2)
         
-        tk.Button(filter_row2, text='🔄 נקה סינון', command=self._clear_shipments_filter, bg='#95a5a6', fg='white', font=('Arial',8)).pack(side='right', padx=(10,2))
+        tk.Button(filter_row2, text='🔄 נקה סינון', command=self._clear_shipments_filter, bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY,8)).pack(side='right', padx=(10,2))
 
-        toolbar = tk.Frame(shipments_page, bg='#f7f9fa')
+        toolbar = tk.Frame(shipments_page, bg=theme.PAGE_BG)
         toolbar.pack(fill='x', padx=8, pady=(0,4))
         
         # כפתורי פעולה בצד ימין
-        tk.Button(toolbar, text="🔄 רענן", command=self._refresh_shipments_table, bg='#3498db', fg='white').pack(side='right', padx=4)
-        tk.Button(toolbar, text='🗑 מחק שורה נבחרת', command=self._delete_selected_shipment_row, bg='#c0392b', fg='white').pack(side='right', padx=4)
-        tk.Button(toolbar, text='✓ סמן כשולם', command=self._mark_shipment_as_paid, bg='#27ae60', fg='white').pack(side='right', padx=4)
-        tk.Button(toolbar, text='✗ בטל שולם', command=self._mark_shipment_as_unpaid, bg='#e67e22', fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text="🔄 רענן", command=self._refresh_shipments_table, bg=theme.PRIMARY, fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='🗑 מחק שורה נבחרת', command=self._delete_selected_shipment_row, bg=theme.DANGER_DARK, fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='✓ סמן כשולם', command=self._mark_shipment_as_paid, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar, text='✗ בטל שולם', command=self._mark_shipment_as_unpaid, bg=theme.WARNING, fg='white').pack(side='right', padx=4)
         
         # בקרי סידור בצד שמאל
-        tk.Label(toolbar, text='סידור לפי:', bg='#f7f9fa', font=('Arial',9)).pack(side='left', padx=(4,2))
+        tk.Label(toolbar, text='סידור לפי:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,9)).pack(side='left', padx=(4,2))
         self.shipments_sort_var = tk.StringVar(value='date_desc')
         sort_options = [
             ('תאריך (חדש לישן)', 'date_desc'),
@@ -110,7 +115,7 @@ class ShipmentsTabMixin:
         sort_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_shipments_table())
 
         # Container for tree + scrollbar
-        tree_container = tk.Frame(shipments_page, bg='#f7f9fa')
+        tree_container = tk.Frame(shipments_page, bg=theme.PAGE_BG)
         tree_container.pack(fill='both', expand=True, padx=10, pady=6)
 
         columns = ('id','kind','date','package_type','quantity','driver','paid')
@@ -136,25 +141,25 @@ class ShipmentsTabMixin:
         # Summary label below tree
         self.shipments_summary_var = tk.StringVar(value='')
         self.shipments_summary_label = tk.Label(shipments_page, textvariable=self.shipments_summary_var,
-            font=('Arial', 11, 'bold'), bg='#f7f9fa', fg='#2c3e50', anchor='e')
+            font=(theme.FONT_FAMILY, 11, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK, anchor='e')
         self.shipments_summary_label.pack(fill='x', padx=15, pady=(2, 6))
 
         self._refresh_shipments_table()
 
         # --- עמוד מובילים ---
-        drivers_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        drivers_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(drivers_page, text='מובילים')
 
-        form = tk.LabelFrame(drivers_page, text='הוספת / עדכון מוביל', bg='#f7f9fa')
+        form = tk.LabelFrame(drivers_page, text='הוספת / עדכון מוביל', bg=theme.PAGE_BG)
         form.pack(fill='x', padx=10, pady=8)
-        tk.Label(form, text='שם:', bg='#f7f9fa').grid(row=0, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(form, text='שם:', bg=theme.PAGE_BG).grid(row=0, column=0, padx=4, pady=4, sticky='e')
         self.driver_name_var = tk.StringVar()
         tk.Entry(form, textvariable=self.driver_name_var, width=30).grid(row=0, column=1, padx=4, pady=4)
-        tk.Label(form, text='טלפון:', bg='#f7f9fa').grid(row=0, column=2, padx=4, pady=4, sticky='e')
+        tk.Label(form, text='טלפון:', bg=theme.PAGE_BG).grid(row=0, column=2, padx=4, pady=4, sticky='e')
         self.driver_phone_var = tk.StringVar()
         tk.Entry(form, textvariable=self.driver_phone_var, width=20).grid(row=0, column=3, padx=4, pady=4)
-        tk.Button(form, text='➕ שמור/עדכן', command=self._add_or_update_driver, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6, pady=4)
-        tk.Button(form, text='🗑 מחק נבחר', command=self._delete_driver, bg='#c0392b', fg='white').grid(row=0, column=5, padx=6, pady=4)
+        tk.Button(form, text='➕ שמור/עדכן', command=self._add_or_update_driver, bg=theme.SUCCESS, fg='white').grid(row=0, column=4, padx=6, pady=4)
+        tk.Button(form, text='🗑 מחק נבחר', command=self._delete_driver, bg=theme.DANGER_DARK, fg='white').grid(row=0, column=5, padx=6, pady=4)
 
         drivers_columns = ('name','phone')
         self.drivers_tree = ttk.Treeview(drivers_page, columns=drivers_columns, show='headings', height=15)
@@ -172,45 +177,45 @@ class ShipmentsTabMixin:
         self._update_shipments_filter_drivers()
 
         # --- עמוד דו"ח חישוב הובלות לתשלום ---
-        payment_report_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        payment_report_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(payment_report_page, text='דו"ח חישוב הובלות לתשלום')
         
-        tk.Label(payment_report_page, text="דו\"ח חישוב הובלות לתשלום", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        tk.Label(payment_report_page, text="דו\"ח חישוב הובלות לתשלום", font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=10)
         
         # פריים לבחירת פרמטרים
-        params_frame = tk.LabelFrame(payment_report_page, text='בחירת פרמטרים', bg='#f7f9fa', font=('Arial',10,'bold'))
+        params_frame = tk.LabelFrame(payment_report_page, text='בחירת פרמטרים', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10,'bold'))
         params_frame.pack(fill='x', padx=20, pady=10)
         
         # שורה 1: בחירת מוביל
-        row1 = tk.Frame(params_frame, bg='#f7f9fa')
+        row1 = tk.Frame(params_frame, bg=theme.PAGE_BG)
         row1.pack(fill='x', padx=10, pady=8)
-        tk.Label(row1, text='מוביל:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(row1, text='מוביל:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.payment_driver_var = tk.StringVar()
         self.payment_driver_combo = ttk.Combobox(row1, textvariable=self.payment_driver_var, width=25, state='readonly')
         self.payment_driver_combo.pack(side='right', padx=5)
         
         # שורה 2: תאריך התחלה
-        row2 = tk.Frame(params_frame, bg='#f7f9fa')
+        row2 = tk.Frame(params_frame, bg=theme.PAGE_BG)
         row2.pack(fill='x', padx=10, pady=8)
-        tk.Label(row2, text='תאריך התחלה:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(row2, text='תאריך התחלה:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.payment_start_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-        payment_start_entry = tk.Entry(row2, textvariable=self.payment_start_date_var, width=15, font=('Arial',10))
+        payment_start_entry = tk.Entry(row2, textvariable=self.payment_start_date_var, width=15, font=(theme.FONT_FAMILY,10))
         payment_start_entry.pack(side='right', padx=5)
         tk.Button(row2, text='📅', width=3, command=lambda: self._open_date_picker(payment_start_entry, self.payment_start_date_var)).pack(side='right', padx=2)
         
         # שורה 3: תאריך סוף
-        row3 = tk.Frame(params_frame, bg='#f7f9fa')
+        row3 = tk.Frame(params_frame, bg=theme.PAGE_BG)
         row3.pack(fill='x', padx=10, pady=8)
-        tk.Label(row3, text='תאריך סוף:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(row3, text='תאריך סוף:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.payment_end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-        payment_end_entry = tk.Entry(row3, textvariable=self.payment_end_date_var, width=15, font=('Arial',10))
+        payment_end_entry = tk.Entry(row3, textvariable=self.payment_end_date_var, width=15, font=(theme.FONT_FAMILY,10))
         payment_end_entry.pack(side='right', padx=5)
         tk.Button(row3, text='📅', width=3, command=lambda: self._open_date_picker(payment_end_entry, self.payment_end_date_var)).pack(side='right', padx=2)
         
         # שורה 4: סינון לפי מצב תשלום
-        row4 = tk.Frame(params_frame, bg='#f7f9fa')
+        row4 = tk.Frame(params_frame, bg=theme.PAGE_BG)
         row4.pack(fill='x', padx=10, pady=8)
-        tk.Label(row4, text='סינון לפי מצב תשלום:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(row4, text='סינון לפי מצב תשלום:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.payment_filter_var = tk.StringVar(value='לא שולם')
         payment_filter_combo = ttk.Combobox(row4, textvariable=self.payment_filter_var, width=22, state='readonly')
         payment_filter_combo['values'] = ['הכל', 'רק לא שולם', 'רק שולם']
@@ -218,70 +223,70 @@ class ShipmentsTabMixin:
         payment_filter_combo.pack(side='right', padx=5)
         
         # כפתורי חישוב ושמירה
-        btn_frame = tk.Frame(params_frame, bg='#f7f9fa')
+        btn_frame = tk.Frame(params_frame, bg=theme.PAGE_BG)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        tk.Button(btn_frame, text='📊 חשב דו"ח', command=self._calculate_payment_report, bg='#2ecc71', fg='white', font=('Arial',11,'bold'), width=20).pack(side='right', padx=5)
-        self.save_report_btn = tk.Button(btn_frame, text='💾 שמור דוח', command=self._save_shipment_report, bg='#3498db', fg='white', font=('Arial',11,'bold'), width=20, state='disabled')
+        tk.Button(btn_frame, text='📊 חשב דו"ח', command=self._calculate_payment_report, bg=theme.SUCCESS_LIGHT, fg='white', font=(theme.FONT_FAMILY,11,'bold'), width=20).pack(side='right', padx=5)
+        self.save_report_btn = tk.Button(btn_frame, text='💾 שמור דוח', command=self._save_shipment_report, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY,11,'bold'), width=20, state='disabled')
         self.save_report_btn.pack(side='right', padx=5)
         
         # פריים לתוצאות
-        results_frame = tk.LabelFrame(payment_report_page, text='תוצאות', bg='#f7f9fa', font=('Arial',10,'bold'))
+        results_frame = tk.LabelFrame(payment_report_page, text='תוצאות', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10,'bold'))
         results_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
         # תצוגת תוצאות
-        self.payment_results_text = tk.Text(results_frame, height=15, width=60, font=('Arial',12), bg='white', fg='#2c3e50', state='disabled')
+        self.payment_results_text = tk.Text(results_frame, height=15, width=60, font=(theme.FONT_FAMILY,12), bg='white', fg=theme.DARK, state='disabled')
         self.payment_results_text.pack(fill='both', expand=True, padx=10, pady=10)
         
         # עדכון רשימת מובילים בטאב החדש
         self._update_payment_drivers_list()
 
         # --- עמוד מחירון הובלות ---
-        pricing_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        pricing_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(pricing_page, text='מחירון')
         
-        tk.Label(pricing_page, text="מחירון הובלות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        tk.Label(pricing_page, text="מחירון הובלות", font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=10)
         
         # פריים לעדכון מחירים
-        update_frame = tk.LabelFrame(pricing_page, text='עדכון מחירים', bg='#f7f9fa', font=('Arial',10,'bold'))
+        update_frame = tk.LabelFrame(pricing_page, text='עדכון מחירים', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10,'bold'))
         update_frame.pack(fill='x', padx=20, pady=10)
         
         # שורה 1: בחירת מוביל
-        pricing_row1 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row1 = tk.Frame(update_frame, bg=theme.PAGE_BG)
         pricing_row1.pack(fill='x', padx=10, pady=8)
-        tk.Label(pricing_row1, text='בחר מוביל:', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(pricing_row1, text='בחר מוביל:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.pricing_driver_var = tk.StringVar()
         self.pricing_driver_combo = ttk.Combobox(pricing_row1, textvariable=self.pricing_driver_var, width=25, state='readonly')
         self.pricing_driver_combo.pack(side='right', padx=5)
         self.pricing_driver_combo.bind('<<ComboboxSelected>>', self._load_driver_pricing)
         
         # שורה 2: מחיר לבד
-        pricing_row2 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row2 = tk.Frame(update_frame, bg=theme.PAGE_BG)
         pricing_row2.pack(fill='x', padx=10, pady=8)
-        tk.Label(pricing_row2, text='מחיר לבד (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(pricing_row2, text='מחיר לבד (₪):', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.pricing_fabric_var = tk.StringVar(value='0')
-        tk.Entry(pricing_row2, textvariable=self.pricing_fabric_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        tk.Entry(pricing_row2, textvariable=self.pricing_fabric_var, width=15, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         
         # שורה 3: מחיר לשק
-        pricing_row3 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row3 = tk.Frame(update_frame, bg=theme.PAGE_BG)
         pricing_row3.pack(fill='x', padx=10, pady=8)
-        tk.Label(pricing_row3, text='מחיר לשק (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(pricing_row3, text='מחיר לשק (₪):', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.pricing_bag_var = tk.StringVar(value='0')
-        tk.Entry(pricing_row3, textvariable=self.pricing_bag_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        tk.Entry(pricing_row3, textvariable=self.pricing_bag_var, width=15, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         
         # שורה 4: מחיר לשקית קטנה
-        pricing_row4 = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_row4 = tk.Frame(update_frame, bg=theme.PAGE_BG)
         pricing_row4.pack(fill='x', padx=10, pady=8)
-        tk.Label(pricing_row4, text='מחיר לשקית קטנה (₪):', bg='#f7f9fa', font=('Arial',10)).pack(side='right', padx=5)
+        tk.Label(pricing_row4, text='מחיר לשקית קטנה (₪):', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         self.pricing_small_bag_var = tk.StringVar(value='0')
-        tk.Entry(pricing_row4, textvariable=self.pricing_small_bag_var, width=15, font=('Arial',10)).pack(side='right', padx=5)
+        tk.Entry(pricing_row4, textvariable=self.pricing_small_bag_var, width=15, font=(theme.FONT_FAMILY,10)).pack(side='right', padx=5)
         
         # כפתור שמירה
-        pricing_btn_frame = tk.Frame(update_frame, bg='#f7f9fa')
+        pricing_btn_frame = tk.Frame(update_frame, bg=theme.PAGE_BG)
         pricing_btn_frame.pack(fill='x', padx=10, pady=10)
-        tk.Button(pricing_btn_frame, text='💾 שמור מחירים', command=self._save_driver_pricing, bg='#3498db', fg='white', font=('Arial',11,'bold'), width=20).pack()
+        tk.Button(pricing_btn_frame, text='💾 שמור מחירים', command=self._save_driver_pricing, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY,11,'bold'), width=20).pack()
         
         # טבלת מחירים קיימת
-        pricing_list_frame = tk.LabelFrame(pricing_page, text='מחירון נוכחי', bg='#f7f9fa', font=('Arial',10,'bold'))
+        pricing_list_frame = tk.LabelFrame(pricing_page, text='מחירון נוכחי', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10,'bold'))
         pricing_list_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
         pricing_columns = ('driver', 'fabric', 'bag', 'small_bag')
@@ -305,15 +310,16 @@ class ShipmentsTabMixin:
         self._refresh_pricing_table()
 
         # --- עמוד היסטוריית דוחות ---
-        reports_history_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        reports_history_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(reports_history_page, text='היסטוריית דוחות')
         
-        tk.Label(reports_history_page, text="היסטוריית דוחות הובלות", font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        tk.Label(reports_history_page, text="היסטוריית דוחות הובלות", font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=10)
         
-        # כפתור רענון
-        toolbar_reports = tk.Frame(reports_history_page, bg='#f7f9fa')
+        # כפתור רענון וייצוא PDF
+        toolbar_reports = tk.Frame(reports_history_page, bg=theme.PAGE_BG)
         toolbar_reports.pack(fill='x', padx=8, pady=(0,4))
-        tk.Button(toolbar_reports, text="🔄 רענן", command=self._refresh_reports_history, bg='#3498db', fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar_reports, text="🔄 רענן", command=self._refresh_reports_history, bg=theme.PRIMARY, fg='white').pack(side='right', padx=4)
+        tk.Button(toolbar_reports, text="📄 ייצוא PDF", command=self._export_selected_report_pdf, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
         
         # טבלת דוחות
         reports_columns = ('report_id', 'created_at', 'driver', 'period', 'total_cost', 'open_excel')
@@ -322,7 +328,7 @@ class ShipmentsTabMixin:
         self.reports_history_tree.heading('created_at', text='תאריך יצירה')
         self.reports_history_tree.heading('driver', text='מוביל')
         self.reports_history_tree.heading('period', text='תקופה')
-        self.reports_history_tree.heading('total_cost', text='סכום לתשלום (₪)')
+        self.reports_history_tree.heading('total_cost', text='סכום כולל מע״מ (₪)')
         self.reports_history_tree.heading('open_excel', text='פתיחה')
         self.reports_history_tree.column('report_id', width=80, anchor='center')
         self.reports_history_tree.column('created_at', width=140, anchor='center')
@@ -1009,23 +1015,29 @@ class ShipmentsTabMixin:
                 self.payment_results_text.insert('end', "\n" + "-" * 50 + "\n", 'separator')
                 total_line = f"סה\"כ חבילות: {total_packages}\n"
                 self.payment_results_text.insert('end', total_line, 'total')
-                cost_line = f"סה\"כ לתשלום: {total_cost:.2f} ₪\n"
-                self.payment_results_text.insert('end', cost_line, 'total_cost')
+                vat_amount = round(total_cost * SHIPMENT_VAT_RATE, 2)
+                total_incl_vat = round(total_cost + vat_amount, 2)
+                self.payment_results_text.insert('end', f"סה\"כ לפני מע\"מ: {total_cost:.2f} ₪\n", 'total')
+                self.payment_results_text.insert('end', f"מע\"מ (18%): {vat_amount:.2f} ₪\n", 'total')
+                self.payment_results_text.insert('end', f"סה\"כ לתשלום כולל מע\"מ: {total_incl_vat:.2f} ₪\n", 'total_cost')
             
             # עיצוב טקסט
-            self.payment_results_text.tag_config('title', font=('Arial', 13, 'bold'), foreground='#2c3e50')
-            self.payment_results_text.tag_config('header', font=('Arial', 12, 'bold'), foreground='#34495e')
-            self.payment_results_text.tag_config('data', font=('Arial', 11), foreground='#2c3e50')
-            self.payment_results_text.tag_config('data_warning', font=('Arial', 11), foreground='#e67e22')
-            self.payment_results_text.tag_config('separator', foreground='#95a5a6')
-            self.payment_results_text.tag_config('total', font=('Arial', 12, 'bold'), foreground='#27ae60')
-            self.payment_results_text.tag_config('total_cost', font=('Arial', 13, 'bold'), foreground='#27ae60')
-            self.payment_results_text.tag_config('no_data', font=('Arial', 11), foreground='#e74c3c')
+            self.payment_results_text.tag_config('title', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.DARK)
+            self.payment_results_text.tag_config('header', font=(theme.FONT_FAMILY, 12, 'bold'), foreground=theme.DARK_2)
+            self.payment_results_text.tag_config('data', font=(theme.FONT_FAMILY, 11), foreground=theme.DARK)
+            self.payment_results_text.tag_config('data_warning', font=(theme.FONT_FAMILY, 11), foreground=theme.WARNING)
+            self.payment_results_text.tag_config('separator', foreground=theme.MUTED)
+            self.payment_results_text.tag_config('total', font=(theme.FONT_FAMILY, 12, 'bold'), foreground=theme.SUCCESS)
+            self.payment_results_text.tag_config('total_cost', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.SUCCESS)
+            self.payment_results_text.tag_config('no_data', font=(theme.FONT_FAMILY, 11), foreground=theme.DANGER)
             
             self.payment_results_text.config(state='disabled')
             
             # שמירת נתוני הדוח לשימוש בשמירה
             if package_counts:
+                _subtotal = total_cost if 'total_cost' in locals() else 0
+                _vat = round(_subtotal * SHIPMENT_VAT_RATE, 2)
+                _incl = round(_subtotal + _vat, 2)
                 self._current_report_data = {
                     'driver': driver_name,
                     'start_date': start_date_str,
@@ -1033,7 +1045,10 @@ class ShipmentsTabMixin:
                     'payment_filter': payment_filter,
                     'package_counts': package_counts,
                     'total_packages': total_packages,
-                    'total_cost': total_cost if 'total_cost' in locals() else 0,
+                    'total_cost': _subtotal,
+                    'vat_rate': SHIPMENT_VAT_RATE,
+                    'vat_amount': _vat,
+                    'total_incl_vat': _incl,
                     'driver_pricing': driver_pricing,
                     'items_data': []  # נמלא בשמירה
                 }
@@ -1348,8 +1363,17 @@ class ShipmentsTabMixin:
             row += 1
             ws[f'A{row}'] = f"סה\"כ חבילות: {self._current_report_data['total_packages']}"
             ws[f'A{row}'].font = Font(bold=True)
+            subtotal = float(self._current_report_data.get('total_cost') or 0)
+            vat_amount = float(self._current_report_data.get('vat_amount') or round(subtotal * SHIPMENT_VAT_RATE, 2))
+            total_incl = float(self._current_report_data.get('total_incl_vat') or round(subtotal + vat_amount, 2))
             row += 1
-            ws[f'A{row}'] = f"סה\"כ לתשלום: {self._current_report_data['total_cost']:.2f} ₪"
+            ws[f'A{row}'] = f"סה\"כ לפני מע\"מ: {subtotal:.2f} ₪"
+            ws[f'A{row}'].font = Font(bold=True)
+            row += 1
+            ws[f'A{row}'] = f"מע\"מ (18%): {vat_amount:.2f} ₪"
+            ws[f'A{row}'].font = Font(bold=True)
+            row += 1
+            ws[f'A{row}'] = f"סה\"כ לתשלום כולל מע\"מ: {total_incl:.2f} ₪"
             ws[f'A{row}'].font = Font(bold=True, size=12, color="006100")
             
             # טבלה
@@ -1466,6 +1490,9 @@ class ShipmentsTabMixin:
                 'payment_filter': self._current_report_data['payment_filter'],
                 'total_packages': self._current_report_data['total_packages'],
                 'total_cost': self._current_report_data['total_cost'],
+                'vat_rate': self._current_report_data.get('vat_rate', SHIPMENT_VAT_RATE),
+                'vat_amount': self._current_report_data.get('vat_amount', 0),
+                'total_incl_vat': self._current_report_data.get('total_incl_vat', self._current_report_data['total_cost']),
                 'excel_file': excel_filename
             }
             
@@ -1505,12 +1532,15 @@ class ShipmentsTabMixin:
             # הוספה לטבלה (הפוך - חדשים ראשונים)
             for report in reversed(reports):
                 period = f"{report.get('start_date', '')} - {report.get('end_date', '')}"
+                display_total = report.get('total_incl_vat')
+                if display_total is None:
+                    display_total = report.get('total_cost', 0)
                 self.reports_history_tree.insert('', 'end', values=(
                     report.get('id', ''),
                     report.get('created_at', ''),
                     report.get('driver', ''),
                     period,
-                    f"{report.get('total_cost', 0):.2f}",
+                    f"{float(display_total or 0):.2f}",
                     '📄 פתח'
                 ))
         except Exception as e:
@@ -1561,3 +1591,60 @@ class ShipmentsTabMixin:
             
         except Exception as e:
             messagebox.showerror('שגיאה', f'שגיאה בפתיחת קובץ: {e}')
+
+    def _get_selected_shipment_report(self):
+        """מחזיר את רשומת הדוח הנבחרת מההיסטוריה, או None."""
+        if not hasattr(self, 'reports_history_tree'):
+            return None
+        selection = self.reports_history_tree.selection()
+        if not selection:
+            return None
+        values = self.reports_history_tree.item(selection[0], 'values')
+        if not values:
+            return None
+        report_id = values[0]
+        reports_file = os.path.join(os.getcwd(), 'shipment_reports.json')
+        if not os.path.exists(reports_file):
+            return None
+        with open(reports_file, 'r', encoding='utf-8') as f:
+            reports = json.load(f)
+        for r in reports:
+            if str(r.get('id')) == str(report_id):
+                return r
+        return None
+
+    def _export_selected_report_pdf(self):
+        """ייצוא הדוח הנבחר ל-PDF בפורמט A4."""
+        try:
+            report = self._get_selected_shipment_report()
+            if not report:
+                messagebox.showwarning('בחירת דוח', 'נא לבחור דוח מהטבלה לפני ייצוא PDF')
+                return
+
+            excel_filename = report.get('excel_file') or ''
+            excel_path = os.path.join(os.getcwd(), 'exports', 'shipment_reports', excel_filename)
+            if not excel_filename or not os.path.exists(excel_path):
+                messagebox.showerror('שגיאה', f'קובץ האקסל של הדוח לא נמצא:\n{excel_filename}')
+                return
+
+            from optitex_analyzer.core.shipment_report_pdf import (
+                create_shipment_report_pdf,
+                read_report_items_from_excel,
+            )
+
+            items = read_report_items_from_excel(excel_path)
+            reports_dir = os.path.join(os.getcwd(), 'exports', 'shipment_reports')
+            os.makedirs(reports_dir, exist_ok=True)
+            driver = report.get('driver', 'דוח')
+            report_id = report.get('id', '')
+            pdf_name = f"דוח_הובלות_{driver}_{report_id}.pdf"
+            pdf_path = os.path.join(reports_dir, pdf_name)
+
+            create_shipment_report_pdf(pdf_path, report, items)
+            try:
+                os.startfile(pdf_path)
+            except Exception:
+                pass
+            messagebox.showinfo('הצלחה', f'נוצר PDF:\n{pdf_name}')
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'שגיאה בייצוא PDF: {e}')

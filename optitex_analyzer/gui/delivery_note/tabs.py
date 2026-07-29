@@ -2,30 +2,31 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 from .methods import DeliveryNoteMethodsMixin
+from .. import theme
 
 
 class DeliveryNoteTabMixin(DeliveryNoteMethodsMixin):
     """Compose the Delivery Note tab by embedding the entry and list sub-tabs."""
 
     def _create_delivery_note_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="תעודת משלוח")
         tk.Label(
             tab,
             text="תעודת משלוח (הזנה ידנית)",
-            font=('Arial', 16, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50',
+            font=(theme.FONT_FAMILY, 16, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
         ).pack(pady=4)
 
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=4, pady=4)
 
         # Build subtabs via helpers
-        entry_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabrics_send_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabrics_send_list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        entry_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        list_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabrics_send_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabrics_send_list_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(entry_wrapper, text="קליטה")
         inner_nb.add(list_wrapper, text="תעודות שמורות")
         inner_nb.add(fabrics_send_wrapper, text="שליחת בדים")

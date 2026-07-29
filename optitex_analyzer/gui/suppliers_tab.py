@@ -1,13 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from . import theme
 
 class SuppliersTabMixin:
     """Mixin לטאב ספקים: הוספה, מחיקה והצגה."""
 
     def _create_suppliers_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="ספקים")
-        tk.Label(tab, text="ניהול ספקים", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        tk.Label(tab, text="ניהול ספקים", font=(theme.FONT_FAMILY,16,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=8)
 
         form = ttk.LabelFrame(tab, text="הוספת ספק", padding=10)
         form.pack(fill='x', padx=10, pady=6)
@@ -28,11 +29,11 @@ class SuppliersTabMixin:
             ("הערות", self.sup_notes_var, 25),
         ]
         for i,(lbl,var,w) in enumerate(labels):
-            tk.Label(form, text=f"{lbl}:", font=('Arial',10,'bold')).grid(row=0,column=i*2,sticky='w',padx=4,pady=4)
+            tk.Label(form, text=f"{lbl}:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0,column=i*2,sticky='w',padx=4,pady=4)
             tk.Entry(form, textvariable=var, width=w).grid(row=0,column=i*2+1,sticky='w',padx=2,pady=4)
 
-        tk.Button(form, text="➕ הוסף", command=self._add_supplier_record, bg='#27ae60', fg='white').grid(row=0, column=len(labels)*2, padx=8)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_supplier, bg='#e67e22', fg='white').grid(row=0, column=len(labels)*2+1, padx=4)
+        tk.Button(form, text="➕ הוסף", command=self._add_supplier_record, bg=theme.SUCCESS, fg='white').grid(row=0, column=len(labels)*2, padx=8)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_supplier, bg=theme.WARNING, fg='white').grid(row=0, column=len(labels)*2+1, padx=4)
 
         tree_frame = ttk.LabelFrame(tab, text="ספקים", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)

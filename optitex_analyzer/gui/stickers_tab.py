@@ -8,6 +8,7 @@ import pandas as pd
 
 from optitex_analyzer.core.label_sheet import LOGO_BABY_BASIC_PATH
 from optitex_analyzer.gui.label_generator_frame import LabelGeneratorFrame
+from . import theme
 
 # SumatraPDF path for 1:1 scale printing
 SUMATRA_PDF_PATH = r"C:\Users\levyn\AppData\Local\SumatraPDF\SumatraPDF.exe"
@@ -67,7 +68,7 @@ class StickersTabMixin:
         self.stickers_sub_notebook.add(paths_tab, text="הגדרת נתיבים")
 
         # Header
-        tk.Label(paths_tab, text="הגדרת נתיבים למדבקות", font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+        tk.Label(paths_tab, text="הגדרת נתיבים למדבקות", font=(theme.FONT_FAMILY, 14, 'bold')).pack(pady=(10, 5))
 
         # Mapping input frame
         input_frame = ttk.LabelFrame(paths_tab, text="הוספת מיפוי", padding=10)
@@ -100,7 +101,7 @@ class StickersTabMixin:
         ttk.Button(input_frame, text="בחר...", command=self._browse_pdf_file).grid(row=0, column=8, padx=5, pady=5)
 
         # Add button
-        tk.Button(input_frame, text="➕ הוסף מיפוי", bg="#27ae60", fg="white", command=self._add_path_mapping).grid(row=0, column=9, padx=10, pady=5)
+        tk.Button(input_frame, text="➕ הוסף מיפוי", bg=theme.SUCCESS, fg="white", command=self._add_path_mapping).grid(row=0, column=9, padx=10, pady=5)
 
         # Mappings table
         table_frame = ttk.LabelFrame(paths_tab, text="טבלת מיפויים", padding=10)
@@ -125,10 +126,10 @@ class StickersTabMixin:
         # Actions
         actions = tk.Frame(paths_tab)
         actions.pack(fill="x", padx=15, pady=(0, 10))
-        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_path_mapping).pack(side="left", padx=5)
-        tk.Button(actions, text="💾 שמור", bg="#3498db", fg="white", command=self._label_paths_save).pack(side="left", padx=5)
-        tk.Button(actions, text="📤 ייצא לאקסל", bg="#9b59b6", fg="white", command=self._export_paths_to_excel).pack(side="left", padx=5)
-        tk.Button(actions, text="📥 ייבא מאקסל", bg="#1abc9c", fg="white", command=self._import_paths_from_excel).pack(side="left", padx=5)
+        tk.Button(actions, text="🗑️ מחק נבחר", bg=theme.WARNING, fg="white", command=self._delete_path_mapping).pack(side="left", padx=5)
+        tk.Button(actions, text="💾 שמור", bg=theme.PRIMARY, fg="white", command=self._label_paths_save).pack(side="left", padx=5)
+        tk.Button(actions, text="📤 ייצא לאקסל", bg=theme.PURPLE_LIGHT, fg="white", command=self._export_paths_to_excel).pack(side="left", padx=5)
+        tk.Button(actions, text="📥 ייבא מאקסל", bg=theme.TEAL, fg="white", command=self._import_paths_from_excel).pack(side="left", padx=5)
 
         # Initialize data
         self._label_paths_data = {"mappings": []}
@@ -308,8 +309,8 @@ class StickersTabMixin:
         frm.pack(fill='both', expand=True)
 
         # Info labels
-        ttk.Label(frm, text=f"מוצר: {product}", font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=3, sticky='w', pady=2)
-        ttk.Label(frm, text=f"מידה: {size}  |  סוג בד: {fabric}", font=('Arial', 10)).grid(row=1, column=0, columnspan=3, sticky='w', pady=(0, 10))
+        ttk.Label(frm, text=f"מוצר: {product}", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, columnspan=3, sticky='w', pady=2)
+        ttk.Label(frm, text=f"מידה: {size}  |  סוג בד: {fabric}", font=(theme.FONT_FAMILY, 10)).grid(row=1, column=0, columnspan=3, sticky='w', pady=(0, 10))
 
         # Path entry
         ttk.Label(frm, text="נתיב:").grid(row=2, column=0, sticky='e', padx=5, pady=5)
@@ -443,7 +444,7 @@ class StickersTabMixin:
             frm = ttk.Frame(dialog, padding=20)
             frm.pack(fill='both', expand=True)
 
-            ttk.Label(frm, text=f"נמצאו {len(df)} שורות בקובץ", font=('Arial', 11, 'bold')).pack(pady=(0, 15))
+            ttk.Label(frm, text=f"נמצאו {len(df)} שורות בקובץ", font=(theme.FONT_FAMILY, 11, 'bold')).pack(pady=(0, 15))
             ttk.Label(frm, text="בחר אופן ייבוא:").pack(pady=(0, 10))
 
             import_mode = tk.StringVar(value="add")
@@ -517,7 +518,7 @@ class StickersTabMixin:
         self.stickers_sub_notebook.add(print_tab, text="הדפסה")
 
         # Header
-        tk.Label(print_tab, text="הדפסת מדבקות", font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+        tk.Label(print_tab, text="הדפסת מדבקות", font=(theme.FONT_FAMILY, 14, 'bold')).pack(pady=(10, 5))
 
         # Selection frame
         select_frame = ttk.LabelFrame(print_tab, text="בחירת פריטים להדפסה", padding=10)
@@ -545,7 +546,7 @@ class StickersTabMixin:
         ttk.Label(row1, text="כמות:").pack(side="left", padx=(20, 5))
         ttk.Entry(row1, textvariable=self._print_qty_var, width=8).pack(side="left", padx=5)
 
-        tk.Button(row1, text="➕ הוסף לרשימה", bg="#27ae60", fg="white", command=self._add_to_print_queue).pack(side="left", padx=20)
+        tk.Button(row1, text="➕ הוסף לרשימה", bg=theme.SUCCESS, fg="white", command=self._add_to_print_queue).pack(side="left", padx=20)
 
         # Row 2: Sizes (checkboxes)
         sizes_frame = ttk.LabelFrame(select_frame, text="בחר מידות", padding=5)
@@ -580,9 +581,9 @@ class StickersTabMixin:
         actions = tk.Frame(print_tab)
         actions.pack(fill="x", padx=15, pady=(0, 10))
 
-        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white", command=self._delete_from_print_queue).pack(side="left", padx=5)
-        tk.Button(actions, text="🧹 נקה הכל", bg="#95a5a6", fg="white", command=self._clear_print_queue).pack(side="left", padx=5)
-        tk.Button(actions, text="🖨️ הדפס הכל", bg="#2980b9", fg="white", font=('Arial', 11, 'bold'), command=self._print_all).pack(side="right", padx=5)
+        tk.Button(actions, text="🗑️ מחק נבחר", bg=theme.WARNING, fg="white", command=self._delete_from_print_queue).pack(side="left", padx=5)
+        tk.Button(actions, text="🧹 נקה הכל", bg=theme.MUTED, fg="white", command=self._clear_print_queue).pack(side="left", padx=5)
+        tk.Button(actions, text="🖨️ הדפס הכל", bg=theme.PRIMARY_DARK, fg="white", font=(theme.FONT_FAMILY, 11, 'bold'), command=self._print_all).pack(side="right", padx=5)
 
         # Print queue data
         self._print_queue_data = []

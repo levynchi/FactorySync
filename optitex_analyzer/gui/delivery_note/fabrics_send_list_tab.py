@@ -1,17 +1,18 @@
 import tkinter as tk
 from tkinter import ttk
+from .. import theme
 
 # UI builder for the saved fabrics shipments list
 
 def build_fabrics_send_list_tab(ctx, container: tk.Frame):
     # Create a main frame with scrollbar
-    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame = tk.Frame(container, bg=theme.PAGE_BG)
     main_frame.pack(fill='both', expand=True)
     
     # Create canvas and scrollbar
-    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    canvas = tk.Canvas(main_frame, bg=theme.PAGE_BG)
     scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
     
     scrollable_frame.bind(
         "<Configure>",
@@ -42,15 +43,15 @@ def build_fabrics_send_list_tab(ctx, container: tk.Frame):
     # Use scrollable_frame as the new container
     container = scrollable_frame
     
-    header = tk.Frame(container, bg='#f7f9fa')
+    header = tk.Frame(container, bg=theme.PAGE_BG)
     header.pack(fill='x', padx=10, pady=(8,4))
-    tk.Label(header, text='שליחות בדים שמורות', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+    tk.Label(header, text='שליחות בדים שמורות', font=(theme.FONT_FAMILY,12,'bold'), bg=theme.PAGE_BG).pack(side='right')
 
     # Minimal columns per request: ID (internal), Date, Count of rolls, Delete
     cols = (
         'id','date','count','delete'
     )
-    table_wrap = tk.Frame(container, bg='#ffffff')
+    table_wrap = tk.Frame(container, bg=theme.CARD_BG)
     table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
 
     ctx.fabrics_shipments_tree = ttk.Treeview(table_wrap, columns=cols, show='headings')
@@ -76,13 +77,13 @@ def build_fabrics_send_list_tab(ctx, container: tk.Frame):
     except Exception:
         pass
 
-    btns = tk.Frame(container, bg='#f7f9fa')
+    btns = tk.Frame(container, bg=theme.PAGE_BG)
     btns.pack(fill='x', padx=10, pady=(0,6))
     # View button similar to delivery notes list
     try:
-        tk.Button(btns, text='👁 צפה', command=ctx._open_selected_fabrics_shipment_view, bg='#2c3e50', fg='white').pack(side='right', padx=(0,8))
+        tk.Button(btns, text='👁 צפה', command=ctx._open_selected_fabrics_shipment_view, bg=theme.DARK, fg='white').pack(side='right', padx=(0,8))
         ctx.fabrics_shipments_tree.bind('<Double-1>', ctx._open_selected_fabrics_shipment_view)
     except Exception:
         pass
-    tk.Button(btns, text='🔄 רענן', command=ctx._fs_refresh_shipments_list, bg='#3498db', fg='white').pack(side='right')
+    tk.Button(btns, text='🔄 רענן', command=ctx._fs_refresh_shipments_list, bg=theme.PRIMARY, fg='white').pack(side='right')
     ctx._fs_refresh_shipments_list()

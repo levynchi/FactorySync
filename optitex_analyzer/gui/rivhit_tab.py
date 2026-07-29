@@ -590,6 +590,17 @@ class RivhitTabMixin:
         self.rivhit_size_vars = {}
         self._build_rivhit_sizes_checkboxes()
 
+        # Colors multi-select for batch creation (מוצר לכל צבע)
+        colors_box = tk.LabelFrame(form, text="יצירת מוצרים לפי צבעים (מוצר לכל צבע, עם ברקוד חדש)", bg=theme.PAGE_BG, fg=theme.DARK, font=(theme.FONT_FAMILY, 9, 'bold'), padx=8, pady=6)
+        colors_box.pack(fill='x', pady=(8, 2))
+        colors_actions = tk.Frame(colors_box, bg=theme.PAGE_BG); colors_actions.pack(fill='x', anchor='e')
+        tk.Button(colors_actions, text="נקה בחירה", command=self._clear_rivhit_color_selection, bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 8)).pack(side='right', padx=3)
+        tk.Button(colors_actions, text="סמן הכל", command=self._select_all_rivhit_colors, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 8)).pack(side='right', padx=3)
+        tk.Button(colors_actions, text="🎨 נהל צבעים", command=self._open_fabric_color_manager, bg=theme.PURPLE, fg='white', font=(theme.FONT_FAMILY, 8, 'bold')).pack(side='right', padx=3)
+        self.rivhit_colors_grid = tk.Frame(colors_box, bg=theme.PAGE_BG); self.rivhit_colors_grid.pack(fill='x', pady=(4, 0))
+        self.rivhit_color_vars = {}
+        self._build_rivhit_colors_checkboxes()
+
         # Print (label) details - applied to the created product(s)
         self.rivhit_print_name_var = tk.StringVar()
         self.rivhit_print_size_var = tk.StringVar()
@@ -628,6 +639,7 @@ class RivhitTabMixin:
         btns = tk.Frame(form, bg=theme.PAGE_BG); btns.pack(pady=(8, 2))
         tk.Button(btns, text="➕ הוסף מוצר", command=self._add_rivhit_product, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=4)
         tk.Button(btns, text="🧩 צור מוצרים לפי מידות", command=self._create_rivhit_products_by_sizes, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=4)
+        tk.Button(btns, text="🎨 צור מוצרים לפי צבעים", command=self._create_rivhit_products_by_colors, bg=theme.PURPLE, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=4)
 
         # Pending list toolbar
         toolbar = tk.Frame(tab, bg=theme.PAGE_BG)
@@ -707,7 +719,7 @@ class RivhitTabMixin:
         else:
             self.rivhit_print_image_label_var.set('ללא תמונה')
 
-    def _apply_rivhit_print_fields(self, barcode, size=''):
+    def _apply_rivhit_print_fields(self, barcode, size='', color=''):
         """שומר פרטי הדפסה (מדבקה) למוצר שנוצר לפי הברקוד שלו.
 
         אם הוזן קוד דגם - התמונה נשמרת פעם אחת ברמת הדגם (family_<code>) והשדות
@@ -724,8 +736,9 @@ class RivhitTabMixin:
         model_code = (self.rivhit_print_model_code_var.get() or '').strip()
         brand = self._current_add_brand()
         size = str(size or '').strip()
+        color = str(color or '').strip()
         # החל רק אם המשתמש הזין פרט הדפסה כלשהו
-        if not (print_name or fabric or img_src or size or size_unit or model_code):
+        if not (print_name or fabric or img_src or size or size_unit or model_code or color):
             return
         # תמונה: אם יש קוד דגם - שם קובץ לפי המותג+הדגם; אחרת לפי הברקוד
         image_rel = ''
@@ -757,6 +770,7 @@ class RivhitTabMixin:
             'image': image_rel,
             'model_code': model_code,
             'brand': brand,
+            'color': color,
         })
         # יצירה/עדכון של דגם האב והפצה לכל הוואריאנטים (מותג+קוד)
         if model_code:
@@ -830,6 +844,518 @@ class RivhitTabMixin:
     def _clear_rivhit_size_selection(self):
         for var in self.rivhit_size_vars.values():
             var.set(False)
+
+    # ===== יצירת מוצרים לפי צבעים =====
+    @staticmethod
+    def _valid_hex(value):
+        """מחזיר hex תקין (#rrggbb) או ריק."""
+        v = str(value or '').strip().lower()
+        if len(v) == 7 and v.startswith('#') and all(ch in '0123456789abcdef' for ch in v[1:]):
+            return v
+        return ''
+
+    @staticmethod
+    def _contrast_fg(hex_value):
+        """צבע טקסט (שחור/לבן) קריא על רקע נתון."""
+        try:
+            r, g, b = int(hex_value[1:3], 16), int(hex_value[3:5], 16), int(hex_value[5:7], 16)
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            return '#000000' if luminance > 140 else '#ffffff'
+        except Exception:
+            return '#000000'
+
+    def _build_rivhit_colors_checkboxes(self):
+        for w in self.rivhit_colors_grid.winfo_children():
+            w.destroy()
+        self.rivhit_color_vars = {}
+        palette = list(getattr(self.data_processor, 'fabric_colors_palette', []) or [])
+        if not palette:
+            tk.Label(self.rivhit_colors_grid, text="אין צבעים בפלטה - לחץ על 'נהל צבעים' כדי להוסיף צבע מתמונת בד",
+                     bg=theme.PAGE_BG, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9)).grid(row=0, column=0, sticky='e', padx=4, pady=2)
+            return
+        cols = 6
+        idx = 0
+        for entry in palette:
+            name = str((entry or {}).get('name', '')).strip()
+            if not name:
+                continue
+            hex_val = self._valid_hex((entry or {}).get('hex', '')) or '#cccccc'
+            cell = tk.Frame(self.rivhit_colors_grid, bg=theme.PAGE_BG)
+            cell.grid(row=idx // cols, column=idx % cols, sticky='w', padx=4, pady=1)
+            var = tk.BooleanVar(value=False)
+            self.rivhit_color_vars[name] = var
+            tk.Label(cell, width=2, bg=hex_val, relief='solid', bd=1).pack(side='right', padx=(0, 3))
+            tk.Checkbutton(cell, text=name, variable=var, bg=theme.PAGE_BG, anchor='w').pack(side='right')
+            idx += 1
+
+    def _select_all_rivhit_colors(self):
+        for var in self.rivhit_color_vars.values():
+            var.set(True)
+
+    def _clear_rivhit_color_selection(self):
+        for var in self.rivhit_color_vars.values():
+            var.set(False)
+
+    def _create_rivhit_products_by_colors(self):
+        name = (self.rivhit_new_name_var.get() or '').strip()
+        if not name:
+            messagebox.showwarning("שדה חסר", "יש להזין שם פריט")
+            return
+        selected_names = [c for c, var in self.rivhit_color_vars.items() if var.get()]
+        if not selected_names:
+            messagebox.showwarning("לא נבחרו צבעים", "יש לבחור לפחות צבע אחד")
+            return
+        palette = {str((e or {}).get('name', '')).strip(): (e or {}) for e in (getattr(self.data_processor, 'fabric_colors_palette', []) or [])}
+        selected = [{'name': c, 'hex': palette.get(c, {}).get('hex', '')} for c in selected_names]
+        try:
+            created = self.data_processor.add_rivhit_new_products_by_colors(
+                base_name=name,
+                colors=selected,
+                cost_nis=self.rivhit_new_cost_var.get(),
+                sale_nis=self.rivhit_new_sale_var.get(),
+                category=self.rivhit_new_cat_var.get(),
+                digital_price=self.rivhit_new_digital_var.get(),
+                last_item_num=(self.rivhit_new_last_item_var.get() or '').strip() or None,
+            )
+            # החל פרטי הדפסה לכל מוצר שנוצר, עם הצבע התואם שלו (מידה - מהשדה הבודד אם הוזנה)
+            single_size = (self.rivhit_print_size_var.get() or '').strip()
+            for rec, color in zip(created, selected):
+                self._apply_rivhit_print_fields(rec.get('item_part_num', ''), size=single_size, color=color['name'])
+            self.rivhit_new_name_var.set('')
+            self.rivhit_new_part_var.set('')
+            self.rivhit_new_cost_var.set('')
+            self.rivhit_new_sale_var.set('')
+            self.rivhit_new_digital_var.set('')
+            self.rivhit_new_cat_var.set('')
+            self._reset_rivhit_print_fields()
+            self._clear_rivhit_color_selection()
+            self._refresh_rivhit_new_table()
+            messagebox.showinfo("הצלחה", f"נוצרו {len(created)} מוצרים לפי הצבעים שנבחרו")
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+
+    # ===== ניהול פלטת צבעי בד =====
+    def _open_fabric_color_manager(self):
+        """דיאלוג לניהול פלטת צבעי הבד: רשימה, הוספה מתמונה/ידנית, מחיקה."""
+        dlg = tk.Toplevel(self.notebook)
+        dlg.title("ניהול צבעי בד")
+        dlg.geometry("720x440")
+        dlg.grab_set()
+
+        tk.Label(dlg, text="פלטת צבעי בד - כל צבע משמש ליצירת מוצר עם ברקוד משלו (דאבל-קליק לעריכה)",
+                 font=(theme.FONT_FAMILY, 11, 'bold')).pack(pady=(10, 4))
+
+        table_frame = tk.Frame(dlg)
+        table_frame.pack(fill='both', expand=True, padx=12, pady=6)
+        tree = ttk.Treeview(table_frame, columns=('name', 'hex', 'supplier', 'sampled_at'), show='headings')
+        tree.heading('name', text='שם הצבע')
+        tree.heading('hex', text='קוד צבע')
+        tree.heading('supplier', text='ספק')
+        tree.heading('sampled_at', text='תאריך דגימה')
+        tree.column('name', width=200, anchor='center')
+        tree.column('hex', width=100, anchor='center')
+        tree.column('supplier', width=150, anchor='center')
+        tree.column('sampled_at', width=110, anchor='center')
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscroll=vsb.set)
+        tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+
+        def refresh():
+            for it in tree.get_children():
+                tree.delete(it)
+            for entry in (getattr(self.data_processor, 'fabric_colors_palette', []) or []):
+                name = str((entry or {}).get('name', '')).strip()
+                if not name:
+                    continue
+                hex_val = self._valid_hex((entry or {}).get('hex', '')) or '#cccccc'
+                tag = f"c_{hex_val[1:]}"
+                tree.tag_configure(tag, background=hex_val, foreground=self._contrast_fg(hex_val))
+                tree.insert('', 'end', values=(
+                    name, hex_val,
+                    str((entry or {}).get('supplier', '')),
+                    str((entry or {}).get('sampled_at', '')),
+                ), tags=(tag,))
+            # רענון הצ'קבוקסים בטופס ההוספה
+            self._build_rivhit_colors_checkboxes()
+
+        def add_from_image():
+            self._add_fabric_color_from_image(parent=dlg, on_saved=refresh)
+
+        def add_from_screen():
+            self._add_fabric_color_from_screen(parent=dlg, on_saved=refresh)
+
+        def add_manual():
+            from tkinter import colorchooser
+            picked = colorchooser.askcolor(title='בחר צבע', parent=dlg)
+            if not picked or not picked[1]:
+                return
+            self._prompt_save_picked_color(picked[1], parent=dlg, on_saved=refresh)
+
+        def paste_from_clipboard(event=None):
+            img = self._grab_clipboard_image(dlg)
+            if img is None:
+                messagebox.showinfo("אין תמונה בלוח",
+                                    "העתק תמונה (Print Screen או Win+Shift+S לחיתוך אזור) ואז לחץ הדבק",
+                                    parent=dlg)
+                return
+            self._add_fabric_color_from_image(parent=dlg, on_saved=refresh, image=img)
+
+        def edit_selected(event=None):
+            sel = tree.selection()
+            if not sel:
+                if event is None:
+                    messagebox.showinfo("לא נבחר", "יש לבחור צבע לעריכה", parent=dlg)
+                return
+            vals = tree.item(sel[0], 'values')
+            name, hex_val = str(vals[0]), str(vals[1])
+            self._prompt_save_picked_color(hex_val, parent=dlg, on_saved=refresh, edit_name=name)
+
+        def delete_selected():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showinfo("לא נבחר", "יש לבחור צבע למחיקה", parent=dlg)
+                return
+            name = str(tree.item(sel[0], 'values')[0])
+            if messagebox.askyesno("מחיקה", f"למחוק את הצבע '{name}' מהפלטה?", parent=dlg):
+                self.data_processor.delete_fabric_palette_color(name)
+                refresh()
+
+        tree.bind('<Double-1>', edit_selected)
+
+        btns = tk.Frame(dlg)
+        btns.pack(fill='x', padx=12, pady=(0, 10))
+        tk.Button(btns, text="📷 הוסף צבע מתמונה", command=add_from_image, bg=theme.PURPLE, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="📋 הדבק תמונה מהלוח", command=paste_from_clipboard, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="🖥️ דגום צבע מהמסך", command=add_from_screen, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="🎨 הוסף צבע ידני", command=add_manual, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="🗑️ מחק נבחר", command=delete_selected, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(btns, text="סגור", command=dlg.destroy).pack(side='left', padx=5)
+        # keycode 86 = מקש V בכל פריסת מקלדת (גם בעברית)
+        dlg.bind('<Control-KeyPress>', lambda e: paste_from_clipboard() if e.keycode == 86 else None)
+
+        refresh()
+
+    def _add_fabric_color_from_screen(self, parent=None, on_saved=None):
+        """פיקר צבע מהמסך: המסך מוקפא לתצוגה מלאה, קוד הצבע מוצג ליד הסמן, ולחיצה בוחרת."""
+        try:
+            from PIL import ImageGrab, ImageTk
+        except ImportError:
+            messagebox.showerror("חסרה ספרייה", "נדרשת הספרייה Pillow (PIL) לדגימת צבע מהמסך", parent=parent)
+            return
+        import time
+
+        root = self.notebook.winfo_toplevel()
+        # הסתרת חלונות האפליקציה כדי לחשוף את מה שמאחוריהם, ואז צילום המסך
+        hidden = []
+        for w in (parent, root):
+            try:
+                if w is not None and w.winfo_viewable():
+                    w.withdraw()
+                    hidden.append(w)
+            except Exception:
+                pass
+        try:
+            root.update_idletasks()
+            root.update()
+            time.sleep(0.3)  # מתן זמן למערכת ההפעלה לצייר את מה שמאחורי החלונות
+            shot = ImageGrab.grab().convert('RGB')
+        finally:
+            for w in hidden:
+                try:
+                    w.deiconify()
+                except Exception:
+                    pass
+
+        overlay = tk.Toplevel(root)
+        overlay.attributes('-fullscreen', True)
+        overlay.attributes('-topmost', True)
+        overlay.update_idletasks()
+        sw = max(overlay.winfo_screenwidth(), 1)
+        sh = max(overlay.winfo_screenheight(), 1)
+        # התאמת קנה מידה בין קואורדינטות tkinter לפיקסלים בצילום (DPI scaling)
+        scale_x = shot.width / sw
+        scale_y = shot.height / sh
+        disp = shot if shot.size == (sw, sh) else shot.resize((sw, sh))
+        photo = ImageTk.PhotoImage(disp)
+        canvas = tk.Canvas(overlay, width=sw, height=sh, highlightthickness=0, cursor='crosshair')
+        canvas.pack(fill='both', expand=True)
+        canvas.create_image(0, 0, anchor='nw', image=photo)
+        canvas._photo_ref = photo
+
+        # פס הנחיה עליון
+        canvas.create_rectangle(0, 0, sw, 34, fill='#1f2933', outline='')
+        canvas.create_text(sw // 2, 17, text="לחץ בכל מקום על המסך כדי לדגום צבע | Esc לביטול",
+                           fill='white', font=(theme.FONT_FAMILY, 11, 'bold'))
+
+        # תווית צפה ליד הסמן: ריבוע צבע + קוד hex
+        info_rect = canvas.create_rectangle(0, 0, 0, 0, fill='#ffffff', outline='#333333', state='hidden')
+        info_swatch = canvas.create_rectangle(0, 0, 0, 0, fill='#ffffff', outline='#333333', state='hidden')
+        info_text = canvas.create_text(0, 0, text='', anchor='w', font=('Consolas', 11, 'bold'), state='hidden')
+
+        def _hex_at(x, y):
+            px = min(max(int(x * scale_x), 0), shot.width - 1)
+            py = min(max(int(y * scale_y), 0), shot.height - 1)
+            r, g, b = shot.getpixel((px, py))
+            return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
+        def on_motion(event):
+            hex_val = _hex_at(event.x, event.y)
+            # מיקום התווית ליד הסמן, עם היפוך ליד קצוות המסך
+            bx = event.x + 18 if event.x < sw - 150 else event.x - 148
+            by = event.y + 18 if event.y < sh - 60 else event.y - 46
+            canvas.coords(info_rect, bx, by, bx + 130, by + 28)
+            canvas.coords(info_swatch, bx + 6, by + 5, bx + 24, by + 23)
+            canvas.coords(info_text, bx + 32, by + 14)
+            canvas.itemconfig(info_swatch, fill=hex_val)
+            canvas.itemconfig(info_text, text=hex_val)
+            for item in (info_rect, info_swatch, info_text):
+                canvas.itemconfig(item, state='normal')
+                canvas.tag_raise(item)
+
+        def on_click(event):
+            hex_val = _hex_at(event.x, event.y)
+            overlay.destroy()
+            self._prompt_save_picked_color(hex_val, parent=parent, on_saved=on_saved)
+
+        def _on_escape(e):
+            overlay.destroy()
+            # החזרת ה-grab לדיאלוג ניהול הצבעים (אם קיים) אחרי ביטול
+            if parent is not None:
+                try:
+                    parent.grab_set()
+                except Exception:
+                    pass
+
+        canvas.bind('<Motion>', on_motion)
+        canvas.bind('<Button-1>', on_click)
+        overlay.bind('<Escape>', _on_escape)
+        # העברת ה-grab מהדיאלוג (המוסתר בזמן הצילום) ל-overlay - בלי זה כל הקלט
+        # ממשיך לזרום לדיאלוג ניהול הצבעים וה-overlay לא מקבל עכבר/מקלדת כלל
+        overlay.grab_set()
+        overlay.focus_force()
+
+    def _prompt_save_picked_color(self, hex_val, parent=None, on_saved=None, edit_name=None):
+        """דיאלוג שמירה/עריכה של צבע: קוד (עם העתקה), שם, ספק ותאריך דגימה.
+
+        edit_name: שם צבע קיים לעריכה - הפרטים נטענים ממנו והשמירה מעדכנת אותו.
+        """
+        from datetime import datetime
+        hex_val = self._valid_hex(hex_val) or '#cccccc'
+        existing = {}
+        if edit_name:
+            existing = next((e for e in (getattr(self.data_processor, 'fabric_colors_palette', []) or [])
+                             if str((e or {}).get('name', '')).strip() == edit_name), {}) or {}
+        dlg = tk.Toplevel(parent or self.notebook)
+        dlg.title("עריכת צבע" if edit_name else "צבע שנדגם")
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        frm = tk.Frame(dlg, padx=15, pady=15)
+        frm.pack(fill='both', expand=True)
+
+        tk.Label(frm, width=8, height=3, bg=hex_val, relief='solid', bd=1).grid(row=0, column=0, rowspan=2, padx=(0, 12))
+        tk.Label(frm, text='קוד הצבע:', anchor='e').grid(row=0, column=2, sticky='e', padx=(6, 2))
+        hex_entry = tk.Entry(frm, width=12, font=('Consolas', 12, 'bold'), justify='center')
+        hex_entry.insert(0, hex_val)
+        hex_entry.config(state='readonly')
+        hex_entry.grid(row=0, column=1, sticky='w')
+
+        copied_var = tk.StringVar(value='')
+
+        def copy_hex():
+            dlg.clipboard_clear()
+            dlg.clipboard_append(hex_val)
+            copied_var.set('הועתק!')
+            dlg.after(1500, lambda: copied_var.set(''))
+
+        tk.Button(frm, text='📋 העתק', command=copy_hex, font=(theme.FONT_FAMILY, 9)).grid(row=1, column=1, sticky='w', pady=(4, 0))
+        tk.Label(frm, textvariable=copied_var, fg=theme.SUCCESS, font=(theme.FONT_FAMILY, 9)).grid(row=1, column=2, sticky='e', pady=(4, 0))
+
+        tk.Label(frm, text='שם הצבע:', anchor='e').grid(row=2, column=2, sticky='e', padx=(6, 2), pady=(12, 0))
+        name_var = tk.StringVar(value=edit_name or '')
+        name_entry = tk.Entry(frm, textvariable=name_var, width=20)
+        name_entry.grid(row=2, column=0, columnspan=2, sticky='w', pady=(12, 0))
+        name_entry.focus_set()
+
+        tk.Label(frm, text='ספק:', anchor='e').grid(row=3, column=2, sticky='e', padx=(6, 2), pady=(6, 0))
+        supplier_var = tk.StringVar(value=str(existing.get('supplier', '')))
+        supplier_names = sorted({str((s or {}).get('business_name', '')).strip()
+                                 for s in (getattr(self.data_processor, 'suppliers', []) or [])} - {''})
+        ttk.Combobox(frm, textvariable=supplier_var, values=supplier_names, width=18).grid(row=3, column=0, columnspan=2, sticky='w', pady=(6, 0))
+
+        tk.Label(frm, text='תאריך דגימה:', anchor='e').grid(row=4, column=2, sticky='e', padx=(6, 2), pady=(6, 0))
+        date_var = tk.StringVar(value=str(existing.get('sampled_at', '')).strip() or datetime.now().strftime('%d.%m.%y'))
+        tk.Entry(frm, textvariable=date_var, width=12, justify='center').grid(row=4, column=0, columnspan=2, sticky='w', pady=(6, 0))
+
+        def save():
+            name = (name_var.get() or '').strip()
+            if not name:
+                messagebox.showwarning("שדה חסר", "יש להזין שם צבע כדי לשמור לפלטה", parent=dlg)
+                return
+            try:
+                if edit_name:
+                    self.data_processor.update_fabric_palette_color(edit_name, {
+                        'name': name,
+                        'hex': hex_val,
+                        'supplier': supplier_var.get(),
+                        'sampled_at': date_var.get(),
+                    })
+                else:
+                    self.data_processor.add_fabric_palette_color(
+                        name, hex_val, supplier=supplier_var.get(), sampled_at=date_var.get())
+            except Exception as e:
+                messagebox.showerror("שגיאה", str(e), parent=dlg)
+                return
+            dlg.destroy()
+            if callable(on_saved):
+                on_saved()
+            else:
+                self._build_rivhit_colors_checkboxes()
+
+        btns = tk.Frame(frm)
+        btns.grid(row=5, column=0, columnspan=3, pady=(14, 0))
+        tk.Button(btns, text="💾 שמור לפלטה", command=save, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="סגור", command=dlg.destroy).pack(side='left', padx=5)
+        dlg.bind('<Return>', lambda e: save())
+
+    def _grab_clipboard_image(self, parent=None):
+        """מחזיר תמונת PIL מהלוח (תמונה מודבקת או נתיב לקובץ תמונה), או None אם אין."""
+        try:
+            from PIL import Image, ImageGrab
+        except ImportError:
+            messagebox.showerror("חסרה ספרייה", "נדרשת הספרייה Pillow (PIL) להדבקת תמונה", parent=parent)
+            return None
+        try:
+            data = ImageGrab.grabclipboard()
+        except Exception:
+            return None
+        if data is None:
+            return None
+        # העתקת קבצים בסייר שמה בלוח רשימת נתיבים
+        if isinstance(data, list):
+            for p in data:
+                try:
+                    return Image.open(p).convert('RGB')
+                except Exception:
+                    continue
+            return None
+        try:
+            return data.convert('RGB')
+        except Exception:
+            return None
+
+    def _add_fabric_color_from_image(self, parent=None, on_saved=None, image=None):
+        """פיקר צבע מתמונת בד: לחיצה על התמונה דוגמת ממוצע אזור 5x5.
+
+        image: תמונת PIL מוכנה (למשל מהדבקה מהלוח); אם לא נמסרה - נפתח דיאלוג בחירת קובץ.
+        """
+        try:
+            from PIL import Image, ImageTk
+        except ImportError:
+            messagebox.showerror("חסרה ספרייה", "נדרשת הספרייה Pillow (PIL) לבחירת צבע מתמונה", parent=parent)
+            return
+        src_img = image
+        if src_img is None:
+            path = filedialog.askopenfilename(
+                title='בחר תמונת בד',
+                filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp *.webp'), ('כל הקבצים', '*.*')],
+                parent=parent,
+            )
+            if not path:
+                return
+            try:
+                src_img = Image.open(path).convert('RGB')
+            except Exception as e:
+                messagebox.showerror("שגיאה", f"לא ניתן לפתוח את התמונה:\n{e}", parent=parent)
+                return
+
+        dlg = tk.Toplevel(parent or self.notebook)
+        dlg.title("בחירת צבע מתמונת בד")
+        dlg.grab_set()
+
+        tk.Label(dlg, text="לחץ על התמונה כדי לדגום צבע (ממוצע אזור 5x5) | Ctrl+V מדביק תמונה מהלוח",
+                 font=(theme.FONT_FAMILY, 10, 'bold')).pack(pady=(10, 4))
+
+        max_w, max_h = 640, 440
+        canvas = tk.Canvas(dlg, cursor='crosshair', highlightthickness=1, highlightbackground=theme.MUTED)
+        canvas.pack(padx=12, pady=4)
+        state = {'img': None, 'scale': 1.0}
+
+        def load_image(img):
+            """טעינת תמונה לקנבס (מקובץ או מהלוח) עם התאמת קנה מידה."""
+            state['img'] = img
+            state['scale'] = min(max_w / img.width, max_h / img.height, 1.0)
+            disp_w = max(1, int(img.width * state['scale']))
+            disp_h = max(1, int(img.height * state['scale']))
+            photo = ImageTk.PhotoImage(img.resize((disp_w, disp_h)))
+            canvas.delete('all')
+            canvas.config(width=disp_w, height=disp_h)
+            canvas.create_image(0, 0, anchor='nw', image=photo)
+            canvas._photo_ref = photo  # שמירת רפרנס מפני garbage collection
+
+        # שורת תוצאה: swatch + hex
+        picked = {'hex': ''}
+        result_row = tk.Frame(dlg)
+        result_row.pack(fill='x', padx=12, pady=6)
+        swatch = tk.Label(result_row, width=4, height=2, relief='solid', bd=1, bg=theme.PAGE_BG)
+        swatch.pack(side='right', padx=(0, 8))
+        hex_var = tk.StringVar(value='(טרם נדגם צבע)')
+        tk.Label(result_row, textvariable=hex_var, font=(theme.FONT_FAMILY, 10)).pack(side='right', padx=(0, 16))
+
+        def sample(event):
+            img, scale = state['img'], state['scale']
+            if img is None:
+                return
+            # המרת קואורדינטות תצוגה לקואורדינטות בתמונה המקורית
+            ox = min(max(int(event.x / scale), 0), img.width - 1)
+            oy = min(max(int(event.y / scale), 0), img.height - 1)
+            # ממוצע אזור 5x5 לנטרול טקסטורת הבד
+            r_sum = g_sum = b_sum = count = 0
+            for dx in range(-2, 3):
+                for dy in range(-2, 3):
+                    px, py = ox + dx, oy + dy
+                    if 0 <= px < img.width and 0 <= py < img.height:
+                        r, g, b = img.getpixel((px, py))
+                        r_sum += r; g_sum += g; b_sum += b; count += 1
+            if not count:
+                return
+            hex_val = '#{:02x}{:02x}{:02x}'.format(r_sum // count, g_sum // count, b_sum // count)
+            picked['hex'] = hex_val
+            hex_var.set(hex_val)
+            swatch.config(bg=hex_val)
+
+        canvas.bind('<Button-1>', sample)
+        canvas.bind('<B1-Motion>', sample)
+
+        def paste_clipboard():
+            img = self._grab_clipboard_image(dlg)
+            if img is None:
+                messagebox.showinfo("אין תמונה בלוח", "העתק תמונה (Print Screen או Win+Shift+S לחיתוך אזור) ונסה שוב", parent=dlg)
+                return
+            picked['hex'] = ''
+            hex_var.set('(טרם נדגם צבע)')
+            swatch.config(bg=theme.PAGE_BG)
+            load_image(img)
+
+        def save():
+            if not picked['hex']:
+                messagebox.showwarning("לא נדגם צבע", "יש ללחוץ על התמונה כדי לדגום צבע", parent=dlg)
+                return
+            hex_val = picked['hex']
+            dlg.destroy()
+            self._prompt_save_picked_color(hex_val, parent=parent, on_saved=on_saved)
+
+        btns = tk.Frame(dlg)
+        btns.pack(pady=(4, 12))
+        tk.Button(btns, text="💾 שמור צבע", command=save, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="📋 הדבק מהלוח", command=paste_clipboard, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
+        # keycode 86 = מקש V בכל פריסת מקלדת (גם בעברית)
+        dlg.bind('<Control-KeyPress>', lambda e: paste_clipboard() if e.keycode == 86 else None)
+
+        load_image(src_img)
 
     def _create_rivhit_products_by_sizes(self):
         name = (self.rivhit_new_name_var.get() or '').strip()
@@ -924,12 +1450,18 @@ class RivhitTabMixin:
         target_box.pack(fill='x', pady=(0, 8))
         target_var = tk.StringVar(value='local')
         url_var = tk.StringVar(value=self.settings.get('website.local_url', 'http://127.0.0.1:8000'))
-        token_var = tk.StringVar(value=self.settings.get('website.api_token', ''))
+        token_var = tk.StringVar(value=self.settings.get('website.local_api_token', 'dev-local-token'))
+
+        def _target_keys():
+            """מפתחות ההגדרות (כתובת, טוקן) לפי היעד הנבחר — לכל יעד טוקן משלו."""
+            if target_var.get() == 'local':
+                return ('website.local_url', 'website.local_api_token', 'http://127.0.0.1:8000', 'dev-local-token')
+            return ('website.prod_url', 'website.api_token', 'https://arye-textil.co.il', '')
 
         def on_target_change():
-            key = 'website.local_url' if target_var.get() == 'local' else 'website.prod_url'
-            default = 'http://127.0.0.1:8000' if target_var.get() == 'local' else 'https://arye-textil.co.il'
-            url_var.set(self.settings.get(key, default))
+            url_key, token_key, url_default, token_default = _target_keys()
+            url_var.set(self.settings.get(url_key, url_default))
+            token_var.set(self.settings.get(token_key, token_default))
 
         tk.Radiobutton(target_box, text="אתר מקומי (פיתוח)", variable=target_var, value='local', command=on_target_change).pack(side='right', padx=6)
         tk.Radiobutton(target_box, text="שרת (arye-textil.co.il)", variable=target_var, value='prod', command=on_target_change).pack(side='right', padx=6)
@@ -983,6 +1515,10 @@ class RivhitTabMixin:
                 product_combo.current(0)
             fabric_combo['values'] = meta.get('fabric_types') or []
             status_var.set(f"נטענו {len(products)} מוצרים מהאתר | {len(pending)} מוצרים ממתינים יישלחו")
+            # שמירת ההגדרות כבר עכשיו (החיבור הצליח), לא רק אחרי שליחה
+            url_key, token_key, _, _ = _target_keys()
+            self.settings.set(url_key, (url_var.get() or '').strip())
+            self.settings.set(token_key, (token_var.get() or '').strip())
 
         tk.Button(target_box, text="🔄 טען מוצרים מהאתר", command=load_meta, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 9, 'bold')).pack(anchor='w', pady=(6, 0))
 
@@ -1008,11 +1544,19 @@ class RivhitTabMixin:
             for rec in pending:
                 barcode = str(rec.get('item_part_num', '')).strip()
                 fields = self.data_processor.get_rivhit_label_fields(barcode, product=rec)
-                rows.append({
+                row = {
                     'size': (fields.get('size') or '').strip(),
                     'barcode': barcode,
                     'unit_price': str(rec.get(price_key, '')).strip(),
-                })
+                }
+                # מוצרים שנוצרו לפי צבעים - שליחת הצבע לאתר (למוצרים התומכים בצבע)
+                color = str(rec.get('color', '')).strip() or (fields.get('color') or '').strip()
+                if color:
+                    row['color'] = color
+                    color_hex = str(rec.get('color_hex', '')).strip()
+                    if color_hex:
+                        row['color_hex'] = color_hex
+                rows.append(row)
             try:
                 client = WebsiteClient(url_var.get(), token_var.get())
                 result = client.send_variants(product['id'], fabric, rows)
@@ -1020,9 +1564,9 @@ class RivhitTabMixin:
                 messagebox.showerror("שגיאה בשליחה", str(e), parent=dlg)
                 return
             # שמירת ההגדרות לפעם הבאה
-            url_key = 'website.local_url' if target_var.get() == 'local' else 'website.prod_url'
+            url_key, token_key, _, _ = _target_keys()
             self.settings.set(url_key, (url_var.get() or '').strip())
-            self.settings.set('website.api_token', (token_var.get() or '').strip())
+            self.settings.set(token_key, (token_var.get() or '').strip())
 
             lines = [
                 f"מוצר: {result.get('product', '')}",

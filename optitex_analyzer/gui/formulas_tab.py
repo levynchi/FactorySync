@@ -1,22 +1,23 @@
 """Formulas and calculations tab for weight and measurements calculations."""
 import tkinter as tk
 from tkinter import ttk, messagebox
+from . import theme
 
 class FormulasTabMixin:
     """Mixin for formulas and calculations tab."""
     
     def _create_formulas_tab(self):
         """Create the formulas and calculations tab with sub-tabs."""
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="נוסחאות וחישובים")
         
         # Title
         title_label = tk.Label(
             tab, 
             text="נוסחאות וחישובים", 
-            font=('Arial', 16, 'bold'), 
-            bg='#f7f9fa', 
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 16, 'bold'), 
+            bg=theme.PAGE_BG, 
+            fg=theme.DARK
         )
         title_label.pack(pady=(10, 20))
         
@@ -25,17 +26,19 @@ class FormulasTabMixin:
         inner_nb.pack(fill='both', expand=True, padx=10, pady=5)
         
         # Sub-tabs
-        weight_calc_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabric_weight_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        product_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        tetra_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        all_over_print_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        store_price_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabric_rolls_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        sqm_cost_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        weight_calc_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabric_weight_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        shirt_fabric_cost_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        product_cost_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        tetra_cost_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        all_over_print_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        store_price_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabric_rolls_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        sqm_cost_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         
         inner_nb.add(weight_calc_tab, text="חישובי משקל כללי")
         inner_nb.add(fabric_weight_tab, text="משקל בד לפריטים בציור")
+        inner_nb.add(shirt_fabric_cost_tab, text="עלות בד לחולצה")
         inner_nb.add(product_cost_tab, text="חישוב שמיכות")
         inner_nb.add(tetra_cost_tab, text="חישוב טטרות")
         inner_nb.add(all_over_print_tab, text="בגדי אול אובר")
@@ -46,6 +49,7 @@ class FormulasTabMixin:
         # Build content for each sub-tab
         self._build_general_weight_content(weight_calc_tab)
         self._build_fabric_weight_content(fabric_weight_tab)
+        self._build_shirt_fabric_cost_content(shirt_fabric_cost_tab)
         self._build_product_cost_content(product_cost_tab)
         self._build_tetra_cost_content(tetra_cost_tab)
         self._build_all_over_print_content(all_over_print_tab)
@@ -65,9 +69,9 @@ class FormulasTabMixin:
         formula_label = tk.Label(
             formula_frame,
             text=formula_text,
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50',
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
             justify='center'
         )
         formula_label.pack(pady=10)
@@ -77,9 +81,9 @@ class FormulasTabMixin:
         instructions_label = tk.Label(
             formula_frame,
             text=instructions_text,
-            font=('Arial', 10),
-            bg='#f7f9fa',
-            fg='#7f8c8d',
+            font=(theme.FONT_FAMILY, 10),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT,
             justify='center'
         )
         instructions_label.pack(pady=5)
@@ -89,24 +93,24 @@ class FormulasTabMixin:
         inputs_frame.pack(fill='x', padx=20, pady=10)
         
         # Input fields
-        tk.Label(inputs_frame, text="אורך (במטר):", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(inputs_frame, text="אורך (במטר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.length_var = tk.StringVar()
-        length_entry = tk.Entry(inputs_frame, textvariable=self.length_var, width=15, font=('Arial', 10))
+        length_entry = tk.Entry(inputs_frame, textvariable=self.length_var, width=15, font=(theme.FONT_FAMILY, 10))
         length_entry.grid(row=0, column=1, padx=5, pady=5)
         
-        tk.Label(inputs_frame, text="משקל למטר (ק״ג):", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(inputs_frame, text="משקל למטר (ק״ג):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
         self.weight_per_meter_var = tk.StringVar()
-        weight_per_meter_entry = tk.Entry(inputs_frame, textvariable=self.weight_per_meter_var, width=15, font=('Arial', 10))
+        weight_per_meter_entry = tk.Entry(inputs_frame, textvariable=self.weight_per_meter_var, width=15, font=(theme.FONT_FAMILY, 10))
         weight_per_meter_entry.grid(row=0, column=3, padx=5, pady=5)
         
-        tk.Label(inputs_frame, text="מספר שכבות:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(inputs_frame, text="מספר שכבות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.layers_var = tk.StringVar()
-        layers_entry = tk.Entry(inputs_frame, textvariable=self.layers_var, width=15, font=('Arial', 10))
+        layers_entry = tk.Entry(inputs_frame, textvariable=self.layers_var, width=15, font=(theme.FONT_FAMILY, 10))
         layers_entry.grid(row=1, column=1, padx=5, pady=5)
         
-        tk.Label(inputs_frame, text="משקל כולל (ק״ג):", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(inputs_frame, text="משקל כולל (ק״ג):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
         self.total_weight_var = tk.StringVar()
-        total_weight_entry = tk.Entry(inputs_frame, textvariable=self.total_weight_var, width=15, font=('Arial', 10))
+        total_weight_entry = tk.Entry(inputs_frame, textvariable=self.total_weight_var, width=15, font=(theme.FONT_FAMILY, 10))
         total_weight_entry.grid(row=1, column=3, padx=5, pady=5)
         
         # Calculate buttons
@@ -114,9 +118,9 @@ class FormulasTabMixin:
             inputs_frame,
             text="חשב משקל כולל",
             command=self._calculate_total_weight,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         calculate_btn.grid(row=2, column=0, padx=5, pady=5)
@@ -125,9 +129,9 @@ class FormulasTabMixin:
             inputs_frame,
             text="חשב שכבות",
             command=self._calculate_layers,
-            bg='#e67e22',
+            bg=theme.WARNING,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         calculate_layers_btn.grid(row=2, column=1, padx=5, pady=5)
@@ -136,9 +140,9 @@ class FormulasTabMixin:
             inputs_frame,
             text="חשב משקל למטר",
             command=self._calculate_weight_per_meter,
-            bg='#9b59b6',
+            bg=theme.PURPLE_LIGHT,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         calculate_weight_per_meter_btn.grid(row=2, column=2, padx=5, pady=5)
@@ -151,9 +155,9 @@ class FormulasTabMixin:
         result_label = tk.Label(
             result_frame,
             textvariable=self.result_var,
-            font=('Arial', 12, 'bold'),
-            bg='#f7f9fa',
-            fg='#27ae60',
+            font=(theme.FONT_FAMILY, 12, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.SUCCESS,
             justify='center'
         )
         result_label.pack(pady=10)
@@ -163,9 +167,9 @@ class FormulasTabMixin:
             container,
             text="נקה הכל",
             command=self._clear_formula_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         clear_btn.pack(pady=20)
@@ -248,9 +252,9 @@ class FormulasTabMixin:
         """Build the fabric weight calculation for drawings content."""
         
         # Create scrollable container
-        canvas = tk.Canvas(container, bg='#f7f9fa', highlightthickness=0)
+        canvas = tk.Canvas(container, bg=theme.PAGE_BG, highlightthickness=0)
         scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+        scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
         
         # Create window and store the window ID
         canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
@@ -289,7 +293,7 @@ class FormulasTabMixin:
         drawing_frame.pack(side='left', fill='both', expand=True, padx=(0, 7))
         
         # Available drawings listbox
-        tk.Label(drawing_frame, text="ציורים זמינים:", font=('Arial', 9, 'bold')).pack(anchor='w')
+        tk.Label(drawing_frame, text="ציורים זמינים:", font=(theme.FONT_FAMILY, 9, 'bold')).pack(anchor='w')
         
         listbox_frame = tk.Frame(drawing_frame)
         listbox_frame.pack(fill='both', expand=True, pady=2)
@@ -297,7 +301,7 @@ class FormulasTabMixin:
         self.drawings_listbox = tk.Listbox(
             listbox_frame,
             selectmode=tk.EXTENDED,
-            font=('Arial', 8),
+            font=(theme.FONT_FAMILY, 8),
             height=5,
             exportselection=False
         )
@@ -314,19 +318,19 @@ class FormulasTabMixin:
         
         # Drawing count label
         self.drawing_count_var = tk.StringVar(value="")
-        tk.Label(drawing_frame, textvariable=self.drawing_count_var, font=('Arial', 7), fg='#7f8c8d').pack(anchor='w')
+        tk.Label(drawing_frame, textvariable=self.drawing_count_var, font=(theme.FONT_FAMILY, 7), fg=theme.SUBTEXT).pack(anchor='w')
         
         # Buttons row
         btn_frame = tk.Frame(drawing_frame)
         btn_frame.pack(fill='x', pady=3)
         
         tk.Button(btn_frame, text="➕ הוסף לחישוב", command=self._add_drawing_to_selection,
-                 bg='#27ae60', fg='white', font=('Arial', 8, 'bold')).pack(side='right', padx=2)
+                 bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 8, 'bold')).pack(side='right', padx=2)
         tk.Button(btn_frame, text="🔄 רענן", command=self._load_drawings_list,
-                 bg='#3498db', fg='white', font=('Arial', 8, 'bold')).pack(side='right', padx=2)
+                 bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 8, 'bold')).pack(side='right', padx=2)
         
         # Selected drawings section
-        tk.Label(drawing_frame, text="ציורים נבחרים לחישוב:", font=('Arial', 9, 'bold')).pack(anchor='w', pady=(5,0))
+        tk.Label(drawing_frame, text="ציורים נבחרים לחישוב:", font=(theme.FONT_FAMILY, 9, 'bold')).pack(anchor='w', pady=(5,0))
         
         selected_frame = tk.Frame(drawing_frame)
         selected_frame.pack(fill='both', expand=True, pady=2)
@@ -334,10 +338,10 @@ class FormulasTabMixin:
         self.selected_drawings_listbox = tk.Listbox(
             selected_frame,
             selectmode=tk.EXTENDED,
-            font=('Arial', 8),
+            font=(theme.FONT_FAMILY, 8),
             height=3,
             exportselection=False,
-            bg='#ecf0f1'
+            bg=theme.PANEL_BG
         )
         selected_scrollbar = ttk.Scrollbar(selected_frame, orient="vertical", command=self.selected_drawings_listbox.yview)
         self.selected_drawings_listbox.configure(yscrollcommand=selected_scrollbar.set)
@@ -346,23 +350,23 @@ class FormulasTabMixin:
         
         # Selected count label
         self.selected_count_var = tk.StringVar(value="נבחרו: 0 ציורים")
-        tk.Label(drawing_frame, textvariable=self.selected_count_var, font=('Arial', 8, 'bold'), fg='#27ae60').pack(anchor='w')
+        tk.Label(drawing_frame, textvariable=self.selected_count_var, font=(theme.FONT_FAMILY, 8, 'bold'), fg=theme.SUCCESS).pack(anchor='w')
         
         # Buttons frame
         btns_frame = tk.Frame(drawing_frame)
         btns_frame.pack(anchor='e', pady=2)
         
         tk.Button(btns_frame, text="🗑️ הסר נבחרים", command=self._remove_drawing_from_selection,
-                 bg='#e74c3c', fg='white', font=('Arial', 8, 'bold')).pack(side='left', padx=2)
+                 bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 8, 'bold')).pack(side='left', padx=2)
         
         tk.Button(btns_frame, text="🧹 נקה הכל", command=self._clear_all_selected_drawings,
-                 bg='#95a5a6', fg='white', font=('Arial', 8, 'bold')).pack(side='left', padx=2)
+                 bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 8, 'bold')).pack(side='left', padx=2)
         
         # Middle column - Drawing info frame
         info_frame = ttk.LabelFrame(main_frame, text="פרטי הציור", padding=15)
         info_frame.pack(side='left', fill='both', expand=True, padx=(7, 7))
         
-        self.drawing_info_text = tk.Text(info_frame, height=6, width=30, font=('Arial', 9), 
+        self.drawing_info_text = tk.Text(info_frame, height=6, width=30, font=(theme.FONT_FAMILY, 9), 
                                        state='disabled', wrap='word')
         info_scrollbar = ttk.Scrollbar(info_frame, orient='vertical', command=self.drawing_info_text.yview)
         self.drawing_info_text.configure(yscrollcommand=info_scrollbar.set)
@@ -374,21 +378,21 @@ class FormulasTabMixin:
         filters_frame.pack(side='left', fill='both', expand=True, padx=(7, 0))
         
         # Row 1 - Supplier filter
-        tk.Label(filters_frame, text="ספק:", font=('Arial', 9, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=3)
+        tk.Label(filters_frame, text="ספק:", font=(theme.FONT_FAMILY, 9, 'bold')).grid(row=0, column=0, sticky='e', padx=5, pady=3)
         self.filter_supplier_var = tk.StringVar(value="הכל")
         self.filter_supplier_combo = ttk.Combobox(filters_frame, textvariable=self.filter_supplier_var, 
                                                   state='readonly', width=18)
         self.filter_supplier_combo.grid(row=0, column=1, padx=5, pady=3, sticky='w')
         
         # Row 2 - Fabric Type filter
-        tk.Label(filters_frame, text="סוג בד:", font=('Arial', 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
+        tk.Label(filters_frame, text="סוג בד:", font=(theme.FONT_FAMILY, 9, 'bold')).grid(row=1, column=0, sticky='e', padx=5, pady=3)
         self.filter_fabric_var = tk.StringVar(value="הכל")
         self.filter_fabric_combo = ttk.Combobox(filters_frame, textvariable=self.filter_fabric_var, 
                                                 state='readonly', width=18)
         self.filter_fabric_combo.grid(row=1, column=1, padx=5, pady=3, sticky='w')
         
         # Row 3 - Product name filter
-        tk.Label(filters_frame, text="שם מוצר:", font=('Arial', 9, 'bold')).grid(row=2, column=0, sticky='e', padx=5, pady=3)
+        tk.Label(filters_frame, text="שם מוצר:", font=(theme.FONT_FAMILY, 9, 'bold')).grid(row=2, column=0, sticky='e', padx=5, pady=3)
         self.filter_product_var = tk.StringVar(value="הכל")
         self.filter_product_combo = ttk.Combobox(filters_frame, textvariable=self.filter_product_var, 
                                                  state='readonly', width=18)
@@ -396,7 +400,7 @@ class FormulasTabMixin:
         self.filter_product_combo.bind('<<ComboboxSelected>>', self._on_product_filter_changed)
         
         # Row 4 - Size filter
-        tk.Label(filters_frame, text="מידה:", font=('Arial', 9, 'bold')).grid(row=3, column=0, sticky='e', padx=5, pady=3)
+        tk.Label(filters_frame, text="מידה:", font=(theme.FONT_FAMILY, 9, 'bold')).grid(row=3, column=0, sticky='e', padx=5, pady=3)
         self.filter_size_var = tk.StringVar(value="הכל")
         self.filter_size_combo = ttk.Combobox(filters_frame, textvariable=self.filter_size_var, 
                                               state='disabled', width=18)
@@ -408,11 +412,11 @@ class FormulasTabMixin:
         btn_frame.grid(row=4, column=0, columnspan=2, pady=8)
         
         filter_btn = tk.Button(btn_frame, text="🔍 סנן", command=self._apply_drawing_filters,
-                              bg='#27ae60', fg='white', font=('Arial', 9, 'bold'))
+                              bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 9, 'bold'))
         filter_btn.pack(side='right', padx=3)
         
         clear_filter_btn = tk.Button(btn_frame, text="🗑️ נקה סינון", command=self._clear_drawing_filters,
-                                    bg='#95a5a6', fg='white', font=('Arial', 9, 'bold'))
+                                    bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 9, 'bold'))
         clear_filter_btn.pack(side='right', padx=3)
         
         # Weight input frame
@@ -420,37 +424,37 @@ class FormulasTabMixin:
         weight_frame.pack(fill='x', padx=20, pady=10)
         
         # Layer count row
-        tk.Label(weight_frame, text="כמות שכבות שנחתכו:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(weight_frame, text="כמות שכבות שנחתכו:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.layers_count_var = tk.StringVar()
-        layers_entry = tk.Entry(weight_frame, textvariable=self.layers_count_var, width=15, font=('Arial', 10))
+        layers_entry = tk.Entry(weight_frame, textvariable=self.layers_count_var, width=15, font=(theme.FONT_FAMILY, 10))
         layers_entry.grid(row=0, column=1, padx=5, pady=5)
         
         # Weight row
-        tk.Label(weight_frame, text="משקל השכבה הכולל (בגרמים):", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(weight_frame, text="משקל השכבה הכולל (בגרמים):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.layer_weight_var = tk.StringVar()
-        weight_entry = tk.Entry(weight_frame, textvariable=self.layer_weight_var, width=15, font=('Arial', 10))
+        weight_entry = tk.Entry(weight_frame, textvariable=self.layer_weight_var, width=15, font=(theme.FONT_FAMILY, 10))
         weight_entry.grid(row=1, column=1, padx=5, pady=5)
         
         # Weight source indicator
         self.weight_source_var = tk.StringVar(value="")
         self.weight_source_label = tk.Label(weight_frame, textvariable=self.weight_source_var, 
-                                            font=('Arial', 8), fg='#27ae60')
+                                            font=(theme.FONT_FAMILY, 8), fg=theme.SUCCESS)
         self.weight_source_label.grid(row=1, column=2, sticky='w', padx=5)
         
         # Price per kg row
-        tk.Label(weight_frame, text="מחיר ל-1 ק\"ג בד (₪):", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(weight_frame, text="מחיר ל-1 ק\"ג בד (₪):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.fabric_weight_price_var = tk.StringVar()
-        price_entry = tk.Entry(weight_frame, textvariable=self.fabric_weight_price_var, width=15, font=('Arial', 10))
+        price_entry = tk.Entry(weight_frame, textvariable=self.fabric_weight_price_var, width=15, font=(theme.FONT_FAMILY, 10))
         price_entry.grid(row=2, column=1, padx=5, pady=5)
         
         # Calculate button
         calc_btn = tk.Button(weight_frame, text="חשב חלוקת משקל", command=self._calculate_weight_distribution,
-                           bg='#27ae60', fg='white', font=('Arial', 10, 'bold'))
+                           bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'))
         calc_btn.grid(row=2, column=2, padx=20, pady=5)
         
         # Export button
         export_btn = tk.Button(weight_frame, text="ייצא ל-Excel", command=self._export_weight_results,
-                             bg='#2c3e50', fg='white', font=('Arial', 10, 'bold'))
+                             bg=theme.DARK, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'))
         export_btn.grid(row=2, column=3, padx=5, pady=5)
         
         # Results frame
@@ -496,18 +500,18 @@ class FormulasTabMixin:
         results_scrollbar.pack(side='right', fill='y')
         
         # Update fabric cost button frame
-        update_cost_frame = tk.Frame(scrollable_frame, bg='#f7f9fa')
+        update_cost_frame = tk.Frame(scrollable_frame, bg=theme.PAGE_BG)
         update_cost_frame.pack(fill='x', padx=20, pady=5)
         
         update_cost_btn = tk.Button(update_cost_frame, text="עדכן עלות בד לפריט נבחר", 
                                    command=self._update_fabric_cost_for_selected,
-                                   bg='#e67e22', fg='white', font=('Arial', 10, 'bold'))
+                                   bg=theme.WARNING, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'))
         update_cost_btn.pack(side='right', padx=5)
         
         # Instruction label for update
         update_info_label = tk.Label(update_cost_frame, 
                                     text="בחר שורה בטבלה ולחץ לעדכון עלות הבד בקטלוג המוצרים",
-                                    font=('Arial', 9), fg='#7f8c8d', bg='#f7f9fa')
+                                    font=(theme.FONT_FAMILY, 9), fg=theme.SUBTEXT, bg=theme.PAGE_BG)
         update_info_label.pack(side='right', padx=10)
         
         # Summary frame
@@ -516,7 +520,7 @@ class FormulasTabMixin:
         
         self.summary_var = tk.StringVar(value="בחר ציור והזן משקל לחישוב")
         summary_label = tk.Label(summary_frame, textvariable=self.summary_var, 
-                               font=('Arial', 11, 'bold'), fg='#2c3e50')
+                               font=(theme.FONT_FAMILY, 11, 'bold'), fg=theme.DARK)
         summary_label.pack(pady=5)
         
         # Initialize
@@ -1423,23 +1427,23 @@ class FormulasTabMixin:
         """Build the product cost calculation content."""
         
         # Title and description
-        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame = tk.Frame(container, bg=theme.PAGE_BG)
         title_frame.pack(fill='x', padx=20, pady=(10, 5))
         
         tk.Label(
             title_frame,
             text="חישוב עלות שמיכות",
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack()
         
         tk.Label(
             title_frame,
             text="חישוב עלות יצור של פריטי טקסטיל - שמיכות, בגדי גוף, מגבות וכו'",
-            font=('Arial', 9),
-            bg='#f7f9fa',
-            fg='#7f8c8d'
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT
         ).pack()
         
         # Main input frame
@@ -1453,74 +1457,74 @@ class FormulasTabMixin:
         row = 0
         
         # Fabric price per kg
-        tk.Label(input_frame, text="מחיר הבד ל-1 ק״ג:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מחיר הבד ל-1 ק״ג:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.fabric_price_per_kg_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.fabric_price_per_kg_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.fabric_price_per_kg_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Fabric weight per meter
-        tk.Label(input_frame, text="משקל 1 מטר רץ בד (גרמים):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="משקל 1 מטר רץ בד (גרמים):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.fabric_weight_per_meter_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.fabric_weight_per_meter_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.fabric_weight_per_meter_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Roll width
-        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.roll_width_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.roll_width_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.roll_width_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Printing price per meter
-        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.printing_price_per_meter_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.printing_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.printing_price_per_meter_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Item width
-        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.item_width_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.item_width_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.item_width_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Item length
-        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.item_length_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.item_length_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.item_length_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Number of layers
-        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.num_layers_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.num_layers_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.num_layers_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Printed layers
-        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.printed_layers_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.printed_layers_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.printed_layers_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Waste percentage
-        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.waste_percentage_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.waste_percentage_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.waste_percentage_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         row += 1
@@ -1534,37 +1538,37 @@ class FormulasTabMixin:
         costs_frame.grid_columnconfigure(3, weight=1)
         
         # Sewing cost
-        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=5, pady=5)
         self.sewing_cost_per_unit_var = tk.StringVar()
-        tk.Entry(costs_frame, textvariable=self.sewing_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(costs_frame, textvariable=self.sewing_cost_per_unit_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=1, padx=5, pady=5, sticky='w')
         
         # Cutting cost
-        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=5, pady=5)
         self.cutting_cost_per_unit_var = tk.StringVar()
-        tk.Entry(costs_frame, textvariable=self.cutting_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(costs_frame, textvariable=self.cutting_cost_per_unit_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=3, padx=5, pady=5, sticky='w')
         
         # Filling cost
-        tk.Label(costs_frame, text="עלות מילוי ליחידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(costs_frame, text="עלות מילוי ליחידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=1, column=0, sticky='w', padx=5, pady=5)
         self.filling_cost_per_unit_var = tk.StringVar()
-        tk.Entry(costs_frame, textvariable=self.filling_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(costs_frame, textvariable=self.filling_cost_per_unit_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=1, column=1, padx=5, pady=5, sticky='w')
         
         # Buttons frame
-        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame = tk.Frame(container, bg=theme.PAGE_BG)
         buttons_frame.pack(fill='x', padx=20, pady=10)
         
         tk.Button(
             buttons_frame,
             text="חשב עלות",
             command=self._calculate_product_cost,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=20,
             height=2
         ).pack(side='left', padx=5)
@@ -1573,9 +1577,9 @@ class FormulasTabMixin:
             buttons_frame,
             text="נקה הכל",
             command=self._clear_product_cost_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=15,
             height=2
         ).pack(side='left', padx=5)
@@ -1591,16 +1595,16 @@ class FormulasTabMixin:
             font=('Courier New', 10),
             wrap=tk.WORD,
             state='disabled',
-            bg='#ffffff'
+            bg=theme.CARD_BG
         )
         self.product_cost_results_text.pack(fill='both', expand=True)
         
         # Configure text tags for formatting
-        self.product_cost_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
-        self.product_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
-        self.product_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
-        self.product_cost_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
-        self.product_cost_results_text.tag_configure('separator', foreground='#7f8c8d')
+        self.product_cost_results_text.tag_configure('header', font=(theme.FONT_FAMILY, 11, 'bold'), foreground=theme.DARK)
+        self.product_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground=theme.DARK_2)
+        self.product_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground=theme.PRIMARY_DARK)
+        self.product_cost_results_text.tag_configure('total', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.SUCCESS)
+        self.product_cost_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
         
         # Initial message
         self._clear_product_cost_inputs()
@@ -1766,23 +1770,23 @@ class FormulasTabMixin:
         """Build the tetra cost calculation content."""
         
         # Title and description
-        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame = tk.Frame(container, bg=theme.PAGE_BG)
         title_frame.pack(fill='x', padx=20, pady=(10, 5))
         
         tk.Label(
             title_frame,
             text="חישוב עלות טטרות",
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack()
         
         tk.Label(
             title_frame,
             text="חישוב עלות יצור טטרות לפי מחיר למטר רץ",
-            font=('Arial', 9),
-            bg='#f7f9fa',
-            fg='#7f8c8d'
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT
         ).pack()
         
         # Main input frame
@@ -1796,65 +1800,65 @@ class FormulasTabMixin:
         row = 0
         
         # Fabric price per meter
-        tk.Label(input_frame, text="מחיר בד למטר רץ:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מחיר בד למטר רץ:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.tetra_fabric_price_per_meter_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_fabric_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_fabric_price_per_meter_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Roll width
-        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="רוחב הגליל (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.tetra_roll_width_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_roll_width_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_roll_width_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Printing price per meter
-        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מחיר הדפסה למטר רץ:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.tetra_printing_price_per_meter_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_printing_price_per_meter_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_printing_price_per_meter_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Item width
-        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="רוחב הפריט (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.tetra_item_width_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_item_width_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_item_width_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Item length
-        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="אורך הפריט (ס״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.tetra_item_length_cm_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_item_length_cm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_item_length_cm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Number of layers
-        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="מספר שכבות בד בפריט:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.tetra_num_layers_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_num_layers_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_num_layers_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
         
         # Printed layers
-        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="כמה שכבות מודפסות (0, 1 או 2):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         self.tetra_printed_layers_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_printed_layers_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_printed_layers_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=1, padx=5, pady=5, sticky='w')
         
         # Waste percentage
-        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(input_frame, text="אחוז בזבוז/התכווצות (%):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=row, column=2, sticky='w', padx=5, pady=5)
         self.tetra_waste_percentage_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.tetra_waste_percentage_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(input_frame, textvariable=self.tetra_waste_percentage_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=row, column=3, padx=5, pady=5, sticky='w')
         
         row += 1
@@ -1868,30 +1872,30 @@ class FormulasTabMixin:
         costs_frame.grid_columnconfigure(3, weight=1)
         
         # Sewing cost
-        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(costs_frame, text="עלות תפירה ליחידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=5, pady=5)
         self.tetra_sewing_cost_per_unit_var = tk.StringVar()
-        tk.Entry(costs_frame, textvariable=self.tetra_sewing_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(costs_frame, textvariable=self.tetra_sewing_cost_per_unit_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=1, padx=5, pady=5, sticky='w')
         
         # Cutting cost
-        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(costs_frame, text="עלות גזירה ליחידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=5, pady=5)
         self.tetra_cutting_cost_per_unit_var = tk.StringVar()
-        tk.Entry(costs_frame, textvariable=self.tetra_cutting_cost_per_unit_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(costs_frame, textvariable=self.tetra_cutting_cost_per_unit_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=3, padx=5, pady=5, sticky='w')
         
         # Buttons frame
-        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame = tk.Frame(container, bg=theme.PAGE_BG)
         buttons_frame.pack(fill='x', padx=20, pady=10)
         
         tk.Button(
             buttons_frame,
             text="חשב עלות",
             command=self._calculate_tetra_cost,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=20,
             height=2
         ).pack(side='left', padx=5)
@@ -1900,9 +1904,9 @@ class FormulasTabMixin:
             buttons_frame,
             text="נקה הכל",
             command=self._clear_tetra_cost_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=15,
             height=2
         ).pack(side='left', padx=5)
@@ -1918,16 +1922,16 @@ class FormulasTabMixin:
             font=('Courier New', 10),
             wrap=tk.WORD,
             state='disabled',
-            bg='#ffffff'
+            bg=theme.CARD_BG
         )
         self.tetra_cost_results_text.pack(fill='both', expand=True)
         
         # Configure text tags for formatting
-        self.tetra_cost_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
-        self.tetra_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
-        self.tetra_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
-        self.tetra_cost_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
-        self.tetra_cost_results_text.tag_configure('separator', foreground='#7f8c8d')
+        self.tetra_cost_results_text.tag_configure('header', font=(theme.FONT_FAMILY, 11, 'bold'), foreground=theme.DARK)
+        self.tetra_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground=theme.DARK_2)
+        self.tetra_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground=theme.PRIMARY_DARK)
+        self.tetra_cost_results_text.tag_configure('total', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.SUCCESS)
+        self.tetra_cost_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
         
         # Initial message
         self._clear_tetra_cost_inputs()
@@ -2076,23 +2080,23 @@ class FormulasTabMixin:
         """Build the all over print cost calculation content."""
         
         # Title and description
-        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame = tk.Frame(container, bg=theme.PAGE_BG)
         title_frame.pack(fill='x', padx=20, pady=(10, 5))
         
         tk.Label(
             title_frame,
             text="חישוב עלות הדפסת בגדי אול אובר",
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack()
         
         tk.Label(
             title_frame,
             text="חישוב עלות הדפסה לפי שטח רבוע של הפריט",
-            font=('Arial', 9),
-            bg='#f7f9fa',
-            fg='#7f8c8d'
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT
         ).pack()
         
         # Product selection frame
@@ -2104,7 +2108,7 @@ class FormulasTabMixin:
         selection_frame.grid_columnconfigure(3, weight=1)
         
         # Product name selection
-        tk.Label(selection_frame, text="שם דגם:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(selection_frame, text="שם דגם:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=5, pady=5)
         self.aop_product_name_var = tk.StringVar()
         self.aop_product_name_combo = ttk.Combobox(
@@ -2112,13 +2116,13 @@ class FormulasTabMixin:
             textvariable=self.aop_product_name_var,
             state='readonly',
             width=30,
-            font=('Arial', 10)
+            font=(theme.FONT_FAMILY, 10)
         )
         self.aop_product_name_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
         self.aop_product_name_combo.bind('<<ComboboxSelected>>', self._on_product_name_selected)
         
         # Product size selection
-        tk.Label(selection_frame, text="מידה:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(selection_frame, text="מידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=5, pady=5)
         self.aop_product_size_var = tk.StringVar()
         self.aop_product_size_combo = ttk.Combobox(
@@ -2126,19 +2130,19 @@ class FormulasTabMixin:
             textvariable=self.aop_product_size_var,
             state='readonly',
             width=20,
-            font=('Arial', 10)
+            font=(theme.FONT_FAMILY, 10)
         )
         self.aop_product_size_combo.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
         self.aop_product_size_combo.bind('<<ComboboxSelected>>', self._on_product_size_selected)
         
         # Square area display
-        tk.Label(selection_frame, text="שטח רבוע:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(selection_frame, text="שטח רבוע:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=1, column=0, sticky='w', padx=5, pady=5)
         self.aop_square_area_label = tk.Label(
             selection_frame,
             text="בחר פריט",
-            font=('Arial', 10),
-            fg='#7f8c8d'
+            font=(theme.FONT_FAMILY, 10),
+            fg=theme.SUBTEXT
         )
         self.aop_square_area_label.grid(row=1, column=1, sticky='w', padx=5, pady=5)
         
@@ -2151,30 +2155,30 @@ class FormulasTabMixin:
         printing_frame.grid_columnconfigure(3, weight=1)
         
         # Printing cost per square meter
-        tk.Label(printing_frame, text="עלות הדפסה למטר רבוע (₪/מ״ר):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(printing_frame, text="עלות הדפסה למטר רבוע (₪/מ״ר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=5, pady=5)
         self.aop_printing_cost_per_sqm_var = tk.StringVar()
-        tk.Entry(printing_frame, textvariable=self.aop_printing_cost_per_sqm_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(printing_frame, textvariable=self.aop_printing_cost_per_sqm_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=1, padx=5, pady=5, sticky='w')
         
         # Waste percentage
-        tk.Label(printing_frame, text="אחוז פחת/בזבוז (%):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(printing_frame, text="אחוז פחת/בזבוז (%):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=5, pady=5)
         self.aop_waste_percentage_var = tk.StringVar()
-        tk.Entry(printing_frame, textvariable=self.aop_waste_percentage_var, width=15, font=('Arial', 10)).grid(
+        tk.Entry(printing_frame, textvariable=self.aop_waste_percentage_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=3, padx=5, pady=5, sticky='w')
         
         # Buttons frame
-        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame = tk.Frame(container, bg=theme.PAGE_BG)
         buttons_frame.pack(fill='x', padx=20, pady=10)
         
         tk.Button(
             buttons_frame,
             text="חשב עלות",
             command=self._calculate_all_over_print_cost,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=20,
             height=2
         ).pack(side='left', padx=5)
@@ -2183,9 +2187,9 @@ class FormulasTabMixin:
             buttons_frame,
             text="נקה הכל",
             command=self._clear_all_over_print_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=15,
             height=2
         ).pack(side='left', padx=5)
@@ -2201,16 +2205,16 @@ class FormulasTabMixin:
             font=('Courier New', 10),
             wrap=tk.WORD,
             state='disabled',
-            bg='#ffffff'
+            bg=theme.CARD_BG
         )
         self.aop_results_text.pack(fill='both', expand=True)
         
         # Configure text tags for formatting
-        self.aop_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
-        self.aop_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
-        self.aop_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
-        self.aop_results_text.tag_configure('total', font=('Arial', 13, 'bold'), foreground='#27ae60')
-        self.aop_results_text.tag_configure('separator', foreground='#7f8c8d')
+        self.aop_results_text.tag_configure('header', font=(theme.FONT_FAMILY, 11, 'bold'), foreground=theme.DARK)
+        self.aop_results_text.tag_configure('label', font=('Courier New', 10), foreground=theme.DARK_2)
+        self.aop_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground=theme.PRIMARY_DARK)
+        self.aop_results_text.tag_configure('total', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.SUCCESS)
+        self.aop_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
         
         # Initialize
         self.aop_selected_product = None
@@ -2287,8 +2291,8 @@ class FormulasTabMixin:
                     square_area = product.get('square_area', 0)
                     self.aop_square_area_label.config(
                         text=f"{square_area:.6f} מ״ר",
-                        fg='#27ae60',
-                        font=('Arial', 10, 'bold')
+                        fg=theme.SUCCESS,
+                        font=(theme.FONT_FAMILY, 10, 'bold')
                     )
                     break
             
@@ -2389,7 +2393,7 @@ class FormulasTabMixin:
         
         # Reset product selection display
         if hasattr(self, 'aop_square_area_label'):
-            self.aop_square_area_label.config(text="בחר פריט", fg='#7f8c8d', font=('Arial', 10))
+            self.aop_square_area_label.config(text="בחר פריט", fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 10))
         
         # Clear results display
         self.aop_results_text.config(state='normal')
@@ -2413,9 +2417,9 @@ class FormulasTabMixin:
         formula_label = tk.Label(
             formula_frame,
             text=formula_text,
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50',
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
             justify='center'
         )
         formula_label.pack(pady=10)
@@ -2425,9 +2429,9 @@ class FormulasTabMixin:
         breakdown_label = tk.Label(
             formula_frame,
             text=breakdown_text,
-            font=('Arial', 10),
-            bg='#f7f9fa',
-            fg='#7f8c8d',
+            font=(theme.FONT_FAMILY, 10),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT,
             justify='center'
         )
         breakdown_label.pack(pady=5)
@@ -2440,7 +2444,7 @@ class FormulasTabMixin:
         tk.Label(
             inputs_frame, 
             text="מחיר לחנות (לפני מע״מ):", 
-            font=('Arial', 12, 'bold')
+            font=(theme.FONT_FAMILY, 12, 'bold')
         ).grid(row=0, column=0, sticky='e', padx=10, pady=10)
         
         self.store_price_var = tk.StringVar()
@@ -2448,14 +2452,14 @@ class FormulasTabMixin:
             inputs_frame, 
             textvariable=self.store_price_var, 
             width=20, 
-            font=('Arial', 12)
+            font=(theme.FONT_FAMILY, 12)
         )
         store_price_entry.grid(row=0, column=1, padx=10, pady=10)
         
         tk.Label(
             inputs_frame, 
             text="ש״ח", 
-            font=('Arial', 12)
+            font=(theme.FONT_FAMILY, 12)
         ).grid(row=0, column=2, sticky='w', padx=5, pady=10)
         
         # Calculate button
@@ -2463,9 +2467,9 @@ class FormulasTabMixin:
             inputs_frame,
             text="חשב מחיר לצרכן",
             command=self._calculate_store_price,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 12, 'bold'),
+            font=(theme.FONT_FAMILY, 12, 'bold'),
             width=20,
             cursor='hand2'
         )
@@ -2479,46 +2483,46 @@ class FormulasTabMixin:
         tk.Label(
             results_frame, 
             text="מחיר כולל מע״מ:", 
-            font=('Arial', 11, 'bold')
+            font=(theme.FONT_FAMILY, 11, 'bold')
         ).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         
         self.price_with_vat_var = tk.StringVar(value="--")
         price_with_vat_label = tk.Label(
             results_frame,
             textvariable=self.price_with_vat_var,
-            font=('Arial', 14, 'bold'),
-            fg='#3498db',
-            bg='#f7f9fa'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            fg=theme.PRIMARY,
+            bg=theme.PAGE_BG
         )
         price_with_vat_label.grid(row=0, column=1, padx=10, pady=8)
         
         tk.Label(
             results_frame, 
             text="ש״ח", 
-            font=('Arial', 11)
+            font=(theme.FONT_FAMILY, 11)
         ).grid(row=0, column=2, sticky='w', padx=5, pady=8)
         
         # Consumer price result
         tk.Label(
             results_frame, 
             text="מחיר לצרכן:", 
-            font=('Arial', 12, 'bold')
+            font=(theme.FONT_FAMILY, 12, 'bold')
         ).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         
         self.consumer_price_var = tk.StringVar(value="--")
         consumer_price_label = tk.Label(
             results_frame,
             textvariable=self.consumer_price_var,
-            font=('Arial', 16, 'bold'),
-            fg='#27ae60',
-            bg='#f7f9fa'
+            font=(theme.FONT_FAMILY, 16, 'bold'),
+            fg=theme.SUCCESS,
+            bg=theme.PAGE_BG
         )
         consumer_price_label.grid(row=1, column=1, padx=10, pady=8)
         
         tk.Label(
             results_frame, 
             text="ש״ח", 
-            font=('Arial', 12, 'bold')
+            font=(theme.FONT_FAMILY, 12, 'bold')
         ).grid(row=1, column=2, sticky='w', padx=5, pady=8)
         
         # Example frame
@@ -2538,9 +2542,9 @@ class FormulasTabMixin:
         example_label = tk.Label(
             example_frame,
             text=example_text,
-            font=('Arial', 10),
-            bg='#f7f9fa',
-            fg='#34495e',
+            font=(theme.FONT_FAMILY, 10),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK_2,
             justify='right'
         )
         example_label.pack()
@@ -2550,9 +2554,9 @@ class FormulasTabMixin:
             container,
             text="נקה",
             command=self._clear_store_price_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         clear_btn.pack(pady=20)
@@ -2591,27 +2595,27 @@ class FormulasTabMixin:
         """Build the fabric rolls calculator content."""
         
         # Title and description
-        title_frame = tk.Frame(container, bg='#f7f9fa')
+        title_frame = tk.Frame(container, bg=theme.PAGE_BG)
         title_frame.pack(fill='x', padx=20, pady=(10, 5))
         
         tk.Label(
             title_frame,
             text="חישוב גלילי בד לגיזרה",
-            font=('Arial', 14, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         ).pack()
         
         tk.Label(
             title_frame,
             text="חישוב כמות גלילי הבד הנדרשים לגיזרה - כולל קליברציה מעבודה קודמת",
-            font=('Arial', 9),
-            bg='#f7f9fa',
-            fg='#7f8c8d'
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT
         ).pack()
         
         # ============ STEPS CONTAINER (Side by Side) ============
-        steps_container = tk.Frame(container, bg='#f7f9fa')
+        steps_container = tk.Frame(container, bg=theme.PAGE_BG)
         steps_container.pack(fill='x', padx=20, pady=10)
         steps_container.grid_columnconfigure(0, weight=1)
         steps_container.grid_columnconfigure(1, weight=1)
@@ -2621,24 +2625,24 @@ class FormulasTabMixin:
         calibration_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
         # Row 0: Previous drawing length
-        tk.Label(calibration_frame, text="אורך ציור קודם (מטר):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(calibration_frame, text="אורך ציור קודם (מטר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_drawing_length_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_drawing_length_var, width=10, font=('Arial', 10)).grid(
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_drawing_length_var, width=10, font=(theme.FONT_FAMILY, 10)).grid(
             row=0, column=1, padx=5, pady=5, sticky='w')
         
         # Row 1: Previous layers
-        tk.Label(calibration_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(calibration_frame, text="כמות שכבות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=1, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_layers_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_layers_var, width=10, font=('Arial', 10)).grid(
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_layers_var, width=10, font=(theme.FONT_FAMILY, 10)).grid(
             row=1, column=1, padx=5, pady=5, sticky='w')
         
         # Row 2: Rolls used
-        tk.Label(calibration_frame, text="כמות גלילים שנצרכו:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(calibration_frame, text="כמות גלילים שנצרכו:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=2, column=0, sticky='e', padx=5, pady=5)
         self.rolls_prev_rolls_used_var = tk.StringVar()
-        tk.Entry(calibration_frame, textvariable=self.rolls_prev_rolls_used_var, width=10, font=('Arial', 10)).grid(
+        tk.Entry(calibration_frame, textvariable=self.rolls_prev_rolls_used_var, width=10, font=(theme.FONT_FAMILY, 10)).grid(
             row=2, column=1, padx=5, pady=5, sticky='w')
         
         # Row 3: Calculate button
@@ -2646,9 +2650,9 @@ class FormulasTabMixin:
             calibration_frame,
             text="חשב אורך גליל",
             command=self._calculate_roll_length,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         )
         calc_roll_btn.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
@@ -2656,31 +2660,31 @@ class FormulasTabMixin:
         # Row 4: Roll length result
         result_frame = tk.Frame(calibration_frame)
         result_frame.grid(row=4, column=0, columnspan=2, pady=5)
-        tk.Label(result_frame, text="אורך ממוצע לגליל:", font=('Arial', 10, 'bold')).pack(side='right', padx=2)
+        tk.Label(result_frame, text="אורך ממוצע לגליל:", font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=2)
         self.rolls_avg_roll_length_var = tk.StringVar(value="--")
         self.rolls_avg_roll_length_label = tk.Label(
             result_frame,
             textvariable=self.rolls_avg_roll_length_var,
-            font=('Arial', 12, 'bold'),
-            fg='#27ae60'
+            font=(theme.FONT_FAMILY, 12, 'bold'),
+            fg=theme.SUCCESS
         )
         self.rolls_avg_roll_length_label.pack(side='right', padx=2)
-        tk.Label(result_frame, text="מטר", font=('Arial', 10)).pack(side='right', padx=2)
+        tk.Label(result_frame, text="מטר", font=(theme.FONT_FAMILY, 10)).pack(side='right', padx=2)
         
         # Row 5: Manual entry
         manual_frame = tk.Frame(calibration_frame)
         manual_frame.grid(row=5, column=0, columnspan=2, pady=5)
-        tk.Label(manual_frame, text="או הזן ידנית:", font=('Arial', 9), fg='#7f8c8d').pack(side='right', padx=2)
+        tk.Label(manual_frame, text="או הזן ידנית:", font=(theme.FONT_FAMILY, 9), fg=theme.SUBTEXT).pack(side='right', padx=2)
         self.rolls_manual_roll_length_var = tk.StringVar()
-        manual_entry = tk.Entry(manual_frame, textvariable=self.rolls_manual_roll_length_var, width=8, font=('Arial', 10))
+        manual_entry = tk.Entry(manual_frame, textvariable=self.rolls_manual_roll_length_var, width=8, font=(theme.FONT_FAMILY, 10))
         manual_entry.pack(side='right', padx=2)
         use_manual_btn = tk.Button(
             manual_frame,
             text="השתמש בערך ידני",
             command=self._use_manual_roll_length,
-            bg='#95a5a6',
+            bg=theme.MUTED,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         )
         use_manual_btn.pack(side='right', padx=2)
         
@@ -2689,7 +2693,7 @@ class FormulasTabMixin:
         new_job_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
         
         # Row 0: Drawing selection
-        tk.Label(new_job_frame, text="בחר ציור (אופציונלי):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(new_job_frame, text="בחר ציור (אופציונלי):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=0, column=0, sticky='e', padx=5, pady=5)
         
         drawing_select_frame = tk.Frame(new_job_frame)
@@ -2710,37 +2714,37 @@ class FormulasTabMixin:
             drawing_select_frame,
             text="טען ציורים",
             command=self._load_rolls_drawings_list,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         )
         load_btn.pack(side='right', padx=2)
         
         # Row 1: New drawing length
-        tk.Label(new_job_frame, text="אורך ציור חדש (מטר):", font=('Arial', 10, 'bold')).grid(
+        tk.Label(new_job_frame, text="אורך ציור חדש (מטר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=1, column=0, sticky='e', padx=5, pady=8)
         self.rolls_new_drawing_length_var = tk.StringVar()
-        tk.Entry(new_job_frame, textvariable=self.rolls_new_drawing_length_var, width=12, font=('Arial', 10)).grid(
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_drawing_length_var, width=12, font=(theme.FONT_FAMILY, 10)).grid(
             row=1, column=1, padx=5, pady=8, sticky='w')
         
         # Row 2: New layers count
-        tk.Label(new_job_frame, text="כמות שכבות:", font=('Arial', 10, 'bold')).grid(
+        tk.Label(new_job_frame, text="כמות שכבות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
             row=2, column=0, sticky='e', padx=5, pady=8)
         self.rolls_new_layers_var = tk.StringVar()
-        tk.Entry(new_job_frame, textvariable=self.rolls_new_layers_var, width=12, font=('Arial', 10)).grid(
+        tk.Entry(new_job_frame, textvariable=self.rolls_new_layers_var, width=12, font=(theme.FONT_FAMILY, 10)).grid(
             row=2, column=1, padx=5, pady=8, sticky='w')
         
         # Buttons frame
-        buttons_frame = tk.Frame(container, bg='#f7f9fa')
+        buttons_frame = tk.Frame(container, bg=theme.PAGE_BG)
         buttons_frame.pack(fill='x', padx=20, pady=10)
         
         tk.Button(
             buttons_frame,
             text="חשב גלילים נדרשים",
             command=self._calculate_fabric_rolls,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=20,
             height=2
         ).pack(side='left', padx=5)
@@ -2749,9 +2753,9 @@ class FormulasTabMixin:
             buttons_frame,
             text="נקה הכל",
             command=self._clear_fabric_rolls_inputs,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             width=15,
             height=2
         ).pack(side='left', padx=5)
@@ -2767,17 +2771,17 @@ class FormulasTabMixin:
             font=('Courier New', 10),
             wrap=tk.WORD,
             state='disabled',
-            bg='#ffffff'
+            bg=theme.CARD_BG
         )
         self.rolls_results_text.pack(fill='both', expand=True)
         
         # Configure text tags for formatting
-        self.rolls_results_text.tag_configure('header', font=('Arial', 11, 'bold'), foreground='#2c3e50')
-        self.rolls_results_text.tag_configure('label', font=('Courier New', 10), foreground='#34495e')
-        self.rolls_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground='#2980b9')
-        self.rolls_results_text.tag_configure('total', font=('Arial', 14, 'bold'), foreground='#27ae60')
-        self.rolls_results_text.tag_configure('warning', font=('Arial', 10, 'bold'), foreground='#e67e22')
-        self.rolls_results_text.tag_configure('separator', foreground='#7f8c8d')
+        self.rolls_results_text.tag_configure('header', font=(theme.FONT_FAMILY, 11, 'bold'), foreground=theme.DARK)
+        self.rolls_results_text.tag_configure('label', font=('Courier New', 10), foreground=theme.DARK_2)
+        self.rolls_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground=theme.PRIMARY_DARK)
+        self.rolls_results_text.tag_configure('total', font=(theme.FONT_FAMILY, 14, 'bold'), foreground=theme.SUCCESS)
+        self.rolls_results_text.tag_configure('warning', font=(theme.FONT_FAMILY, 10, 'bold'), foreground=theme.WARNING)
+        self.rolls_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
         
         # Initialize
         self.rolls_drawings_dict = {}
@@ -3029,7 +3033,7 @@ class FormulasTabMixin:
         self.selected_sqm_drawings = []
         
         # Main 2-column container
-        main_frame = tk.Frame(container, bg='#f7f9fa')
+        main_frame = tk.Frame(container, bg=theme.PAGE_BG)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
         
         # Configure grid weights for 2 columns
@@ -3038,7 +3042,7 @@ class FormulasTabMixin:
         main_frame.rowconfigure(0, weight=1)
         
         # ========== LEFT COLUMN (Input) ==========
-        left_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        left_frame = tk.Frame(main_frame, bg=theme.PAGE_BG)
         left_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
         
         # Instructions
@@ -3054,9 +3058,9 @@ class FormulasTabMixin:
         tk.Label(
             instructions_frame,
             text=instructions_text,
-            font=('Arial', 9),
-            bg='#f7f9fa',
-            fg='#2c3e50',
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
             justify='right',
             anchor='e'
         ).pack(fill='x')
@@ -3072,7 +3076,7 @@ class FormulasTabMixin:
         self.sqm_drawings_listbox = tk.Listbox(
             listbox_frame,
             selectmode=tk.EXTENDED,
-            font=('Arial', 9),
+            font=(theme.FONT_FAMILY, 9),
             height=8,
             exportselection=False
         )
@@ -3083,25 +3087,25 @@ class FormulasTabMixin:
         listbox_scrollbar.pack(side='right', fill='y')
         
         # Buttons for add/refresh
-        btn_frame1 = tk.Frame(available_frame, bg='#f7f9fa')
+        btn_frame1 = tk.Frame(available_frame, bg=theme.PAGE_BG)
         btn_frame1.pack(fill='x', pady=(5, 0))
         
         tk.Button(
             btn_frame1,
             text="➕ הוסף לחישוב",
             command=self._add_drawings_to_selection,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         ).pack(side='right', padx=2)
         
         tk.Button(
             btn_frame1,
             text="🔄 רענן",
             command=self._load_sqm_cut_drawings,
-            bg='#3498db',
+            bg=theme.PRIMARY,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         ).pack(side='right', padx=2)
         
         # Selected drawings frame
@@ -3136,33 +3140,33 @@ class FormulasTabMixin:
             selected_frame,
             text="🗑️ הסר נבחרים",
             command=self._remove_selected_drawings,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         ).pack(anchor='e', pady=(5, 0))
         
         # Price input frame
         input_frame = ttk.LabelFrame(left_frame, text="קלט מחיר", padding=10)
         input_frame.pack(fill='x', pady=(0, 10))
         
-        price_row = tk.Frame(input_frame, bg='#f7f9fa')
+        price_row = tk.Frame(input_frame, bg=theme.PAGE_BG)
         price_row.pack(fill='x')
         
-        tk.Label(price_row, text="מחיר ל-1 ק\"ג בד (₪):", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=5)
+        tk.Label(price_row, text="מחיר ל-1 ק\"ג בד (₪):", font=(theme.FONT_FAMILY, 10, 'bold'), bg=theme.PAGE_BG).pack(side='right', padx=5)
         self.sqm_price_per_kg_var = tk.StringVar()
-        tk.Entry(price_row, textvariable=self.sqm_price_per_kg_var, width=12, font=('Arial', 11)).pack(side='right', padx=5)
+        tk.Entry(price_row, textvariable=self.sqm_price_per_kg_var, width=12, font=(theme.FONT_FAMILY, 11)).pack(side='right', padx=5)
         
         # Buttons row
-        btn_row = tk.Frame(input_frame, bg='#f7f9fa')
+        btn_row = tk.Frame(input_frame, bg=theme.PAGE_BG)
         btn_row.pack(fill='x', pady=(10, 0))
         
         tk.Button(
             btn_row,
             text="📊 חשב ממוצע עלות למ\"ר",
             command=self._calculate_sqm_cost,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 11, 'bold'),
+            font=(theme.FONT_FAMILY, 11, 'bold'),
             padx=15,
             pady=5
         ).pack(side='right', padx=5)
@@ -3171,13 +3175,13 @@ class FormulasTabMixin:
             btn_row,
             text="🗑️ נקה הכל",
             command=self._clear_sqm_cost_inputs,
-            bg='#95a5a6',
+            bg=theme.MUTED,
             fg='white',
-            font=('Arial', 9, 'bold')
+            font=(theme.FONT_FAMILY, 9, 'bold')
         ).pack(side='right', padx=5)
         
         # ========== RIGHT COLUMN (Results) ==========
-        right_frame = tk.Frame(main_frame, bg='#f7f9fa')
+        right_frame = tk.Frame(main_frame, bg=theme.PAGE_BG)
         right_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
         results_frame = ttk.LabelFrame(right_frame, text="תוצאות החישוב", padding=10)
@@ -3187,8 +3191,8 @@ class FormulasTabMixin:
         self.sqm_results_text = tk.Text(
             results_frame,
             font=('Consolas', 10),
-            bg='#2c3e50',
-            fg='#ecf0f1',
+            bg=theme.DARK,
+            fg=theme.PANEL_BG,
             insertbackground='white',
             state='disabled',
             wrap='word'
@@ -3200,13 +3204,13 @@ class FormulasTabMixin:
         results_scrollbar.pack(side='right', fill='y')
         
         # Configure tags for results
-        self.sqm_results_text.tag_configure('header', foreground='#f39c12', font=('Consolas', 11, 'bold'))
-        self.sqm_results_text.tag_configure('subheader', foreground='#3498db', font=('Consolas', 10, 'bold'))
-        self.sqm_results_text.tag_configure('label', foreground='#bdc3c7', font=('Consolas', 9))
-        self.sqm_results_text.tag_configure('value', foreground='#2ecc71', font=('Consolas', 10, 'bold'))
-        self.sqm_results_text.tag_configure('total', foreground='#e74c3c', font=('Consolas', 14, 'bold'))
-        self.sqm_results_text.tag_configure('average', foreground='#f1c40f', font=('Consolas', 16, 'bold'))
-        self.sqm_results_text.tag_configure('separator', foreground='#7f8c8d')
+        self.sqm_results_text.tag_configure('header', foreground=theme.AMBER, font=('Consolas', 11, 'bold'))
+        self.sqm_results_text.tag_configure('subheader', foreground=theme.PRIMARY, font=('Consolas', 10, 'bold'))
+        self.sqm_results_text.tag_configure('label', foreground=theme.MUTED, font=('Consolas', 9))
+        self.sqm_results_text.tag_configure('value', foreground=theme.SUCCESS_LIGHT, font=('Consolas', 10, 'bold'))
+        self.sqm_results_text.tag_configure('total', foreground=theme.DANGER, font=('Consolas', 14, 'bold'))
+        self.sqm_results_text.tag_configure('average', foreground=theme.AMBER, font=('Consolas', 16, 'bold'))
+        self.sqm_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
         
         # Initial welcome message
         self.sqm_results_text.config(state='normal')
@@ -3468,3 +3472,214 @@ class FormulasTabMixin:
             self.sqm_results_text.insert(tk.END, "\n\n    בחר ציורים והזן מחיר לק\"ג\n", 'header')
             self.sqm_results_text.insert(tk.END, "    לחישוב ממוצע עלות למ\"ר\n\n", 'header')
             self.sqm_results_text.config(state='disabled')
+
+    def _build_shirt_fabric_cost_content(self, container):
+        """Build calculator for average fabric cost per shirt from marker length."""
+        title_frame = tk.Frame(container, bg=theme.PAGE_BG)
+        title_frame.pack(fill='x', padx=20, pady=(10, 5))
+
+        tk.Label(
+            title_frame,
+            text="עלות בד לחולצה",
+            font=(theme.FONT_FAMILY, 14, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
+        ).pack()
+
+        tk.Label(
+            title_frame,
+            text="חישוב עלות בד ממוצעת לחולצה לפי אורך שכבה, מספר מידות ויחס ק״ג/מטרים",
+            font=(theme.FONT_FAMILY, 9),
+            bg=theme.PAGE_BG,
+            fg=theme.SUBTEXT
+        ).pack()
+
+        formula_frame = ttk.LabelFrame(container, text="נוסחה", padding=15)
+        formula_frame.pack(fill='x', padx=20, pady=10)
+
+        tk.Label(
+            formula_frame,
+            text="עלות לחולצה = (אורך שכבה ÷ מספר מידות) × (ק״ג ÷ מטרים) × מחיר לק״ג",
+            font=(theme.FONT_FAMILY, 11, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
+            justify='center'
+        ).pack(pady=5)
+
+        input_frame = ttk.LabelFrame(container, text="נתונים", padding=20)
+        input_frame.pack(fill='x', padx=20, pady=10)
+        input_frame.grid_columnconfigure(1, weight=1)
+        input_frame.grid_columnconfigure(3, weight=1)
+
+        tk.Label(input_frame, text="אורך שכבה (מטר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
+            row=0, column=0, sticky='w', padx=5, pady=5)
+        self.shirt_marker_length_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.shirt_marker_length_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
+            row=0, column=1, padx=5, pady=5, sticky='w')
+
+        tk.Label(input_frame, text="מספר מידות בגיזרה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
+            row=0, column=2, sticky='w', padx=5, pady=5)
+        self.shirt_num_sizes_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.shirt_num_sizes_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
+            row=0, column=3, padx=5, pady=5, sticky='w')
+
+        tk.Label(input_frame, text="משקל גליל (ק״ג):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
+            row=1, column=0, sticky='w', padx=5, pady=5)
+        self.shirt_roll_kg_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.shirt_roll_kg_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
+            row=1, column=1, padx=5, pady=5, sticky='w')
+
+        tk.Label(input_frame, text="אורך גליל (מטר):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
+            row=1, column=2, sticky='w', padx=5, pady=5)
+        self.shirt_roll_meters_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.shirt_roll_meters_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
+            row=1, column=3, padx=5, pady=5, sticky='w')
+
+        tk.Label(input_frame, text="מחיר לק״ג (₪):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(
+            row=2, column=0, sticky='w', padx=5, pady=5)
+        self.shirt_price_per_kg_var = tk.StringVar()
+        tk.Entry(input_frame, textvariable=self.shirt_price_per_kg_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(
+            row=2, column=1, padx=5, pady=5, sticky='w')
+
+        buttons_frame = tk.Frame(container, bg=theme.PAGE_BG)
+        buttons_frame.pack(fill='x', padx=20, pady=10)
+
+        tk.Button(
+            buttons_frame,
+            text="חשב עלות",
+            command=self._calculate_shirt_fabric_cost,
+            bg=theme.SUCCESS,
+            fg='white',
+            font=(theme.FONT_FAMILY, 11, 'bold'),
+            width=20,
+            height=2
+        ).pack(side='left', padx=5)
+
+        tk.Button(
+            buttons_frame,
+            text="נקה הכל",
+            command=self._clear_shirt_fabric_cost,
+            bg=theme.DANGER,
+            fg='white',
+            font=(theme.FONT_FAMILY, 11, 'bold'),
+            width=15,
+            height=2
+        ).pack(side='left', padx=5)
+
+        results_frame = ttk.LabelFrame(container, text="תוצאות החישוב", padding=20)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+
+        self.shirt_fabric_cost_results_text = tk.Text(
+            results_frame,
+            height=12,
+            font=('Courier New', 10),
+            wrap=tk.WORD,
+            state='disabled',
+            bg=theme.CARD_BG
+        )
+        self.shirt_fabric_cost_results_text.pack(fill='both', expand=True)
+
+        self.shirt_fabric_cost_results_text.tag_configure('header', font=(theme.FONT_FAMILY, 11, 'bold'), foreground=theme.DARK)
+        self.shirt_fabric_cost_results_text.tag_configure('label', font=('Courier New', 10), foreground=theme.DARK_2)
+        self.shirt_fabric_cost_results_text.tag_configure('value', font=('Courier New', 10, 'bold'), foreground=theme.PRIMARY_DARK)
+        self.shirt_fabric_cost_results_text.tag_configure('total', font=(theme.FONT_FAMILY, 13, 'bold'), foreground=theme.SUCCESS)
+        self.shirt_fabric_cost_results_text.tag_configure('separator', foreground=theme.SUBTEXT)
+
+        self._clear_shirt_fabric_cost()
+
+    def _calculate_shirt_fabric_cost(self):
+        """Calculate average fabric cost per shirt from marker length and roll data."""
+        try:
+            marker_length = float(self.shirt_marker_length_var.get() or 0)
+            num_sizes = float(self.shirt_num_sizes_var.get() or 0)
+            roll_kg = float(self.shirt_roll_kg_var.get() or 0)
+            roll_meters = float(self.shirt_roll_meters_var.get() or 0)
+            price_per_kg = float(self.shirt_price_per_kg_var.get() or 0)
+
+            if marker_length <= 0:
+                messagebox.showwarning("אזהרה", "אורך השכבה חייב להיות גדול מ-0")
+                return
+            if num_sizes <= 0:
+                messagebox.showwarning("אזהרה", "מספר המידות חייב להיות גדול מ-0")
+                return
+            if roll_kg <= 0:
+                messagebox.showwarning("אזהרה", "משקל הגליל חייב להיות גדול מ-0")
+                return
+            if roll_meters <= 0:
+                messagebox.showwarning("אזהרה", "אורך הגליל חייב להיות גדול מ-0")
+                return
+            if price_per_kg <= 0:
+                messagebox.showwarning("אזהרה", "מחיר לק״ג חייב להיות גדול מ-0")
+                return
+
+            kg_per_meter = roll_kg / roll_meters
+            price_per_meter = kg_per_meter * price_per_kg
+            meters_per_shirt = marker_length / num_sizes
+            cost_per_shirt = meters_per_shirt * price_per_meter
+
+            text = self.shirt_fabric_cost_results_text
+            text.config(state='normal')
+            text.delete(1.0, tk.END)
+
+            text.insert(tk.END, "תוצאות חישוב עלות בד לחולצה\n", 'header')
+            text.insert(tk.END, "=" * 60 + "\n\n", 'separator')
+
+            text.insert(tk.END, "נתוני קלט:\n", 'header')
+            text.insert(tk.END, f"  אורך שכבה:                        ", 'label')
+            text.insert(tk.END, f"{marker_length:.2f} מ'\n", 'value')
+            text.insert(tk.END, f"  מספר מידות בגיזרה:                ", 'label')
+            text.insert(tk.END, f"{num_sizes:.0f}\n", 'value')
+            text.insert(tk.END, f"  משקל גליל:                        ", 'label')
+            text.insert(tk.END, f"{roll_kg:.2f} ק״ג\n", 'value')
+            text.insert(tk.END, f"  אורך גליל:                        ", 'label')
+            text.insert(tk.END, f"{roll_meters:.2f} מ'\n", 'value')
+            text.insert(tk.END, f"  מחיר לק״ג:                        ", 'label')
+            text.insert(tk.END, f"{price_per_kg:.2f} ₪\n\n", 'value')
+
+            text.insert(tk.END, "-" * 60 + "\n\n", 'separator')
+
+            text.insert(tk.END, "חישובי ביניים:\n", 'header')
+            text.insert(tk.END, f"  משקל למטר רץ:                     ", 'label')
+            text.insert(tk.END, f"{kg_per_meter:.4f} ק״ג/מ'\n", 'value')
+            text.insert(tk.END, f"  מחיר למטר רץ:                     ", 'label')
+            text.insert(tk.END, f"{price_per_meter:.4f} ₪/מ'\n", 'value')
+            text.insert(tk.END, f"  מטרים ממוצעים לחולצה:             ", 'label')
+            text.insert(tk.END, f"{meters_per_shirt:.4f} מ'\n\n", 'value')
+
+            text.insert(tk.END, "=" * 60 + "\n\n", 'separator')
+            text.insert(tk.END, f"עלות בד ממוצעת לחולצה:  {cost_per_shirt:.2f} ₪\n", 'total')
+
+            text.config(state='disabled')
+
+        except ValueError:
+            messagebox.showerror("שגיאה", "אנא הזן מספרים תקינים בכל השדות")
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"שגיאה בחישוב: {str(e)}")
+
+    def _clear_shirt_fabric_cost(self):
+        """Clear shirt fabric cost inputs and results."""
+        if hasattr(self, 'shirt_marker_length_var'):
+            self.shirt_marker_length_var.set('')
+        if hasattr(self, 'shirt_num_sizes_var'):
+            self.shirt_num_sizes_var.set('')
+        if hasattr(self, 'shirt_roll_kg_var'):
+            self.shirt_roll_kg_var.set('')
+        if hasattr(self, 'shirt_roll_meters_var'):
+            self.shirt_roll_meters_var.set('')
+        if hasattr(self, 'shirt_price_per_kg_var'):
+            self.shirt_price_per_kg_var.set('')
+
+        if hasattr(self, 'shirt_fabric_cost_results_text'):
+            self.shirt_fabric_cost_results_text.config(state='normal')
+            self.shirt_fabric_cost_results_text.delete(1.0, tk.END)
+            self.shirt_fabric_cost_results_text.insert(
+                tk.END,
+                "\n\n    הזן אורך שכבה, מספר מידות, ק״ג, מטרים ומחיר לק״ג\n",
+                'header'
+            )
+            self.shirt_fabric_cost_results_text.insert(
+                tk.END,
+                "    ולחץ 'חשב עלות'\n\n",
+                'header'
+            )
+            self.shirt_fabric_cost_results_text.config(state='disabled')

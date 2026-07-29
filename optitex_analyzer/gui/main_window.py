@@ -20,6 +20,7 @@ from .shipping_costs_tab import ShippingCostsTabMixin
 from .orders_tab import OrdersTabMixin
 from .stickers_tab import StickersTabMixin
 from .rivhit_tab import RivhitTabMixin
+from . import theme
 
 
 class MainWindow(
@@ -104,9 +105,13 @@ class MainWindow(
         self.current_results = []
         self.drawings_manager_window = None
 
+        # ----- Header (כמו header של אתר) -----
+        self._create_header()
+
         # ----- Notebook & Tabs -----
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True)
+        # פס הטאבים המובנה מוסתר; הניווט נעשה בסרגל דינמי שנשבר לשורות (נבנה בסוף)
+        self.notebook = ttk.Notebook(self.root, style="Main.TNotebook")
+        self.notebook.pack(fill="both", expand=True, padx=8, pady=(4, 0))
 
         # Create each tab from its mixin
     # Removed standalone converter tab: converter now embedded as sub-tab inside 'מנהל ציורים'
@@ -185,6 +190,9 @@ class MainWindow(
             except Exception:
                 pass
 
+        # ----- Navigation bar (dynamic, wraps to rows) -----
+        self._create_nav_bar()
+
         # ----- Footer / Status -----
         self._create_status_bar()
         self._load_initial_settings()
@@ -233,16 +241,164 @@ class MainWindow(
         except Exception:
             pass
     
+    def _create_header(self):
+        """כותרת עליונה בסגנון אתר: לוגו + שם התוכנה על רקע כהה."""
+        header = tk.Frame(self.root, bg=theme.DARK, height=54)
+        header.pack(fill="x", side="top")
+        header.pack_propagate(False)
+
+        title = tk.Label(
+            header,
+            text="FactorySync",
+            bg=theme.DARK,
+            fg=theme.CARD_BG,
+            font=(theme.FONT_FAMILY, 16, "bold"),
+        )
+        title.pack(side="right", padx=(0, 18))
+
+        subtitle = tk.Label(
+            header,
+            text="ניהול ייצור, מלאי ומשלוחים",
+            bg=theme.DARK,
+            fg=theme.MUTED,
+            font=(theme.FONT_FAMILY, 10),
+        )
+        subtitle.pack(side="right", padx=(0, 12), pady=(6, 0))
+
+        # לוגו (אם קיים)
+        try:
+            from PIL import Image, ImageTk
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'assets', 'labels', 'logo.png')
+            if os.path.exists(logo_path):
+                img = Image.open(logo_path)
+                img.thumbnail((40, 40), Image.LANCZOS)
+                self._header_logo_img = ImageTk.PhotoImage(img)
+                tk.Label(header, image=self._header_logo_img, bg=theme.DARK).pack(side="right", padx=(0, 10))
+        except Exception:
+            pass
+
+        # פס הדגשה בצבע ראשי מתחת ל-header
+        tk.Frame(self.root, bg=theme.PRIMARY, height=3).pack(fill="x", side="top")
+
+    def _create_nav_bar(self):
+        """סרגל ניווט דינמי במקום פס הטאבים המובנה.
+
+        הכפתורים נשברים אוטומטית לשורות לפי רוחב החלון, כך ששום כיתוב לא נחתך.
+        """
+        self._nav_bar = tk.Frame(self.root, bg=theme.DARK)
+        try:
+            self._nav_bar.pack(fill="x", side="top", before=self.notebook)
+        except Exception:
+            self._nav_bar.pack(fill="x", side="top")
+
+        self._nav_buttons = []
+        self._nav_gap_x = 6
+        self._nav_gap_y = 6
+
+        def on_click(idx):
+            try:
+                self.notebook.select(idx)
+            except Exception:
+                pass
+
+        for i, tab_id in enumerate(self.notebook.tabs()):
+            try:
+                text = self.notebook.tab(tab_id, 'text')
+            except Exception:
+                text = ''
+            btn = tk.Label(
+                self._nav_bar,
+                text=text,
+                font=(theme.FONT_FAMILY, 10, 'bold'),
+                bg=theme.DARK,
+                fg='#cbd5e1',
+                padx=12,
+                pady=5,
+                cursor='hand2',
+            )
+            btn.bind('<Button-1>', lambda e, idx=i: on_click(idx))
+
+            def on_enter(e, b=btn):
+                if getattr(b, '_nav_active', False):
+                    return
+                b.configure(bg=theme.DARK_2, fg='#ffffff')
+
+            def on_leave(e, b=btn):
+                if getattr(b, '_nav_active', False):
+                    return
+                b.configure(bg=theme.DARK, fg='#cbd5e1')
+
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
+            self._nav_buttons.append(btn)
+
+        self._nav_last_width = 0
+        self._nav_bar.bind('<Configure>', self._relayout_nav_bar)
+        try:
+            self.notebook.bind('<<NotebookTabChanged>>', self._update_nav_selection, add='+')
+        except Exception:
+            pass
+        self.root.after_idle(lambda: (self._relayout_nav_bar(), self._update_nav_selection()))
+
+    def _relayout_nav_bar(self, event=None):
+        """פריסת כפתורי הניווט מימין לשמאל עם שבירה אוטומטית לשורות."""
+        try:
+            bar = self._nav_bar
+            width = bar.winfo_width()
+            if width <= 1:
+                return
+            if event is not None and width == self._nav_last_width:
+                return
+            self._nav_last_width = width
+
+            gap_x, gap_y = self._nav_gap_x, self._nav_gap_y
+            pad = 8
+            avail = width - 2 * pad
+            x = pad  # מרחק מהקצה הימני
+            row = 0
+            row_h = 0
+            for btn in self._nav_buttons:
+                bw = btn.winfo_reqwidth()
+                bh = btn.winfo_reqheight()
+                row_h = max(row_h, bh)
+                if x > pad and (x + bw) > avail + pad:
+                    row += 1
+                    x = pad
+                btn.place(relx=1.0, x=-(x + bw), y=row * (row_h + gap_y) + gap_y, width=bw, height=bh)
+                x += bw + gap_x
+            total_h = (row + 1) * (row_h + gap_y) + gap_y
+            bar.configure(height=total_h)
+        except Exception:
+            pass
+
+    def _update_nav_selection(self, event=None):
+        """הדגשת הטאב הפעיל בסרגל הניווט."""
+        try:
+            current = self.notebook.index(self.notebook.select())
+        except Exception:
+            return
+        for i, btn in enumerate(self._nav_buttons):
+            try:
+                if i == current:
+                    btn._nav_active = True
+                    btn.configure(bg=theme.PRIMARY, fg='#ffffff')
+                else:
+                    btn._nav_active = False
+                    btn.configure(bg=theme.DARK, fg='#cbd5e1')
+            except Exception:
+                pass
+
     def _create_status_bar(self):
         """יצירת שורת הסטטוס"""
         self.status_label = tk.Label(
             self.root,
             text="מוכן לעבודה",
-            bg='#34495e',
-            fg='white',
+            bg=theme.DARK,
+            fg='#e2e8f0',
             anchor='w',
             padx=15,
-            font=('Arial', 10)
+            pady=4,
+            font=(theme.FONT_FAMILY, 9)
         )
         self.status_label.pack(fill="x", side="bottom")
     

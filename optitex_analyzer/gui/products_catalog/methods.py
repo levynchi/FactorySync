@@ -4,6 +4,7 @@ from datetime import datetime
 import re
 import os
 import json
+from .. import theme
 
 class ProductsCatalogMethodsMixin:
     """All event handlers, loaders, and helpers for Products Catalog tab."""
@@ -17,14 +18,14 @@ class ProductsCatalogMethodsMixin:
 
         # --- Main Category selector (drives field visibility) ---
         self._products_field_widgets = {}
-        tk.Label(form, text="קטגוריה ראשית:", font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=(0,6))
+        tk.Label(form, text="קטגוריה ראשית:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=(0,6))
         main_cat_names = [c.get('name','') for c in getattr(self.data_processor, 'main_categories', [])]
         self.prod_main_category_combobox = ttk.Combobox(form, textvariable=self.prod_main_category_var, values=main_cat_names, state='readonly', width=16, justify='right')
         self.prod_main_category_combobox.grid(row=0, column=1, sticky='w', padx=2, pady=(0,6))
         self.prod_main_category_combobox.bind('<<ComboboxSelected>>', lambda e: self._apply_main_category_field_visibility())
 
         # shift existing rows by +1 to make space for main category row
-        tk.Label(form, text="שם הדגם:", font=('Arial',10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="שם הדגם:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         model_names = [r.get('name') for r in getattr(self.data_processor, 'product_model_names', [])]
         self.model_name_combobox = ttk.Combobox(
             form,
@@ -40,7 +41,7 @@ class ProductsCatalogMethodsMixin:
         self._products_field_widgets['model_name'].append(self.model_name_combobox)
 
         # sub category (תת קטגוריה) - multi-select like sizes/types/colors/prints
-        tk.Label(form, text="תת קטגוריה:", font=('Arial',10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="תת קטגוריה:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         cat_names = [c.get('name','') for c in getattr(self.data_processor, 'categories', [])]
         # Group sub-category picker + display + clear into one frame to keep them adjacent
         self.subcat_frame = ttk.Frame(form)
@@ -63,7 +64,7 @@ class ProductsCatalogMethodsMixin:
         # We'll collect after creating label widgets too using winfo_children search if needed
 
         # fabric category
-        tk.Label(form, text="קטגוריית בד:", font=('Arial',10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="קטגוריית בד:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=1, column=6, sticky='w', padx=4, pady=4)
         fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
         self.fabric_category_combobox = ttk.Combobox(
             form,
@@ -83,7 +84,7 @@ class ProductsCatalogMethodsMixin:
         self.selected_print_names = []
 
     # size (new row for more space)
-        tk.Label(form, text="מידות:", font=('Arial',10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="מידות:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.size_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_sizes',[])], state='readonly', width=12, justify='right')
         self.size_picker.grid(row=2, column=1, sticky='w', padx=2, pady=4)
         self.size_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('size'))
@@ -92,7 +93,7 @@ class ProductsCatalogMethodsMixin:
         self.btn_clear_size.grid(row=2, column=3, padx=2)
 
         # types (move to its own row for more space)
-        tk.Label(form, text="סוגי בד:", font=('Arial',10,'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="סוגי בד:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
         self.ftype_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_types',[])], state='readonly', width=12, justify='right')
         self.ftype_picker.grid(row=3, column=1, sticky='w', padx=2, pady=4)
         self.ftype_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_type'))
@@ -101,7 +102,7 @@ class ProductsCatalogMethodsMixin:
         self.btn_clear_ftype.grid(row=3, column=3, padx=2)
 
         # colors (keep on their own row)
-        tk.Label(form, text="צבעי בד:", font=('Arial',10,'bold')).grid(row=4, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="צבעי בד:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=4, column=0, sticky='w', padx=4, pady=4)
         self.fcolor_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_fabric_colors',[])], state='readonly', width=12, justify='right')
         self.fcolor_picker.grid(row=4, column=1, sticky='w', padx=2, pady=4)
         self.fcolor_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('fabric_color'))
@@ -110,7 +111,7 @@ class ProductsCatalogMethodsMixin:
         self.btn_clear_fcolor.grid(row=4, column=3, padx=2)
 
         # prints (move to a dedicated row)
-        tk.Label(form, text="שמות פרינט:", font=('Arial',10,'bold')).grid(row=5, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="שמות פרינט:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=5, column=0, sticky='w', padx=4, pady=4)
         self.pname_picker = ttk.Combobox(form, values=[r.get('name') for r in getattr(self.data_processor,'product_print_names',[])], state='readonly', width=12, justify='right')
         self.pname_picker.grid(row=5, column=1, sticky='w', padx=2, pady=4)
         self.pname_picker.bind('<<ComboboxSelected>>', lambda e: self._on_attr_select('print_name'))
@@ -119,26 +120,26 @@ class ProductsCatalogMethodsMixin:
         self.btn_clear_pname.grid(row=5, column=3, padx=2, pady=4)
 
         # accessories quantities (move down to separate row)
-        tk.Label(form, text="טיקטקים:", font=('Arial',10,'bold')).grid(row=6, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="טיקטקים:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=6, column=0, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_ticks_var, width=10).grid(row=6, column=1, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="גומי:", font=('Arial',10,'bold')).grid(row=6, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="גומי:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=6, column=2, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_elastic_var, width=10).grid(row=6, column=3, sticky='w', padx=2, pady=4)
-        tk.Label(form, text="סרט:", font=('Arial',10,'bold')).grid(row=6, column=4, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="סרט:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=6, column=4, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_ribbon_var, width=10).grid(row=6, column=5, sticky='w', padx=2, pady=4)
         # Unit Type (סוג יחידה)
-        tk.Label(form, text="סוג יחידה:", font=('Arial',10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="סוג יחידה:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=6, column=6, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_unit_type_var, width=12).grid(row=6, column=7, sticky='w', padx=2, pady=4)
         
         # Square Area (שטח רבוע)
-        tk.Label(form, text="שטח רבוע:", font=('Arial',10,'bold')).grid(row=7, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form, text="שטח רבוע:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=7, column=0, sticky='w', padx=4, pady=4)
         tk.Entry(form, textvariable=self.prod_square_area_var, width=12).grid(row=7, column=1, sticky='w', padx=2, pady=4)
 
         # actions moved to their own row to avoid horizontal clipping
-        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg='#27ae60', fg='white').grid(row=8, column=0, padx=12, pady=6, sticky='w')
-        tk.Button(form, text="✏️ ערוך נבחר", command=self._edit_selected_product, bg='#3498db', fg='white').grid(row=8, column=1, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg='#e67e22', fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg='#2c3e50', fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
-        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg='#34495e', fg='white').grid(row=8, column=4, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="➕ הוסף", command=self._add_product_catalog_entry, bg=theme.SUCCESS, fg='white').grid(row=8, column=0, padx=12, pady=6, sticky='w')
+        tk.Button(form, text="✏️ ערוך נבחר", command=self._edit_selected_product, bg=theme.PRIMARY, fg='white').grid(row=8, column=1, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_entry, bg=theme.WARNING, fg='white').grid(row=8, column=2, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="💾 ייצוא ל-Excel", command=self._export_products_catalog, bg=theme.DARK, fg='white').grid(row=8, column=3, padx=4, pady=6, sticky='w')
+        tk.Button(form, text="⬆️ יבוא מקובץ", command=self._import_products_catalog_dialog, bg=theme.DARK_2, fg='white').grid(row=8, column=4, padx=4, pady=6, sticky='w')
 
         # סרגל סינון לפי שם הדגם + טוגל תצוגה
         filter_frame = ttk.Frame(parent, padding=4)
@@ -150,9 +151,9 @@ class ProductsCatalogMethodsMixin:
             filter_frame, 
             text='💰 תצוגת עלויות', 
             command=self._toggle_cost_view,
-            bg='#3498db', 
+            bg=theme.PRIMARY, 
             fg='white', 
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=14
         )
         self.toggle_view_btn.pack(side='left', padx=4)
@@ -163,15 +164,15 @@ class ProductsCatalogMethodsMixin:
             filter_frame, 
             text='⚖️ עלות בד: לפי משקל', 
             command=self._toggle_fabric_cost_method,
-            bg='#e67e22', 
+            bg=theme.WARNING, 
             fg='white', 
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=18
         )
         self.toggle_fabric_method_btn.pack(side='left', padx=4)
         
         # סינון לפי קטגוריית בד (באמצע השורה)
-        tk.Label(filter_frame, text="קטגוריית בד:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='left', padx=(20, 4))
+        tk.Label(filter_frame, text="קטגוריית בד:", font=(theme.FONT_FAMILY, 10, 'bold'), bg=theme.PAGE_BG).pack(side='left', padx=(20, 4))
         self.filter_fabric_category_var = tk.StringVar(value="הכל")
         fabric_categories = ["הכל"] + [c.get('name') for c in getattr(self.data_processor, 'product_fabric_categories', [])]
         self.filter_fabric_category_combo = ttk.Combobox(filter_frame, textvariable=self.filter_fabric_category_var, values=fabric_categories, state='readonly', width=15)
@@ -179,15 +180,15 @@ class ProductsCatalogMethodsMixin:
         self.filter_fabric_category_combo.bind('<<ComboboxSelected>>', lambda e: self._filter_products_tree())
         
         # כפתור נקה סינון
-        tk.Button(filter_frame, text='נקה סינון', command=self._clear_product_filters, bg='#95a5a6', fg='white', width=10).pack(side='left', padx=4)
+        tk.Button(filter_frame, text='נקה סינון', command=self._clear_product_filters, bg=theme.MUTED, fg='white', width=10).pack(side='left', padx=4)
         
         # חיפוש (בצד ימין)
-        tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='right', padx=(8, 4))
+        tk.Label(filter_frame, text="🔍 חיפוש לפי שם הדגם:", font=(theme.FONT_FAMILY, 10, 'bold'), bg=theme.PAGE_BG).pack(side='right', padx=(8, 4))
         self.product_filter_var = tk.StringVar()
         self.product_filter_var.trace_add('write', lambda *args: self._filter_products_tree())
-        filter_entry = tk.Entry(filter_frame, textvariable=self.product_filter_var, width=30, font=('Arial', 10))
+        filter_entry = tk.Entry(filter_frame, textvariable=self.product_filter_var, width=30, font=(theme.FONT_FAMILY, 10))
         filter_entry.pack(side='right', padx=2)
-        tk.Button(filter_frame, text='🗑️ נקה', command=lambda: self.product_filter_var.set(''), bg='#e74c3c', fg='white', width=6).pack(side='right', padx=4)
+        tk.Button(filter_frame, text='🗑️ נקה', command=lambda: self.product_filter_var.set(''), bg=theme.DANGER, fg='white', width=6).pack(side='right', padx=4)
 
         # Frame לטבלה (שומר רפרנס לשימוש בהחלפת תצוגה)
         self.products_tree_frame = ttk.LabelFrame(parent, text="פריטים", padding=6)
@@ -370,13 +371,13 @@ class ProductsCatalogMethodsMixin:
         self.acc_name_var = tk.StringVar(); self.acc_unit_var = tk.StringVar()
         acc_form = ttk.LabelFrame(parent, text="הוספת אביזר תפירה", padding=10)
         acc_form.pack(fill='x', padx=10, pady=6)
-        tk.Label(acc_form, text="שם אביזר:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
+        tk.Label(acc_form, text="שם אביזר:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
         tk.Entry(acc_form, textvariable=self.acc_name_var, width=20).grid(row=0, column=1, padx=4, pady=4)
-        tk.Label(acc_form, text="יחידת מדידה:", font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='w')
+        tk.Label(acc_form, text="יחידת מדידה:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='w')
         tk.Entry(acc_form, textvariable=self.acc_unit_var, width=12).grid(row=0, column=3, padx=4, pady=4)
-        tk.Button(acc_form, text="➕ הוסף", command=self._add_sewing_accessory, bg='#27ae60', fg='white').grid(row=0, column=4, padx=8)
+        tk.Button(acc_form, text="➕ הוסף", command=self._add_sewing_accessory, bg=theme.SUCCESS, fg='white').grid(row=0, column=4, padx=8)
         print("🔴 DEBUG: יוצר כפתור 'מחק נבחר' עם command=self._delete_selected_sewing_accessory")
-        delete_btn = tk.Button(acc_form, text="🗑️ מחק נבחר", command=self._delete_selected_sewing_accessory, bg='#e67e22', fg='white')
+        delete_btn = tk.Button(acc_form, text="🗑️ מחק נבחר", command=self._delete_selected_sewing_accessory, bg=theme.WARNING, fg='white')
         delete_btn.grid(row=0, column=5, padx=4)
         print("✅ DEBUG: כפתור 'מחק נבחר' נוצר בהצלחה!")
         print(f"🔍 DEBUG: הכפתור נוצר: {delete_btn}")
@@ -388,7 +389,7 @@ class ProductsCatalogMethodsMixin:
             self._delete_selected_sewing_accessory()
         
         # יצירת כפתור נוסף לבדיקה
-        test_btn = tk.Button(acc_form, text="🧪 בדיקה", command=test_button_click, bg='#3498db', fg='white')
+        test_btn = tk.Button(acc_form, text="🧪 בדיקה", command=test_button_click, bg=theme.PRIMARY, fg='white')
         test_btn.grid(row=0, column=6, padx=4)
         print("🧪 DEBUG: כפתור בדיקה נוסף נוצר!")
 
@@ -407,15 +408,213 @@ class ProductsCatalogMethodsMixin:
         acc_vs.pack(side='right', fill='y')
         self._load_accessories_into_tree()
 
+    # ===== label inventory builders =====
+    def _build_label_inventory_section(self, parent):
+        """תת-טאב מלאי תוויות: מלאי לפי מידה + עדכון + היסטוריה."""
+        from optitex_analyzer.gui.size_matrix import SizeMatrixFrame
+
+        self.label_inv_mode_var = tk.StringVar(value='הוסף למלאי')
+        self.label_inv_note_var = tk.StringVar()
+
+        form = ttk.LabelFrame(parent, text="עדכון מלאי תוויות", padding=10)
+        form.pack(fill='x', padx=10, pady=6)
+
+        controls = tk.Frame(form)
+        controls.pack(fill='x', pady=(0, 6))
+
+        tk.Label(controls, text="מצב:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
+        self.label_inv_mode_combo = ttk.Combobox(
+            controls, textvariable=self.label_inv_mode_var, width=14, state='readonly',
+            values=['הוסף למלאי', 'הגדר מלאי']
+        )
+        self.label_inv_mode_combo.grid(row=0, column=1, padx=4, pady=4, sticky='w')
+
+        tk.Label(controls, text="הערה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='w')
+        tk.Entry(controls, textvariable=self.label_inv_note_var, width=36).grid(row=0, column=3, padx=4, pady=4, sticky='we')
+
+        tk.Button(controls, text="💾 שמור", command=self._save_label_inventory_update, bg=theme.SUCCESS, fg='white').grid(row=0, column=4, padx=8, pady=4)
+        tk.Button(controls, text="🔄 רענן", command=self._refresh_label_inventory_ui, bg=theme.PRIMARY, fg='white').grid(row=0, column=5, padx=4, pady=4)
+        controls.grid_columnconfigure(3, weight=1)
+
+        tk.Label(form, text="הזן כמויות לכל המידות הרלוונטיות (ריק = ללא שינוי):", font=(theme.FONT_FAMILY, 9), fg=theme.DARK).pack(anchor='w', padx=4)
+        self.label_inv_matrix = SizeMatrixFrame(form, allow_free_entry=False, hint='אין מידות מוגדרות')
+        self.label_inv_matrix.pack(fill='x', padx=4, pady=4)
+
+        # Stock table
+        stock_frame = ttk.LabelFrame(parent, text="מלאי נוכחי במפעל", padding=6)
+        stock_frame.pack(fill='both', expand=True, padx=10, pady=6)
+        stock_cols = ('size', 'label_name', 'quantity')
+        self.label_inv_stock_tree = ttk.Treeview(stock_frame, columns=stock_cols, show='headings', height=10)
+        stock_headers = {'size': 'מידה', 'label_name': 'שם תווית', 'quantity': 'כמות במלאי'}
+        stock_widths = {'size': 100, 'label_name': 160, 'quantity': 120}
+        for c in stock_cols:
+            self.label_inv_stock_tree.heading(c, text=stock_headers[c])
+            self.label_inv_stock_tree.column(c, width=stock_widths[c], anchor='center')
+        stock_vs = ttk.Scrollbar(stock_frame, orient='vertical', command=self.label_inv_stock_tree.yview)
+        self.label_inv_stock_tree.configure(yscroll=stock_vs.set)
+        self.label_inv_stock_tree.pack(side='left', fill='both', expand=True)
+        stock_vs.pack(side='right', fill='y')
+        self.label_inv_stock_tree.bind('<<TreeviewSelect>>', self._on_label_inv_stock_select)
+        self.label_inv_stock_tree.tag_configure('negative', foreground='#c0392b')
+        self.label_inv_stock_tree.tag_configure('zero', foreground='#7f8c8d')
+
+        # Movements history
+        mov_frame = ttk.LabelFrame(parent, text="היסטוריית תנועות", padding=6)
+        mov_frame.pack(fill='both', expand=True, padx=10, pady=6)
+        mov_cols = ('created_at', 'type', 'size', 'quantity', 'balance_after', 'note', 'delivery_note_id')
+        self.label_inv_mov_tree = ttk.Treeview(mov_frame, columns=mov_cols, show='headings', height=8)
+        mov_headers = {
+            'created_at': 'תאריך', 'type': 'סוג', 'size': 'מידה', 'quantity': 'כמות',
+            'balance_after': 'יתרה אחרי', 'note': 'הערה', 'delivery_note_id': 'תעודה'
+        }
+        mov_widths = {
+            'created_at': 140, 'type': 110, 'size': 80, 'quantity': 80,
+            'balance_after': 90, 'note': 200, 'delivery_note_id': 70
+        }
+        for c in mov_cols:
+            self.label_inv_mov_tree.heading(c, text=mov_headers[c])
+            self.label_inv_mov_tree.column(c, width=mov_widths[c], anchor='center')
+        mov_vs = ttk.Scrollbar(mov_frame, orient='vertical', command=self.label_inv_mov_tree.yview)
+        self.label_inv_mov_tree.configure(yscroll=mov_vs.set)
+        self.label_inv_mov_tree.pack(side='left', fill='both', expand=True)
+        mov_vs.pack(side='right', fill='y')
+
+        self._refresh_label_inventory_ui()
+
+    def _label_inventory_sizes(self):
+        """רשימת מידות לתוויות: ממידות מוצר + מאביזרי תווית + מלאי קיים."""
+        sizes = set()
+        for rec in getattr(self.data_processor, 'product_sizes', []) or []:
+            name = (rec.get('name') or '').strip()
+            if name:
+                sizes.add(name)
+        for acc in getattr(self.data_processor, 'sewing_accessories', []) or []:
+            size = self.data_processor.parse_label_size_from_accessory(acc.get('name') or '')
+            if size:
+                sizes.add(size)
+        for size in (self.data_processor.get_label_stock() or {}).keys():
+            if size:
+                sizes.add(str(size).strip())
+
+        def _size_key(s):
+            try:
+                # מידות כמו 0-3, 3-6
+                if '-' in s:
+                    parts = s.split('-', 1)
+                    return (0, int(parts[0]), int(parts[1]) if parts[1].isdigit() else 0, s)
+                return (1, int(s), 0, s)
+            except Exception:
+                return (2, 0, 0, s)
+
+        return sorted(sizes, key=_size_key)
+
+    def _refresh_label_inventory_ui(self):
+        if not hasattr(self, 'label_inv_stock_tree'):
+            return
+        try:
+            self.data_processor.refresh_label_inventory()
+        except Exception:
+            pass
+        sizes = self._label_inventory_sizes()
+        if hasattr(self, 'label_inv_matrix'):
+            # שומר כמויות שהוזנו לפני רענון המטריצה
+            prev = {}
+            try:
+                # כולל שדות ריקים דרך _qty_vars אם קיימים
+                for size, var in getattr(self.label_inv_matrix, '_qty_vars', {}).items():
+                    raw = (var.get() or '').strip()
+                    if raw:
+                        prev[size] = raw
+            except Exception:
+                prev = {}
+            self.label_inv_matrix.set_sizes(sizes)
+            for size, raw in prev.items():
+                self.label_inv_matrix.set_quantity(size, raw)
+
+        stock = self.data_processor.get_label_stock() or {}
+        for item in self.label_inv_stock_tree.get_children():
+            self.label_inv_stock_tree.delete(item)
+        for size in sizes:
+            qty = int(stock.get(size, 0) or 0)
+            tags = ()
+            if qty < 0:
+                tags = ('negative',)
+            elif qty == 0:
+                tags = ('zero',)
+            self.label_inv_stock_tree.insert(
+                '', 'end', values=(size, f'תווית {size}', qty), tags=tags
+            )
+
+        type_labels = {
+            'set': 'הגדרה',
+            'add': 'הוספה',
+            'delivery_deduct': 'שליחה',
+            'delivery_restore': 'החזרה ממחיקה',
+        }
+        for item in self.label_inv_mov_tree.get_children():
+            self.label_inv_mov_tree.delete(item)
+        movements = self.data_processor.get_label_movements()
+        for mov in reversed(movements):
+            dn_id = mov.get('delivery_note_id')
+            self.label_inv_mov_tree.insert('', 'end', values=(
+                mov.get('created_at', ''),
+                type_labels.get(mov.get('type'), mov.get('type', '')),
+                mov.get('size', ''),
+                mov.get('quantity', ''),
+                mov.get('balance_after', ''),
+                mov.get('note', ''),
+                dn_id if dn_id is not None else '',
+            ))
+
+    def _on_label_inv_stock_select(self, event=None):
+        sel = self.label_inv_stock_tree.selection()
+        if not sel or not hasattr(self, 'label_inv_matrix'):
+            return
+        vals = self.label_inv_stock_tree.item(sel[0], 'values')
+        if not vals:
+            return
+        size, _name, qty = vals[0], vals[1], vals[2]
+        try:
+            self.label_inv_matrix.set_quantity(size, qty)
+        except Exception:
+            pass
+
+    def _save_label_inventory_update(self):
+        if not hasattr(self, 'label_inv_matrix'):
+            return
+        qtys = self.label_inv_matrix.get_quantities()
+        mode = (self.label_inv_mode_var.get() or '').strip()
+        note = (self.label_inv_note_var.get() or '').strip()
+        if not qtys:
+            messagebox.showerror('שגיאה', 'יש להזין כמות לפחות למידה אחת')
+            return
+        try:
+            updated = []
+            if mode == 'הגדר מלאי':
+                for size, qty in qtys.items():
+                    new_bal = self.data_processor.set_label_stock(size, qty, note=note)
+                    updated.append(f'{size}→{new_bal}')
+                messagebox.showinfo('הצלחה', f'הוגדר מלאי ל-{len(updated)} מידות:\n' + ', '.join(updated))
+            else:
+                for size, qty in qtys.items():
+                    new_bal = self.data_processor.add_label_stock(size, qty, note=note)
+                    updated.append(f'{size}+{qty}={new_bal}')
+                messagebox.showinfo('הצלחה', f'נוסף מלאי ל-{len(updated)} מידות:\n' + ', '.join(updated))
+            self.label_inv_matrix.clear_quantities()
+            self.label_inv_note_var.set('')
+            self._refresh_label_inventory_ui()
+        except Exception as e:
+            messagebox.showerror('שגיאה', str(e))
+
     # ===== categories builders =====
     def _build_categories_section(self, parent):
         self.cat_name_var = tk.StringVar()
         cat_form = ttk.LabelFrame(parent, text="הוספת תת קטגוריה", padding=10)
         cat_form.pack(fill='x', padx=10, pady=6)
-        tk.Label(cat_form, text="שם תת קטגוריה:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
+        tk.Label(cat_form, text="שם תת קטגוריה:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
         tk.Entry(cat_form, textvariable=self.cat_name_var, width=22).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(cat_form, text="➕ הוסף", command=self._add_category, bg='#27ae60', fg='white').grid(row=0, column=2, padx=8)
-        tk.Button(cat_form, text="🗑️ מחק נבחר", command=self._delete_selected_category, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(cat_form, text="➕ הוסף", command=self._add_category, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=8)
+        tk.Button(cat_form, text="🗑️ מחק נבחר", command=self._delete_selected_category, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
 
         cat_tree_frame = ttk.LabelFrame(parent, text="תת קטגוריות", padding=6)
         cat_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -438,8 +637,8 @@ class ProductsCatalogMethodsMixin:
         mcat_nb = ttk.Notebook(parent)
         mcat_nb.pack(fill='both', expand=True, padx=8, pady=6)
 
-        manage_tab = tk.Frame(mcat_nb, bg='#f7f9fa')
-        fields_tab = tk.Frame(mcat_nb, bg='#f7f9fa')
+        manage_tab = tk.Frame(mcat_nb, bg=theme.PAGE_BG)
+        fields_tab = tk.Frame(mcat_nb, bg=theme.PAGE_BG)
         mcat_nb.add(manage_tab, text='קטגוריות')
         mcat_nb.add(fields_tab, text='שדות לקטגוריה')
 
@@ -447,10 +646,10 @@ class ProductsCatalogMethodsMixin:
         self.main_cat_name_var = tk.StringVar()
         mcat_form = ttk.LabelFrame(manage_tab, text="הוספת קטגוריה ראשית", padding=10)
         mcat_form.pack(fill='x', padx=10, pady=6)
-        tk.Label(mcat_form, text="שם קטגוריה ראשית:", font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
+        tk.Label(mcat_form, text="שם קטגוריה ראשית:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='w')
         tk.Entry(mcat_form, textvariable=self.main_cat_name_var, width=22).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(mcat_form, text="➕ הוסף", command=self._add_main_category, bg='#27ae60', fg='white').grid(row=0, column=2, padx=8)
-        tk.Button(mcat_form, text="🗑️ מחק נבחר", command=self._delete_selected_main_category, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(mcat_form, text="➕ הוסף", command=self._add_main_category, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=8)
+        tk.Button(mcat_form, text="🗑️ מחק נבחר", command=self._delete_selected_main_category, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
 
         mcat_tree_frame = ttk.LabelFrame(manage_tab, text="קטגוריות ראשיות", padding=6)
         mcat_tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -491,7 +690,7 @@ class ProductsCatalogMethodsMixin:
         frm.pack(fill='both', expand=True, padx=10, pady=8)
 
         # Category selector
-        tk.Label(frm, text='קטגוריה ראשית:', font=('Arial',10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(frm, text='קטגוריה ראשית:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
         self.main_cat_fields_var = tk.StringVar()
         self.main_cat_fields_combo = ttk.Combobox(frm, textvariable=self.main_cat_fields_var, state='readonly', width=24, justify='right')
         self.main_cat_fields_combo.grid(row=0, column=1, sticky='w', padx=4, pady=4)
@@ -513,7 +712,7 @@ class ProductsCatalogMethodsMixin:
                 col = 0; row += 1
 
         # Action buttons
-        tk.Button(frm, text='💾 שמור שדות', command=self._save_main_category_fields, bg='#2c3e50', fg='white').grid(row=2, column=0, padx=4, pady=8, sticky='w')
+        tk.Button(frm, text='💾 שמור שדות', command=self._save_main_category_fields, bg=theme.DARK, fg='white').grid(row=2, column=0, padx=4, pady=8, sticky='w')
         tk.Button(frm, text='אפס בחירה', command=self._reset_main_category_fields).grid(row=2, column=1, padx=4, pady=8, sticky='w')
 
         # Load categories into combo
@@ -567,14 +766,14 @@ class ProductsCatalogMethodsMixin:
         attr_nb = ttk.Notebook(attributes_tab)
         attr_nb.pack(fill='both', expand=True, padx=8, pady=6)
 
-        sizes_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        ftypes_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        fcolors_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        prints_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        fcats_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        modelnames_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        fabric_prices_tab = tk.Frame(attr_nb, bg='#f7f9fa')
-        cost_settings_tab = tk.Frame(attr_nb, bg='#f7f9fa')
+        sizes_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        ftypes_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        fcolors_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        prints_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        fcats_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        modelnames_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        fabric_prices_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
+        cost_settings_tab = tk.Frame(attr_nb, bg=theme.PAGE_BG)
         attr_nb.add(sizes_tab, text='מידות')
         attr_nb.add(ftypes_tab, text='סוגי בד')
         attr_nb.add(fcolors_tab, text='צבעי בד')
@@ -590,10 +789,10 @@ class ProductsCatalogMethodsMixin:
         # Sizes
         sz_form = ttk.LabelFrame(sizes_tab, text='הוספת מידה', padding=8)
         sz_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(sz_form, text='מידה:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(sz_form, text='מידה:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(sz_form, textvariable=self.attr_size_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(sz_form, text='➕ הוסף', command=self._add_product_size, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(sz_form, text='🗑️ מחק נבחר', command=self._delete_selected_product_size, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(sz_form, text='➕ הוסף', command=self._add_product_size, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(sz_form, text='🗑️ מחק נבחר', command=self._delete_selected_product_size, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
         sz_tree_frame = ttk.LabelFrame(sizes_tab, text='מידות', padding=4)
         sz_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.sizes_tree = ttk.Treeview(sz_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
@@ -607,10 +806,10 @@ class ProductsCatalogMethodsMixin:
         # Fabric Types
         ft_form = ttk.LabelFrame(ftypes_tab, text='הוספת סוג בד', padding=8)
         ft_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(ft_form, text='סוג בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(ft_form, text='סוג בד:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(ft_form, textvariable=self.attr_fabric_type_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(ft_form, text='➕ הוסף', command=self._add_fabric_type_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(ft_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_type_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(ft_form, text='➕ הוסף', command=self._add_fabric_type_item, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(ft_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_type_item, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
         ft_tree_frame = ttk.LabelFrame(ftypes_tab, text='סוגי בד', padding=4)
         ft_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.fabric_types_tree = ttk.Treeview(ft_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
@@ -624,10 +823,10 @@ class ProductsCatalogMethodsMixin:
         # Fabric Colors
         fc_form = ttk.LabelFrame(fcolors_tab, text='הוספת צבע בד', padding=8)
         fc_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(fc_form, text='צבע בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(fc_form, text='צבע בד:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(fc_form, textvariable=self.attr_fabric_color_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(fc_form, text='➕ הוסף', command=self._add_fabric_color_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(fc_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_color_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(fc_form, text='➕ הוסף', command=self._add_fabric_color_item, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(fc_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_color_item, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
         fc_tree_frame = ttk.LabelFrame(fcolors_tab, text='צבעי בד', padding=4)
         fc_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.fabric_colors_tree = ttk.Treeview(fc_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
@@ -641,10 +840,10 @@ class ProductsCatalogMethodsMixin:
         # Print Names
         pn_form = ttk.LabelFrame(prints_tab, text='הוספת שם פרינט', padding=8)
         pn_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(pn_form, text='שם פרינט:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(pn_form, text='שם פרינט:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(pn_form, textvariable=self.attr_print_name_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(pn_form, text='➕ הוסף', command=self._add_print_name_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(pn_form, text='🗑️ מחק נבחר', command=self._delete_selected_print_name_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(pn_form, text='➕ הוסף', command=self._add_print_name_item, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(pn_form, text='🗑️ מחק נבחר', command=self._delete_selected_print_name_item, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
         pn_tree_frame = ttk.LabelFrame(prints_tab, text='שמות פרינט', padding=4)
         pn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.print_names_tree = ttk.Treeview(pn_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
@@ -658,10 +857,10 @@ class ProductsCatalogMethodsMixin:
         # Fabric Categories
         fcg_form = ttk.LabelFrame(fcats_tab, text='הוספת קטגוריית בד', padding=8)
         fcg_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(fcg_form, text='קטגוריית בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(fcg_form, text='קטגוריית בד:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(fcg_form, textvariable=self.attr_fabric_category_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Button(fcg_form, text='➕ הוסף', command=self._add_fabric_category_item, bg='#27ae60', fg='white').grid(row=0, column=2, padx=6)
-        tk.Button(fcg_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_category_item, bg='#e67e22', fg='white').grid(row=0, column=3, padx=4)
+        tk.Button(fcg_form, text='➕ הוסף', command=self._add_fabric_category_item, bg=theme.SUCCESS, fg='white').grid(row=0, column=2, padx=6)
+        tk.Button(fcg_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_category_item, bg=theme.WARNING, fg='white').grid(row=0, column=3, padx=4)
         fcg_tree_frame = ttk.LabelFrame(fcats_tab, text='קטגוריות בדים', padding=4)
         fcg_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.fabric_categories_tree = ttk.Treeview(fcg_tree_frame, columns=('id','name','created_at'), show='headings', height=10)
@@ -675,14 +874,14 @@ class ProductsCatalogMethodsMixin:
         # Model Names (שם הדגם)
         mn_form = ttk.LabelFrame(modelnames_tab, text='הוסף שם דגם', padding=8)
         mn_form.pack(fill='x', padx=8, pady=6)
-        tk.Label(mn_form, text='שם דגם:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4)
+        tk.Label(mn_form, text='שם דגם:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4)
         tk.Entry(mn_form, textvariable=self.attr_model_name_var, width=18).grid(row=0, column=1, padx=4, pady=4)
-        tk.Label(mn_form, text='מחיר תפירה (₪):', font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4)
+        tk.Label(mn_form, text='מחיר תפירה (₪):', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=2, padx=4, pady=4)
         self.attr_model_sewing_price_var = tk.StringVar(value='0')
         tk.Entry(mn_form, textvariable=self.attr_model_sewing_price_var, width=10).grid(row=0, column=3, padx=4, pady=4)
-        tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg='#27ae60', fg='white').grid(row=0, column=4, padx=6)
-        tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg='#e67e22', fg='white').grid(row=0, column=5, padx=4)
-        tk.Button(mn_form, text='💾 עדכן מחיר', command=self._update_selected_model_sewing_price, bg='#3498db', fg='white').grid(row=0, column=6, padx=4)
+        tk.Button(mn_form, text='➕ הוסף', command=self._add_model_name_item, bg=theme.SUCCESS, fg='white').grid(row=0, column=4, padx=6)
+        tk.Button(mn_form, text='🗑️ מחק נבחר', command=self._delete_selected_model_name_item, bg=theme.WARNING, fg='white').grid(row=0, column=5, padx=4)
+        tk.Button(mn_form, text='💾 עדכן מחיר', command=self._update_selected_model_sewing_price, bg=theme.PRIMARY, fg='white').grid(row=0, column=6, padx=4)
         mn_tree_frame = ttk.LabelFrame(modelnames_tab, text='שמות דגם', padding=4)
         mn_tree_frame.pack(fill='both', expand=True, padx=8, pady=4)
         self.model_names_tree = ttk.Treeview(mn_tree_frame, columns=('id','name','sewing_price','created_at'), show='headings', height=10)
@@ -729,12 +928,12 @@ class ProductsCatalogMethodsMixin:
         
         if new_mode:
             # עבור לתצוגת עלויות
-            self.toggle_view_btn.config(text='📋 תצוגה רגילה', bg='#27ae60')
+            self.toggle_view_btn.config(text='📋 תצוגה רגילה', bg=theme.SUCCESS)
             self.products_tree_frame.config(text='פריטים - תצוגת עלויות')
             self._create_products_tree(self.cost_cols, self.cost_headers, self.cost_widths)
         else:
             # עבור לתצוגה רגילה
-            self.toggle_view_btn.config(text='💰 תצוגת עלויות', bg='#3498db')
+            self.toggle_view_btn.config(text='💰 תצוגת עלויות', bg=theme.PRIMARY)
             self.products_tree_frame.config(text='פריטים')
             self._create_products_tree(self.regular_cols, self.regular_headers, self.regular_widths)
         
@@ -748,11 +947,11 @@ class ProductsCatalogMethodsMixin:
         if current_method == 'sqm':
             # עבור לחישוב לפי משקל
             self.fabric_cost_method.set('weight')
-            self.toggle_fabric_method_btn.config(text='⚖️ עלות בד: לפי משקל', bg='#e67e22')
+            self.toggle_fabric_method_btn.config(text='⚖️ עלות בד: לפי משקל', bg=theme.WARNING)
         else:
             # עבור לחישוב לפי מ"ר
             self.fabric_cost_method.set('sqm')
-            self.toggle_fabric_method_btn.config(text='📐 עלות בד: לפי מ"ר', bg='#9b59b6')
+            self.toggle_fabric_method_btn.config(text='📐 עלות בד: לפי מ"ר', bg=theme.PURPLE_LIGHT)
         
         # אם בתצוגת עלויות, טען מחדש
         if self.cost_view_mode.get():
@@ -772,28 +971,28 @@ class ProductsCatalogMethodsMixin:
         fp_form.pack(fill='x', padx=8, pady=6)
         
         # שורה 1 - קטגוריה, צבע, פרינט
-        tk.Label(fp_form, text='קטגוריית בד:', font=('Arial',10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(fp_form, text='קטגוריית בד:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=0, padx=4, pady=4, sticky='e')
         fabric_cat_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_categories', [])]
         self.fp_fabric_category_combo = ttk.Combobox(fp_form, textvariable=self.fp_fabric_category_var, values=fabric_cat_names, width=16, justify='right')
         self.fp_fabric_category_combo.grid(row=0, column=1, padx=4, pady=4, sticky='w')
         
-        tk.Label(fp_form, text='צבע בד:', font=('Arial',10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='e')
+        tk.Label(fp_form, text='צבע בד:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=2, padx=4, pady=4, sticky='e')
         fabric_color_names = [r.get('name') for r in getattr(self.data_processor, 'product_fabric_colors', [])]
         self.fp_fabric_color_combo = ttk.Combobox(fp_form, textvariable=self.fp_fabric_color_var, values=fabric_color_names, width=16, justify='right')
         self.fp_fabric_color_combo.grid(row=0, column=3, padx=4, pady=4, sticky='w')
         
-        tk.Label(fp_form, text='פרינט:', font=('Arial',10,'bold')).grid(row=0, column=4, padx=4, pady=4, sticky='e')
+        tk.Label(fp_form, text='פרינט:', font=(theme.FONT_FAMILY,10,'bold')).grid(row=0, column=4, padx=4, pady=4, sticky='e')
         print_names = [r.get('name') for r in getattr(self.data_processor, 'product_print_names', [])]
         self.fp_print_name_combo = ttk.Combobox(fp_form, textvariable=self.fp_print_name_var, values=print_names, width=16, justify='right')
         self.fp_print_name_combo.grid(row=0, column=5, padx=4, pady=4, sticky='w')
         
         # שורה 2 - מחיר למ"ר
-        tk.Label(fp_form, text='מחיר למ"ר (₪):', font=('Arial',10,'bold')).grid(row=1, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(fp_form, text='מחיר למ"ר (₪):', font=(theme.FONT_FAMILY,10,'bold')).grid(row=1, column=0, padx=4, pady=4, sticky='e')
         tk.Entry(fp_form, textvariable=self.fp_price_per_sqm_var, width=12).grid(row=1, column=1, padx=4, pady=4, sticky='w')
         
         # כפתורים
-        tk.Button(fp_form, text='➕ הוסף', command=self._add_fabric_price, bg='#27ae60', fg='white').grid(row=1, column=2, padx=6, pady=4)
-        tk.Button(fp_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_price, bg='#e67e22', fg='white').grid(row=1, column=3, padx=4, pady=4)
+        tk.Button(fp_form, text='➕ הוסף', command=self._add_fabric_price, bg=theme.SUCCESS, fg='white').grid(row=1, column=2, padx=6, pady=4)
+        tk.Button(fp_form, text='🗑️ מחק נבחר', command=self._delete_selected_fabric_price, bg=theme.WARNING, fg='white').grid(row=1, column=3, padx=4, pady=4)
         
         # טבלה
         fp_tree_frame = ttk.LabelFrame(parent, text='טבלת מחירי בדים', padding=6)
@@ -833,31 +1032,31 @@ class ProductsCatalogMethodsMixin:
         self.cs_sewing_price_var = tk.StringVar(value=str(settings.get('sewing_price', 0)))
         
         # כותרת
-        tk.Label(parent, text='הגדרות מחירי עלות גלובליים', font=('Arial', 14, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(10, 5))
-        tk.Label(parent, text='מחירים אלו ישמשו לחישוב עלות כל הפריטים בקטלוג', font=('Arial', 10), bg='#f7f9fa', fg='#7f8c8d').pack(pady=(0, 10))
+        tk.Label(parent, text='הגדרות מחירי עלות גלובליים', font=(theme.FONT_FAMILY, 14, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(10, 5))
+        tk.Label(parent, text='מחירים אלו ישמשו לחישוב עלות כל הפריטים בקטלוג', font=(theme.FONT_FAMILY, 10), bg=theme.PAGE_BG, fg=theme.SUBTEXT).pack(pady=(0, 10))
         
         # טופס
         cs_form = ttk.LabelFrame(parent, text='מחירי אביזרים ותפירה', padding=20)
         cs_form.pack(fill='x', padx=20, pady=10)
         
         # שורה 1
-        tk.Label(cs_form, text='מחיר טיקטק ליחידה (₪):', font=('Arial',11,'bold')).grid(row=0, column=0, padx=10, pady=10, sticky='e')
-        tk.Entry(cs_form, textvariable=self.cs_tick_price_var, width=15, font=('Arial', 11)).grid(row=0, column=1, padx=10, pady=10, sticky='w')
+        tk.Label(cs_form, text='מחיר טיקטק ליחידה (₪):', font=(theme.FONT_FAMILY,11,'bold')).grid(row=0, column=0, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_tick_price_var, width=15, font=(theme.FONT_FAMILY, 11)).grid(row=0, column=1, padx=10, pady=10, sticky='w')
         
-        tk.Label(cs_form, text='מחיר גומי ליחידה (₪):', font=('Arial',11,'bold')).grid(row=0, column=2, padx=10, pady=10, sticky='e')
-        tk.Entry(cs_form, textvariable=self.cs_elastic_price_var, width=15, font=('Arial', 11)).grid(row=0, column=3, padx=10, pady=10, sticky='w')
+        tk.Label(cs_form, text='מחיר גומי ליחידה (₪):', font=(theme.FONT_FAMILY,11,'bold')).grid(row=0, column=2, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_elastic_price_var, width=15, font=(theme.FONT_FAMILY, 11)).grid(row=0, column=3, padx=10, pady=10, sticky='w')
         
         # שורה 2
-        tk.Label(cs_form, text='מחיר סרט ליחידה (₪):', font=('Arial',11,'bold')).grid(row=1, column=0, padx=10, pady=10, sticky='e')
-        tk.Entry(cs_form, textvariable=self.cs_ribbon_price_var, width=15, font=('Arial', 11)).grid(row=1, column=1, padx=10, pady=10, sticky='w')
+        tk.Label(cs_form, text='מחיר סרט ליחידה (₪):', font=(theme.FONT_FAMILY,11,'bold')).grid(row=1, column=0, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_ribbon_price_var, width=15, font=(theme.FONT_FAMILY, 11)).grid(row=1, column=1, padx=10, pady=10, sticky='w')
         
-        tk.Label(cs_form, text='מחיר תפירה ברירת מחדל (₪):', font=('Arial',11,'bold')).grid(row=1, column=2, padx=10, pady=10, sticky='e')
-        tk.Entry(cs_form, textvariable=self.cs_sewing_price_var, width=15, font=('Arial', 11)).grid(row=1, column=3, padx=10, pady=10, sticky='w')
+        tk.Label(cs_form, text='מחיר תפירה ברירת מחדל (₪):', font=(theme.FONT_FAMILY,11,'bold')).grid(row=1, column=2, padx=10, pady=10, sticky='e')
+        tk.Entry(cs_form, textvariable=self.cs_sewing_price_var, width=15, font=(theme.FONT_FAMILY, 11)).grid(row=1, column=3, padx=10, pady=10, sticky='w')
         
         # כפתור שמירה
-        btn_frame = tk.Frame(parent, bg='#f7f9fa')
+        btn_frame = tk.Frame(parent, bg=theme.PAGE_BG)
         btn_frame.pack(pady=20)
-        tk.Button(btn_frame, text='💾 שמור הגדרות', command=self._save_cost_settings, bg='#27ae60', fg='white', font=('Arial', 12, 'bold'), padx=30, pady=10).pack()
+        tk.Button(btn_frame, text='💾 שמור הגדרות', command=self._save_cost_settings, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 12, 'bold'), padx=30, pady=10).pack()
         
         # הסבר נוסחה
         formula_frame = ttk.LabelFrame(parent, text='נוסחת חישוב עלות פריט', padding=15)
@@ -875,7 +1074,7 @@ class ProductsCatalogMethodsMixin:
 * מחיר תפירה מוגדר בטאב "שם הדגם" לכל דגם בנפרד
 * אם לא מוגדר לדגם - ישתמש במחיר ברירת מחדל למעלה
         """
-        tk.Label(formula_frame, text=formula_text, font=('Courier New', 10), bg='#f7f9fa', fg='#34495e', justify='right').pack()
+        tk.Label(formula_frame, text=formula_text, font=('Courier New', 10), bg=theme.PAGE_BG, fg=theme.DARK_2, justify='right').pack()
 
     def _load_fabric_prices_into_tree(self):
         """טעינת מחירי בדים לטבלה"""
@@ -1553,8 +1752,8 @@ class ProductsCatalogMethodsMixin:
         frm.pack(fill='both', expand=True)
         
         # כותרת עם שם הפריט
-        ttk.Label(frm, text=f"פריט: {product_name}", font=('Arial', 11, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 5))
-        ttk.Label(frm, text=f"מידה: {product_size}", font=('Arial', 10)).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 15))
+        ttk.Label(frm, text=f"פריט: {product_name}", font=(theme.FONT_FAMILY, 11, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 5))
+        ttk.Label(frm, text=f"מידה: {product_size}", font=(theme.FONT_FAMILY, 10)).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 15))
         
         # משתנים לשדות
         ticks_var = tk.StringVar(value=str(current_ticks))
@@ -1562,13 +1761,13 @@ class ProductsCatalogMethodsMixin:
         ribbon_var = tk.StringVar(value=str(current_ribbon))
         
         # שדות עריכה
-        ttk.Label(frm, text="כמות טיקטקים:", font=('Arial', 10)).grid(row=2, column=0, sticky='e', padx=5, pady=5)
+        ttk.Label(frm, text="כמות טיקטקים:", font=(theme.FONT_FAMILY, 10)).grid(row=2, column=0, sticky='e', padx=5, pady=5)
         ttk.Entry(frm, textvariable=ticks_var, width=10).grid(row=2, column=1, sticky='w', padx=5, pady=5)
         
-        ttk.Label(frm, text="כמות גומי:", font=('Arial', 10)).grid(row=3, column=0, sticky='e', padx=5, pady=5)
+        ttk.Label(frm, text="כמות גומי:", font=(theme.FONT_FAMILY, 10)).grid(row=3, column=0, sticky='e', padx=5, pady=5)
         ttk.Entry(frm, textvariable=elastic_var, width=10).grid(row=3, column=1, sticky='w', padx=5, pady=5)
         
-        ttk.Label(frm, text="כמות סרט:", font=('Arial', 10)).grid(row=4, column=0, sticky='e', padx=5, pady=5)
+        ttk.Label(frm, text="כמות סרט:", font=(theme.FONT_FAMILY, 10)).grid(row=4, column=0, sticky='e', padx=5, pady=5)
         ttk.Entry(frm, textvariable=ribbon_var, width=10).grid(row=4, column=1, sticky='w', padx=5, pady=5)
         
         # כפתורים
@@ -1854,16 +2053,16 @@ class ProductsCatalogMethodsMixin:
     def _build_barcodes_section(self, parent):
         """Build the barcodes generation section."""
         # Main frame
-        main_frame = tk.Frame(parent, bg='#f7f9fa')
+        main_frame = tk.Frame(parent, bg=theme.PAGE_BG)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
         # Title
         title_label = tk.Label(
             main_frame,
             text="ייצור ברקודים EAN-13",
-            font=('Arial', 18, 'bold'),
-            bg='#f7f9fa',
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 18, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK
         )
         title_label.pack(pady=(0, 20))
         
@@ -1877,9 +2076,9 @@ class ProductsCatalogMethodsMixin:
         last_barcode_display = tk.Label(
             last_barcode_frame,
             textvariable=self.last_barcode_var,
-            font=('Arial', 28, 'bold'),
-            bg='#ecf0f1',
-            fg='#2c3e50',
+            font=(theme.FONT_FAMILY, 28, 'bold'),
+            bg=theme.PANEL_BG,
+            fg=theme.DARK,
             relief='sunken',
             padx=20,
             pady=15
@@ -1891,21 +2090,21 @@ class ProductsCatalogMethodsMixin:
         generation_frame.pack(fill='x', pady=(0, 20))
         
         # Quantity input
-        input_frame = tk.Frame(generation_frame, bg='#f7f9fa')
+        input_frame = tk.Frame(generation_frame, bg=theme.PAGE_BG)
         input_frame.pack(pady=10)
         
         tk.Label(
             input_frame,
             text="כמות ברקודים לייצור:",
-            font=('Arial', 12, 'bold'),
-            bg='#f7f9fa'
+            font=(theme.FONT_FAMILY, 12, 'bold'),
+            bg=theme.PAGE_BG
         ).pack(side='right', padx=10)
         
         self.barcode_quantity_var = tk.StringVar(value="10")
         quantity_entry = tk.Entry(
             input_frame,
             textvariable=self.barcode_quantity_var,
-            font=('Arial', 12),
+            font=(theme.FONT_FAMILY, 12),
             width=10,
             justify='center'
         )
@@ -1916,9 +2115,9 @@ class ProductsCatalogMethodsMixin:
             generation_frame,
             text="🔢 ייצר ברקודים",
             command=self._generate_barcodes,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 14, 'bold'),
+            font=(theme.FONT_FAMILY, 14, 'bold'),
             padx=30,
             pady=10,
             cursor='hand2'
@@ -1940,9 +2139,9 @@ class ProductsCatalogMethodsMixin:
         instructions_label = tk.Label(
             instructions_frame,
             text=instructions_text,
-            font=('Arial', 10),
-            bg='#f7f9fa',
-            fg='#34495e',
+            font=(theme.FONT_FAMILY, 10),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK_2,
             justify='right'
         )
         instructions_label.pack()
@@ -2198,30 +2397,30 @@ class ProductsCatalogMethodsMixin:
         self.cut_image_path_var = tk.StringVar()
 
         row = 0
-        tk.Label(form, text="שם קובץ אופטיטקס:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(form, text="שם קובץ אופטיטקס:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
         tk.Entry(form, textvariable=self.cut_file_name_var, width=28).grid(row=row, column=1, padx=4, pady=4, sticky='w')
-        tk.Label(form, text="נתיב קובץ:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Label(form, text="נתיב קובץ:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
         tk.Entry(form, textvariable=self.cut_file_path_var, width=36).grid(row=row, column=3, padx=4, pady=4, sticky='w')
         tk.Button(form, text="בחר קובץ...", command=self._browse_cut_file).grid(row=row, column=4, padx=4, pady=4)
         row += 1
 
-        tk.Label(form, text="שם הפריט:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(form, text="שם הפריט:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
         model_names = [r.get('name', '') for r in getattr(self.data_processor, 'product_model_names', []) if r.get('name')]
         self.cut_product_combo = ttk.Combobox(form, textvariable=self.cut_product_name_var, values=sorted(set(model_names)), width=26)
         self.cut_product_combo.grid(row=row, column=1, padx=4, pady=4, sticky='w')
-        tk.Label(form, text="מידות:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Label(form, text="מידות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
         tk.Entry(form, textvariable=self.cut_sizes_var, width=36).grid(row=row, column=3, columnspan=2, padx=4, pady=4, sticky='w')
         row += 1
 
-        tk.Label(form, text="קטגוריה:", font=('Arial', 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
+        tk.Label(form, text="קטגוריה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=0, padx=4, pady=4, sticky='e')
         self.cut_category_combo = ttk.Combobox(form, textvariable=self.cut_category_var, width=26)
         self.cut_category_combo.grid(row=row, column=1, padx=4, pady=4, sticky='w')
-        tk.Label(form, text="תמונה:", font=('Arial', 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
+        tk.Label(form, text="תמונה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=row, column=2, padx=(12,4), pady=4, sticky='e')
         tk.Entry(form, textvariable=self.cut_image_path_var, width=32).grid(row=row, column=3, padx=4, pady=4, sticky='w')
         tk.Button(form, text="בחר תמונה...", command=self._browse_cut_image).grid(row=row, column=4, padx=4, pady=4)
         row += 1
 
-        tk.Button(form, text="➕ הוסף גזרה", command=self._add_cut, bg='#27ae60', fg='white').grid(row=row, column=1, padx=8, pady=6)
+        tk.Button(form, text="➕ הוסף גזרה", command=self._add_cut, bg=theme.SUCCESS, fg='white').grid(row=row, column=1, padx=8, pady=6)
 
         tree_frame = ttk.LabelFrame(parent, text="טבלת גזרות", padding=6)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=6)
@@ -2238,10 +2437,10 @@ class ProductsCatalogMethodsMixin:
         vs.pack(side='right', fill='y')
         self.cuts_tree.bind('<Double-1>', self._on_cuts_tree_double_click)
 
-        actions = tk.Frame(parent, bg='#f7f9fa')
+        actions = tk.Frame(parent, bg=theme.PAGE_BG)
         actions.pack(fill='x', padx=10, pady=(0, 8))
-        tk.Button(actions, text="🗑 מחק נבחר", command=self._delete_cut, bg='#e67e22', fg='white').pack(side='left', padx=5)
-        tk.Button(actions, text="💾 שמור", command=self._save_cuts_catalog, bg='#3498db', fg='white').pack(side='left', padx=5)
+        tk.Button(actions, text="🗑 מחק נבחר", command=self._delete_cut, bg=theme.WARNING, fg='white').pack(side='left', padx=5)
+        tk.Button(actions, text="💾 שמור", command=self._save_cuts_catalog, bg=theme.PRIMARY, fg='white').pack(side='left', padx=5)
 
         self._refresh_cuts_tree()
         self._update_cuts_category_combo()

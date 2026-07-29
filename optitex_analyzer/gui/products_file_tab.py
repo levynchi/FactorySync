@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from . import theme
 
 class ProductsFileTabMixin:
     """Mixin לטאב המציג את קובץ המוצרים שנבחר.
@@ -10,17 +11,17 @@ class ProductsFileTabMixin:
     - קריאה עם openpyxl (ללא תלות בפנדס). אם לא זמין -> הודעה.
     """
     def _create_products_file_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="קובץ מוצרים")
 
-        header = tk.Frame(tab, bg='#f7f9fa'); header.pack(fill='x', padx=12, pady=(10,5))
-        tk.Label(header, text="תצוגת קובץ מוצרים (קריאה בלבד)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(side='right')
-        btns = tk.Frame(header, bg='#f7f9fa'); btns.pack(side='left')
-        tk.Button(btns, text="🔄 רענן", command=self._refresh_products_file_tab, bg='#3498db', fg='white').pack(side='left', padx=4)
-        tk.Button(btns, text="📄 פרטים", command=self._products_file_info, bg='#2980b9', fg='white').pack(side='left', padx=4)
+        header = tk.Frame(tab, bg=theme.PAGE_BG); header.pack(fill='x', padx=12, pady=(10,5))
+        tk.Label(header, text="תצוגת קובץ מוצרים (קריאה בלבד)", font=(theme.FONT_FAMILY,16,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(side='right')
+        btns = tk.Frame(header, bg=theme.PAGE_BG); btns.pack(side='left')
+        tk.Button(btns, text="🔄 רענן", command=self._refresh_products_file_tab, bg=theme.PRIMARY, fg='white').pack(side='left', padx=4)
+        tk.Button(btns, text="📄 פרטים", command=self._products_file_info, bg=theme.PRIMARY_DARK, fg='white').pack(side='left', padx=4)
 
         # Tree container
-        tree_frame = tk.Frame(tab, bg='#ffffff', relief='groove', bd=1)
+        tree_frame = tk.Frame(tab, bg=theme.CARD_BG, relief='groove', bd=1)
         tree_frame.pack(fill='both', expand=True, padx=12, pady=(0,12))
 
         self.products_file_tree = ttk.Treeview(tree_frame, show='headings')
@@ -34,7 +35,7 @@ class ProductsFileTabMixin:
         tree_frame.grid_rowconfigure(0, weight=1)
 
         self.products_file_status_var = tk.StringVar(value="אין קובץ מוצרים טעון")
-        tk.Label(tab, textvariable=self.products_file_status_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(tab, textvariable=self.products_file_status_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
         self._load_products_into_tree()
 

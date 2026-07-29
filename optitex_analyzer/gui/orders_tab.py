@@ -3,22 +3,23 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import json
 import os
+from . import theme
 
 class OrdersTabMixin:
     """Mixin for orders management functionality."""
     
     def _create_orders_tab(self):
         """Create the orders management tab."""
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="הזמנות")
         
         # Title
         tk.Label(
             tab, 
             text="ניהול הזמנות", 
-            font=('Arial', 16, 'bold'), 
-            bg='#f7f9fa', 
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 16, 'bold'), 
+            bg=theme.PAGE_BG, 
+            fg=theme.DARK
         ).pack(pady=4)
         
         # Create inner notebook for sub-tabs
@@ -26,9 +27,9 @@ class OrdersTabMixin:
         inner_nb.pack(fill='both', expand=True, padx=6, pady=4)
         
         # Create sub-tabs
-        create_order_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        customers_tab = tk.Frame(inner_nb, bg='#f7f9fa')
-        orders_history_tab = tk.Frame(inner_nb, bg='#f7f9fa')
+        create_order_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        customers_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        orders_history_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         
         inner_nb.add(create_order_tab, text="יצירת הזמנה")
         inner_nb.add(customers_tab, text="ניהול לקוחות")
@@ -46,7 +47,7 @@ class OrdersTabMixin:
         header_frame.pack(fill='x', padx=10, pady=6)
         
         # Customer selection
-        tk.Label(header_frame, text="לקוח:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(header_frame, text="לקוח:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
         self.order_customer_var = tk.StringVar()
         self.order_customer_combo = ttk.Combobox(
             header_frame, 
@@ -58,17 +59,17 @@ class OrdersTabMixin:
         self.order_customer_combo.grid(row=0, column=1, sticky='w', padx=2, pady=4)
         
         # Order date
-        tk.Label(header_frame, text="תאריך הזמנה:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(header_frame, text="תאריך הזמנה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
         self.order_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         tk.Entry(header_frame, textvariable=self.order_date_var, width=12, state='readonly').grid(row=0, column=3, sticky='w', padx=2, pady=4)
         
         # Order number
-        tk.Label(header_frame, text="מספר הזמנה:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(header_frame, text="מספר הזמנה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.order_number_var = tk.StringVar()
         tk.Entry(header_frame, textvariable=self.order_number_var, width=15).grid(row=1, column=1, sticky='w', padx=2, pady=4)
         
         # Order notes
-        tk.Label(header_frame, text="הערות:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(header_frame, text="הערות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         self.order_notes_var = tk.StringVar()
         tk.Entry(header_frame, textvariable=self.order_notes_var, width=30).grid(row=1, column=3, sticky='w', padx=2, pady=4)
         
@@ -77,7 +78,7 @@ class OrdersTabMixin:
         product_frame.pack(fill='x', padx=10, pady=6)
         
         # Main category selection
-        tk.Label(product_frame, text="קטגוריה ראשית:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="קטגוריה ראשית:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
         self.order_main_category_var = tk.StringVar()
         self.order_main_category_combo = ttk.Combobox(
             product_frame, 
@@ -90,7 +91,7 @@ class OrdersTabMixin:
         self.order_main_category_combo.bind('<<ComboboxSelected>>', lambda e: self._on_main_category_select())
         
         # Product fields
-        tk.Label(product_frame, text="מוצר:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="מוצר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.order_product_var = tk.StringVar()
         self.order_product_combo = ttk.Combobox(
             product_frame, 
@@ -102,7 +103,7 @@ class OrdersTabMixin:
         self.order_product_combo.grid(row=1, column=1, sticky='w', padx=2, pady=4)
         self.order_product_combo.bind('<<ComboboxSelected>>', lambda e: self._on_product_select())
         
-        tk.Label(product_frame, text="מידות:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="מידות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=4, pady=4)
         # Create frame for size selection
         size_frame = ttk.Frame(product_frame)
         size_frame.grid(row=1, column=3, sticky='w', padx=2, pady=4)
@@ -130,7 +131,7 @@ class OrdersTabMixin:
         # Initialize selected sizes list
         self.selected_sizes = []
         
-        tk.Label(product_frame, text="סוג בד:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="סוג בד:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.order_fabric_type_var = tk.StringVar()
         self.order_fabric_type_combo = ttk.Combobox(
             product_frame, 
@@ -141,7 +142,7 @@ class OrdersTabMixin:
         )
         self.order_fabric_type_combo.grid(row=2, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(product_frame, text="צבע בד:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="צבע בד:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=2, sticky='w', padx=4, pady=4)
         self.order_fabric_color_var = tk.StringVar(value="לבן")  # Default to white
         self.order_fabric_color_combo = ttk.Combobox(
             product_frame, 
@@ -153,11 +154,11 @@ class OrdersTabMixin:
         self.order_fabric_color_combo.grid(row=2, column=3, sticky='w', padx=2, pady=4)
         
         # Quantity and packaging
-        tk.Label(product_frame, text="כמות:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="כמות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=3, column=0, sticky='w', padx=4, pady=4)
         self.order_quantity_var = tk.StringVar()
         tk.Entry(product_frame, textvariable=self.order_quantity_var, width=10).grid(row=3, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(product_frame, text="צורת אריזה:", font=('Arial', 10, 'bold')).grid(row=3, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(product_frame, text="צורת אריזה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=3, column=2, sticky='w', padx=4, pady=4)
         self.order_packaging_var = tk.StringVar()
         self.order_packaging_combo = ttk.Combobox(
             product_frame, 
@@ -174,7 +175,7 @@ class OrdersTabMixin:
             product_frame, 
             text="➕ הוסף מוצר", 
             command=self._add_product_to_order, 
-            bg='#27ae60', 
+            bg=theme.SUCCESS, 
             fg='white'
         ).grid(row=3, column=0, columnspan=4, pady=10)
         
@@ -228,7 +229,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="💾 שמור הזמנה", 
             command=self._save_order, 
-            bg='#2c3e50', 
+            bg=theme.DARK, 
             fg='white'
         ).pack(side='right', padx=4)
         
@@ -236,7 +237,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="🗑️ מחק פריט נבחר", 
             command=self._remove_selected_order_item, 
-            bg='#e67e22', 
+            bg=theme.WARNING, 
             fg='white'
         ).pack(side='right', padx=4)
         
@@ -244,7 +245,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="🔄 נקה הזמנה", 
             command=self._clear_order, 
-            bg='#95a5a6', 
+            bg=theme.MUTED, 
             fg='white'
         ).pack(side='right', padx=4)
         
@@ -263,19 +264,19 @@ class OrdersTabMixin:
         form_frame.pack(fill='x', padx=10, pady=6)
         
         # Customer fields
-        tk.Label(form_frame, text="שם הלקוח:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form_frame, text="שם הלקוח:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=4, pady=4)
         self.customer_name_var = tk.StringVar()
         tk.Entry(form_frame, textvariable=self.customer_name_var, width=25).grid(row=0, column=1, sticky='w', padx=2, pady=4)
         
-        tk.Label(form_frame, text="טלפון:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
+        tk.Label(form_frame, text="טלפון:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=4, pady=4)
         self.customer_phone_var = tk.StringVar()
         tk.Entry(form_frame, textvariable=self.customer_phone_var, width=15).grid(row=0, column=3, sticky='w', padx=2, pady=4)
         
-        tk.Label(form_frame, text="כתובת:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form_frame, text="כתובת:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=4, pady=4)
         self.customer_address_var = tk.StringVar()
         tk.Entry(form_frame, textvariable=self.customer_address_var, width=40).grid(row=1, column=1, columnspan=2, sticky='w', padx=2, pady=4)
         
-        tk.Label(form_frame, text="הערות:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
+        tk.Label(form_frame, text="הערות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=4, pady=4)
         self.customer_notes_var = tk.StringVar()
         tk.Entry(form_frame, textvariable=self.customer_notes_var, width=40).grid(row=2, column=1, columnspan=2, sticky='w', padx=2, pady=4)
         
@@ -284,7 +285,7 @@ class OrdersTabMixin:
             form_frame, 
             text="➕ הוסף לקוח", 
             command=self._add_customer, 
-            bg='#27ae60', 
+            bg=theme.SUCCESS, 
             fg='white'
         ).grid(row=3, column=0, pady=10)
         
@@ -292,7 +293,7 @@ class OrdersTabMixin:
             form_frame, 
             text="✏️ עדכן לקוח", 
             command=self._update_customer, 
-            bg='#3498db', 
+            bg=theme.PRIMARY, 
             fg='white'
         ).grid(row=3, column=1, pady=10)
         
@@ -300,7 +301,7 @@ class OrdersTabMixin:
             form_frame, 
             text="🗑️ מחק לקוח", 
             command=self._delete_customer, 
-            bg='#e67e22', 
+            bg=theme.WARNING, 
             fg='white'
         ).grid(row=3, column=2, pady=10)
         
@@ -395,7 +396,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="🔄 רענן", 
             command=self._load_orders_into_tree, 
-            bg='#3498db', 
+            bg=theme.PRIMARY, 
             fg='white'
         ).pack(side='right', padx=4)
         
@@ -403,7 +404,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="👁️ צפה בהזמנה", 
             command=self._view_order_details, 
-            bg='#9b59b6', 
+            bg=theme.PURPLE_LIGHT, 
             fg='white'
         ).pack(side='right', padx=4)
         
@@ -888,12 +889,12 @@ class OrdersTabMixin:
         header_frame = ttk.LabelFrame(details_window, text="פרטי הזמנה", padding=10)
         header_frame.pack(fill='x', padx=10, pady=6)
         
-        tk.Label(header_frame, text=f"מספר הזמנה: {order.get('order_number', '')}", font=('Arial', 12, 'bold')).pack(anchor='w')
-        tk.Label(header_frame, text=f"לקוח: {order.get('customer', '')}", font=('Arial', 12, 'bold')).pack(anchor='w')
-        tk.Label(header_frame, text=f"תאריך: {order.get('date', '')}", font=('Arial', 12, 'bold')).pack(anchor='w')
-        tk.Label(header_frame, text=f"סטטוס: {order.get('status', '')}", font=('Arial', 12, 'bold')).pack(anchor='w')
+        tk.Label(header_frame, text=f"מספר הזמנה: {order.get('order_number', '')}", font=(theme.FONT_FAMILY, 12, 'bold')).pack(anchor='w')
+        tk.Label(header_frame, text=f"לקוח: {order.get('customer', '')}", font=(theme.FONT_FAMILY, 12, 'bold')).pack(anchor='w')
+        tk.Label(header_frame, text=f"תאריך: {order.get('date', '')}", font=(theme.FONT_FAMILY, 12, 'bold')).pack(anchor='w')
+        tk.Label(header_frame, text=f"סטטוס: {order.get('status', '')}", font=(theme.FONT_FAMILY, 12, 'bold')).pack(anchor='w')
         if order.get('notes'):
-            tk.Label(header_frame, text=f"הערות: {order.get('notes', '')}", font=('Arial', 12, 'bold')).pack(anchor='w')
+            tk.Label(header_frame, text=f"הערות: {order.get('notes', '')}", font=(theme.FONT_FAMILY, 12, 'bold')).pack(anchor='w')
         
         # Order items
         items_frame = ttk.LabelFrame(details_window, text="פריטי ההזמנה", padding=10)
@@ -953,7 +954,7 @@ class OrdersTabMixin:
             buttons_frame, 
             text="📊 פתח באקסל", 
             command=lambda: self._export_order_to_excel(order), 
-            bg='#27ae60', 
+            bg=theme.SUCCESS, 
             fg='white'
         ).pack(side='right', padx=4)
     

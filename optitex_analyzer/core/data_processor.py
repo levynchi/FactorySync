@@ -96,6 +96,9 @@ class DataProcessor:
 		# Cuts catalog (גזרות)
 		self.cuts_catalog_file = 'cuts_catalog.json'
 		self.cuts_catalog = self._load_json_list(self.cuts_catalog_file)
+		# Label inventory (מלאי תוויות לפי מידה)
+		self.label_inventory_file = 'label_inventory.json'
+		self.label_inventory = self.load_label_inventory()
 		# Rivhit products (רשימת מוצרים מריווחית)
 		self.rivhit_products_file = 'rivhit_products.json'
 		self.rivhit_meta_file = 'rivhit_meta.json'
@@ -115,6 +118,9 @@ class DataProcessor:
 		# דגמי אב (משפחות מוצרים) - ממופתח לפי קוד דגם; פרטי הדפסה משותפים לכל הוואריאנטים
 		self.rivhit_families_file = 'rivhit_product_families.json'
 		self.rivhit_families = self.load_rivhit_families()
+		# פלטת צבעי בד (שם + hex) ליצירת מוצרים לפי צבעים
+		self.fabric_colors_palette_file = 'fabric_colors_palette.json'
+		self.fabric_colors_palette = self._load_json_list(self.fabric_colors_palette_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -506,6 +512,7 @@ class DataProcessor:
 			'image': '',
 			'model_code': '',
 			'brand': 'arie',
+			'color': '',
 		}
 
 	def get_rivhit_label_fields(self, barcode: str, product: Dict = None) -> Dict:
@@ -523,6 +530,7 @@ class DataProcessor:
 				'image': stored.get('image', ''),
 				'model_code': stored.get('model_code', ''),
 				'brand': stored.get('brand', 'arie'),
+				'color': stored.get('color', ''),
 			}
 		name = ''
 		if product:
@@ -547,6 +555,8 @@ class DataProcessor:
 			'image': str(fields.get('image', '')).strip(),
 			'model_code': str(fields.get('model_code', '')).strip(),
 			'brand': (str(fields.get('brand', '')).strip() or 'arie'),
+			# צבע: אם לא נמסר במפורש - שומרים על הערך הקיים (נקבע ביצירה לפי צבעים)
+			'color': str(fields.get('color', (self.rivhit_label_fields.get(barcode, {}) or {}).get('color', ''))).strip(),
 		}
 		return self.save_rivhit_label_fields()
 
@@ -814,6 +824,110 @@ class DataProcessor:
 			created.append(rec)
 		return created
 
+	# ===== פלטת צבעי בד (ליצירת מוצרים לפי צבעים) =====
+	def save_fabric_colors_palette(self) -> bool:
+		"""שמירת פלטת צבעי הבד לדיסק."""
+		return self._save_json_list(self.fabric_colors_palette_file, self.fabric_colors_palette)
+
+	def add_fabric_palette_color(self, name: str, hex_value: str, supplier: str = '', sampled_at: str = '') -> Dict:
+		"""מוסיף צבע לפלטה (או מעדכן צבע קיים באותו שם). מחזיר את הרשומה.
+
+		supplier: שם הספק שממנו הגיע הבד.
+		sampled_at: תאריך דגימת הצבע (ברירת מחדל - היום, בפורמט dd.mm.yy).
+		"""
+		name = (name or '').strip()
+		hex_value = (hex_value or '').strip()
+		if not name:
+			raise ValueError("יש להזין שם צבע")
+		if not (hex_value.startswith('#') and len(hex_value) == 7):
+			raise ValueError("ערך צבע לא תקין (נדרש פורמט #RRGGBB)")
+		record = {
+			'name': name,
+			'hex': hex_value.lower(),
+			'supplier': (supplier or '').strip(),
+			'sampled_at': (sampled_at or '').strip() or datetime.now().strftime('%d.%m.%y'),
+		}
+		for entry in self.fabric_colors_palette:
+			if str(entry.get('name', '')).strip() == name:
+				entry.update(record)
+				self.save_fabric_colors_palette()
+				return entry
+		self.fabric_colors_palette.append(record)
+		self.save_fabric_colors_palette()
+		return record
+
+	def update_fabric_palette_color(self, name: str, fields: Dict) -> Dict:
+		"""מעדכן צבע קיים לפי שמו הנוכחי (כולל שינוי שם). מחזיר את הרשומה המעודכנת.
+
+		fields יכול לכלול: name, hex, supplier, sampled_at.
+		"""
+		name = (name or '').strip()
+		entry = next((e for e in self.fabric_colors_palette if str(e.get('name', '')).strip() == name), None)
+		if entry is None:
+			raise ValueError(f"הצבע '{name}' לא נמצא בפלטה")
+		new_name = str(fields.get('name', entry.get('name', ''))).strip()
+		if not new_name:
+			raise ValueError("יש להזין שם צבע")
+		new_hex = str(fields.get('hex', entry.get('hex', ''))).strip().lower()
+		if not (new_hex.startswith('#') and len(new_hex) == 7):
+			raise ValueError("ערך צבע לא תקין (נדרש פורמט #RRGGBB)")
+		# מניעת התנגשות עם צבע אחר באותו שם חדש
+		if new_name != name and any(str(e.get('name', '')).strip() == new_name for e in self.fabric_colors_palette):
+			raise ValueError(f"כבר קיים צבע בשם '{new_name}'")
+		entry['name'] = new_name
+		entry['hex'] = new_hex
+		entry['supplier'] = str(fields.get('supplier', entry.get('supplier', ''))).strip()
+		entry['sampled_at'] = str(fields.get('sampled_at', entry.get('sampled_at', ''))).strip()
+		self.save_fabric_colors_palette()
+		return entry
+
+	def delete_fabric_palette_color(self, name: str) -> bool:
+		"""מוחק צבע מהפלטה לפי שם."""
+		name = (name or '').strip()
+		before = len(self.fabric_colors_palette)
+		self.fabric_colors_palette = [e for e in self.fabric_colors_palette if str(e.get('name', '')).strip() != name]
+		if len(self.fabric_colors_palette) == before:
+			return False
+		return self.save_fabric_colors_palette()
+
+	def add_rivhit_new_products_by_colors(self, base_name: str, colors, cost_nis: str = '',
+										sale_nis: str = '', category: str = '', digital_price: str = '',
+										last_item_num=None) -> list:
+		"""יוצר מוצר חדש לכל צבע שנבחר, על בסיס שם פריט משותף.
+
+		colors: רשימת מילונים {'name': שם הצבע, 'hex': '#rrggbb'}.
+		שם כל מוצר = "<שם בסיס> (<צבע>)", וכל מוצר מקבל ברקוד EAN-13 חדש משלו.
+		שדות 'color' ו-'color_hex' נשמרים ברשומה לצרכים פנימיים (מדבקות, ייצוא לאתר)
+		ואינם נכללים בקובץ הייצוא לריווחית.
+		מחזיר רשימת הרשומות שנוצרו.
+		"""
+		base_name = (base_name or '').strip()
+		if not base_name:
+			raise ValueError("יש להזין שם פריט")
+		clean_colors = []
+		for c in (colors or []):
+			nm = str((c or {}).get('name', '')).strip()
+			if nm:
+				clean_colors.append({'name': nm, 'hex': str((c or {}).get('hex', '')).strip()})
+		if not clean_colors:
+			raise ValueError("יש לבחור לפחות צבע אחד")
+		created = []
+		for color in clean_colors:
+			rec = self.add_rivhit_new_product(
+				name=f"{base_name} ({color['name']})",
+				part_num='',
+				cost_nis=cost_nis,
+				sale_nis=sale_nis,
+				category=category,
+				digital_price=digital_price,
+				last_item_num=last_item_num,
+			)
+			rec['color'] = color['name']
+			rec['color_hex'] = color['hex']
+			created.append(rec)
+		self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
+		return created
+
 	def delete_rivhit_new_product(self, index: int) -> bool:
 		"""מוחק מוצר חדש לפי אינדקס."""
 		try:
@@ -993,6 +1107,8 @@ class DataProcessor:
 			self.delivery_notes.append(record)
 			self._save_json_list(self.delivery_notes_file, self.delivery_notes)
 			self._rebuild_combined_receipts()
+			# הפחתת מלאי תוויות מאביזרי "תווית …" שנשלחו
+			self._apply_label_inventory_from_accessories(accessories or [], new_id, restore=False)
 			return new_id
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת תעודת משלוח: {e}")
@@ -1074,6 +1190,18 @@ class DataProcessor:
 
 	def delete_delivery_note(self, note_id: int) -> bool:
 		"""מוחק תעודת משלוח (delivery_note) לפי ID. מחזיר True אם נמחקה רשומה."""
+		# שמירת אביזרים לפני מחיקה לצורך החזרת מלאי תוויות
+		deleted_rec = None
+		try:
+			for r in self.delivery_notes:
+				if int(r.get('id', -1)) == int(note_id):
+					deleted_rec = r
+					break
+		except Exception:
+			for r in self.delivery_notes:
+				if r.get('id') == note_id:
+					deleted_rec = r
+					break
 		before = len(self.delivery_notes)
 		try:
 			self.delivery_notes = [r for r in self.delivery_notes if int(r.get('id', -1)) != int(note_id)]
@@ -1082,6 +1210,10 @@ class DataProcessor:
 		if len(self.delivery_notes) != before:
 			self._save_json_list(self.delivery_notes_file, self.delivery_notes)
 			self._rebuild_combined_receipts()
+			if deleted_rec:
+				self._apply_label_inventory_from_accessories(
+					deleted_rec.get('accessories') or [], int(note_id), restore=True
+				)
 			return True
 		return False
 
@@ -1543,6 +1675,14 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה בהוספת לוג ייבוא: {e}")
 			return None
+
+	def get_fabrics_by_import_log(self, log_id: int) -> List[Dict]:
+		"""החזרת רשומות מלאי בדים ששויכו ללוג ייבוא מסוים."""
+		try:
+			return [r for r in self.fabrics_inventory if r.get('import_log_id') == log_id]
+		except Exception as e:
+			print(f"שגיאה בשליפת רשומות לפי לוג ייבוא: {e}")
+			return []
 
 	def delete_fabric_import_log(self, log_id: int) -> bool:
 		"""מחיקת רשומת לוג לפי ID"""
@@ -2035,6 +2175,190 @@ class DataProcessor:
 
 	def refresh_sewing_accessories(self):
 		self.sewing_accessories = self.load_sewing_accessories()
+
+	# ===== Label Inventory (מלאי תוויות לפי מידה) =====
+	LABEL_ACCESSORY_PREFIX = 'תווית '
+
+	@staticmethod
+	def parse_label_size_from_accessory(name: str):
+		"""מחלץ מידה משם אביזר 'תווית X'. מחזיר None אם זה לא תווית."""
+		n = (name or '').strip()
+		prefix = DataProcessor.LABEL_ACCESSORY_PREFIX
+		if n.startswith(prefix):
+			size = n[len(prefix):].strip()
+			return size or None
+		return None
+
+	def load_label_inventory(self) -> Dict:
+		"""טעינת מלאי תוויות: {stock: {size: qty}, movements: [...]}."""
+		try:
+			if os.path.exists(self.label_inventory_file):
+				with open(self.label_inventory_file, 'r', encoding='utf-8-sig') as f:
+					data = json.load(f)
+					if isinstance(data, dict):
+						stock = data.get('stock') or {}
+						if not isinstance(stock, dict):
+							stock = {}
+						movements = data.get('movements') or []
+						if not isinstance(movements, list):
+							movements = []
+						# נרמול כמויות למספרים שלמים
+						norm_stock = {}
+						for k, v in stock.items():
+							try:
+								norm_stock[str(k).strip()] = int(v)
+							except Exception:
+								norm_stock[str(k).strip()] = 0
+						return {'stock': norm_stock, 'movements': movements}
+			return {'stock': {}, 'movements': []}
+		except Exception as e:
+			print(f"שגיאה בטעינת מלאי תוויות: {e}")
+			return {'stock': {}, 'movements': []}
+
+	def save_label_inventory(self) -> bool:
+		try:
+			with open(self.label_inventory_file, 'w', encoding='utf-8') as f:
+				json.dump(self.label_inventory, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת מלאי תוויות: {e}")
+			return False
+
+	def refresh_label_inventory(self):
+		self.label_inventory = self.load_label_inventory()
+
+	def get_label_stock(self, size: str = None) -> Any:
+		"""מחזיר מלאי למידה אחת, או dict של כל המלאי אם size=None."""
+		stock = (self.label_inventory or {}).get('stock') or {}
+		if size is None:
+			return dict(stock)
+		return int(stock.get(str(size).strip(), 0) or 0)
+
+	def get_label_movements(self) -> List[Dict]:
+		return list((self.label_inventory or {}).get('movements') or [])
+
+	def _append_label_movement(self, mov_type: str, size: str, quantity: int, balance_after: int,
+							   note: str = '', delivery_note_id=None) -> Dict:
+		movements = self.label_inventory.setdefault('movements', [])
+		new_id = max([int(m.get('id', 0) or 0) for m in movements], default=0) + 1
+		rec = {
+			'id': new_id,
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+			'type': mov_type,
+			'size': size,
+			'quantity': int(quantity),
+			'balance_after': int(balance_after),
+			'note': note or '',
+			'delivery_note_id': delivery_note_id,
+		}
+		movements.append(rec)
+		return rec
+
+	def set_label_stock(self, size: str, quantity: int, note: str = '') -> int:
+		"""הגדרת מלאי נוכחי (דריסה) למידה. מחזיר את היתרה החדשה."""
+		size = (size or '').strip()
+		if not size:
+			raise ValueError('חובה לבחור מידה')
+		try:
+			qty = int(quantity)
+		except Exception:
+			raise ValueError('כמות לא תקינה')
+		if qty < 0:
+			raise ValueError('כמות לא יכולה להיות שלילית')
+		stock = self.label_inventory.setdefault('stock', {})
+		stock[size] = qty
+		self._append_label_movement('set', size, qty, qty, note=note)
+		self.save_label_inventory()
+		return qty
+
+	def add_label_stock(self, size: str, quantity: int, note: str = '') -> int:
+		"""הוספת כמות למלאי מידה. מחזיר את היתרה החדשה."""
+		size = (size or '').strip()
+		if not size:
+			raise ValueError('חובה לבחור מידה')
+		try:
+			qty = int(quantity)
+		except Exception:
+			raise ValueError('כמות לא תקינה')
+		if qty == 0:
+			raise ValueError('כמות חייבת להיות שונה מאפס')
+		stock = self.label_inventory.setdefault('stock', {})
+		new_bal = int(stock.get(size, 0) or 0) + qty
+		stock[size] = new_bal
+		self._append_label_movement('add', size, qty, new_bal, note=note)
+		self.save_label_inventory()
+		return new_bal
+
+	def apply_label_delivery_delta(self, size: str, quantity: int, delivery_note_id: int,
+								   restore: bool = False) -> int:
+		"""הפחתה/החזרה של מלאי תוויות מתעודת משלוח. quantity חיובית = כמות שנשלחה."""
+		size = (size or '').strip()
+		if not size:
+			return self.get_label_stock(size)
+		try:
+			qty = abs(int(quantity))
+		except Exception:
+			qty = 0
+		if qty <= 0:
+			return self.get_label_stock(size)
+		stock = self.label_inventory.setdefault('stock', {})
+		current = int(stock.get(size, 0) or 0)
+		if restore:
+			new_bal = current + qty
+			mov_type = 'delivery_restore'
+			delta = qty
+		else:
+			new_bal = current - qty
+			mov_type = 'delivery_deduct'
+			delta = -qty
+		stock[size] = new_bal
+		self._append_label_movement(
+			mov_type, size, delta, new_bal,
+			note=f"תעודת משלוח #{delivery_note_id}",
+			delivery_note_id=delivery_note_id,
+		)
+		self.save_label_inventory()
+		return new_bal
+
+	def _apply_label_inventory_from_accessories(self, accessories: List[Dict], note_id: int, restore: bool = False):
+		"""מעבר על אביזרי תעודה והפעלת עדכון מלאי לכל 'תווית …'."""
+		for acc in accessories or []:
+			name = (acc.get('accessory') or acc.get('name') or '').strip()
+			size = self.parse_label_size_from_accessory(name)
+			if not size:
+				continue
+			try:
+				qty = int(float(acc.get('quantity', 0) or 0))
+			except Exception:
+				qty = 0
+			if qty:
+				self.apply_label_delivery_delta(size, qty, note_id, restore=restore)
+
+	def preview_label_deductions_from_accessories(self, accessories: List[Dict]) -> List[Dict]:
+		"""מחזיר רשימת {size, qty, current, after} לתוויות שיופחתו — לבדיקת אזהרה ב-UI."""
+		result = []
+		# צבירה לפי מידה אם יש כמה שורות לאותה מידה
+		by_size = {}
+		for acc in accessories or []:
+			name = (acc.get('accessory') or acc.get('name') or '').strip()
+			size = self.parse_label_size_from_accessory(name)
+			if not size:
+				continue
+			try:
+				qty = int(float(acc.get('quantity', 0) or 0))
+			except Exception:
+				qty = 0
+			if qty > 0:
+				by_size[size] = by_size.get(size, 0) + qty
+		for size, qty in by_size.items():
+			current = self.get_label_stock(size)
+			result.append({
+				'size': size,
+				'qty': qty,
+				'current': current,
+				'after': current - qty,
+			})
+		return result
 
 	# ===== Categories Management =====
 	def load_categories(self) -> List[Dict]:

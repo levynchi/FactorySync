@@ -6,6 +6,7 @@ import calendar as _cal
 import os
 
 import re
+from . import theme
 
 class ProductsBalanceTabMixin:
     """Mixin לטאב 'מאזן מוצרים ופריטים'.
@@ -15,13 +16,13 @@ class ProductsBalanceTabMixin:
     """
 
     def _create_products_balance_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="מאזן מוצרים ופריטים")
 
         # סרגל מסננים
-        toolbar = tk.Frame(tab, bg='#f7f9fa')
+        toolbar = tk.Frame(tab, bg=theme.PAGE_BG)
         toolbar.pack(fill='x', padx=8, pady=(8,4))
-        tk.Label(toolbar, text='ספק:', bg='#f7f9fa', font=('Arial',10,'bold')).pack(side='right', padx=(6,2))
+        tk.Label(toolbar, text='ספק:', bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,10,'bold')).pack(side='right', padx=(6,2))
         self.balance_supplier_var = tk.StringVar()
         self.balance_supplier_combo = ttk.Combobox(toolbar, textvariable=self.balance_supplier_var, width=28, state='readonly')
         try:
@@ -30,28 +31,28 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         self.balance_supplier_combo.pack(side='right')
-        tk.Button(toolbar, text='🔄 רענן', command=self._refresh_balance_views, bg='#3498db', fg='white').pack(side='right', padx=6)
+        tk.Button(toolbar, text='🔄 רענן', command=self._refresh_balance_views, bg=theme.PRIMARY, fg='white').pack(side='right', padx=6)
 
         # מסנן רק-חוסר נשאר בסרגל העליון
         self.balance_only_pending_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(toolbar, text='רק חוסר', variable=self.balance_only_pending_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='right', padx=(10,0))
+        tk.Checkbutton(toolbar, text='רק חוסר', variable=self.balance_only_pending_var, bg=theme.PAGE_BG, command=self._refresh_products_balance_table).pack(side='right', padx=(10,0))
 
         # פנימי: נוטבוק עם 2 עמודים – מאזן מוצרים + מה נגזר אצל הספק
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=8, pady=8)
 
-        balance_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        balance_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(balance_page, text='מאזן מוצרים')
-        tk.Label(balance_page, text='מאזן מוצרים לפי ספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        tk.Label(balance_page, text='מאזן מוצרים לפי ספק', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=6)
 
-        cut_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        cut_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(cut_page, text='ציורים שנשלחו/נחתכו אצל הספק')
-        tk.Label(cut_page, text='ציורים שנשלחו/נחתכו אצל הספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
+        tk.Label(cut_page, text='ציורים שנשלחו/נחתכו אצל הספק', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=6)
         # סרגל פנימי לעמוד הגזירה: חיפוש + מסננים
-        cut_bar = tk.Frame(cut_page, bg='#f7f9fa'); cut_bar.pack(fill='x', padx=10, pady=(0,6))
+        cut_bar = tk.Frame(cut_page, bg=theme.PAGE_BG); cut_bar.pack(fill='x', padx=10, pady=(0,6))
         
         # חיפוש
-        tk.Label(cut_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cut_bar, text='חיפוש:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_search_var = tk.StringVar(); cut_search = tk.Entry(cut_bar, textvariable=self.cut_search_var, width=24); cut_search.pack(side='right', padx=(0,6))
         try:
             cut_search.bind('<KeyRelease>', lambda e: self._refresh_drawings_table())
@@ -59,7 +60,7 @@ class ProductsBalanceTabMixin:
             pass
         
         # מסנן סוג בד
-        tk.Label(cut_bar, text='סוג בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cut_bar, text='סוג בד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_fabric_filter_var = tk.StringVar(value='הכל')
         self.cut_fabric_filter_cb = ttk.Combobox(cut_bar, textvariable=self.cut_fabric_filter_var, width=18, state='readonly', justify='right')
         try:
@@ -69,7 +70,7 @@ class ProductsBalanceTabMixin:
         self.cut_fabric_filter_cb.pack(side='right', padx=(0,10))
         
         # מסנן סטטוס
-        tk.Label(cut_bar, text='סטטוס:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cut_bar, text='סטטוס:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_status_filter_var = tk.StringVar(value='הכל')
         self.cut_status_filter_cb = ttk.Combobox(cut_bar, textvariable=self.cut_status_filter_var, width=15, state='readonly', justify='right')
         self.cut_status_filter_cb['values'] = ['הכל', 'נשלח', 'נחתך']
@@ -80,7 +81,7 @@ class ProductsBalanceTabMixin:
         self.cut_status_filter_cb.pack(side='right', padx=(0,10))
         
         # כפתור רענון
-        tk.Button(cut_bar, text='🔄 רענן', command=self._refresh_drawings_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        tk.Button(cut_bar, text='🔄 רענן', command=self._refresh_drawings_table, bg=theme.PRIMARY, fg='white').pack(side='left', padx=6)
         cols_cut = ('drawing_id','product','size','fabric','quantity','status','layers')
         self.supplier_cut_tree = ttk.Treeview(cut_page, columns=cols_cut, show='headings', height=18)
         headers_cut = {'drawing_id':'ID ציור','product':'מוצר','size':'מידה','fabric':'סוג בד','quantity':'כמות יחידות','status':'סטטוס','layers':'שכבות'}
@@ -94,25 +95,25 @@ class ProductsBalanceTabMixin:
         vs2.pack(side='left', fill='y', pady=6)
 
         # עמוד חדש: מאזן סחורות שנחתכו אצל הספק
-        cut_balance_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        cut_balance_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(cut_balance_page, text='מאזן סחורות שנחתכו אצל הספק')
-        tk.Label(cut_balance_page, text='מאזן סחורות שנחתכו אצל הספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
-        cb_bar = tk.Frame(cut_balance_page, bg='#f7f9fa'); cb_bar.pack(fill='x', padx=10, pady=(0,6))
-        tk.Label(cb_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cut_balance_page, text='מאזן סחורות שנחתכו אצל הספק', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=6)
+        cb_bar = tk.Frame(cut_balance_page, bg=theme.PAGE_BG); cb_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(cb_bar, text='חיפוש:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_balance_search_var = tk.StringVar(); cb_search = tk.Entry(cb_bar, textvariable=self.cut_balance_search_var, width=24); cb_search.pack(side='right', padx=(0,6))
         try:
             cb_search.bind('<KeyRelease>', lambda e: self._refresh_cut_balance_table())
         except Exception:
             pass
         self.cut_balance_only_pending_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(cb_bar, text='רק חוסר', variable=self.cut_balance_only_pending_var, bg='#f7f9fa', command=self._refresh_cut_balance_table).pack(side='left', padx=(8,0))
-        tk.Button(cb_bar, text='🔄 רענן', command=self._refresh_cut_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        tk.Checkbutton(cb_bar, text='רק חוסר', variable=self.cut_balance_only_pending_var, bg=theme.PAGE_BG, command=self._refresh_cut_balance_table).pack(side='left', padx=(8,0))
+        tk.Button(cb_bar, text='🔄 רענן', command=self._refresh_cut_balance_table, bg=theme.PRIMARY, fg='white').pack(side='left', padx=6)
         
         # סרגל סינונים נוסף
-        cb_filter_bar = tk.Frame(cut_balance_page, bg='#f7f9fa'); cb_filter_bar.pack(fill='x', padx=10, pady=(0,6))
+        cb_filter_bar = tk.Frame(cut_balance_page, bg=theme.PAGE_BG); cb_filter_bar.pack(fill='x', padx=10, pady=(0,6))
         
         # סינון לפי קטגורית בד
-        tk.Label(cb_filter_bar, text='קטגורית בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cb_filter_bar, text='קטגורית בד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_balance_fabric_filter_var = tk.StringVar(value='הכל')
         self.cut_balance_fabric_filter_combo = ttk.Combobox(cb_filter_bar, textvariable=self.cut_balance_fabric_filter_var, width=20, state='readonly')
         self.cut_balance_fabric_filter_combo['values'] = ['הכל']
@@ -120,50 +121,50 @@ class ProductsBalanceTabMixin:
         self.cut_balance_fabric_filter_combo.bind('<<ComboboxSelected>>', lambda e: self._refresh_cut_balance_table())
         
         # סינון לפי טווח ציורים
-        tk.Label(cb_filter_bar, text='טווח ציורים:', bg='#f7f9fa').pack(side='right', padx=(8,4))
-        tk.Label(cb_filter_bar, text='מ-', bg='#f7f9fa').pack(side='right', padx=(4,2))
+        tk.Label(cb_filter_bar, text='טווח ציורים:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
+        tk.Label(cb_filter_bar, text='מ-', bg=theme.PAGE_BG).pack(side='right', padx=(4,2))
         self.cut_balance_drawing_from_var = tk.StringVar()
         cb_drawing_from = tk.Entry(cb_filter_bar, textvariable=self.cut_balance_drawing_from_var, width=8)
         cb_drawing_from.pack(side='right', padx=(0,2))
         cb_drawing_from.bind('<KeyRelease>', lambda e: self._refresh_cut_balance_table())
         
-        tk.Label(cb_filter_bar, text='עד-', bg='#f7f9fa').pack(side='right', padx=(4,2))
+        tk.Label(cb_filter_bar, text='עד-', bg=theme.PAGE_BG).pack(side='right', padx=(4,2))
         self.cut_balance_drawing_to_var = tk.StringVar()
         cb_drawing_to = tk.Entry(cb_filter_bar, textvariable=self.cut_balance_drawing_to_var, width=8)
         cb_drawing_to.pack(side='right', padx=(0,6))
         cb_drawing_to.bind('<KeyRelease>', lambda e: self._refresh_cut_balance_table())
         
         # כפתור ניקוי סינונים
-        tk.Button(cb_filter_bar, text='🗑️ נקה סינונים', command=self._clear_cut_balance_filters, bg='#e74c3c', fg='white').pack(side='left', padx=6)
+        tk.Button(cb_filter_bar, text='🗑️ נקה סינונים', command=self._clear_cut_balance_filters, bg=theme.DANGER, fg='white').pack(side='left', padx=6)
 
         # אזור סיכום מרוכז לפי תאריכים ודגם
         summary_box = ttk.LabelFrame(cut_balance_page, text='סיכום לפי דגם ותאריכים')
         summary_box.pack(fill='x', padx=10, pady=(0,6))
-        cb_summary_bar = tk.Frame(summary_box, bg='#f7f9fa')
+        cb_summary_bar = tk.Frame(summary_box, bg=theme.PAGE_BG)
         cb_summary_bar.pack(fill='x', padx=8, pady=(6,4))
 
-        tk.Label(cb_summary_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cb_summary_bar, text='מתאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_balance_summary_from_date_var = tk.StringVar()
         cb_summary_from = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_from_date_var, width=12)
         cb_summary_from.pack(side='right', padx=(0,2))
         tk.Button(cb_summary_bar, text='📅', width=2, command=lambda e=cb_summary_from,v=self.cut_balance_summary_from_date_var: self._open_date_picker(e, v, self._summarize_cut_balance_grouped)).pack(side='right', padx=(0,6))
 
-        tk.Label(cb_summary_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cb_summary_bar, text='עד תאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_balance_summary_to_date_var = tk.StringVar()
         cb_summary_to = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_to_date_var, width=12)
         cb_summary_to.pack(side='right', padx=(0,2))
         tk.Button(cb_summary_bar, text='📅', width=2, command=lambda e=cb_summary_to,v=self.cut_balance_summary_to_date_var: self._open_date_picker(e, v, self._summarize_cut_balance_grouped)).pack(side='right', padx=(0,6))
 
-        tk.Label(cb_summary_bar, text='דגם / חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(cb_summary_bar, text='דגם / חיפוש:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.cut_balance_summary_search_var = tk.StringVar()
         cb_summary_search = tk.Entry(cb_summary_bar, textvariable=self.cut_balance_summary_search_var, width=34)
         cb_summary_search.pack(side='right', padx=(0,6))
         cb_summary_search.bind('<Return>', lambda e: self._summarize_cut_balance_grouped())
 
-        tk.Button(cb_summary_bar, text='סכם הכל', command=self._summarize_cut_balance_grouped, bg='#27ae60', fg='white').pack(side='left', padx=6)
-        tk.Button(cb_summary_bar, text='סכם חיפוש', command=self._summarize_cut_balance, bg='#16a085', fg='white').pack(side='left', padx=6)
+        tk.Button(cb_summary_bar, text='סכם הכל', command=self._summarize_cut_balance_grouped, bg=theme.SUCCESS, fg='white').pack(side='left', padx=6)
+        tk.Button(cb_summary_bar, text='סכם חיפוש', command=self._summarize_cut_balance, bg=theme.TEAL, fg='white').pack(side='left', padx=6)
         self.cut_balance_summary_result_var = tk.StringVar(value='בחר טווח תאריכים ולחץ סכם הכל')
-        tk.Label(summary_box, textvariable=self.cut_balance_summary_result_var, bg='#f7f9fa', fg='#2c3e50', font=('Arial',10,'bold')).pack(fill='x', padx=8, pady=(0,4))
+        tk.Label(summary_box, textvariable=self.cut_balance_summary_result_var, bg=theme.PAGE_BG, fg=theme.DARK, font=(theme.FONT_FAMILY,10,'bold')).pack(fill='x', padx=8, pady=(0,4))
 
         grouped_cols = ('product','size','fabric_category','shipped','received','diff','drawings','status')
         self.cut_balance_grouped_summary_tree = ttk.Treeview(summary_box, columns=grouped_cols, show='headings', height=8)
@@ -220,18 +221,18 @@ class ProductsBalanceTabMixin:
             pass
 
         # עמוד חדש: מלאי (עם טאב פנימי)
-        inventory_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        inventory_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(inventory_page, text='מלאי')
         inv_nb = ttk.Notebook(inventory_page)
         inv_nb.pack(fill='both', expand=True, padx=6, pady=6)
 
         # תת-טאב: מלאי עדכני (תצוגה)
-        inv_view_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_view_page = tk.Frame(inv_nb, bg=theme.PAGE_BG)
         inv_nb.add(inv_view_page, text='מלאי עדכני')
-        tk.Label(inv_view_page, text='מלאי עדכני מתוך הקטלוג (קריאה בלבד)', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
-        inv_bar = tk.Frame(inv_view_page, bg='#f7f9fa'); inv_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(inv_view_page, text='מלאי עדכני מתוך הקטלוג (קריאה בלבד)', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(6,2))
+        inv_bar = tk.Frame(inv_view_page, bg=theme.PAGE_BG); inv_bar.pack(fill='x', padx=10, pady=(0,6))
         # מסננים: שם דגם / סוג בד / קטגוריה ראשית
-        tk.Label(inv_bar, text='שם דגם:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(inv_bar, text='שם דגם:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.inv_view_name_filter_var = tk.StringVar(value='הכל')
         self.inv_view_name_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_name_filter_var, width=28, state='readonly', justify='right')
         try:
@@ -240,7 +241,7 @@ class ProductsBalanceTabMixin:
             pass
         self.inv_view_name_filter_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(inv_bar, text='סוג בד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(inv_bar, text='סוג בד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.inv_view_fabric_filter_var = tk.StringVar(value='הכל')
         self.inv_view_fabric_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_fabric_filter_var, width=18, state='readonly', justify='right')
         try:
@@ -249,7 +250,7 @@ class ProductsBalanceTabMixin:
             pass
         self.inv_view_fabric_filter_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(inv_bar, text='קטגוריה ראשית:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(inv_bar, text='קטגוריה ראשית:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.inv_view_main_cat_filter_var = tk.StringVar(value='הכל')
         self.inv_view_main_cat_filter_cb = ttk.Combobox(inv_bar, textvariable=self.inv_view_main_cat_filter_var, width=18, state='readonly', justify='right')
         try:
@@ -258,17 +259,17 @@ class ProductsBalanceTabMixin:
             pass
         self.inv_view_main_cat_filter_cb.pack(side='right', padx=(0,10))
         # מיקום: בחירה מרובה או הכל
-        tk.Label(inv_bar, text='מיקום:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(inv_bar, text='מיקום:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.inv_view_location_summary_var = tk.StringVar(value='כל המקומות')
         self.inv_view_loc_menu_btn = tk.Menubutton(inv_bar, textvariable=self.inv_view_location_summary_var, relief='raised', direction='below')
         self.inv_view_loc_menu = tk.Menu(self.inv_view_loc_menu_btn, tearoff=0)
         self.inv_view_loc_menu_btn.configure(menu=self.inv_view_loc_menu)
         self.inv_view_loc_menu_btn.pack(side='right', padx=(0,10))
         # תצוגת מלאי עדכני נמשכת מהקטלוג – אין צורך בבחירת קובץ
-        tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg='#27ae60', fg='white').pack(side='right', padx=(6,0))
-        tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg='#3498db', fg='white').pack(side='right', padx=(6,0))
+        tk.Button(inv_bar, text='💾 יצוא לאקסל…', command=self._export_products_inventory_to_excel, bg=theme.SUCCESS, fg='white').pack(side='right', padx=(6,0))
+        tk.Button(inv_bar, text='🔄 רענן', command=self._refresh_products_inventory_table, bg=theme.PRIMARY, fg='white').pack(side='right', padx=(6,0))
         self.products_inventory_status_var = tk.StringVar(value='מקור: קטלוג מוצרים')
-        tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg='#f7f9fa', anchor='e').pack(side='right', expand=True, fill='x')
+        tk.Label(inv_bar, textvariable=self.products_inventory_status_var, bg=theme.PAGE_BG, anchor='e').pack(side='right', expand=True, fill='x')
 
         # טבלת מלאי – עמודות נדרשות (הוספנו 'fabric_category' ו'ticks')
         inv_cols = ('name','main_category','size','fabric_category','fabric_type','quantity','location','packaging','ticks')
@@ -294,7 +295,7 @@ class ProductsBalanceTabMixin:
             'packaging':120,
             'ticks':100
         }
-        inv_table_wrap = tk.Frame(inv_view_page, bg='#ffffff', relief='groove', bd=1)
+        inv_table_wrap = tk.Frame(inv_view_page, bg=theme.CARD_BG, relief='groove', bd=1)
         inv_table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         self.products_inventory_tree = ttk.Treeview(inv_table_wrap, columns=inv_cols, show='headings', height=18)
         for c in inv_cols:
@@ -308,13 +309,13 @@ class ProductsBalanceTabMixin:
         inv_table_wrap.grid_columnconfigure(0, weight=1)
 
         # תת-טאב: יצירת עדכון מלאי
-        inv_create_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_create_page = tk.Frame(inv_nb, bg=theme.PAGE_BG)
         inv_nb.add(inv_create_page, text='יצירת עדכון')
-        tk.Label(inv_create_page, text='עדכון מלאי עדכני', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
-        form = tk.Frame(inv_create_page, bg='#f7f9fa'); form.pack(anchor='e', padx=10, pady=(0,6))
+        tk.Label(inv_create_page, text='עדכון מלאי עדכני', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(6,2))
+        form = tk.Frame(inv_create_page, bg=theme.PAGE_BG); form.pack(anchor='e', padx=10, pady=(0,6))
 
         # שדות
-        tk.Label(form, text='שם דגם:', bg='#f7f9fa').grid(row=0, column=6, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='שם דגם:', bg=theme.PAGE_BG).grid(row=0, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_name_var = tk.StringVar()
         self.inv_create_name_cb = ttk.Combobox(form, textvariable=self.inv_create_name_var, width=32, justify='right')
         try:
@@ -328,7 +329,7 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
-        tk.Label(form, text='קטגוריה ראשית:', bg='#f7f9fa').grid(row=0, column=4, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='קטגוריה ראשית:', bg=theme.PAGE_BG).grid(row=0, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_main_cat_var = tk.StringVar()
         self.inv_create_main_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_main_cat_var, width=20, state='readonly', justify='right')
         # ערכי ברירת מחדל לקטגוריות ראשיות
@@ -343,7 +344,7 @@ class ProductsBalanceTabMixin:
             pass
         self.inv_create_main_cat_cb.grid(row=0, column=3, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='מידה:', bg='#f7f9fa').grid(row=0, column=2, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='מידה:', bg=theme.PAGE_BG).grid(row=0, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_size_var = tk.StringVar()
         self.inv_create_size_cb = ttk.Combobox(form, textvariable=self.inv_create_size_var, width=16, justify='right')
         self.inv_create_size_cb.grid(row=0, column=1, padx=4, pady=2, sticky='e')
@@ -352,7 +353,7 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
 
-        tk.Label(form, text='סוג בד:', bg='#f7f9fa').grid(row=1, column=6, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='סוג בד:', bg=theme.PAGE_BG).grid(row=1, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_fabric_var = tk.StringVar()
         self.inv_create_fabric_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_var, width=24, justify='right')
         self.inv_create_fabric_cb.grid(row=1, column=5, padx=4, pady=2, sticky='e')
@@ -362,38 +363,38 @@ class ProductsBalanceTabMixin:
             pass
 
         # קטגורית בד (נמשכת מהקטלוג עבור שם הדגם)
-        tk.Label(form, text='קטגורית בד:', bg='#f7f9fa').grid(row=1, column=4, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='קטגורית בד:', bg=theme.PAGE_BG).grid(row=1, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_fabric_cat_var = tk.StringVar()
         self.inv_create_fabric_cat_cb = ttk.Combobox(form, textvariable=self.inv_create_fabric_cat_var, width=20, state='readonly', justify='right')
         self.inv_create_fabric_cat_cb.grid(row=1, column=3, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='כמות:', bg='#f7f9fa').grid(row=1, column=2, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='כמות:', bg=theme.PAGE_BG).grid(row=1, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_qty_var = tk.StringVar(value='0')
         tk.Entry(form, textvariable=self.inv_create_qty_var, width=10, justify='right').grid(row=1, column=1, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='מיקום:', bg='#f7f9fa').grid(row=2, column=6, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='מיקום:', bg=theme.PAGE_BG).grid(row=2, column=6, padx=4, pady=2, sticky='e')
         self.inv_create_location_var = tk.StringVar()
         self.inv_create_location_cb = ttk.Combobox(form, textvariable=self.inv_create_location_var, width=16, justify='right')
         self.inv_create_location_cb.grid(row=2, column=5, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='צורת אריזה:', bg='#f7f9fa').grid(row=2, column=4, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='צורת אריזה:', bg=theme.PAGE_BG).grid(row=2, column=4, padx=4, pady=2, sticky='e')
         self.inv_create_packaging_var = tk.StringVar()
         self.inv_create_packaging_cb = ttk.Combobox(form, textvariable=self.inv_create_packaging_var, width=16, justify='right')
         self.inv_create_packaging_cb.grid(row=2, column=3, padx=4, pady=2, sticky='e')
 
-        tk.Label(form, text='טיקטקים:', bg='#f7f9fa').grid(row=2, column=2, padx=4, pady=2, sticky='e')
+        tk.Label(form, text='טיקטקים:', bg=theme.PAGE_BG).grid(row=2, column=2, padx=4, pady=2, sticky='e')
         self.inv_create_ticks_var = tk.StringVar(value='עם טיקטקים')
         self.inv_create_ticks_cb = ttk.Combobox(form, textvariable=self.inv_create_ticks_var, width=16, justify='right', state='readonly')
         self.inv_create_ticks_cb['values'] = ['עם טיקטקים', 'ללא טיקטקים']
         self.inv_create_ticks_cb.grid(row=2, column=1, padx=4, pady=2, sticky='e')
 
-        actions = tk.Frame(inv_create_page, bg='#f7f9fa'); actions.pack(fill='x', padx=10, pady=(0,6))
-        tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        actions = tk.Frame(inv_create_page, bg=theme.PAGE_BG); actions.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(actions, text='➕ הוסף לשורות', command=self._inv_create_add_row, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
         tk.Button(actions, text='🗑️ הסר שורה', command=self._inv_create_delete_selected).pack(side='right', padx=4)
         tk.Button(actions, text='🧹 נקה הכל', command=self._inv_create_clear_all).pack(side='right', padx=4)
         # כפתור עדכון שיחיל את השורות על המלאי וירשום להיסטוריה
-        tk.Button(actions, text='⬆️ עדכן', command=self._inv_create_apply_updates, bg='#2ecc71', fg='white').pack(side='left', padx=4)
-        tk.Button(actions, text='💾 שמור לאקסל…', command=self._inv_create_export_to_excel, bg='#2c3e50', fg='white').pack(side='left', padx=4)
+        tk.Button(actions, text='⬆️ עדכן', command=self._inv_create_apply_updates, bg=theme.SUCCESS_LIGHT, fg='white').pack(side='left', padx=4)
+        tk.Button(actions, text='💾 שמור לאקסל…', command=self._inv_create_export_to_excel, bg=theme.DARK, fg='white').pack(side='left', padx=4)
 
         # טבלת בנייה
         self.inv_create_tree = ttk.Treeview(inv_create_page, columns=inv_cols, show='headings', height=14)
@@ -412,14 +413,14 @@ class ProductsBalanceTabMixin:
             pass
 
         # תת-טאב: היסטוריית עדכונים
-        inv_hist_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        inv_hist_page = tk.Frame(inv_nb, bg=theme.PAGE_BG)
         inv_nb.add(inv_hist_page, text='היסטוריית עדכונים')
-        tk.Label(inv_hist_page, text='היסטוריית עדכוני מלאי', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(6,2))
-        hist_bar = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_bar.pack(fill='x', padx=10, pady=(0,6))
-        tk.Button(hist_bar, text='🔄 רענן', command=self._inv_history_reload, bg='#3498db', fg='white').pack(side='right')
-        tk.Button(hist_bar, text='🗑️ מחק עדכון נבחר', command=self._inv_history_delete_selected, bg='#e74c3c', fg='white').pack(side='right', padx=(8,0))
+        tk.Label(inv_hist_page, text='היסטוריית עדכוני מלאי', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(6,2))
+        hist_bar = tk.Frame(inv_hist_page, bg=theme.PAGE_BG); hist_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Button(hist_bar, text='🔄 רענן', command=self._inv_history_reload, bg=theme.PRIMARY, fg='white').pack(side='right')
+        tk.Button(hist_bar, text='🗑️ מחק עדכון נבחר', command=self._inv_history_delete_selected, bg=theme.DANGER, fg='white').pack(side='right', padx=(8,0))
         # חלוקה לשניים: תקציר למעלה, פריטים למטה
-        hist_wrap = tk.Frame(inv_hist_page, bg='#f7f9fa'); hist_wrap.pack(fill='both', expand=True, padx=10, pady=6)
+        hist_wrap = tk.Frame(inv_hist_page, bg=theme.PAGE_BG); hist_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         hist_wrap.grid_columnconfigure(0, weight=1)
         hist_wrap.grid_rowconfigure(1, weight=1)
         # טבלת באצ׳ים
@@ -466,10 +467,10 @@ class ProductsBalanceTabMixin:
             pass
 
         # תת-טאב ניהול: צורות אריזה
-        pkg_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        pkg_page = tk.Frame(inv_nb, bg=theme.PAGE_BG)
         inv_nb.add(pkg_page, text='צורות אריזה')
-        tk.Label(pkg_page, text='ניהול צורות אריזה', font=('Arial',14,'bold'), bg='#f7f9fa').pack(pady=(6,2))
-        pkg_bar = tk.Frame(pkg_page, bg='#f7f9fa'); pkg_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(pkg_page, text='ניהול צורות אריזה', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG).pack(pady=(6,2))
+        pkg_bar = tk.Frame(pkg_page, bg=theme.PAGE_BG); pkg_bar.pack(fill='x', padx=10, pady=(0,6))
         self.pkg_new_var = tk.StringVar()
         tk.Entry(pkg_bar, textvariable=self.pkg_new_var, width=24).pack(side='right', padx=6)
         tk.Button(pkg_bar, text='➕ הוסף', command=self._inv_pkg_add).pack(side='right')
@@ -483,10 +484,10 @@ class ProductsBalanceTabMixin:
             pass
 
         # תת-טאב ניהול: מיקומים
-        loc_page = tk.Frame(inv_nb, bg='#f7f9fa')
+        loc_page = tk.Frame(inv_nb, bg=theme.PAGE_BG)
         inv_nb.add(loc_page, text='מיקומים')
-        tk.Label(loc_page, text='ניהול מיקומים', font=('Arial',14,'bold'), bg='#f7f9fa').pack(pady=(6,2))
-        loc_bar = tk.Frame(loc_page, bg='#f7f9fa'); loc_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(loc_page, text='ניהול מיקומים', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG).pack(pady=(6,2))
+        loc_bar = tk.Frame(loc_page, bg=theme.PAGE_BG); loc_bar.pack(fill='x', padx=10, pady=(0,6))
         self.loc_new_var = tk.StringVar()
         tk.Entry(loc_bar, textvariable=self.loc_new_var, width=24).pack(side='right', padx=6)
         tk.Button(loc_bar, text='➕ הוסף', command=self._inv_loc_add).pack(side='right')
@@ -520,11 +521,11 @@ class ProductsBalanceTabMixin:
         self._refresh_products_inventory_table()
 
         # עמוד חדש: מאזן אביזרי תפירה
-        accessories_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        accessories_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(accessories_page, text='מאזן אביזרי תפירה')
-        tk.Label(accessories_page, text='מאזן אביזרי תפירה לפי ספק', font=('Arial',14,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=6)
-        acc_bar = tk.Frame(accessories_page, bg='#f7f9fa'); acc_bar.pack(fill='x', padx=10, pady=(0,6))
-        tk.Label(acc_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(accessories_page, text='מאזן אביזרי תפירה לפי ספק', font=(theme.FONT_FAMILY,14,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=6)
+        acc_bar = tk.Frame(accessories_page, bg=theme.PAGE_BG); acc_bar.pack(fill='x', padx=10, pady=(0,6))
+        tk.Label(acc_bar, text='חיפוש:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.accessories_search_var = tk.StringVar(); acc_search = tk.Entry(acc_bar, textvariable=self.accessories_search_var, width=24); acc_search.pack(side='right', padx=(0,6))
         try:
             acc_search.bind('<KeyRelease>', lambda e: self._refresh_accessories_balance_table())
@@ -537,7 +538,7 @@ class ProductsBalanceTabMixin:
                 from tkcalendar import DateEntry  # type: ignore
             except Exception:
                 DateEntry = None
-            tk.Label(acc_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            tk.Label(acc_bar, text='עד תאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
             self.accessories_to_date_var = tk.StringVar()
             # ברירת מחדל: היום
             try:
@@ -563,7 +564,7 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
 
-            tk.Label(acc_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            tk.Label(acc_bar, text='מתאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
             self.accessories_from_date_var = tk.StringVar()
             # ברירת מחדל: תחילת השנה הנוכחית
             try:
@@ -591,8 +592,8 @@ class ProductsBalanceTabMixin:
         except Exception:
             pass
         self.accessories_only_pending_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg='#f7f9fa', command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
-        tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg='#3498db', fg='white').pack(side='left', padx=6)
+        tk.Checkbutton(acc_bar, text='רק חוסר', variable=self.accessories_only_pending_var, bg=theme.PAGE_BG, command=self._refresh_accessories_balance_table).pack(side='left', padx=(8,0))
+        tk.Button(acc_bar, text='🔄 רענן', command=self._refresh_accessories_balance_table, bg=theme.PRIMARY, fg='white').pack(side='left', padx=6)
         # כפתורי סינון מהיר לאביזרים עיקריים
         self.accessories_kind_filter_var = tk.StringVar(value='')
         tk.Button(acc_bar, text='כל האביזרים', command=self._set_accessories_summary).pack(side='left', padx=(4,12))
@@ -609,7 +610,7 @@ class ProductsBalanceTabMixin:
         self._build_accessories_tree(detail=False)
 
         # סרגל פנימי: חיפוש + כפתור פירוט לפי מידות
-        inner_bar = tk.Frame(balance_page, bg='#f7f9fa')
+        inner_bar = tk.Frame(balance_page, bg=theme.PAGE_BG)
         inner_bar.pack(fill='x', padx=10, pady=(0,6))
         # טווח תאריכים: מתאריך ... עד תאריך ... עם בורר גרפי אם tkcalendar מותקן
         try:
@@ -618,7 +619,7 @@ class ProductsBalanceTabMixin:
                 from tkcalendar import DateEntry  # type: ignore
             except Exception:
                 DateEntry = None
-            tk.Label(inner_bar, text='עד תאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            tk.Label(inner_bar, text='עד תאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
             self.balance_to_date_var = tk.StringVar()
             # ברירת מחדל: היום
             try:
@@ -646,7 +647,7 @@ class ProductsBalanceTabMixin:
             except Exception:
                 pass
 
-            tk.Label(inner_bar, text='מתאריך:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+            tk.Label(inner_bar, text='מתאריך:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
             self.balance_from_date_var = tk.StringVar()
             # ברירת מחדל: תחילת השנה הנוכחית
             try:
@@ -673,7 +674,7 @@ class ProductsBalanceTabMixin:
                 pass
         except Exception:
             pass
-        tk.Label(inner_bar, text='חיפוש:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(inner_bar, text='חיפוש:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.balance_search_var = tk.StringVar()
         search_entry = tk.Entry(inner_bar, textvariable=self.balance_search_var, width=24)
         search_entry.pack(side='right', padx=(0,6))
@@ -683,11 +684,11 @@ class ProductsBalanceTabMixin:
             pass
         # מצב פירוט לפי מידות (כפתור טוגול) – ברירת מחדל: פירוט מידות פעיל
         self._balance_detail_by_size = True
-        self._balance_toggle_btn = tk.Button(inner_bar, text='תצוגת מוצר בלבד', command=self._toggle_balance_detail_mode, bg='#8e44ad', fg='white')
+        self._balance_toggle_btn = tk.Button(inner_bar, text='תצוגת מוצר בלבד', command=self._toggle_balance_detail_mode, bg=theme.PURPLE, fg='white')
         self._balance_toggle_btn.pack(side='left')
         # הוספת אפשרות לכלול "מה נגזר אצל הספק" לתוך העמודה "נשלח"
         self.include_cuts_in_shipped_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg='#f7f9fa', command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
+        tk.Checkbutton(inner_bar, text="הוסף נגזר ל'נשלח'", variable=self.include_cuts_in_shipped_var, bg=theme.PAGE_BG, command=self._refresh_products_balance_table).pack(side='left', padx=(8,0))
 
         # בניית טבלת המאזן עם עמודות דינמיות בהתאם למצב פירוט מידות
         self._balance_page_frame = balance_page
@@ -1064,7 +1065,7 @@ class ProductsBalanceTabMixin:
             _update_title(); _rebuild_days()
 
         tk.Button(header, text='«', width=3, command=lambda: _change_month(-1)).pack(side='right')
-        title_lbl = tk.Label(header, text='', font=('Arial', 10, 'bold'))
+        title_lbl = tk.Label(header, text='', font=(theme.FONT_FAMILY, 10, 'bold'))
         title_lbl.pack(side='right', padx=6)
         tk.Button(header, text='»', width=3, command=lambda: _change_month(+1)).pack(side='right')
 
@@ -1079,7 +1080,7 @@ class ProductsBalanceTabMixin:
         # יצירת סדר שבוע החל מיום ראשון
         weekdays = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
         for i, w in enumerate(weekdays):
-            tk.Label(grid, text=w, width=4, anchor='center', fg='#2c3e50').grid(row=0, column=i, pady=(0,4))
+            tk.Label(grid, text=w, width=4, anchor='center', fg=theme.DARK).grid(row=0, column=i, pady=(0,4))
 
         day_btns = []  # נשמור כדי לעדכן/לנקות אם צריך
 
@@ -1135,7 +1136,7 @@ class ProductsBalanceTabMixin:
                     text=txt,
                     width=4,
                     relief='raised',
-                    bg=('#eaf2f8' if is_today else None),
+                    bg=(theme.PANEL_BG if is_today else None),
                     command=lambda D=d, Y=y, M=m: _select_date(Y, M, D)
                 )
                 btn.grid(row=row, column=col, padx=1, pady=1)
@@ -1475,7 +1476,7 @@ class ProductsBalanceTabMixin:
                 received_sum = sum(m['qty'] for m in movements if m['direction'] == 'נתקבל')
                 cut_sum = sum(m['qty'] for m in movements if m['direction'] == 'נגזר')
                 diff = shipped_sum + cut_sum - received_sum
-                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | נגזר: {cut_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
+                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | נגזר: {cut_sum} | הפרש: {max(diff,0)}", bg=theme.PAGE_BG, anchor='e')
                 summary.pack(fill='x', padx=10, pady=(0,10))
             except Exception:
                 pass
@@ -2645,7 +2646,7 @@ class ProductsBalanceTabMixin:
                 shipped_sum = sum(m['qty'] for m in movements if m['direction'] == 'נשלח')
                 received_sum = sum(m['qty'] for m in movements if m['direction'] == 'נתקבל')
                 diff = shipped_sum - received_sum
-                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
+                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg=theme.PAGE_BG, anchor='e')
                 summary.pack(fill='x', padx=10, pady=(0,10))
             except Exception:
                 pass
@@ -3194,7 +3195,7 @@ class ProductsBalanceTabMixin:
                 shipped_sum = sum(m['qty'] for m in moves if m['direction'] == 'נשלח')
                 received_sum = sum(m['qty'] for m in moves if m['direction'] == 'נתקבל')
                 diff = shipped_sum - received_sum
-                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg='#f7f9fa', anchor='e')
+                summary = tk.Label(win, text=f"נשלח: {shipped_sum} | נתקבל: {received_sum} | הפרש: {max(diff,0)}", bg=theme.PAGE_BG, anchor='e')
                 summary.pack(fill='x', padx=10, pady=(0,10))
             except Exception:
                 pass
@@ -3597,8 +3598,8 @@ class ProductsBalanceTabMixin:
             title_label = tk.Label(
                 dialog, 
                 text=title_text,
-                font=('Arial', 12, 'bold'),
-                bg='#ecf0f1',
+                font=(theme.FONT_FAMILY, 12, 'bold'),
+                bg=theme.PANEL_BG,
                 pady=10
             )
             title_label.pack(fill='x')
@@ -3607,7 +3608,7 @@ class ProductsBalanceTabMixin:
             question_label = tk.Label(
                 dialog,
                 text='איך לעדכן את המלאי?',
-                font=('Arial', 11),
+                font=(theme.FONT_FAMILY, 11),
                 pady=10
             )
             question_label.pack()
@@ -3628,9 +3629,9 @@ class ProductsBalanceTabMixin:
                 buttons_frame,
                 text='➕ הוסף\n(חיבור לכמות קיימת)',
                 command=lambda: on_choice('add'),
-                bg='#27ae60',
+                bg=theme.SUCCESS,
                 fg='white',
-                font=('Arial', 10),
+                font=(theme.FONT_FAMILY, 10),
                 width=20,
                 height=3
             )
@@ -3641,9 +3642,9 @@ class ProductsBalanceTabMixin:
                 buttons_frame,
                 text='🔄 דרוס\n(החלפה בכמות חדשה)',
                 command=lambda: on_choice('overwrite'),
-                bg='#3498db',
+                bg=theme.PRIMARY,
                 fg='white',
-                font=('Arial', 10),
+                font=(theme.FONT_FAMILY, 10),
                 width=20,
                 height=3
             )
@@ -3655,9 +3656,9 @@ class ProductsBalanceTabMixin:
                     buttons_frame,
                     text=f'🏢 החלף תכולת גלריה\n(מחק הכל ב-{single_location})',
                     command=lambda: on_choice('replace_gallery'),
-                    bg='#e74c3c',
+                    bg=theme.DANGER,
                     fg='white',
-                    font=('Arial', 10, 'bold'),
+                    font=(theme.FONT_FAMILY, 10, 'bold'),
                     width=20,
                     height=3
                 )
@@ -3667,8 +3668,8 @@ class ProductsBalanceTabMixin:
                 info_label = tk.Label(
                     buttons_frame,
                     text='ℹ️ "החלף גלריה" זמין רק כאשר\nכל הפריטים שייכים לאותו מיקום',
-                    font=('Arial', 9),
-                    fg='#7f8c8d',
+                    font=(theme.FONT_FAMILY, 9),
+                    fg=theme.SUBTEXT,
                     justify='center'
                 )
                 info_label.pack(pady=5)
@@ -3678,9 +3679,9 @@ class ProductsBalanceTabMixin:
                 buttons_frame,
                 text='✖ ביטול',
                 command=lambda: on_choice(None),
-                bg='#95a5a6',
+                bg=theme.MUTED,
                 fg='white',
-                font=('Arial', 10),
+                font=(theme.FONT_FAMILY, 10),
                 width=20
             )
             cancel_btn.pack(pady=10)

@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 
 from optitex_analyzer.gui.size_matrix import SizeMatrixFrame
+from .. import theme
 
 # This module defines a function that builds the Entry sub-tab UI on a given container.
 
@@ -12,13 +13,13 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx is the MainWindow (mixin host) instance. We reuse its state and methods.
     """
     # Create a main frame with scrollbar
-    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame = tk.Frame(container, bg=theme.PAGE_BG)
     main_frame.pack(fill='both', expand=True)
     
     # Create canvas and scrollbar
-    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    canvas = tk.Canvas(main_frame, bg=theme.PAGE_BG)
     scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
     
     scrollable_frame.bind(
         "<Configure>",
@@ -52,7 +53,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Header form
     form = ttk.LabelFrame(container, text="פרטי תעודה", padding=10)
     form.pack(fill='x', padx=10, pady=6)
-    tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="שם ספק:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
     ctx.dn_supplier_name_var = tk.StringVar()
     ctx.dn_supplier_name_combo = ttk.Combobox(form, textvariable=ctx.dn_supplier_name_var, width=28, state='readonly')
     try:
@@ -61,14 +62,14 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
     ctx.dn_supplier_name_combo.grid(row=0,column=1,sticky='w',padx=4,pady=4)
-    tk.Label(form, text="תאריך:", font=('Arial',10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="תאריך:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
     ctx.dn_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
     tk.Entry(form, textvariable=ctx.dn_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
     # Lines frame
     lines_frame = ttk.LabelFrame(container, text="שורות תעודה", padding=8)
     lines_frame.pack(fill='both', expand=False, padx=10, pady=4)
-    entry_bar = tk.Frame(lines_frame, bg='#f7f9fa')
+    entry_bar = tk.Frame(lines_frame, bg=theme.PAGE_BG)
     entry_bar.pack(fill='x', pady=(0,6))
 
     # Variables
@@ -191,7 +192,7 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     lbls = ["מוצר","סוג בד","צבע בד","קטגורית בד","שם פרינט","קטגוריה","הערה"]
     for i,lbl in enumerate(lbls):
-        tk.Label(entry_bar, text=lbl, bg='#f7f9fa').grid(row=0,column=i*2,sticky='w',padx=2)
+        tk.Label(entry_bar, text=lbl, bg=theme.PAGE_BG).grid(row=0,column=i*2,sticky='w',padx=2)
 
     ctx.dn_fabric_type_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_type_var, width=12, state='readonly')
     ctx.dn_fabric_color_combo = ttk.Combobox(entry_bar, textvariable=ctx.dn_fabric_color_var, width=10, state='readonly')
@@ -284,9 +285,9 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     # After adding a new field, shift action buttons to the right to avoid overlap
     _btn_base_col = len(widgets) * 2
-    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg='#27ae60', fg='white').grid(row=1,column=_btn_base_col,padx=6)
-    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg='#e67e22', fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
-    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg='#e74c3c', fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
+    tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_delivery_line, bg=theme.SUCCESS, fg='white').grid(row=1,column=_btn_base_col,padx=6)
+    tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_delivery_selected, bg=theme.WARNING, fg='white').grid(row=1,column=_btn_base_col+1,padx=4)
+    tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_delivery_lines, bg=theme.DANGER, fg='white').grid(row=1,column=_btn_base_col+2,padx=4)
 
     cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','category','quantity','note')
     ctx.delivery_tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=10)
@@ -321,9 +322,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     tk.Label(accessories_frame, text="כמות:").grid(row=0,column=4,sticky='w',padx=4,pady=2)
     tk.Entry(accessories_frame, textvariable=ctx.dn_accessory_qty_var, width=8).grid(row=0,column=5,sticky='w',padx=4,pady=2)
     
-    tk.Button(accessories_frame, text="➕ הוסף", command=ctx._add_accessory_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-    tk.Button(accessories_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_accessory, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-    tk.Button(accessories_frame, text="❌ נקה", command=ctx._clear_accessories, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+    tk.Button(accessories_frame, text="➕ הוסף", command=ctx._add_accessory_line, bg=theme.SUCCESS, fg='white').grid(row=0,column=6,padx=8)
+    tk.Button(accessories_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_accessory, bg=theme.WARNING, fg='white').grid(row=0,column=7,padx=4)
+    tk.Button(accessories_frame, text="❌ נקה", command=ctx._clear_accessories, bg=theme.DANGER, fg='white').grid(row=0,column=8,padx=4)
     
     # Sewing accessories tree
     ctx.delivery_accessories_tree = ttk.Treeview(accessories_frame, columns=('accessory','unit','quantity'), show='headings', height=4)
@@ -379,9 +380,9 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx._refresh_driver_names_for_delivery()
     except Exception:
         pass
-    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-    tk.Button(pkg_frame, text="❌ נקה", command=ctx._clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._add_package_line, bg=theme.SUCCESS, fg='white').grid(row=0,column=6,padx=8)
+    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_package, bg=theme.WARNING, fg='white').grid(row=0,column=7,padx=4)
+    tk.Button(pkg_frame, text="❌ נקה", command=ctx._clear_packages, bg=theme.DANGER, fg='white').grid(row=0,column=8,padx=4)
     ctx.packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
     ctx.packages_tree.heading('type', text='פריט הובלה')
     ctx.packages_tree.heading('quantity', text='כמות')
@@ -391,8 +392,8 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.packages_tree.column('driver', width=110, anchor='center')
     ctx.packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
 
-    bottom_actions = tk.Frame(container, bg='#f7f9fa')
+    bottom_actions = tk.Frame(container, bg=theme.PAGE_BG)
     bottom_actions.pack(fill='x', padx=10, pady=6)
-    tk.Button(bottom_actions, text="💾 שמור תעודה", command=ctx._save_delivery_note, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
+    tk.Button(bottom_actions, text="💾 שמור תעודה", command=ctx._save_delivery_note, bg=theme.DARK, fg='white', font=(theme.FONT_FAMILY,11,'bold')).pack(side='right', padx=4)
     ctx.delivery_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
-    tk.Label(container, textvariable=ctx.delivery_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+    tk.Label(container, textvariable=ctx.delivery_summary_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')

@@ -9,5 +9,16 @@
     "total_packages": 219,
     "total_cost": 2525.0,
     "excel_file": "דוח_הובלות_מוחמד_20251026_142556_001.xlsx"
+  },
+  {
+    "id": 2,
+    "created_at": "2026-07-15 10:38:24",
+    "driver": "מוחמד",
+    "start_date": "2025-11-01",
+    "end_date": "2027-06-30",
+    "payment_filter": "רק לא שולם",
+    "total_packages": 274,
+    "total_cost": 3575.0,
+    "excel_file": "דוח_הובלות_מוחמד_20260715_103824_001.xlsx"
   }
 ]

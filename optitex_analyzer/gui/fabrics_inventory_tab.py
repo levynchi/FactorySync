@@ -1,26 +1,27 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
+from . import theme
 
 class FabricsInventoryTabMixin:
     """Mixin לטאב מלאי בדים."""
     def _create_fabrics_inventory_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa'); self.notebook.add(tab, text="מלאי בדים")
-        tk.Label(tab, text="מלאי בדים", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG); self.notebook.add(tab, text="מלאי בדים")
+        tk.Label(tab, text="מלאי בדים", font=(theme.FONT_FAMILY, 16, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=8)
         # Action bar
-        actions = tk.Frame(tab, bg='#f7f9fa'); actions.pack(fill='x', padx=15, pady=5)
-        tk.Button(actions, text="⬇️ הורד תבנית אקסל למשלוח", command=self._export_fabrics_template_excel, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
-        tk.Button(actions, text="📤 הדפס לאקסל", command=self._export_current_fabrics_to_excel, bg='#16a085', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
-        tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg='#2980b9', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
-        tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=5)
+        actions = tk.Frame(tab, bg=theme.PAGE_BG); actions.pack(fill='x', padx=15, pady=5)
+        tk.Button(actions, text="⬇️ הורד תבנית אקסל למשלוח", command=self._export_fabrics_template_excel, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="📤 הדפס לאקסל", command=self._export_current_fabrics_to_excel, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="📥 הכנס משלוח בדים (CSV)", command=self._import_fabrics_csv, bg=theme.PRIMARY_DARK, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
+        tk.Button(actions, text="🔄 רענן", command=self._refresh_fabrics_table, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=5)
 
         inner_notebook = ttk.Notebook(tab); inner_notebook.pack(fill='both', expand=True, padx=10, pady=(0,5))
-        inventory_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(inventory_tab, text="נתוני מלאי")
-        unbarcoded_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
-        barcode_search_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(barcode_search_tab, text="חיפוש לפי ברקוד")
+        inventory_tab = tk.Frame(inner_notebook, bg=theme.CARD_BG); inner_notebook.add(inventory_tab, text="נתוני מלאי")
+        unbarcoded_tab = tk.Frame(inner_notebook, bg=theme.CARD_BG); inner_notebook.add(unbarcoded_tab, text="בדים בלי ברקוד")
+        barcode_search_tab = tk.Frame(inner_notebook, bg=theme.CARD_BG); inner_notebook.add(barcode_search_tab, text="חיפוש לפי ברקוד")
 
         # Filter bar for inventory
-        filter_frame = tk.Frame(inventory_tab, bg='#ffffff'); filter_frame.pack(fill='x', padx=5, pady=(6,0))
+        filter_frame = tk.Frame(inventory_tab, bg=theme.CARD_BG); filter_frame.pack(fill='x', padx=5, pady=(6,0))
         # Variables
         self.fabrics_filter_type_var = tk.StringVar(value='')
         self.fabrics_filter_color_var = tk.StringVar(value='')
@@ -28,23 +29,23 @@ class FabricsInventoryTabMixin:
         self.fabrics_filter_status_var = tk.StringVar(value='')
         self.fabrics_filter_intake_date_var = tk.StringVar(value='')
         # Widgets (placed right-to-left)
-        tk.Label(filter_frame, text=':סטטוס', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':סטטוס', bg=theme.CARD_BG).pack(side='right', padx=(6,2))
         self.fabrics_filter_status_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_status_var, state='readonly', width=14, values=('', 'במלאי','נשלח','נגזר'))
         self.fabrics_filter_status_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text=':תאריך קליטה', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':תאריך קליטה', bg=theme.CARD_BG).pack(side='right', padx=(6,2))
         self.fabrics_filter_intake_date_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_intake_date_var, state='readonly', width=16)
         self.fabrics_filter_intake_date_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text=':מיקום', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':מיקום', bg=theme.CARD_BG).pack(side='right', padx=(6,2))
         self.fabrics_filter_location_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_location_var, width=18)
         self.fabrics_filter_location_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text=':צבע', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':צבע', bg=theme.CARD_BG).pack(side='right', padx=(6,2))
         self.fabrics_filter_color_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_color_var, width=18)
         self.fabrics_filter_color_cb.pack(side='right', padx=(0,10))
 
-        tk.Label(filter_frame, text=':סוג בד', bg='#ffffff').pack(side='right', padx=(6,2))
+        tk.Label(filter_frame, text=':סוג בד', bg=theme.CARD_BG).pack(side='right', padx=(6,2))
         self.fabrics_filter_type_cb = ttk.Combobox(filter_frame, textvariable=self.fabrics_filter_type_var, width=20, state='readonly')
         self.fabrics_filter_type_cb.pack(side='right', padx=(0,10))
 
@@ -52,7 +53,7 @@ class FabricsInventoryTabMixin:
         tk.Button(filter_frame, text='נקה', command=lambda: self._clear_fabrics_filters()).pack(side='left', padx=(0,6))
         tk.Button(filter_frame, text='החל סינון', command=lambda: self._apply_fabrics_filters()).pack(side='left')
         self.fabrics_filter_info_var = tk.StringVar(value='')
-        tk.Label(filter_frame, textvariable=self.fabrics_filter_info_var, bg='#ffffff', fg='#7f8c8d').pack(side='left', padx=10)
+        tk.Label(filter_frame, textvariable=self.fabrics_filter_info_var, bg=theme.CARD_BG, fg=theme.SUBTEXT).pack(side='left', padx=10)
 
         # Bind quick-apply
         self.fabrics_filter_status_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
@@ -62,7 +63,7 @@ class FabricsInventoryTabMixin:
         self.fabrics_filter_intake_date_cb.bind('<<ComboboxSelected>>', lambda e: self._apply_fabrics_filters())
 
         # Inventory table
-        table_frame = tk.Frame(inventory_tab, bg='#ffffff'); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        table_frame = tk.Frame(inventory_tab, bg=theme.CARD_BG); table_frame.pack(fill='both', expand=True, padx=5, pady=5)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','intake_date','status')
         self.fabrics_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
         headers = {'barcode':'ברקוד','fabric_type':'סוג בד','color_name':'צבע','color_no':'מס׳ צבע','design_code':'Desen Kodu','width':'רוחב','net_kg':'ק"ג נטו','meters':'מטרים','price':'מחיר','location':'מיקום','intake_date':'תאריך קליטה','status':'סטטוס'}
@@ -78,8 +79,10 @@ class FabricsInventoryTabMixin:
         self.fabrics_tree.bind('<Button-3>', self._on_fabrics_right_click)
 
         # Logs tab
-        logs_tab = tk.Frame(inner_notebook, bg='#ffffff'); inner_notebook.add(logs_tab, text="קבצים שעלו")
-        logs_frame = tk.Frame(logs_tab, bg='#ffffff'); logs_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        logs_tab = tk.Frame(inner_notebook, bg=theme.CARD_BG); inner_notebook.add(logs_tab, text="קבצים שעלו")
+        tk.Label(logs_tab, text="דאבל־קליק על קובץ כדי לפתוח באקסל", bg=theme.CARD_BG, fg=theme.SUBTEXT,
+                 font=(theme.FONT_FAMILY, 9), anchor='e').pack(fill='x', padx=8, pady=(6, 0))
+        logs_frame = tk.Frame(logs_tab, bg=theme.CARD_BG); logs_frame.pack(fill='both', expand=True, padx=5, pady=5)
         log_cols = ('id','file_name','imported_at','records_added','delete')
         self.fabrics_logs_tree = ttk.Treeview(logs_frame, columns=log_cols, show='headings')
         log_headers = {'id':'ID','file_name':'שם קובץ','imported_at':'תאריך העלאה','records_added':'רשומות','delete':'מחיקה'}
@@ -90,12 +93,13 @@ class FabricsInventoryTabMixin:
         self.fabrics_logs_tree.grid(row=0,column=0,sticky='nsew'); lsvb.grid(row=0,column=1,sticky='ns')
         logs_frame.grid_columnconfigure(0,weight=1); logs_frame.grid_rowconfigure(0,weight=1)
         self.fabrics_logs_tree.bind('<Button-1>', self._handle_logs_click)
+        self.fabrics_logs_tree.bind('<Double-1>', self._open_fabric_import_in_excel)
 
         # Unbarcoded fabrics UI
-        ub_actions = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_actions.pack(fill='x', padx=6, pady=6)
-        tk.Button(ub_actions, text="➕ הוסף", command=self._ub_add_dialog, bg='#27ae60', fg='white').pack(side='right', padx=4)
-        tk.Button(ub_actions, text="🗑️ מחק נבחר", command=self._ub_delete_selected, bg='#e67e22', fg='white').pack(side='right')
-        ub_frame = tk.Frame(unbarcoded_tab, bg='#ffffff'); ub_frame.pack(fill='both', expand=True, padx=6, pady=(0,6))
+        ub_actions = tk.Frame(unbarcoded_tab, bg=theme.CARD_BG); ub_actions.pack(fill='x', padx=6, pady=6)
+        tk.Button(ub_actions, text="➕ הוסף", command=self._ub_add_dialog, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
+        tk.Button(ub_actions, text="🗑️ מחק נבחר", command=self._ub_delete_selected, bg=theme.WARNING, fg='white').pack(side='right')
+        ub_frame = tk.Frame(unbarcoded_tab, bg=theme.CARD_BG); ub_frame.pack(fill='both', expand=True, padx=6, pady=(0,6))
         ub_cols = ('id','created_at','fabric_type','manufacturer','color','shade','notes')
         self.ub_tree = ttk.Treeview(ub_frame, columns=ub_cols, show='headings')
         ub_headers = {'id':'', 'created_at':'תאריך','fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
@@ -116,7 +120,7 @@ class FabricsInventoryTabMixin:
 
         # Footer summary
         self.fabrics_summary_var = tk.StringVar(value="אין נתונים")
-        tk.Label(tab, textvariable=self.fabrics_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=12, font=('Arial',10)).pack(fill='x', side='bottom')
+        tk.Label(tab, textvariable=self.fabrics_summary_var, bg=theme.DARK, fg='white', anchor='w', padx=12, font=(theme.FONT_FAMILY,10)).pack(fill='x', side='bottom')
         # Initialize filters list values, then populate
         try:
             self._refresh_fabric_filter_values()
@@ -496,6 +500,71 @@ class FabricsInventoryTabMixin:
         if result.get('logs_deleted'):
             self._populate_fabrics_logs(); self._populate_fabrics_table()
 
+    def _open_fabric_import_in_excel(self, event):
+        """דאבל-קליק על קובץ שעלה: פתיחת ה-CSV המקורי, או שחזור לאקסל מהרשומות אם המקור לא קיים."""
+        col = self.fabrics_logs_tree.identify_column(event.x)
+        if col == '#5':  # עמודת מחיקה - מטופלת בקליק בודד
+            return
+        item_id = self.fabrics_logs_tree.identify_row(event.y)
+        if not item_id:
+            return
+        values = self.fabrics_logs_tree.item(item_id, 'values')
+        if not values:
+            return
+        try:
+            log_id = int(values[0])
+        except Exception:
+            return
+        logs = getattr(self.data_processor, 'fabrics_import_logs', []) or []
+        log = next((l for l in logs if l.get('id') == log_id), None)
+        if not log:
+            return
+        # 1) פתיחת הקובץ המקורי אם עדיין קיים במחשב
+        full_path = (log.get('full_path') or '').strip()
+        if full_path and os.path.exists(full_path):
+            try:
+                os.startfile(full_path)
+                return
+            except Exception:
+                pass
+        # 2) שחזור לאקסל מהרשומות ששויכו להעלאה זו
+        records = self.data_processor.get_fabrics_by_import_log(log_id)
+        if not records:
+            messagebox.showinfo(
+                "אין נתונים",
+                "הקובץ המקורי לא נמצא במחשב, ולא נותרו רשומות מלאי מהעלאה זו לשחזור.")
+            return
+        try:
+            from openpyxl import Workbook  # type: ignore
+            from openpyxl.styles import Font, Alignment  # type: ignore
+            wb = Workbook(); ws = wb.active; ws.title = 'Shipment'
+            try:
+                ws.sheet_view.rightToLeft = True
+            except Exception:
+                pass
+            headers = ['BARCODE NO', 'סוג בד', 'COLOR NAME', 'COLOR NO', 'Desen Kodu', 'WIDTH', 'GR',
+                       'NET KG', 'GROSS KG', 'METER', 'PRICE', 'TOTAL', 'location', 'Last Modified', 'מטרה']
+            keys = ['barcode', 'fabric_type', 'color_name', 'color_no', 'design_code', 'width', 'gr',
+                    'net_kg', 'gross_kg', 'meters', 'price', 'total', 'location', 'last_modified', 'purpose']
+            for j, h in enumerate(headers, start=1):
+                c = ws.cell(row=1, column=j, value=h)
+                c.font = Font(bold=True); c.alignment = Alignment(horizontal='center')
+            for i, rec in enumerate(records, start=2):
+                for j, k in enumerate(keys, start=1):
+                    ws.cell(row=i, column=j, value=rec.get(k, ''))
+            out_dir = os.path.join(os.getcwd(), 'exports', 'fabrics_imports')
+            os.makedirs(out_dir, exist_ok=True)
+            base = os.path.splitext(log.get('file_name') or f'import_{log_id}')[0]
+            safe = ''.join(ch if (ch.isalnum() or ch in ' -_.א-ת') else '_' for ch in base).strip() or f'import_{log_id}'
+            out_path = os.path.join(out_dir, f'{safe}.xlsx')
+            wb.save(out_path)
+            try:
+                os.startfile(out_path)
+            except Exception:
+                messagebox.showinfo('נוצר קובץ', f'הקובץ שוחזר ונשמר ב:\n{out_path}')
+        except Exception as e:
+            messagebox.showerror('שגיאה', f'כשל בשחזור הקובץ לאקסל: {e}')
+
     # ===== Unbarcoded fabrics helpers =====
     def _populate_unbarcoded_table(self):
         tree = getattr(self, 'ub_tree', None)
@@ -533,7 +602,7 @@ class FabricsInventoryTabMixin:
                 win.destroy()
             except Exception as e:
                 messagebox.showerror('שגיאה', str(e))
-        tk.Button(btns, text='שמירה', command=_do_add, bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        tk.Button(btns, text='שמירה', command=_do_add, bg=theme.DARK, fg='white').pack(side='right', padx=4)
         tk.Button(btns, text='ביטול', command=win.destroy).pack(side='right')
 
     def _ub_delete_selected(self):
@@ -557,24 +626,24 @@ class FabricsInventoryTabMixin:
     def _build_barcode_search_tab(self, container):
         """בניית טאב חיפוש לפי ברקוד"""
         # כותרת
-        tk.Label(container, text="חיפוש לפי ברקוד", font=('Arial', 14, 'bold'), bg='#ffffff').pack(pady=10)
+        tk.Label(container, text="חיפוש לפי ברקוד", font=(theme.FONT_FAMILY, 14, 'bold'), bg=theme.CARD_BG).pack(pady=10)
         
         # שדה סריקת ברקוד
-        barcode_frame = tk.Frame(container, bg='#ffffff')
+        barcode_frame = tk.Frame(container, bg=theme.CARD_BG)
         barcode_frame.pack(fill='x', padx=20, pady=10)
         
-        tk.Label(barcode_frame, text="ברקוד:", font=('Arial', 12, 'bold'), bg='#ffffff').pack(side='right', padx=(0, 8))
+        tk.Label(barcode_frame, text="ברקוד:", font=(theme.FONT_FAMILY, 12, 'bold'), bg=theme.CARD_BG).pack(side='right', padx=(0, 8))
         self.barcode_search_var = tk.StringVar()
         barcode_entry = tk.Entry(barcode_frame, textvariable=self.barcode_search_var, font=('Consolas', 12), width=25)
         barcode_entry.pack(side='right', padx=(0, 8))
         barcode_entry.bind('<Return>', self._add_barcode_to_search)
         
-        tk.Button(barcode_frame, text="➕ הוסף", command=self._add_barcode_to_search, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=8)
-        tk.Button(barcode_frame, text="🗑️ מחק נבחר", command=self._remove_selected_barcode, bg='#e67e22', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
-        tk.Button(barcode_frame, text="🧹 נקה הכל", command=self._clear_all_barcodes, bg='#e74c3c', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(barcode_frame, text="➕ הוסף", command=self._add_barcode_to_search, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=8)
+        tk.Button(barcode_frame, text="🗑️ מחק נבחר", command=self._remove_selected_barcode, bg=theme.WARNING, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(barcode_frame, text="🧹 נקה הכל", command=self._clear_all_barcodes, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
         
         # טבלת ברקודים שנסרקו
-        table_frame = tk.Frame(container, bg='#ffffff')
+        table_frame = tk.Frame(container, bg=theme.CARD_BG)
         table_frame.pack(fill='both', expand=True, padx=20, pady=10)
         
         cols = ('barcode', 'fabric_type', 'color_name', 'color_no', 'design_code', 'width', 'net_kg', 'meters', 'price', 'location', 'status')
@@ -605,12 +674,12 @@ class FabricsInventoryTabMixin:
         table_frame.grid_rowconfigure(0, weight=1)
         
         # תחשיב כולל
-        summary_frame = tk.Frame(container, bg='#2c3e50', relief='raised', bd=2)
+        summary_frame = tk.Frame(container, bg=theme.DARK, relief='raised', bd=2)
         summary_frame.pack(fill='x', padx=20, pady=(10, 20))
         
         self.barcode_search_summary_var = tk.StringVar(value="אין ברקודים נסרקו")
-        tk.Label(summary_frame, textvariable=self.barcode_search_summary_var, bg='#2c3e50', fg='white', 
-                font=('Arial', 12, 'bold'), padx=15, pady=8).pack()
+        tk.Label(summary_frame, textvariable=self.barcode_search_summary_var, bg=theme.DARK, fg='white', 
+                font=(theme.FONT_FAMILY, 12, 'bold'), padx=15, pady=8).pack()
         
         # אתחול רשימת ברקודים
         self._scanned_barcodes_list = []

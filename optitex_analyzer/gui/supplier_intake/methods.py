@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+from .. import theme
 
 class SupplierIntakeMethodsMixin:
     def _refresh_driver_names_for_intake(self):
@@ -562,17 +563,17 @@ class SupplierIntakeMethodsMixin:
             win.grab_set()
         except Exception:
             pass
-        header = tk.Frame(win, bg='#f7f9fa')
+        header = tk.Frame(win, bg=theme.PAGE_BG)
         header.pack(fill='x', padx=10, pady=8)
-        tk.Label(header, text=f"ספק: {rec.get('supplier','')}", bg='#f7f9fa', font=('Arial',11,'bold')).pack(side='right', padx=8)
-        tk.Label(header, text=f"תאריך: {rec.get('date','')}", bg='#f7f9fa').pack(side='right', padx=8)
-        tk.Label(header, text=f"ID: {rec.get('id','')}", bg='#f7f9fa').pack(side='right', padx=8)
-        tk.Label(header, text=f"סה\"כ כמות: {rec.get('total_quantity',0)}", bg='#f7f9fa').pack(side='right', padx=8)
+        tk.Label(header, text=f"ספק: {rec.get('supplier','')}", bg=theme.PAGE_BG, font=(theme.FONT_FAMILY,11,'bold')).pack(side='right', padx=8)
+        tk.Label(header, text=f"תאריך: {rec.get('date','')}", bg=theme.PAGE_BG).pack(side='right', padx=8)
+        tk.Label(header, text=f"ID: {rec.get('id','')}", bg=theme.PAGE_BG).pack(side='right', padx=8)
+        tk.Label(header, text=f"סה\"כ כמות: {rec.get('total_quantity',0)}", bg=theme.PAGE_BG).pack(side='right', padx=8)
 
-        body = tk.Frame(win, bg='#f7f9fa')
+        body = tk.Frame(win, bg=theme.PAGE_BG)
         body.pack(fill='both', expand=True, padx=10, pady=(0,10))
 
-        lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg='#f7f9fa')
+        lines_frame = tk.LabelFrame(body, text='שורות תעודה', bg=theme.PAGE_BG)
         lines_frame.pack(fill='both', expand=True, pady=6)
         cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','barcode','category','returned_from_drawing','drawing_id','quantity','label_status','note')
         tree = ttk.Treeview(lines_frame, columns=cols, show='headings', height=8)
@@ -599,7 +600,7 @@ class SupplierIntakeMethodsMixin:
                 ln.get('print_name',''), ln.get('barcode',''), ln.get('category',''), ln.get('returned_from_drawing','לא'), ln.get('drawing_id',''), ln.get('quantity',''), ln.get('label_status','עם תווית'), ln.get('note','')
             ))
 
-        pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg='#f7f9fa')
+        pk_frame = tk.LabelFrame(body, text='פריטי הובלה', bg=theme.PAGE_BG)
         pk_frame.pack(fill='x', pady=6)
         pk_cols = ('type','quantity','driver')
         pk_tree = ttk.Treeview(pk_frame, columns=pk_cols, show='headings', height=4)
@@ -613,7 +614,7 @@ class SupplierIntakeMethodsMixin:
         for p in rec.get('packages', []) or []:
             pk_tree.insert('', 'end', values=(p.get('package_type',''), p.get('quantity',''), p.get('driver','')))
 
-        btns = tk.Frame(win, bg='#f7f9fa')
+        btns = tk.Frame(win, bg=theme.PAGE_BG)
         btns.pack(fill='x', padx=10, pady=(0,10))
         tk.Button(btns, text='סגור', command=win.destroy).pack(side='left')
 

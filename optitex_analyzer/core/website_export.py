@@ -28,7 +28,8 @@ class WebsiteClient:
 	def _request(self, path: str, payload: dict = None) -> dict:
 		url = f"{self.base_url}{path}"
 		data = None
-		headers = {'X-API-Token': self.token}
+		# Cloudflare חוסם את ברירת המחדל Python-urllib (error 1010) - חובה UA מותאם
+		headers = {'X-API-Token': self.token, 'User-Agent': 'FactorySync/1.0'}
 		if payload is not None:
 			data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
 			headers['Content-Type'] = 'application/json; charset=utf-8'
@@ -61,6 +62,8 @@ class WebsiteClient:
 		"""שליחת וריאנטים (מידה+ברקוד+מחיר) למוצר קיים באתר.
 
 		rows: רשימת מילונים עם המפתחות size, barcode, unit_price (ואופציונלית fabric_type).
+		למוצרים שנוצרו לפי צבעים השורות כוללות גם color ו-color_hex; מוצרים באתר
+		שתומכים בצבע יקלטו אותם, ואחרים יתעלמו מהשדות.
 		מחזיר את סיכום השרת: created / updated / errors / warnings.
 		"""
 		payload = {

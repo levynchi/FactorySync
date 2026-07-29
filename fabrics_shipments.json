@@ -355,7 +355,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -385,7 +386,8 @@
       {
         "package_type": "בד",
         "quantity": 9,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -416,7 +418,8 @@
       {
         "package_type": "בד",
         "quantity": 10,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -456,7 +459,8 @@
       {
         "package_type": "בד",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -508,7 +512,8 @@
       {
         "package_type": "בד",
         "quantity": 14,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -552,7 +557,8 @@
       {
         "package_type": "בד",
         "quantity": 7,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -577,7 +583,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "INTERLOCK",
@@ -602,7 +609,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "OTHER",
@@ -625,7 +633,8 @@
       {
         "package_type": "בד",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -650,7 +659,8 @@
       {
         "package_type": "בד",
         "quantity": 4,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -674,7 +684,8 @@
       {
         "package_type": "בד",
         "quantity": 3,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -737,7 +748,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -759,7 +771,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -781,7 +794,8 @@
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "fabric_type": "RIB",
@@ -791,5 +805,50 @@
     "meters": 0.0,
     "supplier": "אלשראר מסחר ותעשייה בע\"מ",
     "created_at": "2026-07-12 12:41:12"
+  },
+  {
+    "id": 32,
+    "date": "2026-07-20",
+    "barcodes": [
+      "0",
+      "25049348"
+    ],
+    "count_barcodes": 2,
+    "packages": [
+      {
+        "package_type": "בד",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "fabric_type": "RIB",
+    "color_name": "לבן",
+    "color_no": "",
+    "net_kg": 37.4,
+    "meters": 115.13,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2026-07-20 14:05:14"
+  },
+  {
+    "id": 33,
+    "date": "2026-07-29",
+    "barcodes": [
+      "0"
+    ],
+    "count_barcodes": 1,
+    "packages": [
+      {
+        "package_type": "בד",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "fabric_type": "POLYESTER",
+    "color_name": "שמנת",
+    "color_no": "2525",
+    "net_kg": 50.0,
+    "meters": 55.0,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "created_at": "2026-07-29 13:42:19"
   }
 ]

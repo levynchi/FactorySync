@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from optitex_analyzer.gui.size_matrix import SizeMatrixFrame
+from .. import theme
 
 def build_entry_tab(ctx, container: tk.Frame):
     # Reuse the original UI construction from SupplierIntakeTabMixin
@@ -13,11 +14,11 @@ def build_entry_tab(ctx, container: tk.Frame):
         ctx._supplier_packages = []
 
     # Scrollable wrapper so the full form is reachable on smaller screens
-    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame = tk.Frame(container, bg=theme.PAGE_BG)
     main_frame.pack(fill='both', expand=True)
-    canvas = tk.Canvas(main_frame, bg='#f7f9fa', highlightthickness=0)
+    canvas = tk.Canvas(main_frame, bg=theme.PAGE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
     scrollable_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
     _win_id = canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
     canvas.configure(yscrollcommand=scrollbar.set)
@@ -39,7 +40,7 @@ def build_entry_tab(ctx, container: tk.Frame):
 
     form = ttk.LabelFrame(container, text="פרטי קליטה", padding=10)
     form.pack(fill='x', padx=10, pady=6)
-    tk.Label(form, text="שם ספק:", font=('Arial',10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="שם ספק:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0,column=0,sticky='w',padx=4,pady=4)
     ctx.supplier_name_var = tk.StringVar()
     ctx.supplier_name_combo = ttk.Combobox(form, textvariable=ctx.supplier_name_var, width=28, state='readonly')
     try:
@@ -48,7 +49,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         pass
     ctx.supplier_name_combo.grid(row=0,column=1,sticky='w',padx=4,pady=4)
-    tk.Label(form, text="תאריך:", font=('Arial',10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="תאריך:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=0,column=2,sticky='w',padx=4,pady=4)
     ctx.supplier_date_var = tk.StringVar()
     try:
         from datetime import datetime
@@ -80,7 +81,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         tk.Entry(form, textvariable=ctx.supplier_date_var, width=15).grid(row=0,column=3,sticky='w',padx=4,pady=4)
 
     # New fields: Arrival date and supplier document number
-    tk.Label(form, text="תאריך הגעה:", font=('Arial',10,'bold')).grid(row=1,column=0,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="תאריך הגעה:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=1,column=0,sticky='w',padx=4,pady=4)
     ctx.supplier_arrival_date_var = tk.StringVar()
     try:
         from datetime import datetime
@@ -113,14 +114,14 @@ def build_entry_tab(ctx, container: tk.Frame):
     except Exception:
         tk.Entry(form, textvariable=ctx.supplier_arrival_date_var, width=15).grid(row=1,column=1,sticky='w',padx=4,pady=4)
 
-    tk.Label(form, text="מס' מסמך ספק:", font=('Arial',10,'bold')).grid(row=1,column=2,sticky='w',padx=4,pady=4)
+    tk.Label(form, text="מס' מסמך ספק:", font=(theme.FONT_FAMILY,10,'bold')).grid(row=1,column=2,sticky='w',padx=4,pady=4)
     ctx.supplier_doc_number_var = tk.StringVar()
     tk.Entry(form, textvariable=ctx.supplier_doc_number_var, width=18).grid(row=1,column=3,sticky='w',padx=4,pady=4)
 
     # Lines frame and entry bar
     lines_frame = ttk.LabelFrame(container, text="שורות קליטה", padding=8)
     lines_frame.pack(fill='both', expand=True, padx=10, pady=4)
-    entry_bar = tk.Frame(lines_frame, bg='#f7f9fa')
+    entry_bar = tk.Frame(lines_frame, bg=theme.PAGE_BG)
     entry_bar.pack(fill='x', pady=(0,6))
 
     # Variables
@@ -330,7 +331,7 @@ def build_entry_tab(ctx, container: tk.Frame):
             return
         
         # Create an entry widget for inline editing
-        edit_entry = tk.Entry(ctx.supplier_tree, font=('Arial', 9))
+        edit_entry = tk.Entry(ctx.supplier_tree, font=(theme.FONT_FAMILY, 9))
         edit_entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
         edit_entry.insert(0, current_quantity)
         edit_entry.select_range(0, tk.END)
@@ -460,7 +461,7 @@ def build_entry_tab(ctx, container: tk.Frame):
         'note': 'הערה',
         'label_status': 'תוויות',
     }
-    label_widgets = {k: tk.Label(entry_bar, text=v, bg='#f7f9fa') for k,v in label_texts.items()}
+    label_widgets = {k: tk.Label(entry_bar, text=v, bg=theme.PAGE_BG) for k,v in label_texts.items()}
 
     qty_entry = tk.Entry(entry_bar, textvariable=ctx.sup_qty_var, width=7)
     note_entry = tk.Entry(entry_bar, textvariable=ctx.sup_note_var, width=18)
@@ -487,7 +488,7 @@ def build_entry_tab(ctx, container: tk.Frame):
     # Read-only info: fabric type recorded on the selected drawing (does not change any field)
     ctx.sup_drawing_fabric_info_var = tk.StringVar()
     ctx.sup_drawing_fabric_info_lbl = tk.Label(entry_bar, textvariable=ctx.sup_drawing_fabric_info_var,
-                                               bg='#f7f9fa', fg='#2980b9', font=('Arial', 9, 'bold'))
+                                               bg=theme.PAGE_BG, fg=theme.PRIMARY_DARK, font=(theme.FONT_FAMILY, 9, 'bold'))
 
     def _update_drawing_fabric_info(*_a):
         try:
@@ -513,9 +514,9 @@ def build_entry_tab(ctx, container: tk.Frame):
         pass
 
     # Action buttons placed after fields dynamically
-    btn_add = tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg='#27ae60', fg='white')
-    btn_del = tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg='#e67e22', fg='white')
-    btn_clr = tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg='#e74c3c', fg='white')
+    btn_add = tk.Button(entry_bar, text="➕ הוסף", command=ctx._add_supplier_line, bg=theme.SUCCESS, fg='white')
+    btn_del = tk.Button(entry_bar, text="🗑️ מחק נבחר", command=ctx._delete_supplier_selected, bg=theme.WARNING, fg='white')
+    btn_clr = tk.Button(entry_bar, text="❌ נקה הכל", command=ctx._clear_supplier_lines, bg=theme.DANGER, fg='white')
 
     def _find_main_category_by_name(name: str):
         try:
@@ -802,9 +803,9 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_pkg_driver_combo.grid(row=0,column=5,sticky='w',padx=4,pady=2)
     try: ctx._refresh_driver_names_for_intake()
     except Exception: pass
-    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._add_supplier_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_supplier_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-    tk.Button(pkg_frame, text="❌ נקה", command=ctx._clear_supplier_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+    tk.Button(pkg_frame, text="➕ הוסף", command=ctx._add_supplier_package_line, bg=theme.SUCCESS, fg='white').grid(row=0,column=6,padx=8)
+    tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=ctx._delete_selected_supplier_package, bg=theme.WARNING, fg='white').grid(row=0,column=7,padx=4)
+    tk.Button(pkg_frame, text="❌ נקה", command=ctx._clear_supplier_packages, bg=theme.DANGER, fg='white').grid(row=0,column=8,padx=4)
     ctx.sup_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
     ctx.sup_packages_tree.heading('type', text='פריט הובלה')
     ctx.sup_packages_tree.heading('quantity', text='כמות')
@@ -815,8 +816,8 @@ def build_entry_tab(ctx, container: tk.Frame):
     ctx.sup_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
 
     # Save + summary
-    bottom_actions = tk.Frame(container, bg='#f7f9fa')
+    bottom_actions = tk.Frame(container, bg=theme.PAGE_BG)
     bottom_actions.pack(fill='x', padx=10, pady=6)
-    tk.Button(bottom_actions, text="💾 שמור קליטה", command=ctx._save_supplier_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right', padx=4)
+    tk.Button(bottom_actions, text="💾 שמור קליטה", command=ctx._save_supplier_receipt, bg=theme.DARK, fg='white', font=(theme.FONT_FAMILY,11,'bold')).pack(side='right', padx=4)
     ctx.supplier_summary_var = tk.StringVar(value="0 שורות | 0 כמות")
-    tk.Label(container, textvariable=ctx.supplier_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+    tk.Label(container, textvariable=ctx.supplier_summary_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')

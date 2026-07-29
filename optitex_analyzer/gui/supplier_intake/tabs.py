@@ -1,20 +1,21 @@
 import tkinter as tk
 from tkinter import ttk
 from .methods import SupplierIntakeMethodsMixin
+from .. import theme
 
 class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
     """Compose the Supplier Intake tab (entry + saved list)."""
     def _create_supplier_intake_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="תעודת קליטה")
-        tk.Label(tab, text="תעודת קליטה (הזנה ידנית)", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=8)
+        tk.Label(tab, text="תעודת קליטה (הזנה ידנית)", font=(theme.FONT_FAMILY,16,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=8)
 
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=4, pady=4)
-        entry_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabrics_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
-        fabrics_list_wrapper = tk.Frame(inner_nb, bg='#f7f9fa')
+        entry_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        list_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabrics_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        fabrics_list_wrapper = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(entry_wrapper, text="קליטה")
         inner_nb.add(list_wrapper, text="קליטות שמורות")
         inner_nb.add(fabrics_wrapper, text="קליטת בדים")
@@ -35,12 +36,12 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
 
     def _build_fabrics_intake_tab(self, container: tk.Frame):
         """UI עבור 'קליטת בדים': סריקת ברקוד, תצוגת נתונים ושמירה לשינוי סטטוס במלאי הבדים."""
-        header = tk.Frame(container, bg='#f7f9fa')
+        header = tk.Frame(container, bg=theme.PAGE_BG)
         header.pack(fill='x', padx=10, pady=(8,4))
-        tk.Label(header, text='קליטת בדים', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+        tk.Label(header, text='קליטת בדים', font=(theme.FONT_FAMILY,12,'bold'), bg=theme.PAGE_BG).pack(side='right')
 
         # מצב קליטה: לפי ברקוד או ללא ברקוד
-        mode_frame = tk.Frame(container, bg='#f7f9fa')
+        mode_frame = tk.Frame(container, bg=theme.PAGE_BG)
         mode_frame.pack(fill='x', padx=10)
         self.fi_mode_var = tk.StringVar(value='barcode')
         ttk.Radiobutton(mode_frame, text='לפי ברקוד', variable=self.fi_mode_var, value='barcode').pack(side='right', padx=(0,10))
@@ -52,10 +53,10 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         self.fi_nb_color = tk.StringVar()
         self.fi_nb_shade = tk.StringVar()
         self.fi_nb_notes = tk.StringVar()
-        nb_top = tk.Frame(mode_frame, bg='#f7f9fa')
+        nb_top = tk.Frame(mode_frame, bg=theme.PAGE_BG)
         def _mk_top_input(lbl_txt, var):
-            box = tk.Frame(nb_top, bg='#f7f9fa')
-            tk.Label(box, text=lbl_txt+':', bg='#f7f9fa').pack(side='right', padx=(6,2))
+            box = tk.Frame(nb_top, bg=theme.PAGE_BG)
+            tk.Label(box, text=lbl_txt+':', bg=theme.PAGE_BG).pack(side='right', padx=(6,2))
             tk.Entry(box, textvariable=var, width=16).pack(side='right')
             return box
         _mk_top_input('סוג בד', self.fi_nb_type).pack(side='right', padx=8)
@@ -63,16 +64,16 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         _mk_top_input('צבע', self.fi_nb_color).pack(side='right', padx=8)
         _mk_top_input('גוון', self.fi_nb_shade).pack(side='right', padx=8)
         _mk_top_input('הערות', self.fi_nb_notes).pack(side='right', padx=8)
-        tk.Button(nb_top, text='➕ הוסף שורה', command=self._fi_nb_add_item, bg='#27ae60', fg='white').pack(side='left')
+        tk.Button(nb_top, text='➕ הוסף שורה', command=self._fi_nb_add_item, bg=theme.SUCCESS, fg='white').pack(side='left')
 
         # מסגרת תוכן דינמית מתחת לבורר המצבים ומעל ההובלה
-        content_frame = tk.Frame(container, bg='#f7f9fa')
+        content_frame = tk.Frame(container, bg=theme.PAGE_BG)
         content_frame.pack(fill='both', expand=True)
 
         # ברקוד + פעולות
-        bar = tk.Frame(content_frame, bg='#f7f9fa')
+        bar = tk.Frame(content_frame, bg=theme.PAGE_BG)
         bar.pack(fill='x', padx=10, pady=(0,6))
-        tk.Label(bar, text='בר קוד:', bg='#f7f9fa').pack(side='right', padx=(8,4))
+        tk.Label(bar, text='בר קוד:', bg=theme.PAGE_BG).pack(side='right', padx=(8,4))
         self.fi_barcode_var = tk.StringVar()
         entry = tk.Entry(bar, textvariable=self.fi_barcode_var, width=24)
         entry.pack(side='right')
@@ -80,12 +81,12 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
             entry.bind('<Return>', lambda e: self._fi_add_fabric_by_barcode())
         except Exception:
             pass
-        tk.Button(bar, text='➕ הוסף', command=self._fi_add_fabric_by_barcode, bg='#27ae60', fg='white').pack(side='right', padx=6)
+        tk.Button(bar, text='➕ הוסף', command=self._fi_add_fabric_by_barcode, bg=theme.SUCCESS, fg='white').pack(side='right', padx=6)
         tk.Button(bar, text='🗑️ הסר נבחר', command=self._fi_remove_selected).pack(side='left', padx=6)
         tk.Button(bar, text='🧹 נקה הכל', command=self._fi_clear_all).pack(side='left')
 
         # טבלת פריטי בד שנבחרו לקליטה (ברקוד)
-        table_wrap = tk.Frame(content_frame, bg='#ffffff', relief='groove', bd=1)
+        table_wrap = tk.Frame(content_frame, bg=theme.CARD_BG, relief='groove', bd=1)
         table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
         cols = ('barcode','fabric_type','color_name','color_no','design_code','width','net_kg','meters','price','location','status')
         headers = {
@@ -106,7 +107,7 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         self.fi_bar_table_wrap = table_wrap
 
         # טבלה לפריטים ללא ברקוד + כפתורי פעולה
-        nb_table_wrap = tk.Frame(content_frame, bg='#ffffff', relief='groove', bd=1)
+        nb_table_wrap = tk.Frame(content_frame, bg=theme.CARD_BG, relief='groove', bd=1)
         nb_cols = ('fabric_type','manufacturer','color','shade','notes')
         nb_headers = {'fabric_type':'סוג בד','manufacturer':'יצרן הבד','color':'צבע','shade':'גוון','notes':'הערות'}
         nb_widths = {'fabric_type':160,'manufacturer':140,'color':100,'shade':80,'notes':220}
@@ -122,7 +123,7 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         nb_table_wrap.grid_columnconfigure(0, weight=1)
         self.fi_nb_table_wrap = nb_table_wrap
 
-        nb_actions = tk.Frame(content_frame, bg='#f7f9fa')
+        nb_actions = tk.Frame(content_frame, bg=theme.PAGE_BG)
         tk.Button(nb_actions, text='🗑️ הסר נבחר', command=self._fi_nb_remove_selected).pack(side='right', padx=6)
         tk.Button(nb_actions, text='🧹 נקה הכל', command=self._fi_nb_clear_all).pack(side='right')
         self.fi_nb_actions = nb_actions
@@ -177,9 +178,9 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
             self._refresh_driver_names_for_intake()
         except Exception:
             pass
-        tk.Button(pkg_frame, text="➕ הוסף", command=self._fi_add_package_line, bg='#27ae60', fg='white').grid(row=0,column=6,padx=8)
-        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._fi_delete_selected_package, bg='#e67e22', fg='white').grid(row=0,column=7,padx=4)
-        tk.Button(pkg_frame, text="❌ נקה", command=self._fi_clear_packages, bg='#e74c3c', fg='white').grid(row=0,column=8,padx=4)
+        tk.Button(pkg_frame, text="➕ הוסף", command=self._fi_add_package_line, bg=theme.SUCCESS, fg='white').grid(row=0,column=6,padx=8)
+        tk.Button(pkg_frame, text="🗑️ מחק נבחר", command=self._fi_delete_selected_package, bg=theme.WARNING, fg='white').grid(row=0,column=7,padx=4)
+        tk.Button(pkg_frame, text="❌ נקה", command=self._fi_clear_packages, bg=theme.DANGER, fg='white').grid(row=0,column=8,padx=4)
         self.fi_packages_tree = ttk.Treeview(pkg_frame, columns=('type','quantity','driver'), show='headings', height=4)
         self.fi_packages_tree.heading('type', text='פריט הובלה')
         self.fi_packages_tree.heading('quantity', text='כמות')
@@ -190,20 +191,20 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         self.fi_packages_tree.grid(row=1,column=0,columnspan=9, sticky='ew', padx=2, pady=(6,2))
 
         # פעולת שמירה + סיכום
-        actions = tk.Frame(container, bg='#f7f9fa')
+        actions = tk.Frame(container, bg=theme.PAGE_BG)
         actions.pack(fill='x', padx=10, pady=(0,8))
-        tk.Button(actions, text='💾 שמור קליטת בדים', command=self._fi_save_receipt, bg='#2c3e50', fg='white', font=('Arial',11,'bold')).pack(side='right')
+        tk.Button(actions, text='💾 שמור קליטת בדים', command=self._fi_save_receipt, bg=theme.DARK, fg='white', font=(theme.FONT_FAMILY,11,'bold')).pack(side='right')
         self.fi_summary_var = tk.StringVar(value='0 בדים')
-        tk.Label(container, textvariable=self.fi_summary_var, bg='#34495e', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(container, textvariable=self.fi_summary_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
     def _build_fabrics_list_tab(self, container: tk.Frame):
-        header = tk.Frame(container, bg='#f7f9fa')
+        header = tk.Frame(container, bg=theme.PAGE_BG)
         header.pack(fill='x', padx=10, pady=(8,4))
-        tk.Label(header, text='קליטות בדים שמורות', font=('Arial',12,'bold'), bg='#f7f9fa').pack(side='right')
+        tk.Label(header, text='קליטות בדים שמורות', font=(theme.FONT_FAMILY,12,'bold'), bg=theme.PAGE_BG).pack(side='right')
 
         cols = ('id','date','supplier','count','packages','delete')
         # עוטפים את הטבלה במסגרת פנימית כדי להשתמש ב-grid בפנים, בעוד שה-container משתמש ב-pack
-        table_wrap = tk.Frame(container, bg='#ffffff')
+        table_wrap = tk.Frame(container, bg=theme.CARD_BG)
         table_wrap.pack(fill='both', expand=True, padx=10, pady=6)
 
         self.fabrics_intakes_tree = ttk.Treeview(table_wrap, columns=cols, show='headings')
@@ -230,7 +231,7 @@ class SupplierIntakeTabMixin(SupplierIntakeMethodsMixin):
         except Exception:
             pass
 
-        btns = tk.Frame(container, bg='#f7f9fa')
+        btns = tk.Frame(container, bg=theme.PAGE_BG)
         btns.pack(fill='x', padx=10, pady=(0,6))
-        tk.Button(btns, text='🔄 רענן', command=self._refresh_fabrics_intakes_list, bg='#3498db', fg='white').pack(side='right')
+        tk.Button(btns, text='🔄 רענן', command=self._refresh_fabrics_intakes_list, bg=theme.PRIMARY, fg='white').pack(side='right')
         self._refresh_fabrics_intakes_list()

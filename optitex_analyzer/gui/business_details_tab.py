@@ -3,6 +3,7 @@ import zipfile
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from . import theme
 
 
 class BusinessDetailsTabMixin:
@@ -10,7 +11,7 @@ class BusinessDetailsTabMixin:
 
     def _create_business_details_tab(self):
         """Create a standalone 'Business Details' tab on the main notebook (legacy placement)."""
-        tab = tk.Frame(self.notebook, bg="#f7f9fa")
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="פרטי עסק")
         self._build_business_details_panel(tab)
 
@@ -19,10 +20,10 @@ class BusinessDetailsTabMixin:
 
         Used by the standalone tab and by the 'ניהול תוכנה' wrapper tab.
         """
-        title = tk.Label(parent, text="פרטי העסק", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        title = tk.Label(parent, text="פרטי העסק", font=(theme.FONT_FAMILY, 16, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         title.pack(pady=(10, 6))
 
-        body = tk.Frame(parent, bg="#f7f9fa")
+        body = tk.Frame(parent, bg=theme.PAGE_BG)
         body.pack(fill="both", expand=True, padx=14, pady=8)
 
         # state vars
@@ -44,15 +45,15 @@ class BusinessDetailsTabMixin:
         self._bd_controls_to_toggle = []
 
     # layout: two columns (form on right, logo on left)
-        form = tk.Frame(body, bg="#f7f9fa")
+        form = tk.Frame(body, bg=theme.PAGE_BG)
         form.pack(side="right", fill="both", expand=True)
 
-        logo_frame = tk.Frame(body, bg="#eef3f7", bd=1, relief="solid")
+        logo_frame = tk.Frame(body, bg=theme.PANEL_BG, bd=1, relief="solid")
         logo_frame.pack(side="left", padx=(0, 16), pady=4)
 
         # Form fields
         def add_row(row, label_text, var, width=32):
-            lbl = tk.Label(form, text=label_text, bg="#f7f9fa")
+            lbl = tk.Label(form, text=label_text, bg=theme.PAGE_BG)
             lbl.grid(row=row, column=1, sticky="e", padx=(8, 4), pady=4)
             ent = tk.Entry(form, textvariable=var, width=width, justify="right")
             ent.grid(row=row, column=0, sticky="we", padx=(0, 4), pady=4)
@@ -63,7 +64,7 @@ class BusinessDetailsTabMixin:
         r = 0
         add_row(r, "שם העסק:", self.bd_business_name); r += 1
         # Type + VAT id in one row
-        tk.Label(form, text="סוג עוסק:", bg="#f7f9fa").grid(row=r, column=1, sticky="e", padx=(8, 4), pady=4)
+        tk.Label(form, text="סוג עוסק:", bg=theme.PAGE_BG).grid(row=r, column=1, sticky="e", padx=(8, 4), pady=4)
         type_combo = ttk.Combobox(form, textvariable=self.bd_business_type, values=["עוסק מורשה", "חברה בע""מ", "שותפות", "אחר"], state="readonly", width=14)
         type_combo.grid(row=r, column=0, sticky="w", padx=(0, 4), pady=4)
         self._bd_controls_to_toggle.append(type_combo)
@@ -78,9 +79,9 @@ class BusinessDetailsTabMixin:
         add_row(r, "איש קשר:", self.bd_contact); r += 1
 
         # Buttons
-        btns = tk.Frame(form, bg="#f7f9fa")
+        btns = tk.Frame(form, bg=theme.PAGE_BG)
         btns.grid(row=r, column=0, columnspan=2, sticky="we", pady=(8, 4))
-        self.bd_save_btn = tk.Button(btns, text="💾 שמור", bg="#27ae60", fg="white", command=self._bd_save)
+        self.bd_save_btn = tk.Button(btns, text="💾 שמור", bg=theme.SUCCESS, fg="white", command=self._bd_save)
         self.bd_save_btn.pack(side="right", padx=(8, 0))
         self.bd_reset_btn = tk.Button(btns, text="איפוס", command=self._bd_load_from_settings)
         self.bd_reset_btn.pack(side="right")
@@ -89,20 +90,20 @@ class BusinessDetailsTabMixin:
         self.bd_unlock_btn.pack(side="left")
 
         # Logo area
-        tk.Label(logo_frame, text="לוגו העסק", font=("Arial", 12, "bold"), bg="#eef3f7").pack(padx=10, pady=(10, 6))
-        self.bd_logo_canvas = tk.Label(logo_frame, bg="#ffffff", width=38, height=12, relief="sunken", bd=1, anchor="center")
+        tk.Label(logo_frame, text="לוגו העסק", font=(theme.FONT_FAMILY, 12, "bold"), bg=theme.PANEL_BG).pack(padx=10, pady=(10, 6))
+        self.bd_logo_canvas = tk.Label(logo_frame, bg=theme.CARD_BG, width=38, height=12, relief="sunken", bd=1, anchor="center")
         self.bd_logo_canvas.pack(padx=10, pady=(0, 8))
 
-        pick_row = tk.Frame(logo_frame, bg="#eef3f7")
+        pick_row = tk.Frame(logo_frame, bg=theme.PANEL_BG)
         pick_row.pack(fill="x", padx=10, pady=(0, 10))
         self.bd_pick_logo_btn = tk.Button(pick_row, text="בחר לוגו…", command=self._bd_pick_logo)
         self.bd_pick_logo_btn.pack(side="right")
         self.bd_clear_logo_btn = tk.Button(pick_row, text="הסר", command=self._bd_clear_logo)
         self.bd_clear_logo_btn.pack(side="right", padx=(6, 0))
 
-        path_row = tk.Frame(logo_frame, bg="#eef3f7")
+        path_row = tk.Frame(logo_frame, bg=theme.PANEL_BG)
         path_row.pack(fill="x", padx=10, pady=(0, 12))
-        tk.Label(path_row, text="נתיב:", bg="#eef3f7").pack(side="right")
+        tk.Label(path_row, text="נתיב:", bg=theme.PANEL_BG).pack(side="right")
         self.bd_logo_entry = tk.Entry(path_row, textvariable=self.bd_logo_path, width=34, justify="right")
         self.bd_logo_entry.pack(side="right", padx=(6, 0))
         self._bd_entries.append(self.bd_logo_entry)
@@ -122,7 +123,7 @@ class BusinessDetailsTabMixin:
                 if enabled:
                     ent.configure(state='normal')
                 else:
-                    ent.configure(state='disabled', disabledbackground='#e9ecef', disabledforeground='#7a7a7a')
+                    ent.configure(state='disabled', disabledbackground=theme.BORDER, disabledforeground=theme.SUBTEXT)
             except Exception:
                 pass
         # Combo + buttons
@@ -145,7 +146,7 @@ class BusinessDetailsTabMixin:
 
     def _create_software_management_tab(self):
         """Create a parent tab 'ניהול תוכנה' and place 'פרטי עסק' as a sub-tab within it."""
-        parent_tab = tk.Frame(self.notebook, bg="#f7f9fa")
+        parent_tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(parent_tab, text="ניהול תוכנה")
 
         # Inner notebook for management pages
@@ -154,7 +155,7 @@ class BusinessDetailsTabMixin:
         self.software_mgmt_notebook = inner_nb
 
         # Business Details sub-tab
-        bd_tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        bd_tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(bd_tab, text="פרטי עסק")
         self._build_business_details_panel(bd_tab)
 
@@ -166,28 +167,28 @@ class BusinessDetailsTabMixin:
 
     # ---- Backups Tab ----
     def _create_backups_tab(self, inner_nb: ttk.Notebook):
-        tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(tab, text="גיבויים")
 
-        title = tk.Label(tab, text="גיבוי כל נתוני התוכנה", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        title = tk.Label(tab, text="גיבוי כל נתוני התוכנה", font=(theme.FONT_FAMILY, 16, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         title.pack(pady=(10, 6))
 
-        body = tk.Frame(tab, bg="#f7f9fa")
+        body = tk.Frame(tab, bg=theme.PAGE_BG)
         body.pack(fill="both", expand=True, padx=12, pady=8)
 
         # Controls
-        ctrl = tk.Frame(body, bg="#f7f9fa")
+        ctrl = tk.Frame(body, bg=theme.PAGE_BG)
         ctrl.pack(fill="x", pady=(0, 8))
-        tk.Button(ctrl, text="צור גיבוי עכשיו", bg="#2980b9", fg="white", command=self._run_full_backup).pack(side="right", padx=(8, 0))
+        tk.Button(ctrl, text="צור גיבוי עכשיו", bg=theme.PRIMARY_DARK, fg="white", command=self._run_full_backup).pack(side="right", padx=(8, 0))
         tk.Button(ctrl, text="שחזר מגיבוי…", command=self._restore_from_backup).pack(side="right", padx=(8, 0))
         tk.Button(ctrl, text="פתח תיקיית גיבויים", command=self._open_backups_folder).pack(side="right", padx=(8, 0))
         tk.Button(ctrl, text="רענן רשימה", command=self._refresh_backups_list).pack(side="right")
 
-        self.backup_status_label = tk.Label(body, text="", bg="#f7f9fa", fg="#2c3e50", anchor="e", justify="right")
+        self.backup_status_label = tk.Label(body, text="", bg=theme.PAGE_BG, fg=theme.DARK, anchor="e", justify="right")
         self.backup_status_label.pack(fill="x", pady=(0, 6))
 
         # Backups list
-        list_frame = tk.Frame(body, bg="#f7f9fa")
+        list_frame = tk.Frame(body, bg=theme.PAGE_BG)
         list_frame.pack(fill="both", expand=True)
 
         columns = ("name", "size", "date")
@@ -535,21 +536,21 @@ class BusinessDetailsTabMixin:
     # ---- GitHub Tab ----
     def _create_github_tab(self, inner_nb: ttk.Notebook):
         """יצירת טאב GitHub לניהול סינכרון נתונים"""
-        tab = tk.Frame(inner_nb, bg="#f7f9fa")
+        tab = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(tab, text="GitHub")
         
-        title = tk.Label(tab, text="סינכרון נתונים עם GitHub", font=("Arial", 16, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        title = tk.Label(tab, text="סינכרון נתונים עם GitHub", font=(theme.FONT_FAMILY, 16, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         title.pack(pady=(10, 6))
         
-        body = tk.Frame(tab, bg="#f7f9fa")
+        body = tk.Frame(tab, bg=theme.PAGE_BG)
         body.pack(fill="both", expand=True, padx=12, pady=8)
         
         # הגדרות סינכרון
-        settings_frame = tk.LabelFrame(body, text="הגדרות סינכרון", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        settings_frame = tk.LabelFrame(body, text="הגדרות סינכרון", font=(theme.FONT_FAMILY, 12, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         settings_frame.pack(fill="x", pady=(0, 10))
         
         # סינכרון אוטומטי
-        auto_sync_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        auto_sync_frame = tk.Frame(settings_frame, bg=theme.PAGE_BG)
         auto_sync_frame.pack(fill="x", padx=10, pady=5)
         
         self.git_auto_sync_var = tk.BooleanVar()
@@ -560,47 +561,47 @@ class BusinessDetailsTabMixin:
             text="הפעל סינכרון אוטומטי", 
             variable=self.git_auto_sync_var,
             command=self._toggle_auto_sync,
-            bg="#f7f9fa",
-            font=("Arial", 11)
+            bg=theme.PAGE_BG,
+            font=(theme.FONT_FAMILY, 11)
         )
         auto_sync_cb.pack(side="right")
         
         # URL מאגר
-        url_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        url_frame = tk.Frame(settings_frame, bg=theme.PAGE_BG)
         url_frame.pack(fill="x", padx=10, pady=5)
         
-        tk.Label(url_frame, text="URL מאגר:", bg="#f7f9fa", font=("Arial", 11)).pack(side="right", padx=(0, 5))
+        tk.Label(url_frame, text="URL מאגר:", bg=theme.PAGE_BG, font=(theme.FONT_FAMILY, 11)).pack(side="right", padx=(0, 5))
         self.git_repo_url_var = tk.StringVar()
         self.git_repo_url_var.set(self.settings.get("git.repo_url", ""))
-        url_entry = tk.Entry(url_frame, textvariable=self.git_repo_url_var, width=50, font=("Arial", 10))
+        url_entry = tk.Entry(url_frame, textvariable=self.git_repo_url_var, width=50, font=(theme.FONT_FAMILY, 10))
         url_entry.pack(side="right", fill="x", expand=True)
         
         # ענף
-        branch_frame = tk.Frame(settings_frame, bg="#f7f9fa")
+        branch_frame = tk.Frame(settings_frame, bg=theme.PAGE_BG)
         branch_frame.pack(fill="x", padx=10, pady=5)
         
-        tk.Label(branch_frame, text="ענף:", bg="#f7f9fa", font=("Arial", 11)).pack(side="right", padx=(0, 5))
+        tk.Label(branch_frame, text="ענף:", bg=theme.PAGE_BG, font=(theme.FONT_FAMILY, 11)).pack(side="right", padx=(0, 5))
         self.git_branch_var = tk.StringVar()
         self.git_branch_var.set(self.settings.get("git.branch", "main"))
-        branch_entry = tk.Entry(branch_frame, textvariable=self.git_branch_var, width=20, font=("Arial", 10))
+        branch_entry = tk.Entry(branch_frame, textvariable=self.git_branch_var, width=20, font=(theme.FONT_FAMILY, 10))
         branch_entry.pack(side="right")
         
         # כפתורי פעולה
-        actions_frame = tk.LabelFrame(body, text="פעולות", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        actions_frame = tk.LabelFrame(body, text="פעולות", font=(theme.FONT_FAMILY, 12, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         actions_frame.pack(fill="x", pady=(0, 10))
         
-        buttons_frame = tk.Frame(actions_frame, bg="#f7f9fa")
+        buttons_frame = tk.Frame(actions_frame, bg=theme.PAGE_BG)
         buttons_frame.pack(fill="x", padx=10, pady=5)
         
-        tk.Button(buttons_frame, text="שמור הגדרות", bg="#27ae60", fg="white", command=self._save_git_settings, font=("Arial", 10)).pack(side="right", padx=(5, 0))
-        tk.Button(buttons_frame, text="סטטוס", bg="#3498db", fg="white", command=self._check_git_status, font=("Arial", 10)).pack(side="right", padx=(5, 0))
-        tk.Button(buttons_frame, text="סינכרון עכשיו", bg="#e74c3c", fg="white", command=self._sync_now, font=("Arial", 10)).pack(side="right", padx=(5, 0))
+        tk.Button(buttons_frame, text="שמור הגדרות", bg=theme.SUCCESS, fg="white", command=self._save_git_settings, font=(theme.FONT_FAMILY, 10)).pack(side="right", padx=(5, 0))
+        tk.Button(buttons_frame, text="סטטוס", bg=theme.PRIMARY, fg="white", command=self._check_git_status, font=(theme.FONT_FAMILY, 10)).pack(side="right", padx=(5, 0))
+        tk.Button(buttons_frame, text="סינכרון עכשיו", bg=theme.DANGER, fg="white", command=self._sync_now, font=(theme.FONT_FAMILY, 10)).pack(side="right", padx=(5, 0))
         
         # סטטוס
-        status_frame = tk.LabelFrame(body, text="סטטוס", font=("Arial", 12, "bold"), bg="#f7f9fa", fg="#2c3e50")
+        status_frame = tk.LabelFrame(body, text="סטטוס", font=(theme.FONT_FAMILY, 12, "bold"), bg=theme.PAGE_BG, fg=theme.DARK)
         status_frame.pack(fill="both", expand=True)
         
-        self.git_status_text = tk.Text(status_frame, height=8, width=70, font=("Consolas", 9), bg="#2c3e50", fg="#ecf0f1")
+        self.git_status_text = tk.Text(status_frame, height=8, width=70, font=("Consolas", 9), bg=theme.DARK, fg=theme.PANEL_BG)
         self.git_status_text.pack(fill="both", expand=True, padx=10, pady=5)
         
         # טעינת סטטוס ראשוני

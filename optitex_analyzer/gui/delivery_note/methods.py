@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import os
 from datetime import datetime
+from .. import theme
 
 class DeliveryNoteMethodsMixin:
     def _refresh_driver_names_for_delivery(self):
@@ -249,6 +250,26 @@ class DeliveryNoteMethodsMixin:
                     return
         except Exception:
             pass
+        # אזהרה אם מלאי תוויות לא מספיק (לא חוסם שמירה)
+        try:
+            if self._accessories and hasattr(self.data_processor, 'preview_label_deductions_from_accessories'):
+                previews = self.data_processor.preview_label_deductions_from_accessories(self._accessories)
+                short = [p for p in previews if p.get('after', 0) < 0]
+                if short:
+                    lines = [
+                        f"תווית {p['size']}: במלאי {p['current']}, שולחים {p['qty']} → יתרה {p['after']}"
+                        for p in short
+                    ]
+                    proceed = messagebox.askyesno(
+                        "אזהרת מלאי תוויות",
+                        "מלאי התוויות לא מספיק לחלק מהמידות:\n\n"
+                        + "\n".join(lines)
+                        + "\n\nהאם לשמור בכל זאת? (המלאי ייצא שלילי)"
+                    )
+                    if not proceed:
+                        return
+        except Exception:
+            pass
         try:
             # שימוש בשיטה החדשה לאחר פיצול הקבצים (עם נפילה אחורה)
             if hasattr(self.data_processor, 'add_delivery_note'):
@@ -261,6 +282,11 @@ class DeliveryNoteMethodsMixin:
             self._clear_accessories()
             try:
                 self._refresh_delivery_notes_list()
+            except Exception:
+                pass
+            try:
+                if hasattr(self, '_refresh_label_inventory_ui'):
+                    self._refresh_label_inventory_ui()
             except Exception:
                 pass
             # עדכון טאב הובלות אם קיים
@@ -524,25 +550,35 @@ class DeliveryNoteMethodsMixin:
                 return
             win = tk.Toplevel(self.notebook)
             win.title(f"תעודת משלוח #{rec.get('id')}")
-            win.geometry('760x520')
+            win.geometry('820x620')
+            try:
+                win.minsize(640, 420)
+            except Exception:
+                pass
             win.transient(self.notebook.winfo_toplevel())
             header = tk.Frame(win, pady=6)
             header.pack(fill='x')
             def _lbl(text):
-                return tk.Label(header, text=text, font=('Arial',10,'bold'))
+                return tk.Label(header, text=text, font=(theme.FONT_FAMILY,10,'bold'))
             _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
             _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
             _lbl(f"ספק: {rec.get('supplier')}").grid(row=0,column=2,padx=6,sticky='w')
             # תיקון מחרוזת f לא נכונה שגרמה להצגת הטקסט {rec.get('total_quantity')} במקום הערך
             _lbl(f"סה\"כ כמות: {rec.get('total_quantity')}").grid(row=0,column=3,padx=6,sticky='w')
+            # שורת כפתורים מעוגנת לתחתית כדי שלא תיחתך על ידי הפאנלים
+            btns = tk.Frame(win)
+            btns.pack(side='bottom', fill='x', pady=8, padx=8)
             # קונטיינר לפאנלים
             body = tk.PanedWindow(win, orient='vertical')
             body.pack(fill='both', expand=True, padx=8, pady=4)
+            has_accessories = bool(rec.get('accessories'))
+            lines_h = 5 if has_accessories else 8
+            side_h = 4 if has_accessories else 6
             # שורות מוצרים
             lines_frame = tk.LabelFrame(body, text='שורות מוצרים')
             body.add(lines_frame, stretch='always')
             lines_cols = ('product','size','fabric_type','fabric_color','fabric_category','print_name','quantity','note')
-            lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=8)
+            lines_tree = ttk.Treeview(lines_frame, columns=lines_cols, show='headings', height=lines_h)
             headers_map = {'product':'מוצר','size':'מידה','fabric_type':'סוג בד','fabric_color':'צבע בד','fabric_category':'קטגורית בד','print_name':'פרינט','quantity':'כמות','note':'הערה'}
             widths_map = {'product':140,'size':70,'fabric_type':110,'fabric_color':110,'fabric_category':120,'print_name':110,'quantity':60,'note':160}
             for c in lines_cols:
@@ -553,11 +589,11 @@ class DeliveryNoteMethodsMixin:
             lines_tree.pack(fill='both', expand=True, padx=4, pady=4)
             
             # אביזרי תפירה
-            if rec.get('accessories'):
+            if has_accessories:
                 acc_frame = tk.LabelFrame(body, text='אביזרי תפירה')
                 body.add(acc_frame, stretch='always')
                 acc_cols = ('accessory','unit','quantity')
-                acc_tree = ttk.Treeview(acc_frame, columns=acc_cols, show='headings', height=6)
+                acc_tree = ttk.Treeview(acc_frame, columns=acc_cols, show='headings', height=side_h)
                 acc_headers = {'accessory':'אביזר תפירה','unit':'יחידה','quantity':'כמות'}
                 acc_widths = {'accessory':200,'unit':100,'quantity':80}
                 for c in acc_cols:
@@ -571,7 +607,7 @@ class DeliveryNoteMethodsMixin:
             pkg_frame = tk.LabelFrame(body, text='פרטי הובלה / חבילות')
             body.add(pkg_frame, stretch='always')
             pkg_cols = ('package_type','quantity','driver')
-            pkg_tree = ttk.Treeview(pkg_frame, columns=pkg_cols, show='headings', height=6)
+            pkg_tree = ttk.Treeview(pkg_frame, columns=pkg_cols, show='headings', height=side_h)
             pkg_headers = {'package_type':'פריט הובלה','quantity':'כמות','driver':'מוביל'}
             pkg_widths = {'package_type':140,'quantity':70,'driver':120}
             for c in pkg_cols:
@@ -580,9 +616,6 @@ class DeliveryNoteMethodsMixin:
             for p in rec.get('packages', []) or []:
                 pkg_tree.insert('', 'end', values=(p.get('package_type'), p.get('quantity'), p.get('driver')))
             pkg_tree.pack(fill='both', expand=True, padx=4, pady=4)
-            # Actions: Open in Excel + Close
-            btns = tk.Frame(win)
-            btns.pack(fill='x', pady=6, padx=4)
 
             def _export_dn_to_excel_and_open():
                 try:
@@ -1011,7 +1044,7 @@ class DeliveryNoteMethodsMixin:
                     except Exception:
                         pass
 
-            tk.Button(btns, text='🖨 פתח באקסל', command=_export_dn_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
+            tk.Button(btns, text='🖨 פתח באקסל', command=_export_dn_to_excel_and_open, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
             tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')
         except Exception as e:
             try:
@@ -1240,7 +1273,7 @@ class DeliveryNoteMethodsMixin:
         main_frame.pack(fill='both', expand=True)
         
         # Title
-        tk.Label(main_frame, text="הוספת בד ידנית (ללא בר קוד)", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        tk.Label(main_frame, text="הוספת בד ידנית (ללא בר קוד)", font=(theme.FONT_FAMILY, 14, 'bold')).pack(pady=(0, 20))
         
         # Form fields
         fields_frame = tk.Frame(main_frame)
@@ -1352,8 +1385,8 @@ class DeliveryNoteMethodsMixin:
             except Exception as e:
                 messagebox.showerror("שגיאה", f"שגיאה בהוספת הבד: {str(e)}")
         
-        tk.Button(buttons_frame, text="הוסף בד", command=add_fabric, bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='right', padx=(10, 0))
-        tk.Button(buttons_frame, text="ביטול", command=win.destroy, bg='#95a5a6', fg='white').pack(side='right')
+        tk.Button(buttons_frame, text="הוסף בד", command=add_fabric, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='right', padx=(10, 0))
+        tk.Button(buttons_frame, text="ביטול", command=win.destroy, bg=theme.MUTED, fg='white').pack(side='right')
 
     def _fs_remove_selected(self):
         try:
@@ -1674,13 +1707,20 @@ class DeliveryNoteMethodsMixin:
         win = tk.Toplevel(self.notebook)
         win.title(f"שליחת בדים #{ship_id}")
         win.geometry('720x520')
+        try:
+            win.minsize(560, 360)
+        except Exception:
+            pass
         header = tk.Frame(win, pady=6)
         header.pack(fill='x')
         def _lbl(t):
-            return tk.Label(header, text=t, font=('Arial',10,'bold'))
+            return tk.Label(header, text=t, font=(theme.FONT_FAMILY,10,'bold'))
         _lbl(f"ID: {rec.get('id')}").grid(row=0,column=0,padx=6,sticky='w')
         _lbl(f"תאריך: {rec.get('date')}").grid(row=0,column=1,padx=6,sticky='w')
         _lbl(f"ספק: {rec.get('supplier','')}").grid(row=0,column=2,padx=6,sticky='w')
+        # שורת כפתורים מעוגנת לתחתית כדי שלא תיחתך
+        btns = tk.Frame(win)
+        btns.pack(side='bottom', fill='x', pady=8, padx=8)
         # table of barcode details
         body = tk.Frame(win)
         body.pack(fill='both', expand=True, padx=8, pady=6)
@@ -1754,8 +1794,6 @@ class DeliveryNoteMethodsMixin:
                     nk,
                     mt
                 ))
-        btns = tk.Frame(win)
-        btns.pack(fill='x', pady=6)
         # Export to Excel (similar to delivery notes view)
         def _export_fs_to_excel_and_open():
             try:
@@ -1972,5 +2010,5 @@ class DeliveryNoteMethodsMixin:
                 try: messagebox.showerror('שגיאה', str(e))
                 except Exception: pass
 
-        tk.Button(btns, text='🖨 פתח באקסל', command=_export_fs_to_excel_and_open, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        tk.Button(btns, text='🖨 פתח באקסל', command=_export_fs_to_excel_and_open, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
         tk.Button(btns, text='סגור', command=win.destroy).pack(side='right')

@@ -1,17 +1,18 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from .. import theme
 
 # This module defines a function that builds the Saved Delivery Notes list sub-tab.
 
 def build_list_tab(ctx, container: tk.Frame):
     # Create a main frame with scrollbar
-    main_frame = tk.Frame(container, bg='#f7f9fa')
+    main_frame = tk.Frame(container, bg=theme.PAGE_BG)
     main_frame.pack(fill='both', expand=True)
     
     # Create canvas and scrollbar
-    canvas = tk.Canvas(main_frame, bg='#f7f9fa')
+    canvas = tk.Canvas(main_frame, bg=theme.PAGE_BG)
     scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg='#f7f9fa')
+    scrollable_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
     
     scrollable_frame.bind(
         "<Configure>",
@@ -56,11 +57,16 @@ def build_list_tab(ctx, container: tk.Frame):
     vs2.grid(row=0,column=1,sticky='ns', pady=6)
     container.grid_columnconfigure(0, weight=1)
     container.grid_rowconfigure(0, weight=1)
-    refresh_btn = tk.Button(container, text="🔄 רענן", command=ctx._refresh_delivery_notes_list, bg='#3498db', fg='white')
-    refresh_btn.grid(row=1,column=0,sticky='e', padx=6, pady=(0,6))
-    # כפתור צפייה בתעודה
-    view_btn = tk.Button(container, text="👁 צפה", command=ctx._open_selected_delivery_note_view, bg='#2c3e50', fg='white')
-    view_btn.grid(row=1,column=0,sticky='e', padx=60, pady=(0,6))
+    # הכפתורים נמצאים במכל נפרד כדי שלא יחפפו זה את זה.
+    actions = tk.Frame(container, bg=theme.PAGE_BG)
+    actions.grid(row=1, column=0, sticky='e', padx=6, pady=(0, 6))
+    refresh_btn = tk.Button(actions, text="🔄 רענן", command=ctx._refresh_delivery_notes_list,
+                            bg=theme.PRIMARY, fg='white')
+    refresh_btn.pack(side='right', padx=(0, 4))
+    # כפתור צפייה בתעודה, שממנו אפשר גם לפתוח את הקובץ באקסל.
+    view_btn = tk.Button(actions, text="👁 צפה", command=ctx._open_selected_delivery_note_view,
+                         bg=theme.DARK, fg='white')
+    view_btn.pack(side='right')
     # פתיחת פירוט בדאבל-קליק על שורה
     ctx.delivery_notes_tree.bind('<Double-1>', ctx._open_selected_delivery_note_view)
     # מחיקה בלחיצה על עמודת האייקון
@@ -114,6 +120,11 @@ def _on_click_delete(ctx, event):
                     ctx._notify_new_receipt_saved()
                 elif hasattr(ctx, '_refresh_shipments_table'):
                     ctx._refresh_shipments_table()
+            except Exception:
+                pass
+            try:
+                if hasattr(ctx, '_refresh_label_inventory_ui'):
+                    ctx._refresh_label_inventory_ui()
             except Exception:
                 pass
             # הודעה למשתמש על מחיקת ההובלות המשויכות

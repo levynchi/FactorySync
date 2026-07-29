@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import json
 import os
 from datetime import datetime
+from .. import theme
 
 # סימן כיווניות RTL לטקסט עברי (Right-To-Left Mark)
 RLM = '\u200f'
@@ -64,18 +65,18 @@ class DrawingsManagerTabMixin:
             pass
 
     def _create_drawings_manager_tab(self):
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="מנהל ציורים")
         self._drawings_tab = tab
-        tk.Label(tab, text="מנהל ציורים - טבלה מקומית", font=('Arial', 16, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=10)
+        tk.Label(tab, text="מנהל ציורים - טבלה מקומית", font=(theme.FONT_FAMILY, 16, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=10)
         # Inner notebook to host drawings table and embedded converter
         inner_nb = ttk.Notebook(tab)
         inner_nb.pack(fill='both', expand=True, padx=6, pady=(0, 6))
-        table_page = tk.Frame(inner_nb, bg='#f7f9fa')
-        converter_page = tk.Frame(inner_nb, bg='#f7f9fa')
-        cut_drawings_page = tk.Frame(inner_nb, bg='#f7f9fa')
-        product_map_page = tk.Frame(inner_nb, bg='#f7f9fa')
-        area_calc_page = tk.Frame(inner_nb, bg='#f7f9fa')
+        table_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        converter_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        cut_drawings_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        product_map_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
+        area_calc_page = tk.Frame(inner_nb, bg=theme.PAGE_BG)
         inner_nb.add(table_page, text="טבלת ציורים")
         inner_nb.add(converter_page, text="ממיר קבצים")
         inner_nb.add(product_map_page, text="מיפוי מוצרים")
@@ -88,38 +89,38 @@ class DrawingsManagerTabMixin:
         except Exception:
             pass
 
-        actions = tk.Frame(table_page, bg='#f7f9fa')
+        actions = tk.Frame(table_page, bg=theme.PAGE_BG)
         actions.pack(fill='x', padx=12, pady=(0, 8))
-        left = tk.Frame(actions, bg='#f7f9fa'); left.pack(side='left')
-        tk.Button(left, text="🔄 רענן", command=self._refresh_drawings_tree, bg='#3498db', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='left', padx=4)
-        tk.Button(left, text="📊 ייצא לאקסל", command=self._export_drawings_to_excel_tab, bg='#27ae60', fg='white', font=('Arial', 10, 'bold'), width=12).pack(side='left', padx=4)
-        right = tk.Frame(actions, bg='#f7f9fa'); right.pack(side='right')
-        tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg='#e67e22', fg='white', font=('Arial', 10, 'bold'), width=10).pack(side='right', padx=4)
+        left = tk.Frame(actions, bg=theme.PAGE_BG); left.pack(side='left')
+        tk.Button(left, text="🔄 רענן", command=self._refresh_drawings_tree, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'), width=10).pack(side='left', padx=4)
+        tk.Button(left, text="📊 ייצא לאקסל", command=self._export_drawings_to_excel_tab, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'), width=12).pack(side='left', padx=4)
+        right = tk.Frame(actions, bg=theme.PAGE_BG); right.pack(side='right')
+        tk.Button(right, text="❌ מחק נבחר", command=self._delete_selected_drawing_tab, bg=theme.WARNING, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'), width=10).pack(side='right', padx=4)
 
         # מערכת סינון
-        filter_frame = tk.Frame(table_page, bg='#f7f9fa')
+        filter_frame = tk.Frame(table_page, bg=theme.PAGE_BG)
         filter_frame.pack(fill='x', padx=12, pady=(0, 8))
         
-        tk.Label(filter_frame, text="סינון:", font=('Arial', 10, 'bold'), bg='#f7f9fa').pack(side='left', padx=(0, 8))
+        tk.Label(filter_frame, text="סינון:", font=(theme.FONT_FAMILY, 10, 'bold'), bg=theme.PAGE_BG).pack(side='left', padx=(0, 8))
         
         # סינון לפי ספק
-        tk.Label(filter_frame, text="ספק:", font=('Arial', 9), bg='#f7f9fa').pack(side='left', padx=(0, 4))
+        tk.Label(filter_frame, text="ספק:", font=(theme.FONT_FAMILY, 9), bg=theme.PAGE_BG).pack(side='left', padx=(0, 4))
         self.drawings_supplier_filter_var = tk.StringVar()
         self.drawings_supplier_filter_cb = ttk.Combobox(filter_frame, textvariable=self.drawings_supplier_filter_var, width=20, state='readonly')
         self.drawings_supplier_filter_cb.pack(side='left', padx=(0, 8))
         self.drawings_supplier_filter_cb.bind('<<ComboboxSelected>>', self._apply_drawings_filters)
         
         # סינון לפי סטטוס
-        tk.Label(filter_frame, text="סטטוס:", font=('Arial', 9), bg='#f7f9fa').pack(side='left', padx=(0, 4))
+        tk.Label(filter_frame, text="סטטוס:", font=(theme.FONT_FAMILY, 9), bg=theme.PAGE_BG).pack(side='left', padx=(0, 4))
         self.drawings_status_filter_var = tk.StringVar()
         self.drawings_status_filter_cb = ttk.Combobox(filter_frame, textvariable=self.drawings_status_filter_var, width=15, state='readonly')
         self.drawings_status_filter_cb.pack(side='left', padx=(0, 8))
         self.drawings_status_filter_cb.bind('<<ComboboxSelected>>', self._apply_drawings_filters)
         
         # כפתור נקה סינון
-        tk.Button(filter_frame, text="🗑️ נקה סינון", command=self._clear_drawings_filters, bg='#95a5a6', fg='white', font=('Arial', 9)).pack(side='left', padx=8)
+        tk.Button(filter_frame, text="🗑️ נקה סינון", command=self._clear_drawings_filters, bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 9)).pack(side='left', padx=8)
 
-        table_frame = tk.Frame(table_page, bg='#ffffff')
+        table_frame = tk.Frame(table_page, bg=theme.CARD_BG)
         table_frame.pack(fill='both', expand=True, padx=12, pady=8)
         cols = ("id", "file_name", "created_at", "products", "total_quantity", "estimated_layers", "actual_layers", "products_details", "sent_to_supplier", "status", "excel")
         self.drawings_tree = ttk.Treeview(table_frame, columns=cols, show='headings')
@@ -141,7 +142,7 @@ class DrawingsManagerTabMixin:
         for st in ("טרם נשלח", "נשלח", "הוחזר", "נחתך"):
             self._drawing_status_menu.add_command(label=st, command=lambda s=st: self._change_selected_drawing_status(s))
         self.drawings_stats_var = tk.StringVar(value="אין נתונים")
-        tk.Label(table_page, textvariable=self.drawings_stats_var, bg='#34495e', fg='white', anchor='w', padx=10, font=('Arial', 10)).pack(fill='x', side='bottom')
+        tk.Label(table_page, textvariable=self.drawings_stats_var, bg=theme.DARK_2, fg='white', anchor='w', padx=10, font=(theme.FONT_FAMILY, 10)).pack(fill='x', side='bottom')
         
         # אתחול רשימות הסינון
         self._refresh_drawings_filter_options()
@@ -168,21 +169,21 @@ class DrawingsManagerTabMixin:
 
     # === Product Mapping Tab ===
     def _build_product_mapping_tab(self, container: tk.Widget):
-        wrapper = tk.Frame(container, bg='#f7f9fa')
+        wrapper = tk.Frame(container, bg=theme.PAGE_BG)
         wrapper.pack(fill='both', expand=True, padx=10, pady=8)
-        tk.Label(wrapper, text="ניהול מיפוי מוצרים (קובץ מוצרים.xlsx)", font=('Arial', 14, 'bold'), bg='#f7f9fa').pack(anchor='e', pady=(0, 8))
+        tk.Label(wrapper, text="ניהול מיפוי מוצרים (קובץ מוצרים.xlsx)", font=(theme.FONT_FAMILY, 14, 'bold'), bg=theme.PAGE_BG).pack(anchor='e', pady=(0, 8))
 
-        actions = tk.Frame(wrapper, bg='#f7f9fa'); actions.pack(fill='x', pady=(0, 6))
-        tk.Button(actions, text="🔄 רענן", command=self._refresh_product_mapping_table, bg='#3498db', fg='white').pack(side='right', padx=4)
-        tk.Button(actions, text="💾 שמור לקובץ", command=self._save_product_mapping, bg='#2c3e50', fg='white').pack(side='right', padx=4)
+        actions = tk.Frame(wrapper, bg=theme.PAGE_BG); actions.pack(fill='x', pady=(0, 6))
+        tk.Button(actions, text="🔄 רענן", command=self._refresh_product_mapping_table, bg=theme.PRIMARY, fg='white').pack(side='right', padx=4)
+        tk.Button(actions, text="💾 שמור לקובץ", command=self._save_product_mapping, bg=theme.DARK, fg='white').pack(side='right', padx=4)
 
-        form = tk.Frame(wrapper, bg='#ecf0f1'); form.pack(fill='x', pady=(0, 6))
-        tk.Label(form, text="file name:", bg='#ecf0f1').grid(row=0, column=0, sticky='w', padx=6, pady=4)
+        form = tk.Frame(wrapper, bg=theme.PANEL_BG); form.pack(fill='x', pady=(0, 6))
+        tk.Label(form, text="file name:", bg=theme.PANEL_BG).grid(row=0, column=0, sticky='w', padx=6, pady=4)
         self.pm_file_name_var = tk.StringVar()
         file_name_entry = tk.Entry(form, textvariable=self.pm_file_name_var, width=26)
         file_name_entry.grid(row=0, column=1, sticky='w', padx=4, pady=4)
         self._attach_paste_menu(file_name_entry)
-        tk.Label(form, text="product name:", bg='#ecf0f1').grid(row=0, column=2, sticky='w', padx=10, pady=4)
+        tk.Label(form, text="product name:", bg=theme.PANEL_BG).grid(row=0, column=2, sticky='w', padx=10, pady=4)
         self.pm_product_name_var = tk.StringVar()
         # Load model names list and create a combobox for selection
         try:
@@ -197,13 +198,13 @@ class DrawingsManagerTabMixin:
             state='normal'  # allow typing if list is empty or custom value needed
         )
         self.pm_product_name_combo.grid(row=0, column=3, sticky='w', padx=4, pady=4)
-        tk.Label(form, text="unit quantity:", bg='#ecf0f1').grid(row=0, column=4, sticky='w', padx=10, pady=4)
+        tk.Label(form, text="unit quantity:", bg=theme.PANEL_BG).grid(row=0, column=4, sticky='w', padx=10, pady=4)
         self.pm_unit_qty_var = tk.StringVar(value='1')
         self.pm_unit_qty_spin = tk.Spinbox(form, from_=1, to=999, textvariable=self.pm_unit_qty_var, width=5)
         self.pm_unit_qty_spin.grid(row=0, column=5, sticky='w', padx=4, pady=4)
-        tk.Button(form, text="➕ הוסף/עדכן", command=self._add_product_mapping_row, bg='#27ae60', fg='white').grid(row=0, column=6, padx=8)
-        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_mapping, bg='#e67e22', fg='white').grid(row=0, column=7, padx=4)
-        tk.Button(form, text="❌ נקה שדות", command=lambda: (self.pm_file_name_var.set(''), self.pm_product_name_var.set(''), self.pm_unit_qty_var.set('1')), bg='#e74c3c', fg='white').grid(row=0, column=8, padx=4)
+        tk.Button(form, text="➕ הוסף/עדכן", command=self._add_product_mapping_row, bg=theme.SUCCESS, fg='white').grid(row=0, column=6, padx=8)
+        tk.Button(form, text="🗑️ מחק נבחר", command=self._delete_selected_product_mapping, bg=theme.WARNING, fg='white').grid(row=0, column=7, padx=4)
+        tk.Button(form, text="❌ נקה שדות", command=lambda: (self.pm_file_name_var.set(''), self.pm_product_name_var.set(''), self.pm_unit_qty_var.set('1')), bg=theme.DANGER, fg='white').grid(row=0, column=8, padx=4)
 
         cols = ('file_name', 'product_name', 'unit_qty')
         self.product_mapping_tree = ttk.Treeview(wrapper, columns=cols, show='headings', height=12)
@@ -762,14 +763,14 @@ class DrawingsManagerTabMixin:
 
         content = "\n".join([RLM + l for l in header_lines]) + "\n\n" + "\n".join([RLM + l for l in table_lines])
 
-        top = tk.Toplevel(self.root); top.title("תצוגת הדפסה"); top.geometry('600x700'); top.configure(bg='#f0f0f0')
+        top = tk.Toplevel(self.root); top.title("תצוגת הדפסה"); top.geometry('600x700'); top.configure(bg=theme.PAGE_BG)
         txt = scrolledtext.ScrolledText(top, font=('Courier New', 10), wrap='word')
         txt.pack(fill='both', expand=True, padx=8, pady=8)
         txt.tag_configure('rtl', justify='right')
         txt.insert(tk.END, content, 'rtl'); txt.config(state='disabled')
-        btns = tk.Frame(top, bg='#f0f0f0'); btns.pack(fill='x', pady=6)
-        tk.Button(btns, text="הדפס", command=lambda: self._attempt_system_print(content), bg='#2c3e50', fg='white', width=12).pack(side='left', padx=10)
-        tk.Button(btns, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', width=12).pack(side='right', padx=10)
+        btns = tk.Frame(top, bg=theme.PAGE_BG); btns.pack(fill='x', pady=6)
+        tk.Button(btns, text="הדפס", command=lambda: self._attempt_system_print(content), bg=theme.DARK, fg='white', width=12).pack(side='left', padx=10)
+        tk.Button(btns, text="סגור", command=top.destroy, bg=theme.MUTED, fg='white', width=12).pack(side='right', padx=10)
 
     def _attempt_system_print(self, text_content: str):
         """Try to print using Windows default printer. Fallback: copy to clipboard."""
@@ -796,9 +797,9 @@ class DrawingsManagerTabMixin:
             messagebox.showerror("שגיאה", f"כשל בהדפסה: {e}")
 
     def _show_drawing_details(self, record):
-        top = tk.Toplevel(self.root); top.title(f"פרטי ציור - {record.get('שם הקובץ','')}"); top.geometry('900x700'); top.configure(bg='#f0f0f0')
-        tk.Label(top, text=f"פרטי ציור: {record.get('שם הקובץ','')}", font=('Arial', 14, 'bold'), bg='#f0f0f0', anchor='e', justify='right').pack(pady=10, fill='x')
-        info = tk.LabelFrame(top, text="מידע כללי", bg='#f0f0f0'); info.pack(fill='x', padx=12, pady=6)
+        top = tk.Toplevel(self.root); top.title(f"פרטי ציור - {record.get('שם הקובץ','')}"); top.geometry('900x700'); top.configure(bg=theme.PAGE_BG)
+        tk.Label(top, text=f"פרטי ציור: {record.get('שם הקובץ','')}", font=(theme.FONT_FAMILY, 14, 'bold'), bg=theme.PAGE_BG, anchor='e', justify='right').pack(pady=10, fill='x')
+        info = tk.LabelFrame(top, text="מידע כללי", bg=theme.PAGE_BG); info.pack(fill='x', padx=12, pady=6)
         base_txt = (
             f"ID: {record.get('id','')}\n"
             f"תאריך יצירה: {record.get('תאריך יצירה','')}\n"
@@ -839,8 +840,8 @@ class DrawingsManagerTabMixin:
                     base_txt += f"\nמשקל לכל שכבה: {weight_per_layer:.2f} ק״ג"
         status_val = record.get('status','')
         base_txt += f"\nסטטוס: {status_val}"
-        tk.Label(info, text=base_txt, bg='#f0f0f0', justify='right', anchor='e').pack(fill='x', padx=8, pady=6)
-        tk.Label(top, text="פירוט מוצרים ומידות:", font=('Arial', 12, 'bold'), bg='#f0f0f0', anchor='e', justify='right').pack(anchor='e', padx=12, pady=(6, 2), fill='x')
+        tk.Label(info, text=base_txt, bg=theme.PAGE_BG, justify='right', anchor='e').pack(fill='x', padx=8, pady=6)
+        tk.Label(top, text="פירוט מוצרים ומידות:", font=(theme.FONT_FAMILY, 12, 'bold'), bg=theme.PAGE_BG, anchor='e', justify='right').pack(anchor='e', padx=12, pady=(6, 2), fill='x')
         st = scrolledtext.ScrolledText(top, height=20, font=('Courier New', 10), wrap='word')
         st.pack(fill='both', expand=True, padx=12, pady=4)
         st.tag_configure('rtl', justify='right')
@@ -875,7 +876,7 @@ class DrawingsManagerTabMixin:
         if layers_used and overall_expected:
             st.insert(tk.END, RLM + f"\n➡ סך כמות צפויה לאחר גזירה לכל הציור: {overall_expected}\n", 'rtl')
         st.config(state='disabled')
-        tk.Button(top, text="סגור", command=top.destroy, bg='#95a5a6', fg='white', font=('Arial', 11, 'bold'), width=12).pack(pady=10)
+        tk.Button(top, text="סגור", command=top.destroy, bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 11, 'bold'), width=12).pack(pady=10)
 
     def _delete_selected_drawing_tab(self):
         sel = self.drawings_tree.selection();
@@ -1028,11 +1029,11 @@ class DrawingsManagerTabMixin:
     # === Area Calculation Tab ===
     def _build_area_calculation_tab(self, container: tk.Widget):
         """בניית טאב חישוב שטח כולל לדגם מידה"""
-        wrapper = tk.Frame(container, bg='#f7f9fa')
+        wrapper = tk.Frame(container, bg=theme.PAGE_BG)
         wrapper.pack(fill='both', expand=True, padx=10, pady=8)
         
         # כותרת
-        tk.Label(wrapper, text="שטח רבוע לדגם מידה", font=('Arial', 14, 'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(0, 15))
+        tk.Label(wrapper, text="שטח רבוע לדגם מידה", font=(theme.FONT_FAMILY, 14, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(0, 15))
         
         # מסגרת הזנת נתונים
         input_frame = ttk.LabelFrame(wrapper, text="הזנת נתונים", padding=15)
@@ -1042,7 +1043,7 @@ class DrawingsManagerTabMixin:
         self._load_area_data_from_file()
         
         # שם דגם - נבחר מקטלוג המוצרים
-        tk.Label(input_frame, text="שם הדגם:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=8)
+        tk.Label(input_frame, text="שם הדגם:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=8)
         self.area_product_name_var = tk.StringVar()
         
         # קבלת רשימת שמות הדגמים מקטלוג המוצרים
@@ -1053,14 +1054,14 @@ class DrawingsManagerTabMixin:
         self.area_product_combo.bind('<<ComboboxSelected>>', self._on_area_product_selected)
         
         # מידה - תתעדכן בהתאם לדגם הנבחר
-        tk.Label(input_frame, text="מידה:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=8)
+        tk.Label(input_frame, text="מידה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=8)
         self.area_size_var = tk.StringVar()
         self.area_size_combo = ttk.Combobox(input_frame, textvariable=self.area_size_var, 
                                           state='readonly', width=15, justify='right')
         self.area_size_combo.grid(row=0, column=3, sticky='w', padx=5, pady=8)
         
         # מ"ר של הגיזרה
-        tk.Label(input_frame, text="מ\"ר של הגיזרה:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=8)
+        tk.Label(input_frame, text="מ\"ר של הגיזרה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=8)
         self.area_sqm_var = tk.StringVar()
         area_entry = tk.Entry(input_frame, textvariable=self.area_sqm_var, width=20, justify='center')
         area_entry.grid(row=1, column=1, sticky='w', padx=5, pady=8)
@@ -1071,11 +1072,11 @@ class DrawingsManagerTabMixin:
         buttons_frame.grid(row=1, column=2, columnspan=2, sticky='w', padx=15, pady=8)
         
         tk.Button(buttons_frame, text="➕ הוסף", command=self._add_area_calculation_entry,
-                 bg='#27ae60', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
+                 bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(buttons_frame, text="🧮 חשב שטח רבוע", command=self._calculate_total_area,
-                 bg='#3498db', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
+                 bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(buttons_frame, text="🗑️ נקה הכל", command=self._clear_area_calculations,
-                 bg='#e74c3c', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
+                 bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         
         # טבלת נתונים
         table_frame = ttk.LabelFrame(wrapper, text="רשימת מ\"ר", padding=10)
@@ -1111,7 +1112,7 @@ class DrawingsManagerTabMixin:
         
         # כפתור מחיקת שורה נבחרת
         tk.Button(table_frame, text="❌ מחק שורה נבחרת", command=self._delete_selected_area_row,
-                 bg='#e67e22', fg='white', font=('Arial', 9)).grid(row=1, column=0, pady=5, sticky='w')
+                 bg=theme.WARNING, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=1, column=0, pady=5, sticky='w')
         
         # טעינת הנתונים השמורים לטבלה
         self._populate_area_data_from_storage()

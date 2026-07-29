@@ -29,7 +29,8 @@ class SettingsManager:
             "website": {
                 "local_url": "http://127.0.0.1:8000",
                 "prod_url": "https://arye-textil.co.il",
-                "api_token": ""
+                "api_token": "",
+                "local_api_token": "dev-local-token"
             }
         }
         print("✅ הגדרות ברירת מחדל נקבעו")

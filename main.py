@@ -36,12 +36,17 @@ def main():
         
         # יצירת החלון הראשי
         print("🖼️  יוצר חלון ראשי...")
-        root = tk.Tk()
+        try:
+            import ttkbootstrap as tb
+            root = tb.Window(themename="cosmo")
+        except Exception:
+            root = tk.Tk()
         print("✅ חלון ראשי נוצר בהצלחה")
         
         # הגדרת סגנון
         print("🎨 מגדיר סגנון...")
-        root.tk_setPalette(background='#f0f0f0')
+        from optitex_analyzer.gui.theme import apply_theme
+        apply_theme(root)
         print("✅ סגנון הוגדר בהצלחה")
         
         # יצירת המנהלים

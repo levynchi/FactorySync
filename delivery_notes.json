@@ -861,7 +861,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -912,7 +913,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -935,7 +937,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -992,7 +995,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1009,7 +1013,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1044,7 +1049,8 @@
       {
         "package_type": "בד",
         "quantity": 5,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1084,7 +1090,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1158,7 +1165,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1192,7 +1200,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1274,7 +1283,8 @@
       {
         "package_type": "שק",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1336,7 +1346,8 @@
       {
         "package_type": "שק",
         "quantity": 3,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1387,12 +1398,14 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 4,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       },
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1471,12 +1484,14 @@
       {
         "package_type": "בד",
         "quantity": 2,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       },
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1493,7 +1508,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1516,7 +1532,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1588,7 +1605,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1661,7 +1679,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1678,7 +1697,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1773,7 +1793,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1852,7 +1873,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1892,12 +1914,14 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       },
       {
         "package_type": "בד",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -1926,7 +1950,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -1982,12 +2007,14 @@
       {
         "package_type": "בד",
         "quantity": 8,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       },
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2038,7 +2065,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2106,7 +2134,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2129,7 +2158,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2175,7 +2205,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2226,7 +2257,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2254,7 +2286,8 @@
       {
         "package_type": "שקית קטנה",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2446,7 +2479,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2463,7 +2497,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [
@@ -2519,7 +2554,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2581,7 +2617,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2632,7 +2669,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2746,7 +2784,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2775,7 +2814,8 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
@@ -2826,11 +2866,143 @@
       {
         "package_type": "שק",
         "quantity": 1,
-        "driver": "מוחמד"
+        "driver": "מוחמד",
+        "paid": true
       }
     ],
     "accessories": [],
     "receipt_kind": "delivery_note",
     "created_at": "2026-07-14 12:40:17"
+  },
+  {
+    "id": 71,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-19",
+    "lines": [
+      {
+        "product": "גופיות סבא",
+        "size": "3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 194,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "8",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 194,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "10",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 194,
+        "note": ""
+      },
+      {
+        "product": "גופיות סבא",
+        "size": "12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 194,
+        "note": ""
+      }
+    ],
+    "total_quantity": 776,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-07-19 09:38:58"
+  },
+  {
+    "id": 72,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-20",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "טיק טקים קומפלט",
+        "unit": "יחידות",
+        "quantity": 6000.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-07-20 14:05:50"
+  },
+  {
+    "id": 73,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-29",
+    "lines": [
+      {
+        "product": "אוברול",
+        "size": "3-6",
+        "fabric_type": "פלנל",
+        "fabric_color": "מודפס",
+        "fabric_category": "פלנל מודפס",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 75,
+        "note": ""
+      }
+    ],
+    "total_quantity": 75,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-07-29 13:40:37"
+  },
+  {
+    "id": 74,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-29",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [],
+    "accessories": [
+      {
+        "accessory": "רוכסן 60 ס\"מ",
+        "unit": "יחידות",
+        "quantity": 100.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-07-29 13:51:47"
   }
 ]

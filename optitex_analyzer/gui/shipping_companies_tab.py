@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+from . import theme
 
 class ShippingCompaniesTabMixin:
     """Mixin for shipping companies management tab."""
@@ -13,9 +14,9 @@ class ShippingCompaniesTabMixin:
         title_label = tk.Label(
             container, 
             text="ניהול חברות עמילות/שילוח", 
-            font=('Arial', 16, 'bold'), 
-            bg='#f7f9fa', 
-            fg='#2c3e50'
+            font=(theme.FONT_FAMILY, 16, 'bold'), 
+            bg=theme.PAGE_BG, 
+            fg=theme.DARK
         )
         title_label.pack(pady=(10, 20))
         
@@ -24,31 +25,31 @@ class ShippingCompaniesTabMixin:
         input_frame.pack(fill='x', padx=20, pady=10)
         
         # Company details
-        tk.Label(input_frame, text="שם החברה:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="שם החברה:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.company_name_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.company_name_var, width=30, font=('Arial', 10)).grid(row=0, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.company_name_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=0, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="איש קשר:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="איש קשר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
         self.contact_person_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.contact_person_var, width=30, font=('Arial', 10)).grid(row=0, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.contact_person_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=0, column=3, padx=5, pady=5)
         
         # Contact details
-        tk.Label(input_frame, text="טלפון:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="טלפון:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.phone_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.phone_var, width=30, font=('Arial', 10)).grid(row=1, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.phone_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="מייל:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="מייל:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
         self.email_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.email_var, width=30, font=('Arial', 10)).grid(row=1, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.email_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=3, padx=5, pady=5)
         
         # Additional details
-        tk.Label(input_frame, text="כתובת:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="כתובת:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.address_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.address_var, width=30, font=('Arial', 10)).grid(row=2, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.address_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=1, padx=5, pady=5)
         
-        tk.Label(input_frame, text="הערות:", font=('Arial', 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="הערות:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
         self.notes_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.notes_var, width=30, font=('Arial', 10)).grid(row=2, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.notes_var, width=30, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=3, padx=5, pady=5)
         
         # Buttons
         buttons_frame = tk.Frame(input_frame)
@@ -58,9 +59,9 @@ class ShippingCompaniesTabMixin:
             buttons_frame,
             text="הוסף חברה",
             command=self._add_shipping_company,
-            bg='#27ae60',
+            bg=theme.SUCCESS,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -68,9 +69,9 @@ class ShippingCompaniesTabMixin:
             buttons_frame,
             text="עדכן חברה",
             command=self._update_shipping_company,
-            bg='#f39c12',
+            bg=theme.AMBER,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -78,9 +79,9 @@ class ShippingCompaniesTabMixin:
             buttons_frame,
             text="מחק חברה",
             command=self._delete_shipping_company,
-            bg='#e74c3c',
+            bg=theme.DANGER,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         
@@ -88,9 +89,9 @@ class ShippingCompaniesTabMixin:
             buttons_frame,
             text="נקה שדות",
             command=self._clear_shipping_company_inputs,
-            bg='#95a5a6',
+            bg=theme.MUTED,
             fg='white',
-            font=('Arial', 10, 'bold'),
+            font=(theme.FONT_FAMILY, 10, 'bold'),
             width=15
         ).pack(side='left', padx=5)
         

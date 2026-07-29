@@ -1,26 +1,27 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+from . import theme
 
 class ReturnedDrawingTabMixin:
     """Mixin עבור טאב 'קליטת ציור שנחתך' (לשעבר קליטת ציור חוזר)."""
     def _create_returned_drawing_tab(self):
         """Create standalone top-level 'cut drawings' tab (legacy)."""
-        tab = tk.Frame(self.notebook, bg='#f7f9fa')
+        tab = tk.Frame(self.notebook, bg=theme.PAGE_BG)
         self.notebook.add(tab, text="קליטת ציור שנחתך")
         self._build_returned_drawings_content(tab)
 
     # ===== Embedded builder =====
     def _build_returned_drawings_content(self, container: tk.Widget):
         """Build the returned / cut drawings UI directly in the container (no inner tabs)."""
-        tk.Label(container, text="קליטת ציור שנחתך / חזר מגזירה", font=('Arial',16,'bold'), bg='#f7f9fa', fg='#2c3e50').pack(pady=(8,4))
+        tk.Label(container, text="קליטת ציור שנחתך / חזר מגזירה", font=(theme.FONT_FAMILY,16,'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=(8,4))
 
         # --- Scan content directly ---
         form = ttk.LabelFrame(container, text="פרטי ציור שנחתך", padding=12)
         form.pack(fill='x', padx=8, pady=6)
 
         # Row 0
-        tk.Label(form, text="ציור ID:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=0, column=0, pady=4, sticky='w')
+        tk.Label(form, text="ציור ID:", font=(theme.FONT_FAMILY,10,'bold'), width=12, anchor='w').grid(row=0, column=0, pady=4, sticky='w')
         self.return_drawing_id_var = tk.StringVar()
         # קומבובוקס לבחירת ID מתוך טבלת הציורים (ID – שם קובץ)
         from tkinter import ttk as _ttk_internal  # שמירה אם ערך צבוע ע"י כלים
@@ -35,22 +36,22 @@ class ReturnedDrawingTabMixin:
             self.return_drawing_id_combo.bind('<FocusIn>', lambda e: _on_combo_drop())
         except Exception: pass
         # כפתור רענון קטן ליד
-        tk.Button(form, text="↺", width=3, command=lambda: self._refresh_return_drawing_id_options(), bg='#3498db', fg='white').grid(row=0, column=1, sticky='e', padx=(0,4))
-        tk.Label(form, text="ספק (מוצג אוטומטית):", font=('Arial',10,'bold'), width=18, anchor='w').grid(row=0, column=2, pady=4, sticky='w')
+        tk.Button(form, text="↺", width=3, command=lambda: self._refresh_return_drawing_id_options(), bg=theme.PRIMARY, fg='white').grid(row=0, column=1, sticky='e', padx=(0,4))
+        tk.Label(form, text="ספק (מוצג אוטומטית):", font=(theme.FONT_FAMILY,10,'bold'), width=18, anchor='w').grid(row=0, column=2, pady=4, sticky='w')
         # תצוגה בלבד של שם הספק לפי הציור הנבחר (אין שדה הזנה)
         self.return_supplier_display_var = tk.StringVar(value="")
         tk.Label(form, textvariable=self.return_supplier_display_var, width=25, anchor='w').grid(row=0, column=3, pady=4, sticky='w')
 
         # Row 1
-        tk.Label(form, text="תאריך:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1, column=0, pady=4, sticky='w')
+        tk.Label(form, text="תאריך:", font=(theme.FONT_FAMILY,10,'bold'), width=12, anchor='w').grid(row=1, column=0, pady=4, sticky='w')
         self.return_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         tk.Entry(form, textvariable=self.return_date_var, width=20).grid(row=1, column=1, pady=4, sticky='w')
-        tk.Label(form, text="שכבות:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=1, column=2, pady=4, sticky='w')
+        tk.Label(form, text="שכבות:", font=(theme.FONT_FAMILY,10,'bold'), width=12, anchor='w').grid(row=1, column=2, pady=4, sticky='w')
         self.return_layers_var = tk.StringVar()
         tk.Entry(form, textvariable=self.return_layers_var, width=10).grid(row=1, column=3, pady=4, sticky='w')
 
         # Row 2 - פירוט מוצרים ומידות
-        tk.Label(form, text="פירוט מוצרים:", font=('Arial',10,'bold'), width=12, anchor='w').grid(row=2, column=0, pady=4, sticky='w')
+        tk.Label(form, text="פירוט מוצרים:", font=(theme.FONT_FAMILY,10,'bold'), width=12, anchor='w').grid(row=2, column=0, pady=4, sticky='w')
         self.return_products_display_var = tk.StringVar(value="")
         products_label = tk.Label(form, textvariable=self.return_products_display_var, width=60, anchor='e', wraplength=500, justify='right')
         products_label.grid(row=2, column=1, columnspan=3, pady=4, sticky='e')
@@ -77,14 +78,14 @@ class ReturnedDrawingTabMixin:
         self.scanned_fabrics_tree.pack(side='left', fill='both', expand=True, padx=(4,0), pady=4)
         vs.pack(side='right', fill='y', pady=4)
 
-        btns = tk.Frame(scan_frame, bg='#f7f9fa')
+        btns = tk.Frame(scan_frame, bg=theme.PAGE_BG)
         btns.pack(fill='x', pady=4)
-        tk.Button(btns, text="🗑️ מחק נבחר", command=self._delete_selected_barcode, bg='#e67e22', fg='white').pack(side='left', padx=4)
-        tk.Button(btns, text="❌ נקה הכל", command=self._clear_all_barcodes, bg='#e74c3c', fg='white').pack(side='left', padx=4)
-        tk.Button(btns, text="💾 שמור ציור שנחתך", command=self._save_returned_drawing, bg='#27ae60', fg='white').pack(side='right', padx=4)
+        tk.Button(btns, text="🗑️ מחק נבחר", command=self._delete_selected_barcode, bg=theme.WARNING, fg='white').pack(side='left', padx=4)
+        tk.Button(btns, text="❌ נקה הכל", command=self._clear_all_barcodes, bg=theme.DANGER, fg='white').pack(side='left', padx=4)
+        tk.Button(btns, text="💾 שמור ציור שנחתך", command=self._save_returned_drawing, bg=theme.SUCCESS, fg='white').pack(side='right', padx=4)
 
         self.return_summary_var = tk.StringVar(value="0 ברקודים נסרקו")
-        tk.Label(container, textvariable=self.return_summary_var, bg='#2c3e50', fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
+        tk.Label(container, textvariable=self.return_summary_var, bg=theme.DARK, fg='white', anchor='w', padx=10).pack(fill='x', side='bottom')
 
         self._scanned_barcodes = []
         # לאתחל אפשרויות ID לאחר יצירת הקומפוננטה

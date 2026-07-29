@@ -4,6 +4,7 @@ import re
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
+from . import theme
 
 
 class LabelGeneratorFrame(ttk.Frame):
@@ -38,10 +39,32 @@ class LabelGeneratorFrame(ttk.Frame):
         self.refresh_products()
 
     def _build_ui(self, title):
-        tk.Label(self, text=title, font=('Arial', 14, 'bold')).pack(pady=(10, 5))
+        # אזור גלילה — כדי להגיע לכפתורי PDF/הדפסה מתחת לתור
+        main_frame = tk.Frame(self)
+        main_frame.pack(fill="both", expand=True)
+        canvas = tk.Canvas(main_frame, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        body = tk.Frame(canvas)
+        body.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        win_id = canvas.create_window((0, 0), window=body, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
-        sel = ttk.LabelFrame(self, text="בחירת מוצרים מריווחית", padding=10)
-        sel.pack(fill="both", expand=True, padx=15, pady=10)
+        def _configure_scroll_region(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.itemconfig(win_id, width=event.width)
+        canvas.bind("<Configure>", _configure_scroll_region)
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+
+        tk.Label(body, text=title, font=(theme.FONT_FAMILY, 14, 'bold')).pack(pady=(10, 5))
+
+        sel = ttk.LabelFrame(body, text="בחירת מוצרים מריווחית", padding=10)
+        sel.pack(fill="x", padx=15, pady=10)
 
         row1 = tk.Frame(sel)
         row1.pack(fill="x", pady=5)
@@ -57,10 +80,10 @@ class LabelGeneratorFrame(ttk.Frame):
         search_entry.pack(side="right", padx=5)
         search_entry.bind('<KeyRelease>', lambda e: self._refresh_products_table())
 
-        tk.Button(row1, text="🧹 נקה סינון", bg="#95a5a6", fg="white",
+        tk.Button(row1, text="🧹 נקה סינון", bg=theme.MUTED, fg="white",
                   command=self._clear_filters).pack(side="right", padx=10)
-        tk.Button(row1, text="➕ הוסף הכל לתור", bg="#27ae60", fg="white",
-                  font=('Arial', 10, 'bold'), command=self._add_all_to_queue).pack(side="left", padx=10)
+        tk.Button(row1, text="➕ הוסף הכל לתור", bg=theme.SUCCESS, fg="white",
+                  font=(theme.FONT_FAMILY, 10, 'bold'), command=self._add_all_to_queue).pack(side="left", padx=10)
 
         row_pack = tk.Frame(sel)
         row_pack.pack(fill="x", pady=(0, 5))
@@ -79,11 +102,11 @@ class LabelGeneratorFrame(ttk.Frame):
             text="טיפ: לחץ פעמיים על תא 'כמות' כדי להזין כמות לכל מוצר, ואז 'הוסף הכל לתור'. "
                  "גודל המארז (3/5) חל על כל המדבקות — ניתן לשנות לפני יצירת PDF או הדפסה. "
                  "לעריכת שדות המדבקה - בטאב ריווחית, דאבל-קליק על מוצר.",
-            fg="#95a5a6", font=('Arial', 8), justify="right", anchor="e",
+            fg=theme.MUTED, font=(theme.FONT_FAMILY, 8), justify="right", anchor="e",
         ).pack(fill="x", pady=(2, 6))
 
         prod_frame = tk.Frame(sel)
-        prod_frame.pack(fill="both", expand=True)
+        prod_frame.pack(fill="x")
         pcols = ("name", "size", "fabric", "barcode", "qty")
         pheaders = {"name": "שם המוצר", "size": "מידה", "fabric": "סוג בד",
                     "barcode": "ברקוד", "qty": "כמות"}
@@ -96,17 +119,16 @@ class LabelGeneratorFrame(ttk.Frame):
         self._products_tree.configure(yscrollcommand=pvs.set)
         self._products_tree.grid(row=0, column=0, sticky="nsew")
         pvs.grid(row=0, column=1, sticky="ns")
-        prod_frame.grid_rowconfigure(0, weight=1)
         prod_frame.grid_columnconfigure(0, weight=1)
         self._products_tree.bind('<Double-1>', self._edit_qty_cell)
 
-        queue_frame = ttk.LabelFrame(self, text="תור מדבקות", padding=10)
-        queue_frame.pack(fill="both", expand=True, padx=15, pady=10)
+        queue_frame = ttk.LabelFrame(body, text="תור מדבקות", padding=10)
+        queue_frame.pack(fill="x", padx=15, pady=10)
 
         cols = ("print_name", "size", "fabric", "pack", "barcode", "qty")
         headers = {"print_name": "שם להדפסה", "size": "מידה", "fabric": "סוג בד",
                    "pack": "מארז", "barcode": "ברקוד", "qty": "כמות"}
-        self._queue_tree = ttk.Treeview(queue_frame, columns=cols, show="headings")
+        self._queue_tree = ttk.Treeview(queue_frame, columns=cols, show="headings", height=8)
         for c in cols:
             self._queue_tree.heading(c, text=headers[c])
             w = 70 if c in ("size", "pack", "qty") else 160
@@ -115,26 +137,25 @@ class LabelGeneratorFrame(ttk.Frame):
         self._queue_tree.configure(yscrollcommand=vs.set)
         self._queue_tree.grid(row=0, column=0, sticky="nsew")
         vs.grid(row=0, column=1, sticky="ns")
-        queue_frame.grid_rowconfigure(0, weight=1)
         queue_frame.grid_columnconfigure(0, weight=1)
 
         self._summary_var = tk.StringVar(value='סה"כ: 0 מדבקות | 0 דפים (15 לדף)')
         tk.Label(queue_frame, textvariable=self._summary_var, anchor="e", justify="right",
-                 font=('Arial', 11, 'bold'), fg="#2c3e50").grid(
+                 font=(theme.FONT_FAMILY, 11, 'bold'), fg=theme.DARK).grid(
             row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
-        actions = tk.Frame(self)
-        actions.pack(fill="x", padx=15, pady=(0, 10))
-        tk.Button(actions, text="🗑️ מחק נבחר", bg="#e67e22", fg="white",
+        actions = tk.Frame(body)
+        actions.pack(fill="x", padx=15, pady=(0, 16))
+        tk.Button(actions, text="🗑️ מחק נבחר", bg=theme.WARNING, fg="white",
                   command=self._delete_selected).pack(side="left", padx=5)
-        tk.Button(actions, text="🧹 נקה הכל", bg="#95a5a6", fg="white",
+        tk.Button(actions, text="🧹 נקה הכל", bg=theme.MUTED, fg="white",
                   command=self._clear_queue).pack(side="left", padx=5)
-        tk.Button(actions, text="🖨️ הדפס", bg="#2980b9", fg="white",
-                  font=('Arial', 11, 'bold'), command=self._print).pack(side="right", padx=5)
-        tk.Button(actions, text="🧾 צור דף מדבקות (PDF)", bg="#27ae60", fg="white",
-                  font=('Arial', 11, 'bold'), command=self._generate_pdf).pack(side="right", padx=5)
-        tk.Button(actions, text="📁 ייצא קבצים בודדים (PDF)", bg="#8e44ad", fg="white",
-                  font=('Arial', 11, 'bold'), command=self._export_single_pdfs).pack(side="right", padx=5)
+        tk.Button(actions, text="🖨️ הדפס", bg=theme.PRIMARY_DARK, fg="white",
+                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._print).pack(side="right", padx=5)
+        tk.Button(actions, text="🧾 צור דף מדבקות (PDF)", bg=theme.SUCCESS, fg="white",
+                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._generate_pdf).pack(side="right", padx=5)
+        tk.Button(actions, text="📁 ייצא קבצים בודדים (PDF)", bg=theme.PURPLE, fg="white",
+                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._export_single_pdfs).pack(side="right", padx=5)
 
     def _rivhit_products(self):
         dp = self.data_processor
