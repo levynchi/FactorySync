@@ -1,22 +1,58 @@
 [
   {
-    "name": "תכלת קשי 29.07.26",
-    "hex": "#7387a8"
+    "name": "תכלת",
+    "hex": "#7387a8",
+    "supplier": "קשי",
+    "sampled_at": "02.08.26",
+    "image": "assets\\fabric_colors\\תכלת_קשי_290726.png"
   },
   {
-    "name": "ורוד קשי 29.07.26",
-    "hex": "#ffa4a4"
+    "name": "ורוד",
+    "hex": "#ffa4a4",
+    "supplier": "קשי",
+    "sampled_at": "02.08.26",
+    "image": ""
   },
   {
-    "name": "בז' אפרפר קשי 29.07.26",
-    "hex": "#c3beb8"
+    "name": "בז אפרפר",
+    "hex": "#c3beb8",
+    "supplier": "קשי",
+    "sampled_at": "02.08.26",
+    "image": ""
   },
   {
-    "name": "אפור עשן בהיר קשי 29.07.26",
-    "hex": "#dedede"
+    "name": "אפור פנינה בהיר",
+    "hex": "#dedcdd",
+    "supplier": "קשי",
+    "sampled_at": "02.08.26",
+    "image": ""
   },
   {
-    "name": "אפור פנינה קשי 29.07.26",
-    "hex": "#dedcdd"
+    "name": "לבן",
+    "hex": "#ffffff",
+    "supplier": "אריה",
+    "sampled_at": "02.08.26",
+    "image": ""
+  },
+  {
+    "name": "שמנת",
+    "hex": "#f8fce2",
+    "supplier": "אריה",
+    "sampled_at": "02.08.26",
+    "image": ""
+  },
+  {
+    "name": "מוקה בהיר",
+    "hex": "#dbbca5",
+    "supplier": "קשי",
+    "sampled_at": "03.08.26",
+    "image": ""
+  },
+  {
+    "name": "חום עתיק",
+    "hex": "#835f57",
+    "supplier": "קשי",
+    "sampled_at": "03.08.26",
+    "image": ""
   }
 ]

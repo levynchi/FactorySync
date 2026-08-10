@@ -539,6 +539,31 @@ class RivhitTabMixin:
     _RIVHIT_NEW_COLS = ('item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'digital_price', 'compute_0036')
 
     def _build_rivhit_add_subtab(self, tab):
+        # עטיפה נגללת - התוכן ארוך מגובה המסך (טופס + מידות + צבעים + מדבקה + ייצוא)
+        outer = tk.Frame(tab, bg=theme.PAGE_BG)
+        outer.pack(fill='both', expand=True)
+        canvas = tk.Canvas(outer, bg=theme.PAGE_BG, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(outer, orient='vertical', command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg=theme.PAGE_BG)
+        scroll_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        _win_id = canvas.create_window((0, 0), window=scroll_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        def _configure_scroll_region(event):
+            canvas.configure(scrollregion=canvas.bbox('all'))
+            canvas.itemconfig(_win_id, width=event.width)
+        canvas.bind('<Configure>', _configure_scroll_region)
+
+        # גלגלת עכבר גוללת רק כשהסמן מעל הלשונית הזו
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        canvas.bind('<Enter>', lambda e: canvas.bind_all('<MouseWheel>', _on_mousewheel))
+        canvas.bind('<Leave>', lambda e: canvas.unbind_all('<MouseWheel>'))
+
+        tab = scroll_frame
+
         tk.Label(tab, text="הוספת מוצרים וייצוא לריווחית", font=(theme.FONT_FAMILY, 16, 'bold'), bg=theme.PAGE_BG, fg=theme.DARK).pack(pady=8)
 
         # Add form
@@ -646,6 +671,7 @@ class RivhitTabMixin:
         toolbar.pack(fill='x', padx=15, pady=(8, 2))
         tk.Label(toolbar, text="מוצרים ממתינים לייצוא:", bg=theme.PAGE_BG, font=(theme.FONT_FAMILY, 11, 'bold')).pack(side='right')
         tk.Button(toolbar, text="⬇️ ייצא קובץ לריווחית", command=self._export_rivhit_new, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
+        tk.Button(toolbar, text="🔗 עדכן ריווחית (API)", command=self._update_rivhit_via_api, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
         tk.Button(toolbar, text="🌐 ייצוא לאתר", command=self._export_rivhit_to_website, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
         tk.Button(toolbar, text="🗑️ נקה הכל", command=self._clear_rivhit_new, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
         tk.Button(toolbar, text="מחק נבחר", command=self._delete_rivhit_new_selected, bg=theme.MUTED, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=4)
@@ -864,6 +890,38 @@ class RivhitTabMixin:
         except Exception:
             return '#000000'
 
+    # גודל אחיד לדוגמית בד — כמו ריבוע קוד הצבע במניפה באתר (~84px), לא תמונה גדולה
+    FABRIC_SWATCH_SIZE = 96
+
+    @classmethod
+    def _normalize_fabric_image(cls, img):
+        """מנרמל תמונת בד לדוגמית אחידה: ריבוע FABRIC_SWATCH_SIZE x FABRIC_SWATCH_SIZE.
+
+        חיתוך מרכזי לריבוע; תמונה גדולה מוקטנת באיכות גבוהה (LANCZOS),
+        ותמונה קטנה (למשל חיתוך מסך קטן) מרוצפת בשיקוף כדי לשמור על
+        חדות הטקסטורה במקום הגדלה שמטשטשת.
+        """
+        from PIL import Image
+        size = cls.FABRIC_SWATCH_SIZE
+        img = img.convert('RGB')
+        w, h = img.size
+        side = min(w, h)
+        left, top = (w - side) // 2, (h - side) // 2
+        square = img.crop((left, top, left + side, top + side))
+        if side >= size:
+            return square.resize((size, size), Image.LANCZOS)
+        canvas = Image.new('RGB', (size, size))
+        tiles = -(-size // side)  # עיגול כלפי מעלה
+        for row in range(tiles):
+            for col in range(tiles):
+                tile = square
+                if col % 2 == 1:
+                    tile = tile.transpose(Image.FLIP_LEFT_RIGHT)
+                if row % 2 == 1:
+                    tile = tile.transpose(Image.FLIP_TOP_BOTTOM)
+                canvas.paste(tile, (col * side, row * side))
+        return canvas
+
     def _build_rivhit_colors_checkboxes(self):
         for w in self.rivhit_colors_grid.winfo_children():
             w.destroy()
@@ -947,15 +1005,17 @@ class RivhitTabMixin:
 
         table_frame = tk.Frame(dlg)
         table_frame.pack(fill='both', expand=True, padx=12, pady=6)
-        tree = ttk.Treeview(table_frame, columns=('name', 'hex', 'supplier', 'sampled_at'), show='headings')
+        tree = ttk.Treeview(table_frame, columns=('name', 'hex', 'supplier', 'sampled_at', 'image'), show='headings')
         tree.heading('name', text='שם הצבע')
         tree.heading('hex', text='קוד צבע')
         tree.heading('supplier', text='ספק')
         tree.heading('sampled_at', text='תאריך דגימה')
-        tree.column('name', width=200, anchor='center')
-        tree.column('hex', width=100, anchor='center')
-        tree.column('supplier', width=150, anchor='center')
-        tree.column('sampled_at', width=110, anchor='center')
+        tree.heading('image', text='תמונה')
+        tree.column('name', width=190, anchor='center')
+        tree.column('hex', width=95, anchor='center')
+        tree.column('supplier', width=140, anchor='center')
+        tree.column('sampled_at', width=105, anchor='center')
+        tree.column('image', width=60, anchor='center')
         vsb = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
         tree.configure(yscroll=vsb.set)
         tree.grid(row=0, column=0, sticky='nsew')
@@ -977,6 +1037,7 @@ class RivhitTabMixin:
                     name, hex_val,
                     str((entry or {}).get('supplier', '')),
                     str((entry or {}).get('sampled_at', '')),
+                    '✓' if str((entry or {}).get('image', '')).strip() else '',
                 ), tags=(tag,))
             # רענון הצ'קבוקסים בטופס ההוספה
             self._build_rivhit_colors_checkboxes()
@@ -1138,12 +1199,12 @@ class RivhitTabMixin:
         overlay.focus_force()
 
     def _prompt_save_picked_color(self, hex_val, parent=None, on_saved=None, edit_name=None):
-        """דיאלוג שמירה/עריכה של צבע: קוד (עם העתקה), שם, ספק ותאריך דגימה.
+        """דיאלוג שמירה/עריכה של צבע: קוד (עם העתקה), שם, ספק, תאריך דגימה ותמונת בד.
 
         edit_name: שם צבע קיים לעריכה - הפרטים נטענים ממנו והשמירה מעדכנת אותו.
+        תמונת בד אפשר להדביק מהלוח (Ctrl+V), לבחור מקובץ, ולדגום ממנה מחדש את קוד הצבע.
         """
         from datetime import datetime
-        hex_val = self._valid_hex(hex_val) or '#cccccc'
         existing = {}
         if edit_name:
             existing = next((e for e in (getattr(self.data_processor, 'fabric_colors_palette', []) or [])
@@ -1155,18 +1216,32 @@ class RivhitTabMixin:
         frm = tk.Frame(dlg, padx=15, pady=15)
         frm.pack(fill='both', expand=True)
 
-        tk.Label(frm, width=8, height=3, bg=hex_val, relief='solid', bd=1).grid(row=0, column=0, rowspan=2, padx=(0, 12))
+        # קוד הצבע וה-swatch דינמיים - דגימה מחדש מהתמונה מעדכנת אותם
+        hex_state = {'hex': self._valid_hex(hex_val) or '#cccccc'}
+        swatch = tk.Label(frm, width=8, height=3, bg=hex_state['hex'], relief='solid', bd=1)
+        swatch.grid(row=0, column=0, rowspan=2, padx=(0, 12))
         tk.Label(frm, text='קוד הצבע:', anchor='e').grid(row=0, column=2, sticky='e', padx=(6, 2))
         hex_entry = tk.Entry(frm, width=12, font=('Consolas', 12, 'bold'), justify='center')
-        hex_entry.insert(0, hex_val)
-        hex_entry.config(state='readonly')
         hex_entry.grid(row=0, column=1, sticky='w')
+
+        def set_hex(new_hex):
+            new_hex = self._valid_hex(new_hex)
+            if not new_hex:
+                return
+            hex_state['hex'] = new_hex
+            swatch.config(bg=new_hex)
+            hex_entry.config(state='normal')
+            hex_entry.delete(0, 'end')
+            hex_entry.insert(0, new_hex)
+            hex_entry.config(state='readonly')
+
+        set_hex(hex_state['hex'])
 
         copied_var = tk.StringVar(value='')
 
         def copy_hex():
             dlg.clipboard_clear()
-            dlg.clipboard_append(hex_val)
+            dlg.clipboard_append(hex_state['hex'])
             copied_var.set('הועתק!')
             dlg.after(1500, lambda: copied_var.set(''))
 
@@ -1189,22 +1264,183 @@ class RivhitTabMixin:
         date_var = tk.StringVar(value=str(existing.get('sampled_at', '')).strip() or datetime.now().strftime('%d.%m.%y'))
         tk.Entry(frm, textvariable=date_var, width=12, justify='center').grid(row=4, column=0, columnspan=2, sticky='w', pady=(6, 0))
 
+        # --- תמונת בד מצורפת ---
+        # pil: תמונה חדשה בזיכרון (מהלוח/מקובץ); path: תמונה קיימת בדיסק; changed: האם לשכתב בשמירה
+        img_state = {'pil': None, 'path': str(existing.get('image', '')).strip(), 'changed': False}
+        tk.Label(frm, text='תמונת בד:', anchor='e').grid(row=5, column=2, sticky='ne', padx=(6, 2), pady=(10, 0))
+        img_frame = tk.Frame(frm)
+        img_frame.grid(row=5, column=0, columnspan=2, sticky='w', pady=(10, 0))
+        preview_lbl = tk.Label(img_frame, text='(אין תמונה)', width=8, height=3,
+                               relief='solid', bd=1, bg=theme.PAGE_BG, compound='center')
+        preview_lbl.grid(row=0, column=0, columnspan=4, pady=(0, 4))
+
+        def _current_pil():
+            """התמונה הנוכחית כ-PIL: מהזיכרון או מהדיסק. None אם אין."""
+            if img_state['pil'] is not None:
+                return img_state['pil']
+            rel = img_state['path']
+            if rel:
+                abs_path = rel if os.path.isabs(rel) else os.path.join(os.getcwd(), rel)
+                if os.path.exists(abs_path):
+                    try:
+                        from PIL import Image
+                        return Image.open(abs_path).convert('RGB')
+                    except Exception:
+                        return None
+            return None
+
+        brightness_var = tk.DoubleVar(value=1.0)
+
+        def _adjusted_pil():
+            """התמונה הנוכחית אחרי התאמת בהירות - זה מה שמוצג ומה שנשמר."""
+            img = _current_pil()
+            if img is None:
+                return None
+            factor = float(brightness_var.get() or 1.0)
+            if abs(factor - 1.0) > 0.01:
+                from PIL import ImageEnhance
+                img = ImageEnhance.Brightness(img).enhance(factor)
+            return img
+
+        def _update_preview():
+            img = _adjusted_pil()
+            if img is not None:
+                try:
+                    from PIL import Image, ImageTk
+                    # תצוגה מקדימה באותו גודל כמו הקובץ שנשמר (דוגמית קטנה)
+                    side = self.FABRIC_SWATCH_SIZE
+                    shown = img.copy()
+                    if shown.size != (side, side):
+                        shown = shown.resize((side, side), Image.LANCZOS)
+                    preview_lbl._img_ref = ImageTk.PhotoImage(shown)
+                    # עם תמונה width/height נמדדים בפיקסלים - חובה לעדכן לגודל התמונה
+                    preview_lbl.config(image=preview_lbl._img_ref, text='', width=side, height=side)
+                    return
+                except Exception:
+                    pass
+            preview_lbl._img_ref = None
+            preview_lbl.config(image='', text='(אין תמונה)', width=8, height=3)
+
+        def paste_image(event=None):
+            img = self._grab_clipboard_image(dlg)
+            if img is None:
+                messagebox.showinfo("אין תמונה בלוח",
+                                    "העתק תמונה (Print Screen או Win+Shift+S לחיתוך אזור) ואז לחץ הדבק",
+                                    parent=dlg)
+                return
+            img_state['pil'] = self._normalize_fabric_image(img)
+            img_state['changed'] = True
+            brightness_var.set(1.0)
+            bright_pct.config(text='100%')
+            _update_preview()
+
+        def choose_image_file():
+            path = filedialog.askopenfilename(
+                title='בחר תמונת בד',
+                filetypes=[('תמונות', '*.png *.jpg *.jpeg *.gif *.bmp *.webp'), ('כל הקבצים', '*.*')],
+                parent=dlg,
+            )
+            if not path:
+                return
+            try:
+                from PIL import Image
+                img_state['pil'] = self._normalize_fabric_image(Image.open(path))
+            except Exception as e:
+                messagebox.showerror("שגיאה", f"לא ניתן לפתוח את התמונה:\n{e}", parent=dlg)
+                return
+            img_state['changed'] = True
+            brightness_var.set(1.0)
+            bright_pct.config(text='100%')
+            _update_preview()
+
+        def remove_image():
+            img_state['pil'] = None
+            img_state['path'] = ''
+            img_state['changed'] = True
+            brightness_var.set(1.0)
+            bright_pct.config(text='100%')
+            _update_preview()
+
+        def resample_from_image():
+            img = _adjusted_pil()
+            if img is None:
+                messagebox.showinfo("אין תמונה", "הדבק או בחר תמונת בד קודם", parent=dlg)
+                return
+            self._add_fabric_color_from_image(parent=dlg, image=img.copy(), on_picked=set_hex)
+
+        # --- מחוון בהירות: הבהרה/הכהיה של הבד אחרי הנירמול ---
+        bright_row = tk.Frame(img_frame)
+        bright_row.grid(row=1, column=0, columnspan=4, sticky='ew', pady=(0, 4))
+        tk.Label(bright_row, text='בהירות:', font=(theme.FONT_FAMILY, 9)).pack(side='right', padx=(0, 4))
+        bright_pct = tk.Label(bright_row, text='100%', width=5, font=(theme.FONT_FAMILY, 9, 'bold'))
+        bright_pct.pack(side='right')
+
+        def on_brightness(_=None):
+            bright_pct.config(text=f"{int(round(float(brightness_var.get()) * 100))}%")
+            if _current_pil() is not None:
+                img_state['changed'] = True
+            _update_preview()
+
+        ttk.Scale(bright_row, from_=0.5, to=2.0, variable=brightness_var,
+                  orient='horizontal', command=on_brightness).pack(side='right', fill='x', expand=True, padx=(4, 4))
+
+        def reset_brightness():
+            brightness_var.set(1.0)
+            on_brightness()
+
+        tk.Button(bright_row, text='אפס', command=reset_brightness, font=(theme.FONT_FAMILY, 8)).pack(side='left')
+
+        tk.Button(img_frame, text='📋 הדבק מהלוח', command=paste_image, font=(theme.FONT_FAMILY, 9)).grid(row=2, column=0, padx=(0, 4))
+        tk.Button(img_frame, text='בחר קובץ…', command=choose_image_file, font=(theme.FONT_FAMILY, 9)).grid(row=2, column=1, padx=(0, 4))
+        tk.Button(img_frame, text='הסר', command=remove_image, font=(theme.FONT_FAMILY, 9)).grid(row=2, column=2, padx=(0, 4))
+        tk.Button(img_frame, text='🎯 דגום צבע מהתמונה', command=resample_from_image, bg=theme.PURPLE, fg='white', font=(theme.FONT_FAMILY, 9, 'bold')).grid(row=2, column=3)
+        _update_preview()
+        # keycode 86 = מקש V בכל פריסת מקלדת (גם בעברית)
+        dlg.bind('<Control-KeyPress>', lambda e: paste_image() if e.keycode == 86 else None)
+
+        def _save_image_file(name):
+            """כותב תמונה חדשה לדיסק לפי שם הצבע ומחזיר נתיב יחסי; מוחק קובץ ישן אם הוסר."""
+            old_rel = str(existing.get('image', '')).strip()
+            if not img_state['changed']:
+                return img_state['path']
+            new_rel = ''
+            final_img = _adjusted_pil()  # כולל התאמת בהירות; עובד גם כשרק הבהירות שונתה על תמונה מהדיסק
+            if final_img is not None:
+                dest_dir = os.path.join(os.getcwd(), 'assets', 'fabric_colors')
+                os.makedirs(dest_dir, exist_ok=True)
+                safe = ''.join(ch for ch in name if ch.isalnum() or ch in ' _-').strip().replace(' ', '_') or 'color'
+                dest = os.path.join(dest_dir, f"{safe}.png")
+                final_img.save(dest, 'PNG')
+                new_rel = os.path.relpath(dest, os.getcwd())
+            # מחיקת הקובץ הישן אם הוחלף בנתיב אחר או הוסר
+            if old_rel and old_rel != new_rel:
+                old_abs = old_rel if os.path.isabs(old_rel) else os.path.join(os.getcwd(), old_rel)
+                try:
+                    if os.path.exists(old_abs):
+                        os.remove(old_abs)
+                except Exception:
+                    pass
+            return new_rel
+
         def save():
             name = (name_var.get() or '').strip()
             if not name:
                 messagebox.showwarning("שדה חסר", "יש להזין שם צבע כדי לשמור לפלטה", parent=dlg)
                 return
             try:
+                image_rel = _save_image_file(name)
                 if edit_name:
                     self.data_processor.update_fabric_palette_color(edit_name, {
                         'name': name,
-                        'hex': hex_val,
+                        'hex': hex_state['hex'],
                         'supplier': supplier_var.get(),
                         'sampled_at': date_var.get(),
+                        'image': image_rel,
                     })
                 else:
                     self.data_processor.add_fabric_palette_color(
-                        name, hex_val, supplier=supplier_var.get(), sampled_at=date_var.get())
+                        name, hex_state['hex'], supplier=supplier_var.get(),
+                        sampled_at=date_var.get(), image=image_rel)
             except Exception as e:
                 messagebox.showerror("שגיאה", str(e), parent=dlg)
                 return
@@ -1215,7 +1451,7 @@ class RivhitTabMixin:
                 self._build_rivhit_colors_checkboxes()
 
         btns = tk.Frame(frm)
-        btns.grid(row=5, column=0, columnspan=3, pady=(14, 0))
+        btns.grid(row=6, column=0, columnspan=3, pady=(14, 0))
         tk.Button(btns, text="💾 שמור לפלטה", command=save, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(btns, text="סגור", command=dlg.destroy).pack(side='left', padx=5)
         dlg.bind('<Return>', lambda e: save())
@@ -1246,10 +1482,12 @@ class RivhitTabMixin:
         except Exception:
             return None
 
-    def _add_fabric_color_from_image(self, parent=None, on_saved=None, image=None):
+    def _add_fabric_color_from_image(self, parent=None, on_saved=None, image=None, on_picked=None):
         """פיקר צבע מתמונת בד: לחיצה על התמונה דוגמת ממוצע אזור 5x5.
 
         image: תמונת PIL מוכנה (למשל מהדבקה מהלוח); אם לא נמסרה - נפתח דיאלוג בחירת קובץ.
+        on_picked: callback שמקבל את ה-hex הנדגם; כשנמסר - הקנבס רק מחזיר את הצבע
+        (לדוגמה לעדכון צבע קיים) במקום לפתוח דיאלוג שמירת צבע חדש.
         """
         try:
             from PIL import Image, ImageTk
@@ -1345,11 +1583,14 @@ class RivhitTabMixin:
                 return
             hex_val = picked['hex']
             dlg.destroy()
-            self._prompt_save_picked_color(hex_val, parent=parent, on_saved=on_saved)
+            if callable(on_picked):
+                on_picked(hex_val)
+            else:
+                self._prompt_save_picked_color(hex_val, parent=parent, on_saved=on_saved)
 
         btns = tk.Frame(dlg)
         btns.pack(pady=(4, 12))
-        tk.Button(btns, text="💾 שמור צבע", command=save, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="✔ אשר צבע" if callable(on_picked) else "💾 שמור צבע", command=save, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(btns, text="📋 הדבק מהלוח", command=paste_clipboard, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
         # keycode 86 = מקש V בכל פריסת מקלדת (גם בעברית)
@@ -1429,9 +1670,35 @@ class RivhitTabMixin:
             messagebox.showerror("שגיאה", str(e))
 
     # ===== ייצוא לאתר הקטלוג הלבן =====
+    def _encode_fabric_image_b64(self, color_name):
+        """תמונת ההדמיה של צבע מהפלטה כ-JPEG בקידוד base64 (לשליחה לאתר). '' אם אין."""
+        entry = next((e for e in (getattr(self.data_processor, 'fabric_colors_palette', []) or [])
+                      if str((e or {}).get('name', '')).strip() == color_name), None)
+        rel = str((entry or {}).get('image', '')).strip()
+        if not rel:
+            return ''
+        path = rel if os.path.isabs(rel) else os.path.join(os.getcwd(), rel)
+        if not os.path.exists(path):
+            return ''
+        try:
+            import base64
+            import io
+            from PIL import Image
+            buf = io.BytesIO()
+            Image.open(path).convert('RGB').save(buf, 'JPEG', quality=88)
+            return base64.b64encode(buf.getvalue()).decode('ascii')
+        except Exception:
+            return ''
+
     def _export_rivhit_to_website(self):
-        """ייצוא המוצרים הממתינים כווריאנטים למוצר קיים באתר הקטלוג הלבן."""
+        """ייצוא המוצרים הממתינים כווריאנטים למוצר קיים באתר הקטלוג הלבן.
+
+        אם סנכרון ריווחית מופעל - אחרי שליחה מוצלחת לאתר אותם מוצרים נשלחים גם
+        לריווחית (יצירת חדשים ועדכון קיימים), כך ששני היעדים נשארים מסונכרנים.
+        """
+        import threading
         from ..core.website_export import WebsiteClient, WebsiteExportError
+        from ..core.rivhit_api import RivhitOnlineClient, RivhitApiError
 
         pending = list(getattr(self.data_processor, 'rivhit_new_products', []) or [])
         if not pending:
@@ -1529,6 +1796,72 @@ class RivhitTabMixin:
         tk.Radiobutton(price_box, text="מחיר לצרכן דיגיטלי", variable=price_src_var, value='digital').pack(side='right', padx=6)
         tk.Radiobutton(price_box, text="מחיר מכירה", variable=price_src_var, value='sale').pack(side='right', padx=6)
 
+        # --- סנכרון ריווחית ---
+        riv_box = tk.LabelFrame(frm, text="סנכרון ריווחית", padx=8, pady=6)
+        riv_box.pack(fill='x', pady=(0, 8))
+        riv_auto_var = tk.BooleanVar(value=bool(self.settings.get('rivhit.auto_sync', True)))
+        riv_state = {'groups': [], 'load_result': None}
+        riv_check = tk.Checkbutton(riv_box, text="עדכן גם את ריווחית אוטומטית (יצירת פריטים חדשים ועדכון קיימים)", variable=riv_auto_var)
+        riv_check.pack(anchor='e')
+        rg = tk.Frame(riv_box); rg.pack(fill='x', pady=2)
+        tk.Label(rg, text='קבוצה:', anchor='e', width=8).pack(side='right')
+        riv_group_combo = ttk.Combobox(rg, state='disabled', width=36)
+        riv_group_combo.pack(side='right', padx=(0, 8))
+        riv_status_var = tk.StringVar(value='טוען קבוצות פריטים מריווחית...')
+        tk.Label(riv_box, textvariable=riv_status_var, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9)).pack(anchor='e', pady=(2, 0))
+
+        def _rivhit_unavailable(msg):
+            if not dlg.winfo_exists():
+                return
+            riv_auto_var.set(False)
+            riv_check.config(state='disabled')
+            riv_status_var.set(msg)
+
+        def _rivhit_ready(groups):
+            if not dlg.winfo_exists():
+                return
+            riv_state['groups'] = groups
+            labels = [f"{g.get('item_group_name', '')} ({g.get('item_group_id', '')})" for g in groups]
+            riv_group_combo['values'] = labels
+            riv_group_combo.config(state='readonly')
+            default_gid = self.settings.get('rivhit.default_group_id', 16)
+            default_idx = 0
+            for i, g in enumerate(groups):
+                if g.get('item_group_id') == default_gid:
+                    default_idx = i
+                    break
+            if labels:
+                riv_group_combo.current(default_idx)
+            riv_status_var.set(f'חיבור לריווחית תקין ✓ | {len(groups)} קבוצות')
+
+        def _load_rivhit_groups_bg():
+            # רץ ב-thread רקע: כותב את התוצאה בלבד; ה-UI קורא אותה ב-poll מה-thread הראשי
+            token = (self.settings.get('rivhit.api_token', '') or '').strip()
+            if not token:
+                riv_state['load_result'] = ('err', 'לא הוגדר טוקן ריווחית (דרך "עדכן ריווחית (API)") - הסנכרון כבוי')
+                return
+            try:
+                groups = RivhitOnlineClient(token).item_groups()
+            except RivhitApiError as e:
+                riv_state['load_result'] = ('err', f'ריווחית לא זמינה - הסנכרון כבוי ({e})')
+                return
+            riv_state['load_result'] = ('ok', groups)
+
+        def _poll_rivhit_load():
+            if not dlg.winfo_exists():
+                return
+            res = riv_state['load_result']
+            if res is None:
+                dlg.after(150, _poll_rivhit_load)
+                return
+            if res[0] == 'ok':
+                _rivhit_ready(res[1])
+            else:
+                _rivhit_unavailable(res[1])
+
+        threading.Thread(target=_load_rivhit_groups_bg, daemon=True).start()
+        dlg.after(150, _poll_rivhit_load)
+
         def send():
             idx = product_combo.current()
             if idx < 0 or not meta_state['products']:
@@ -1556,6 +1889,8 @@ class RivhitTabMixin:
                     color_hex = str(rec.get('color_hex', '')).strip()
                     if color_hex:
                         row['color_hex'] = color_hex
+                    # באתר מוצג רק ריבוע קוד הצבע (hex) - לא תמונת צילום הבד
+                    row['clear_image'] = True
                 rows.append(row)
             try:
                 client = WebsiteClient(url_var.get(), token_var.get())
@@ -1567,8 +1902,10 @@ class RivhitTabMixin:
             url_key, token_key, _, _ = _target_keys()
             self.settings.set(url_key, (url_var.get() or '').strip())
             self.settings.set(token_key, (token_var.get() or '').strip())
+            self.settings.set('rivhit.auto_sync', bool(riv_auto_var.get()))
 
             lines = [
+                "--- אתר ---",
                 f"מוצר: {result.get('product', '')}",
                 f"נוצרו: {result.get('created', 0)} | עודכנו: {result.get('updated', 0)}",
             ]
@@ -1580,14 +1917,215 @@ class RivhitTabMixin:
                 lines.extend(errors[:15])
                 if len(errors) > 15:
                     lines.append(f"...ועוד {len(errors) - 15} שגיאות")
+
+            # סנכרון ריווחית - רק אחרי שהשליחה לאתר הצליחה
+            rivhit_failed = False
+            if riv_auto_var.get() and riv_state['groups']:
+                gidx = riv_group_combo.current()
+                group_id = riv_state['groups'][gidx].get('item_group_id') if gidx >= 0 else None
+                try:
+                    token = (self.settings.get('rivhit.api_token', '') or '').strip()
+                    riv_result = self._sync_products_to_rivhit(
+                        RivhitOnlineClient(token), pending, group_id, update_existing=True)
+                    self.settings.set('rivhit.default_group_id', group_id)
+                    lines.append("")
+                    lines.append("--- ריווחית ---")
+                    lines.extend(self._format_rivhit_sync_summary(riv_result))
+                    rivhit_failed = bool(riv_result['errors'])
+                except RivhitApiError as e:
+                    rivhit_failed = True
+                    lines.append("")
+                    lines.append("⚠️ האתר עודכן, אבל עדכון ריווחית נכשל:")
+                    lines.append(str(e))
+                    lines.append('אפשר לנסות שוב דרך הכפתור "עדכן ריווחית (API)".')
+
+            if errors or rivhit_failed:
                 messagebox.showwarning("הסתיים עם שגיאות", "\n".join(lines), parent=dlg)
             else:
                 dlg.destroy()
-                messagebox.showinfo("הצלחה", "\n".join(lines))
+                messagebox.showinfo("הצלחה", "\n".join(lines).strip())
 
         btns = tk.Frame(frm)
         btns.pack(pady=(6, 0))
         tk.Button(btns, text="🌐 שלח לאתר", command=send, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
+        tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
+
+    def _sync_products_to_rivhit(self, client, products, group_id, update_existing=True):
+        """שליחת רשימת מוצרים לריווחית: יצירת חדשים ועדכון/דילוג על קיימים לפי מק"ט/ברקוד.
+
+        מחזיר dict עם רשימות created/updated/skipped/errors (מחרוזות לתצוגה).
+        קריאת Item.List נכשלת -> RivhitApiError עולה למעלה; כשל בפריט בודד נאסף ב-errors.
+        """
+        from ..core.rivhit_api import RivhitApiError
+
+        existing_items = client.item_list()
+        by_key = {}
+        for it in existing_items:
+            for key in (str(it.get('item_part_num', '')).strip(), str(it.get('barcode', '')).strip()):
+                if key:
+                    by_key.setdefault(key, it)
+
+        result = {'created': [], 'updated': [], 'skipped': [], 'errors': []}
+        for rec in products:
+            name = str(rec.get('item_name', '')).strip()
+            part_num = str(rec.get('item_part_num', '')).strip()
+            existing = by_key.get(part_num)
+            try:
+                if existing is not None:
+                    if update_existing:
+                        client.item_update(
+                            existing.get('item_id'),
+                            item_name=name,
+                            item_part_num=part_num,
+                            barcode=part_num,
+                            cost_nis=rec.get('item_cost_nis', ''),
+                            sale_nis=rec.get('item_sale_nis', ''),
+                            item_group_id=group_id,
+                        )
+                        result['updated'].append(f"{name} (פריט {existing.get('item_id')})")
+                    else:
+                        result['skipped'].append(f"{name} - כבר קיים בריווחית (פריט {existing.get('item_id')})")
+                    continue
+                data = client.item_new(
+                    item_name=name,
+                    item_part_num=part_num,
+                    barcode=part_num,
+                    cost_nis=rec.get('item_cost_nis', ''),
+                    sale_nis=rec.get('item_sale_nis', ''),
+                    item_group_id=group_id,
+                )
+                item_id = data.get('item_id', '')
+                result['created'].append(f"{name} (פריט {item_id})" if item_id else name)
+            except RivhitApiError as e:
+                result['errors'].append(f"{name}: {e}")
+        return result
+
+    @staticmethod
+    def _format_rivhit_sync_summary(result):
+        """שורות סיכום לתצוגה מתוצאת _sync_products_to_rivhit."""
+        lines = [
+            f"נוצרו: {len(result['created'])} | עודכנו: {len(result['updated'])} | "
+            f"דולגו: {len(result['skipped'])} | שגיאות: {len(result['errors'])}",
+            "",
+        ]
+        for label, items in (("נוצרו:", result['created']), ("עודכנו:", result['updated']), ("דולגו:", result['skipped'])):
+            if items:
+                lines.append(label)
+                lines.extend(items[:15])
+                if len(items) > 15:
+                    lines.append(f"...ועוד {len(items) - 15}")
+                lines.append("")
+        if result['errors']:
+            lines.append("שגיאות:")
+            lines.extend(result['errors'][:15])
+            if len(result['errors']) > 15:
+                lines.append(f"...ועוד {len(result['errors']) - 15} שגיאות")
+        return lines
+
+    def _update_rivhit_via_api(self):
+        """שליחת המוצרים הממתינים ישירות לריווחית אונליין (פריטים ומלאי) דרך ה-API."""
+        from ..core.rivhit_api import RivhitOnlineClient, RivhitApiError
+
+        pending = list(getattr(self.data_processor, 'rivhit_new_products', []) or [])
+        if not pending:
+            messagebox.showinfo("אין מוצרים", "אין מוצרים ממתינים לשליחה לריווחית")
+            return
+
+        dlg = tk.Toplevel(self.notebook)
+        dlg.title("עדכן ריווחית (API)")
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        frm = tk.Frame(dlg, padx=15, pady=15)
+        frm.pack(fill='both', expand=True)
+
+        # --- חיבור ---
+        conn_box = tk.LabelFrame(frm, text="חיבור לריווחית אונליין", padx=8, pady=6)
+        conn_box.pack(fill='x', pady=(0, 8))
+        token_var = tk.StringVar(value=self.settings.get('rivhit.api_token', ''))
+        tr = tk.Frame(conn_box); tr.pack(fill='x')
+        tk.Label(tr, text='API TOKEN:', anchor='e', width=10).pack(side='right')
+        tk.Entry(tr, textvariable=token_var, width=44, show='*').pack(side='right', padx=(0, 8))
+        tk.Label(conn_box, text='הטוקן מהגדרות ריווחית אונליין ← API', fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 8)).pack(anchor='e')
+
+        # --- קבוצת פריטים ---
+        group_box = tk.LabelFrame(frm, text="קבוצת פריטים בריווחית", padx=8, pady=6)
+        group_box.pack(fill='x', pady=(0, 8))
+        group_var = tk.StringVar()
+        group_state = {'groups': [], 'existing': None}
+        gr = tk.Frame(group_box); gr.pack(fill='x', pady=2)
+        tk.Label(gr, text='קבוצה:', anchor='e', width=10).pack(side='right')
+        group_combo = ttk.Combobox(gr, textvariable=group_var, state='disabled', width=40)
+        group_combo.pack(side='right', padx=(0, 8))
+
+        status_var = tk.StringVar(value=f'{len(pending)} מוצרים ממתינים | יש ללחוץ "בדוק חיבור" תחילה')
+        tk.Label(group_box, textvariable=status_var, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9)).pack(anchor='e', pady=(4, 0))
+
+        update_existing_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(frm, text='עדכן פריטים שכבר קיימים בריווחית (לפי מק"ט/ברקוד), אחרת ידולגו', variable=update_existing_var).pack(anchor='e', pady=(0, 8))
+
+        def _make_client():
+            token = (token_var.get() or '').strip()
+            if not token:
+                messagebox.showwarning("חסר טוקן", "יש להזין API TOKEN של ריווחית", parent=dlg)
+                return None
+            return RivhitOnlineClient(token)
+
+        def check_connection():
+            client = _make_client()
+            if client is None:
+                return
+            try:
+                groups = client.item_groups()
+            except RivhitApiError as e:
+                messagebox.showerror("שגיאת התחברות", str(e), parent=dlg)
+                return
+            group_state['groups'] = groups
+            labels = [f"{g.get('item_group_name', '')} ({g.get('item_group_id', '')})" for g in groups]
+            group_combo['values'] = labels
+            group_combo.config(state='readonly')
+            # ברירת מחדל: הקבוצה שתואמת את הקטגוריה של המוצרים הממתינים
+            cats = {str(r.get('compute_0036', '')).strip() for r in pending if str(r.get('compute_0036', '')).strip()}
+            default_idx = 0
+            for i, g in enumerate(groups):
+                if str(g.get('item_group_name', '')).strip() in cats:
+                    default_idx = i
+                    break
+            if labels:
+                group_combo.current(default_idx)
+            status_var.set(f"חיבור תקין ✓ | נטענו {len(groups)} קבוצות פריטים | {len(pending)} מוצרים ממתינים")
+            # החיבור הצליח - שמירת הטוקן להבא
+            self.settings.set('rivhit.api_token', (token_var.get() or '').strip())
+
+        tk.Button(conn_box, text="🔌 בדוק חיבור", command=check_connection, bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 9, 'bold')).pack(anchor='w', pady=(6, 0))
+
+        def send():
+            client = _make_client()
+            if client is None:
+                return
+            idx = group_combo.current()
+            if idx < 0 or not group_state['groups']:
+                messagebox.showwarning("לא נבחרה קבוצה", 'יש ללחוץ "בדוק חיבור" ולבחור קבוצת פריטים', parent=dlg)
+                return
+            group_id = group_state['groups'][idx].get('item_group_id')
+            try:
+                result = self._sync_products_to_rivhit(client, pending, group_id, update_existing_var.get())
+            except RivhitApiError as e:
+                messagebox.showerror("שגיאה במשיכת פריטים", str(e), parent=dlg)
+                return
+
+            self.settings.set('rivhit.api_token', (token_var.get() or '').strip())
+            self.settings.set('rivhit.default_group_id', group_id)
+
+            lines = self._format_rivhit_sync_summary(result)
+            if result['errors']:
+                messagebox.showwarning("הסתיים עם שגיאות", "\n".join(lines), parent=dlg)
+            else:
+                dlg.destroy()
+                messagebox.showinfo("הסתיים", "\n".join(lines).strip())
+
+        btns = tk.Frame(frm)
+        btns.pack(pady=(6, 0))
+        tk.Button(btns, text="🔗 שלח לריווחית", command=send, bg=theme.SUCCESS, fg='white', font=(theme.FONT_FAMILY, 10, 'bold')).pack(side='left', padx=5)
         tk.Button(btns, text="ביטול", command=dlg.destroy).pack(side='left', padx=5)
 
     # ===== Data upload sub-tab (יבוא נתונים מריווחית) =====

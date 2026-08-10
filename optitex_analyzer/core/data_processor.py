@@ -829,11 +829,12 @@ class DataProcessor:
 		"""שמירת פלטת צבעי הבד לדיסק."""
 		return self._save_json_list(self.fabric_colors_palette_file, self.fabric_colors_palette)
 
-	def add_fabric_palette_color(self, name: str, hex_value: str, supplier: str = '', sampled_at: str = '') -> Dict:
+	def add_fabric_palette_color(self, name: str, hex_value: str, supplier: str = '', sampled_at: str = '', image: str = '') -> Dict:
 		"""מוסיף צבע לפלטה (או מעדכן צבע קיים באותו שם). מחזיר את הרשומה.
 
 		supplier: שם הספק שממנו הגיע הבד.
 		sampled_at: תאריך דגימת הצבע (ברירת מחדל - היום, בפורמט dd.mm.yy).
+		image: נתיב יחסי לתמונת הבד המצורפת לצבע.
 		"""
 		name = (name or '').strip()
 		hex_value = (hex_value or '').strip()
@@ -846,9 +847,13 @@ class DataProcessor:
 			'hex': hex_value.lower(),
 			'supplier': (supplier or '').strip(),
 			'sampled_at': (sampled_at or '').strip() or datetime.now().strftime('%d.%m.%y'),
+			'image': (image or '').strip(),
 		}
 		for entry in self.fabric_colors_palette:
 			if str(entry.get('name', '')).strip() == name:
+				# עדכון צבע קיים באותו שם: לא מוחקים תמונה מצורפת אם לא נמסרה חדשה
+				if not record['image']:
+					record['image'] = str(entry.get('image', '')).strip()
 				entry.update(record)
 				self.save_fabric_colors_palette()
 				return entry
@@ -859,7 +864,7 @@ class DataProcessor:
 	def update_fabric_palette_color(self, name: str, fields: Dict) -> Dict:
 		"""מעדכן צבע קיים לפי שמו הנוכחי (כולל שינוי שם). מחזיר את הרשומה המעודכנת.
 
-		fields יכול לכלול: name, hex, supplier, sampled_at.
+		fields יכול לכלול: name, hex, supplier, sampled_at, image.
 		"""
 		name = (name or '').strip()
 		entry = next((e for e in self.fabric_colors_palette if str(e.get('name', '')).strip() == name), None)
@@ -878,16 +883,25 @@ class DataProcessor:
 		entry['hex'] = new_hex
 		entry['supplier'] = str(fields.get('supplier', entry.get('supplier', ''))).strip()
 		entry['sampled_at'] = str(fields.get('sampled_at', entry.get('sampled_at', ''))).strip()
+		entry['image'] = str(fields.get('image', entry.get('image', ''))).strip()
 		self.save_fabric_colors_palette()
 		return entry
 
 	def delete_fabric_palette_color(self, name: str) -> bool:
-		"""מוחק צבע מהפלטה לפי שם."""
+		"""מוחק צבע מהפלטה לפי שם, כולל קובץ התמונה המצורף אם קיים."""
 		name = (name or '').strip()
-		before = len(self.fabric_colors_palette)
-		self.fabric_colors_palette = [e for e in self.fabric_colors_palette if str(e.get('name', '')).strip() != name]
-		if len(self.fabric_colors_palette) == before:
+		entry = next((e for e in self.fabric_colors_palette if str(e.get('name', '')).strip() == name), None)
+		if entry is None:
 			return False
+		image_rel = str(entry.get('image', '')).strip()
+		if image_rel:
+			image_abs = image_rel if os.path.isabs(image_rel) else os.path.join(os.getcwd(), image_rel)
+			try:
+				if os.path.exists(image_abs):
+					os.remove(image_abs)
+			except Exception:
+				pass
+		self.fabric_colors_palette = [e for e in self.fabric_colors_palette if e is not entry]
 		return self.save_fabric_colors_palette()
 
 	def add_rivhit_new_products_by_colors(self, base_name: str, colors, cost_nis: str = '',

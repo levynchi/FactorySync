@@ -1168,5 +1168,192 @@
     "image": "assets\\labels\\products\\family_arie_201.png",
     "model_code": "201",
     "brand": "arie"
+  },
+  "7297555022264": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "תכלת קשי 29.07.26"
+  },
+  "7297555022271": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "ורוד קשי 29.07.26"
+  },
+  "7297555022288": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "בז' אפרפר קשי 29.07.26"
+  },
+  "7297555022295": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "אפור עשן בהיר קשי 29.07.26"
+  },
+  "7297555022301": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "אפור פנינה קשי 29.07.26"
+  },
+  "7297555022318": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "לבן"
+  },
+  "7297555022325": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "66x128",
+    "size_unit": "חודשים",
+    "fabric": "טריקו גרזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "שמנת"
+  },
+  "7297555022332": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "",
+    "size_unit": "חודשים",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "מוקה בהיר"
+  },
+  "7297555022349": {
+    "print_name": "סדין למיטת תינוק",
+    "size": "",
+    "size_unit": "חודשים",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "חום עתיק"
+  },
+  "7297555022356": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "תכלת"
+  },
+  "7297555022363": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "ורוד"
+  },
+  "7297555022370": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "בז אפרפר"
+  },
+  "7297555022387": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "אפור פנינה בהיר"
+  },
+  "7297555022394": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "לבן"
+  },
+  "7297555022400": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "שמנת"
+  },
+  "7297555022417": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "מוקה בהיר"
+  },
+  "7297555022424": {
+    "print_name": "סדין לעגלה",
+    "size": "33X75",
+    "size_unit": "",
+    "fabric": "טריקו ג'רזי",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": "חום עתיק"
   }
 }

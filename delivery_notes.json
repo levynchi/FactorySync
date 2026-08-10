@@ -3004,5 +3004,74 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-07-29 13:51:47"
+  },
+  {
+    "id": 75,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-07-30",
+    "lines": [
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 148,
+        "note": ""
+      },
+      {
+        "product": "חולצת בייבי",
+        "size": "12-18",
+        "fabric_type": "",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 296,
+        "note": ""
+      }
+    ],
+    "total_quantity": 444,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-07-30 13:12:13"
+  },
+  {
+    "id": 76,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-08-02",
+    "lines": [
+      {
+        "product": "שמיכת בייבי לייס",
+        "size": "",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 84,
+        "note": "להדפיס רק את החלק העליון"
+      }
+    ],
+    "total_quantity": 84,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-08-02 13:30:35"
   }
 ]
