@@ -4,11 +4,40 @@
 האימות: טוקן משותף בכותרת X-API-Token, מוגדר באתר דרך WHITE_CATALOG_API_TOKEN.
 """
 
+import base64
+import io
 import json
+import os
 import urllib.error
 import urllib.request
 
-DEFAULT_TIMEOUT = 20  # seconds
+DEFAULT_TIMEOUT = 60  # seconds — image payloads need more time
+
+
+def encode_product_image_b64(path, max_side=1400):
+	"""Encode a product photo as JPEG base64 for the website import API.
+
+	Returns (b64, 'jpg') or ('', '') if the file is missing or unreadable.
+	"""
+	rel = (path or '').strip()
+	if not rel:
+		return '', ''
+	full = rel if os.path.isabs(rel) else os.path.join(os.getcwd(), rel)
+	if not os.path.exists(full):
+		return '', ''
+	try:
+		from PIL import Image
+		img = Image.open(full).convert('RGB')
+		w, h = img.size
+		longest = max(w, h)
+		if longest > max_side:
+			scale = max_side / float(longest)
+			img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.LANCZOS)
+		buf = io.BytesIO()
+		img.save(buf, 'JPEG', quality=88)
+		return base64.b64encode(buf.getvalue()).decode('ascii'), 'jpg'
+	except Exception:
+		return '', ''
 
 
 class WebsiteExportError(Exception):

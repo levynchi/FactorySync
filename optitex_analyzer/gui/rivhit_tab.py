@@ -1882,15 +1882,25 @@ class RivhitTabMixin:
                     'barcode': barcode,
                     'unit_price': str(rec.get(price_key, '')).strip(),
                 }
-                # מוצרים שנוצרו לפי צבעים - שליחת הצבע לאתר (למוצרים התומכים בצבע)
+                # מוצרים שנוצרו לפי צבעים/הדפסים - שליחת הצבע לאתר (למוצרים התומכים בצבע)
                 color = str(rec.get('color', '')).strip() or (fields.get('color') or '').strip()
                 if color:
                     row['color'] = color
                     color_hex = str(rec.get('color_hex', '')).strip()
                     if color_hex:
                         row['color_hex'] = color_hex
-                    # באתר מוצג רק ריבוע קוד הצבע (hex) - לא תמונת צילום הבד
-                    row['clear_image'] = True
+                    image_path = (fields.get('image') or rec.get('image') or '').strip()
+                    if image_path:
+                        from ..core.website_export import encode_product_image_b64
+                        image_b64, image_fmt = encode_product_image_b64(image_path)
+                        if image_b64:
+                            row['image_base64'] = image_b64
+                            row['image_format'] = image_fmt
+                        else:
+                            row['clear_image'] = True
+                    else:
+                        # באתר מוצג רק ריבוע קוד הצבע (hex) - לא תמונת צילום הבד
+                        row['clear_image'] = True
                 rows.append(row)
             try:
                 client = WebsiteClient(url_var.get(), token_var.get())
