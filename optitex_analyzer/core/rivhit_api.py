@@ -1,4 +1,4 @@
-"""קליינט ל-Rivhit Online API - הכנסת פריטים ישירות לריווחית (פריטים ומלאי).
+"""קליינט ל-Rivhit Online API - פריטים ומלאי, וייצוא מבנה אחיד.
 
 REST JSON מול https://api.rivhit.co.il/online/RivhitOnlineAPI.svc
 אימות: api_token בגוף כל בקשה (מהגדרות ריווחית אונליין -> API).
@@ -9,9 +9,17 @@ REST JSON מול https://api.rivhit.co.il/online/RivhitOnlineAPI.svc
 import json
 import urllib.error
 import urllib.request
+from datetime import date
+from pathlib import Path
 
 BASE_URL = 'https://api.rivhit.co.il/online/RivhitOnlineAPI.svc'
 DEFAULT_TIMEOUT = 30  # seconds
+OPEN_FORMAT_TIMEOUT = 120  # הפקת מבנה אחיד יכולה לקחת יותר זמן
+
+
+def default_open_format_year(today=None) -> int:
+	"""שנת המס המלאה האחרונה (ברירת מחדל לקובץ מבנה אחיד)."""
+	return (today or date.today()).year - 1
 
 
 class RivhitApiError(Exception):
@@ -20,6 +28,21 @@ class RivhitApiError(Exception):
 	def __init__(self, message, error_code=None):
 		super().__init__(message)
 		self.error_code = error_code
+
+
+def download_url(url: str, dest_path, timeout: int = DEFAULT_TIMEOUT) -> Path:
+	"""מוריד URL לקובץ מקומי בלי לשלוח api_token."""
+	dest = Path(dest_path)
+	dest.parent.mkdir(parents=True, exist_ok=True)
+	req = urllib.request.Request(url)
+	try:
+		with urllib.request.urlopen(req, timeout=timeout) as resp:
+			dest.write_bytes(resp.read())
+	except urllib.error.HTTPError as e:
+		raise RivhitApiError(f'הורדת קובץ המבנה האחיד נכשלה (HTTP {e.code})')
+	except urllib.error.URLError as e:
+		raise RivhitApiError(f'הורדת קובץ המבנה האחיד נכשלה:\n{e.reason}')
+	return dest
 
 
 class RivhitOnlineClient:
@@ -117,3 +140,29 @@ class RivhitOnlineClient:
 			if fields.get(key) not in (None, ''):
 				payload[key] = int(fields[key])
 		return self._request('Item.Update', payload)
+
+	# ===== מבנה אחיד (Open Format) =====
+	def open_format_zip(self, year: int, request_reference: str = None) -> dict:
+		"""מפיק קובץ מבנה אחיד לשנת מס. מחזיר data (כולל link להורדת ZIP)."""
+		year = int(year)
+		if year < 2000 or year > 2100:
+			raise RivhitApiError(f'שנת מס לא תקינה: {year}')
+		payload = {'year': year}
+		if request_reference:
+			payload['request_reference'] = str(request_reference)
+		old_timeout = self.timeout
+		self.timeout = max(self.timeout, OPEN_FORMAT_TIMEOUT)
+		try:
+			return self._request('OpenFormat.ZIP', payload)
+		finally:
+			self.timeout = old_timeout
+
+	def download_open_format_zip(self, year: int, dest_path, request_reference: str = None) -> Path:
+		"""מפיק מבנה אחיד ומוריד את ה-ZIP לנתיב dest_path."""
+		data = self.open_format_zip(year, request_reference)
+		link = ''
+		if isinstance(data, dict):
+			link = str(data.get('link') or data.get('url') or data.get('file_link') or '').strip()
+		if not link:
+			raise RivhitApiError('ריווחית לא החזירה קישור להורדת קובץ מבנה אחיד')
+		return download_url(link, dest_path, timeout=max(self.timeout, OPEN_FORMAT_TIMEOUT))
