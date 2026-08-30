@@ -2160,8 +2160,127 @@ class RivhitTabMixin:
         self.rivhit_groups_meta_var = tk.StringVar(value='')
         tk.Label(groups_box, textvariable=self.rivhit_groups_meta_var, bg=theme.PAGE_BG, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9)).pack(anchor='e', pady=(6, 0))
 
+        # Section 3: official Open Format year-end file from Rivhit
+        self._build_rivhit_open_format_section(tab)
+
         self._update_rivhit_meta_label()
         self._update_rivhit_groups_meta_label()
+
+    def _build_rivhit_open_format_section(self, tab):
+        """בלוק הפקת קובץ מבנה אחיד (Open Format) מריווחית אונליין."""
+        from datetime import date
+        from ..core.rivhit_api import default_open_format_year
+
+        box = tk.LabelFrame(
+            tab, text="קובץ מבנה אחיד (Open Format)", bg=theme.PAGE_BG, fg=theme.DARK,
+            font=(theme.FONT_FAMILY, 11, 'bold'), padx=12, pady=12,
+        )
+        box.pack(fill='x', padx=15, pady=8)
+        tk.Label(
+            box,
+            text="קובץ רשמי לרואה החשבון / רשות המסים. ריווחית מפיקה ZIP עם Bkmvdata.txt ו-Ini.txt.",
+            bg=theme.PAGE_BG, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9), justify='right',
+        ).pack(anchor='e', pady=(0, 6))
+
+        year_row = tk.Frame(box, bg=theme.PAGE_BG)
+        year_row.pack(fill='x')
+        this_year = date.today().year
+        default_year = default_open_format_year()
+        years = [str(y) for y in range(this_year, this_year - 11, -1)]
+        self.rivhit_open_format_year_var = tk.StringVar(value=str(default_year))
+        year_combo = ttk.Combobox(
+            year_row, textvariable=self.rivhit_open_format_year_var,
+            values=years, state='readonly', width=8,
+        )
+        year_combo.pack(side='right', padx=(0, 8))
+        tk.Label(year_row, text='שנת מס:', bg=theme.PAGE_BG, fg=theme.DARK).pack(side='right')
+        tk.Button(
+            year_row, text="📄 הפקת קובץ מבנה אחיד",
+            command=self._export_rivhit_open_format,
+            bg=theme.TEAL, fg='white', font=(theme.FONT_FAMILY, 10, 'bold'),
+        ).pack(side='left', padx=5)
+
+        self.rivhit_open_format_status_var = tk.StringVar(value='')
+        tk.Label(
+            box, textvariable=self.rivhit_open_format_status_var,
+            bg=theme.PAGE_BG, fg=theme.SUBTEXT, font=(theme.FONT_FAMILY, 9),
+        ).pack(anchor='e', pady=(6, 0))
+
+    def _export_rivhit_open_format(self):
+        """מפיק מריווחית קובץ מבנה אחיד לשנה שנבחרה ושומר ZIP מקומי."""
+        import subprocess
+        import threading
+        from ..core.rivhit_api import RivhitOnlineClient, RivhitApiError
+
+        token = (self.settings.get('rivhit.api_token', '') or '').strip()
+        if not token:
+            messagebox.showwarning(
+                "חסר טוקן",
+                "יש להזין API TOKEN של ריווחית דרך \"עדכן ריווחית (API)\" ולשמור חיבור תקין.",
+            )
+            return
+        try:
+            year = int((self.rivhit_open_format_year_var.get() or '').strip())
+        except (TypeError, ValueError):
+            messagebox.showwarning("שנה חסרה", "יש לבחור שנת מס")
+            return
+
+        export_dir = os.path.join(os.getcwd(), 'exports', 'open_format')
+        os.makedirs(export_dir, exist_ok=True)
+        file_path = filedialog.asksaveasfilename(
+            title="שמירת קובץ מבנה אחיד",
+            defaultextension=".zip",
+            initialdir=export_dir,
+            initialfile=f"open_format_{year}.zip",
+            filetypes=[("ZIP", "*.zip"), ("All files", "*.*")],
+        )
+        if not file_path:
+            return
+
+        status = getattr(self, 'rivhit_open_format_status_var', None)
+        if status is not None:
+            status.set(f"מפיק קובץ מבנה אחיד לשנת {year}...")
+
+        result = {'ok': None, 'error': None, 'path': file_path}
+
+        def _work():
+            try:
+                client = RivhitOnlineClient(token)
+                client.download_open_format_zip(year, file_path)
+                result['ok'] = True
+            except RivhitApiError as e:
+                result['error'] = str(e)
+            except Exception as e:
+                result['error'] = str(e)
+
+        def _poll():
+            if result['ok'] is None and result['error'] is None:
+                self.notebook.after(200, _poll)
+                return
+            if status is not None:
+                if result['ok']:
+                    status.set(f"נשמר: {file_path}")
+                else:
+                    status.set('')
+            if result['error']:
+                messagebox.showerror("שגיאה בהפקת מבנה אחיד", result['error'])
+                return
+            open_folder = messagebox.askyesno(
+                "הקובץ מוכן",
+                f"קובץ מבנה אחיד לשנת {year} נשמר ונכון לשליחה לרואה החשבון:\n{file_path}\n\nלפתוח את תיקיית הקובץ?",
+            )
+            if open_folder:
+                folder = os.path.dirname(os.path.abspath(file_path))
+                try:
+                    if os.name == 'nt':
+                        os.startfile(folder)
+                    else:
+                        subprocess.Popen(['xdg-open', folder])
+                except Exception:
+                    pass
+
+        threading.Thread(target=_work, daemon=True).start()
+        self.notebook.after(200, _poll)
 
     def _update_rivhit_groups_meta_label(self):
         if not hasattr(self, 'rivhit_groups_meta_var'):
