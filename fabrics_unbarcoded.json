@@ -511,5 +511,50 @@
     "color": "שמנת",
     "shade": "2525",
     "notes": "Desen: חלק, רוחב: 160cm, ק\"ג: 50.00, מטרים: 55.00, מחיר: 2.00"
+  },
+  {
+    "id": 58,
+    "created_at": "2026-08-16 12:15:44",
+    "fabric_type": "POLYESTER",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 147cm, ק\"ג: 25.00, מטרים: 55.00, מחיר: 0.00"
+  },
+  {
+    "id": 59,
+    "created_at": "2026-08-16 12:16:08",
+    "fabric_type": "POLYESTER",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 147cm, ק\"ג: 25.00, מטרים: 53.00, מחיר: 0.00"
+  },
+  {
+    "id": 60,
+    "created_at": "2026-08-16 12:16:34",
+    "fabric_type": "POLYESTER",
+    "manufacturer": "",
+    "color": "שחור",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 147cm, ק\"ג: 26.00, מטרים: 58.00, מחיר: 0.00"
+  },
+  {
+    "id": 61,
+    "created_at": "2026-08-16 12:17:00",
+    "fabric_type": "POLYESTER",
+    "manufacturer": "",
+    "color": "שחור",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 147cm, ק\"ג: 23.00, מטרים: 52.00, מחיר: 0.00"
+  },
+  {
+    "id": 62,
+    "created_at": "2026-08-24 09:39:25",
+    "fabric_type": "RIB",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 180cm, ק\"ג: 20.00, מטרים: 50.00, מחיר: 0.00"
   }
 ]

@@ -535,7 +535,7 @@
     "size_unit": "חודשים",
     "fabric": "פלנל",
     "pack_qty": 3,
-    "image": "assets\\labels\\products\\7297555021748.png",
+    "image": "assets\\labels\\products\\7297555021694.png",
     "model_code": "202",
     "brand": "arie"
   },
@@ -545,7 +545,7 @@
     "size_unit": "חודשים",
     "fabric": "פלנל",
     "pack_qty": 3,
-    "image": "assets\\labels\\products\\7297555021748.png",
+    "image": "assets\\labels\\products\\7297555021694.png",
     "model_code": "202",
     "brand": "arie"
   },
@@ -555,9 +555,10 @@
     "size_unit": "חודשים",
     "fabric": "פלנל",
     "pack_qty": 3,
-    "image": "assets\\labels\\products\\7297555021748.png",
+    "image": "assets\\labels\\products\\7297555021694.png",
     "model_code": "202",
-    "brand": "arie"
+    "brand": "arie",
+    "color": ""
   },
   "7297555021700": {
     "print_name": "גטקס לתינוק",
@@ -565,7 +566,7 @@
     "size_unit": "חודשים",
     "fabric": "פלנל",
     "pack_qty": 3,
-    "image": "assets\\labels\\products\\7297555021748.png",
+    "image": "assets\\labels\\products\\7297555021694.png",
     "model_code": "202",
     "brand": "arie"
   },
@@ -575,7 +576,7 @@
     "size_unit": "חודשים",
     "fabric": "פלנל",
     "pack_qty": 3,
-    "image": "assets\\labels\\products\\7297555021748.png",
+    "image": "assets\\labels\\products\\7297555021694.png",
     "model_code": "202",
     "brand": "arie"
   },

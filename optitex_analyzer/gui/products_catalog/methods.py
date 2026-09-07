@@ -1240,11 +1240,11 @@ class ProductsCatalogMethodsMixin:
                         costs = self.data_processor.calculate_item_cost(rec, fabric_cost_method)
                         # בדיקה אם יש עלות בד ישירה (מסומן ב-* במצב משקל)
                         has_direct_fabric_cost = rec.get('fabric_cost') is not None and rec.get('fabric_cost') != ''
-                        # הצגת סימון * רק במצב משקל ואם יש עלות ישירה
+                        # במצב משקל: * = עלות ישירה; בלי עלות ישירה – לפי מ"ר (עם סימון)
                         if fabric_cost_method == 'weight' and has_direct_fabric_cost:
                             fabric_cost_display = f"₪{costs['fabric_cost']:.2f} *"
                         elif fabric_cost_method == 'weight' and not has_direct_fabric_cost:
-                            fabric_cost_display = "₪0.00 (לא הוגדר)"
+                            fabric_cost_display = f"₪{costs['fabric_cost']:.2f} (מ״ר)"
                         else:
                             fabric_cost_display = f"₪{costs['fabric_cost']:.2f}"
                         self.products_tree.insert('', 'end', values=(
@@ -1803,14 +1803,68 @@ class ProductsCatalogMethodsMixin:
         ttk.Button(btn_frame, text="שמור", command=_save).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="ביטול", command=top.destroy).pack(side='left', padx=5)
 
+    def _has_active_product_filters(self) -> bool:
+        """האם יש סינון פעיל בטאב הפריטים (שם דגם / קטגוריית בד)."""
+        filter_text = ''
+        if hasattr(self, 'product_filter_var'):
+            filter_text = (self.product_filter_var.get() or '').strip()
+        fabric_cat = "הכל"
+        if hasattr(self, 'filter_fabric_category_var'):
+            fabric_cat = self.filter_fabric_category_var.get() or "הכל"
+        return bool(filter_text) or fabric_cat != "הכל"
+
+    def _get_filtered_products_catalog(self) -> list:
+        """רשימת פריטים לפי הסינון הנוכחי (שם דגם + קטגוריית בד)."""
+        filter_text = ''
+        if hasattr(self, 'product_filter_var'):
+            filter_text = (self.product_filter_var.get() or '').strip().lower()
+        fabric_cat_filter = "הכל"
+        if hasattr(self, 'filter_fabric_category_var'):
+            fabric_cat_filter = self.filter_fabric_category_var.get() or "הכל"
+
+        filtered = []
+        for rec in getattr(self.data_processor, 'products_catalog', []) or []:
+            product_name = (rec.get('name', '') or '').lower()
+            product_fabric_cat = rec.get('fabric_category', '') or 'בלי קטגוריה'
+            name_match = not filter_text or filter_text in product_name
+            fabric_cat_match = fabric_cat_filter == "הכל" or product_fabric_cat == fabric_cat_filter
+            if name_match and fabric_cat_match:
+                filtered.append(rec)
+        return filtered
+
     def _export_products_catalog(self):
-        if not getattr(self.data_processor, 'products_catalog', []):
+        base = list(getattr(self.data_processor, 'products_catalog', []) or [])
+        if not base:
             messagebox.showerror("שגיאה", "אין מוצרים לייצוא")
             return
+
+        if self._has_active_product_filters():
+            choice = messagebox.askyesnocancel(
+                "ייצוא לאקסל",
+                "יש פילטרים פעילים.\n\nהאם לייצא רק את הפריטים המסוננים?\n\nכן = פריטים מסוננים בלבד\nלא = כל הפריטים"
+            )
+            if choice is None:  # ביטול
+                return
+            elif choice:  # כן - פריטים מסוננים
+                records = self._get_filtered_products_catalog()
+            else:  # לא - כל הפריטים
+                records = base
+        else:
+            records = base
+
+        if not records:
+            messagebox.showerror("שגיאה", "אין פריטים לייצוא לפי הסינון הנוכחי")
+            return
+
         file_path = filedialog.asksaveasfilename(title="ייצוא קטלוג מוצרים", defaultextension='.xlsx', filetypes=[('Excel','*.xlsx')])
         if not file_path: return
+        preferred_method = 'weight'
+        if hasattr(self, 'fabric_cost_method'):
+            preferred_method = self.fabric_cost_method.get() or 'weight'
         try:
-            self.data_processor.export_products_catalog_to_excel(file_path)
+            self.data_processor.export_products_catalog_to_excel(
+                file_path, records=records, preferred_cost_method=preferred_method
+            )
             messagebox.showinfo("הצלחה", "הקטלוג יוצא בהצלחה")
         except Exception as e:
             messagebox.showerror("שגיאה", str(e))

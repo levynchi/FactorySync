@@ -1,0 +1,85 @@
+[
+  {
+    "id": 1,
+    "customer": "בייבי בייסיק",
+    "date": "2026-09-07",
+    "note": "הכל לבן",
+    "lines": [
+      {
+        "barcode": "7297555022059",
+        "item_name": "בייבי בייסיק רגליות פלנל (0-3)",
+        "print_name": "רגליות לתינוק",
+        "size": "0-3",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 2050,
+        "unit_price": 6.4,
+        "line_total": 13120.0
+      },
+      {
+        "barcode": "7297555022066",
+        "item_name": "בייבי בייסיק רגליות פלנל (3-6)",
+        "print_name": "רגליות לתינוק",
+        "size": "3-6",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 510,
+        "unit_price": 6.4,
+        "line_total": 3264.0
+      },
+      {
+        "barcode": "7297555022134",
+        "item_name": "בייבי בייסיק גטקס פתוח (12-18)",
+        "print_name": "גטקס פתוח",
+        "size": "12-18",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 515,
+        "unit_price": 7.34,
+        "line_total": 3780.1
+      },
+      {
+        "barcode": "7297555022141",
+        "item_name": "בייבי בייסיק גטקס פתוח (18-24)",
+        "print_name": "גטקס פתוח",
+        "size": "18-24",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 515,
+        "unit_price": 7.34,
+        "line_total": 3780.1
+      },
+      {
+        "barcode": "7297555022158",
+        "item_name": "בייבי בייסיק גטקס פתוח (24-30)",
+        "print_name": "גטקס פתוח",
+        "size": "24-30",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 510,
+        "unit_price": 7.34,
+        "line_total": 3743.4
+      },
+      {
+        "barcode": "7297555021984",
+        "item_name": "בייבי בייסיק בגד גוף מעטפת פלנל (0-3)",
+        "print_name": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric": "פלנל",
+        "color": "לבן",
+        "pack_qty": 5,
+        "quantity": 1545,
+        "unit_price": 9.5,
+        "line_total": 14677.5
+      }
+    ],
+    "total_quantity": 5645,
+    "total_amount": 42365.1,
+    "created_at": "2026-09-07 12:57:14"
+  }
+]

@@ -5,8 +5,9 @@
 import pandas as pd
 import json
 import os
+import shutil
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 
 def parse_numeric_value(val) -> float:
@@ -49,6 +50,7 @@ class DataProcessor:
 		self.sewing_accessories_file = sewing_accessories_file
 		self.categories_file = categories_file
 		self.suppliers_file = suppliers_file
+		self.supplier_documents_root = 'supplier_documents'
 		# קבצי תכונות מוצר
 		self.product_sizes_file = product_sizes_file
 		self.fabric_types_file = fabric_types_file
@@ -121,6 +123,13 @@ class DataProcessor:
 		# פלטת צבעי בד (שם + hex) ליצירת מוצרים לפי צבעים
 		self.fabric_colors_palette_file = 'fabric_colors_palette.json'
 		self.fabric_colors_palette = self._load_json_list(self.fabric_colors_palette_file)
+		# בייבי בייסיק: מחירון סיטונאי, תעודות סחורה, תשלומים
+		self.baby_basic_price_list_file = 'baby_basic_price_list.json'
+		self.baby_basic_notes_file = 'baby_basic_delivery_notes.json'
+		self.baby_basic_payments_file = 'baby_basic_payments.json'
+		self.baby_basic_price_list = self._load_json_dict(self.baby_basic_price_list_file)
+		self.baby_basic_notes = self._load_json_list(self.baby_basic_notes_file)
+		self.baby_basic_payments = self._load_json_list(self.baby_basic_payments_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -161,6 +170,7 @@ class DataProcessor:
 				'address': address.strip(),
 				'business_number': business_number.strip(),
 				'notes': notes.strip(),
+				'documents': [],
 				'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 			}
 			self.suppliers.append(record)
@@ -169,12 +179,99 @@ class DataProcessor:
 		except Exception as e:
 			raise Exception(f"שגיאה בהוספת ספק: {e}")
 
+	def get_supplier(self, supplier_id: int) -> Optional[Dict]:
+		"""מציאת ספק לפי ID"""
+		for s in self.suppliers:
+			try:
+				if int(s.get('id', 0)) == int(supplier_id):
+					return s
+			except (TypeError, ValueError):
+				continue
+		return None
+
+	def supplier_documents_dir(self, supplier_id: int) -> str:
+		return os.path.join(self.supplier_documents_root, str(int(supplier_id)))
+
+	def supplier_document_path(self, supplier_id: int, filename: str) -> str:
+		return os.path.join(self.supplier_documents_dir(supplier_id), filename)
+
+	def add_supplier_document(self, supplier_id: int, source_path: str) -> Dict:
+		"""העתקת קובץ לתיקיית הספק והוספת רשומה ב-documents. מחזיר את רשומת המסמך."""
+		supplier = self.get_supplier(supplier_id)
+		if not supplier:
+			raise ValueError(f"ספק {supplier_id} לא נמצא")
+		if not source_path or not os.path.isfile(source_path):
+			raise ValueError("קובץ לא נמצא")
+
+		dest_dir = self.supplier_documents_dir(supplier_id)
+		os.makedirs(dest_dir, exist_ok=True)
+
+		original_name = os.path.basename(source_path)
+		name, ext = os.path.splitext(original_name)
+		filename = original_name
+		dest_path = os.path.join(dest_dir, filename)
+		if os.path.exists(dest_path):
+			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+			filename = f"{name}_{timestamp}{ext}"
+			dest_path = os.path.join(dest_dir, filename)
+
+		shutil.copy2(source_path, dest_path)
+
+		docs = supplier.setdefault('documents', [])
+		new_id = max([d.get('id', 0) for d in docs], default=0) + 1
+		record = {
+			'id': new_id,
+			'filename': filename,
+			'original_name': original_name,
+			'uploaded_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+		}
+		docs.append(record)
+		self.save_suppliers()
+		return record
+
+	def delete_supplier_document(self, supplier_id: int, document_id: int) -> bool:
+		"""מחיקת מסמך של ספק (קובץ + רשומה)."""
+		supplier = self.get_supplier(supplier_id)
+		if not supplier:
+			return False
+		docs = supplier.get('documents') or []
+		target = None
+		remaining = []
+		for d in docs:
+			try:
+				if int(d.get('id', 0)) == int(document_id):
+					target = d
+				else:
+					remaining.append(d)
+			except (TypeError, ValueError):
+				remaining.append(d)
+		if target is None:
+			return False
+		filename = target.get('filename') or ''
+		if filename:
+			path = self.supplier_document_path(supplier_id, filename)
+			try:
+				if os.path.isfile(path):
+					os.remove(path)
+			except OSError:
+				pass
+		supplier['documents'] = remaining
+		self.save_suppliers()
+		return True
+
+	def _remove_supplier_documents_dir(self, supplier_id: int) -> None:
+		dest_dir = self.supplier_documents_dir(supplier_id)
+		if os.path.isdir(dest_dir):
+			shutil.rmtree(dest_dir, ignore_errors=True)
+
 	def delete_supplier(self, supplier_id: int) -> bool:
-		"""מחיקת ספק לפי ID"""
+		"""מחיקת ספק לפי ID כולל תיקיית המסמכים שלו"""
 		before = len(self.suppliers)
 		self.suppliers = [s for s in self.suppliers if int(s.get('id',0)) != int(supplier_id)]
 		if len(self.suppliers) != before:
-			self.save_suppliers(); return True
+			self._remove_supplier_documents_dir(supplier_id)
+			self.save_suppliers()
+			return True
 		return False
 
 	def load_barcodes_data(self) -> Dict:
@@ -304,6 +401,16 @@ class DataProcessor:
 			return []
 		except Exception:
 			return []
+
+	def _load_json_dict(self, path: str) -> Dict:
+		try:
+			if os.path.exists(path):
+				with open(path, 'r', encoding='utf-8') as f:
+					data = json.load(f)
+					return data if isinstance(data, dict) else {}
+			return {}
+		except Exception:
+			return {}
 
 	def _save_json_list(self, path: str, data: List[Dict]) -> bool:
 		try:
@@ -1892,10 +1999,14 @@ class DataProcessor:
 		"""רענון קטלוג מהמחשב."""
 		self.products_catalog = self.load_products_catalog()
 
-	def export_products_catalog_to_excel(self, file_path: str) -> bool:
-		"""ייצוא קטלוג מוצרים ל-Excel עם 3 גליונות: תצוגה רגילה, עלויות לפי משקל, עלויות לפי מ"ר."""
+	def export_products_catalog_to_excel(self, file_path: str, records: list = None, preferred_cost_method: str = 'weight') -> bool:
+		"""ייצוא קטלוג מוצרים ל-Excel עם 3 גליונות: תצוגה רגילה, עלויות לפי משקל, עלויות לפי מ"ר.
+		אם מועבר records – מייצא רק אותם; אחרת את כל הקטלוג.
+		preferred_cost_method: 'weight' או 'sqm' – קובע איזה גיליון עלויות יופיע ראשון.
+		"""
 		try:
-			if not self.products_catalog:
+			catalog = list(records) if records is not None else list(self.products_catalog or [])
+			if not catalog:
 				raise ValueError("אין מוצרים לייצוא")
 			
 			# גליון 1: תצוגה רגילה - נתוני המוצרים הגולמיים
@@ -1904,7 +2015,7 @@ class DataProcessor:
 				'print_name','square_area','ticks_qty','elastic_qty','ribbon_qty','fabric_cost','created_at'
 			]
 			regular_rows = []
-			for rec in self.products_catalog:
+			for rec in catalog:
 				regular_rows.append({
 					'barcode': rec.get('barcode',''),
 					'id': rec.get('id'),
@@ -1924,55 +2035,42 @@ class DataProcessor:
 				})
 			df_regular = pd.DataFrame(regular_rows, columns=regular_columns)
 			
-			# גליון 2 ו-3: תצוגת עלויות
+			# גליונות עלויות
 			cost_columns = ['barcode','name','size','fabric_category','fabric_color','print_name',
 						   'fabric_cost','ticks_cost','elastic_cost','ribbon_cost','sewing_cost','total_cost']
+
+			def _cost_rows(method: str) -> list:
+				rows = []
+				for rec in catalog:
+					costs = self.calculate_item_cost(rec, method)
+					rows.append({
+						'barcode': rec.get('barcode',''),
+						'name': rec.get('name',''),
+						'size': rec.get('size',''),
+						'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
+						'fabric_color': rec.get('fabric_color',''),
+						'print_name': rec.get('print_name',''),
+						'fabric_cost': costs['fabric_cost'],
+						'ticks_cost': costs['ticks_cost'],
+						'elastic_cost': costs['elastic_cost'],
+						'ribbon_cost': costs['ribbon_cost'],
+						'sewing_cost': costs['sewing_cost'],
+						'total_cost': costs['total_cost']
+					})
+				return rows
+
+			df_weight = pd.DataFrame(_cost_rows('weight'), columns=cost_columns)
+			df_sqm = pd.DataFrame(_cost_rows('sqm'), columns=cost_columns)
 			
-			# גליון 2: עלויות לפי משקל
-			weight_rows = []
-			for rec in self.products_catalog:
-				costs = self.calculate_item_cost(rec, 'weight')
-				weight_rows.append({
-					'barcode': rec.get('barcode',''),
-					'name': rec.get('name',''),
-					'size': rec.get('size',''),
-					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
-					'fabric_color': rec.get('fabric_color',''),
-					'print_name': rec.get('print_name',''),
-					'fabric_cost': costs['fabric_cost'],
-					'ticks_cost': costs['ticks_cost'],
-					'elastic_cost': costs['elastic_cost'],
-					'ribbon_cost': costs['ribbon_cost'],
-					'sewing_cost': costs['sewing_cost'],
-					'total_cost': costs['total_cost']
-				})
-			df_weight = pd.DataFrame(weight_rows, columns=cost_columns)
-			
-			# גליון 3: עלויות לפי מ"ר
-			sqm_rows = []
-			for rec in self.products_catalog:
-				costs = self.calculate_item_cost(rec, 'sqm')
-				sqm_rows.append({
-					'barcode': rec.get('barcode',''),
-					'name': rec.get('name',''),
-					'size': rec.get('size',''),
-					'fabric_category': rec.get('fabric_category') or 'בלי קטגוריה',
-					'fabric_color': rec.get('fabric_color',''),
-					'print_name': rec.get('print_name',''),
-					'fabric_cost': costs['fabric_cost'],
-					'ticks_cost': costs['ticks_cost'],
-					'elastic_cost': costs['elastic_cost'],
-					'ribbon_cost': costs['ribbon_cost'],
-					'sewing_cost': costs['sewing_cost'],
-					'total_cost': costs['total_cost']
-				})
-			df_sqm = pd.DataFrame(sqm_rows, columns=cost_columns)
-			
-			# שמירת כל הגליונות בקובץ אחד
+			# שמירת כל הגליונות – גיליון שיטת החישוב הפעילה בתוכנה קודם
 			with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
 				df_regular.to_excel(writer, sheet_name='תצוגה רגילה', index=False)
-				df_weight.to_excel(writer, sheet_name='עלויות לפי משקל', index=False)
-				df_sqm.to_excel(writer, sheet_name='עלויות לפי מר', index=False)
+				if preferred_cost_method == 'sqm':
+					df_sqm.to_excel(writer, sheet_name='עלויות לפי מר', index=False)
+					df_weight.to_excel(writer, sheet_name='עלויות לפי משקל', index=False)
+				else:
+					df_weight.to_excel(writer, sheet_name='עלויות לפי משקל', index=False)
+					df_sqm.to_excel(writer, sheet_name='עלויות לפי מר', index=False)
 			
 			return True
 		except Exception as e:
@@ -2766,7 +2864,7 @@ class DataProcessor:
 			fabric_cost_method: שיטת חישוב עלות בד
 				- 'auto': אוטומטי - אם יש fabric_cost ישיר ישתמש בו, אחרת לפי מ"ר
 				- 'sqm': תמיד לפי מ"ר (שטח רבוע × מחיר למ"ר)
-				- 'weight': תמיד לפי משקל (fabric_cost ישיר, אם אין - 0)
+				- 'weight': לפי משקל (fabric_cost ישיר; אם אין – נפילה לחישוב לפי מ"ר)
 		"""
 		try:
 			settings = self.load_item_cost_settings()
@@ -2779,11 +2877,7 @@ class DataProcessor:
 			direct_fabric_cost = item.get('fabric_cost')
 			has_direct_cost = direct_fabric_cost is not None and direct_fabric_cost != ''
 			
-			if fabric_cost_method == 'weight':
-				# תמיד לפי משקל - משתמש בעלות ישירה אם יש, אחרת 0
-				fabric_cost = float(direct_fabric_cost) if has_direct_cost else 0
-			elif fabric_cost_method == 'sqm':
-				# תמיד לפי מ"ר - מחשב מחדש
+			def _fabric_cost_from_sqm() -> float:
 				fabric_price_rec = self.find_fabric_price(
 					item.get('fabric_category', ''),
 					item.get('fabric_color', ''),
@@ -2791,20 +2885,18 @@ class DataProcessor:
 				)
 				square_area = float(item.get('square_area', 0) or 0)
 				price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
-				fabric_cost = square_area * price_per_sqm
+				return square_area * price_per_sqm
+
+			if fabric_cost_method == 'weight':
+				# לפי משקל - עלות ישירה אם קיימת; אחרת נפילה לחישוב לפי מ"ר
+				# (כדי לא לייצא/להציג עלות חסרה כמו 0 כשיש מחיר למ"ר)
+				fabric_cost = float(direct_fabric_cost) if has_direct_cost else _fabric_cost_from_sqm()
+			elif fabric_cost_method == 'sqm':
+				# תמיד לפי מ"ר - מחשב מחדש
+				fabric_cost = _fabric_cost_from_sqm()
 			else:  # auto
 				# אוטומטי - אם יש עלות ישירה משתמש בה, אחרת מחשב לפי מ"ר
-				if has_direct_cost:
-					fabric_cost = float(direct_fabric_cost)
-				else:
-					fabric_price_rec = self.find_fabric_price(
-						item.get('fabric_category', ''),
-						item.get('fabric_color', ''),
-						item.get('print_name', '')
-					)
-					square_area = float(item.get('square_area', 0) or 0)
-					price_per_sqm = float(fabric_price_rec.get('price_per_sqm', 0) or 0)
-					fabric_cost = square_area * price_per_sqm
+				fabric_cost = float(direct_fabric_cost) if has_direct_cost else _fabric_cost_from_sqm()
 			
 			# חישוב עלויות אביזרים
 			tick_price = float(settings.get('tick_price', 0) or 0)
@@ -2891,3 +2983,198 @@ class DataProcessor:
 		except Exception as e:
 			print(f"שגיאה בעדכון כמויות פריט: {e}")
 			return False
+
+	# ===== בייבי בייסיק: מחירון, תעודות סחורה, תשלומים =====
+	BABY_BASIC_PARTNER_NAME = 'בייבי בייסיק'
+
+	def get_baby_basic_products(self) -> List[Dict]:
+		"""מוצרי בייבי בייסיק מריווחית, עם שדות מדבקה ומחיר סיטונאי."""
+		items = []
+		seen = set()
+		for p in (self.rivhit_products or []):
+			if str(p.get('compute_0036', '')).strip() != self.RIVHIT_BABY_BASIC_CATEGORY:
+				continue
+			barcode = str(p.get('item_part_num', '')).strip()
+			if not barcode or barcode in seen:
+				continue
+			seen.add(barcode)
+			fields = self.get_rivhit_label_fields(barcode, product=p)
+			items.append({
+				'item_name': str(p.get('item_name', '')).strip(),
+				'barcode': barcode,
+				'print_name': str(fields.get('print_name', '') or '').strip(),
+				'size': str(fields.get('size', '') or '').strip(),
+				'size_unit': str(fields.get('size_unit', '') or '').strip(),
+				'fabric': str(fields.get('fabric', '') or '').strip(),
+				'pack_qty': int(fields.get('pack_qty') or 5),
+				'model_code': str(fields.get('model_code', '') or '').strip(),
+				'color': str(fields.get('color', '') or '').strip(),
+				'price': self.get_baby_basic_price(barcode),
+			})
+		items.sort(key=lambda r: (r.get('print_name') or r.get('item_name') or '', r.get('size') or '', r.get('barcode') or ''))
+		return items
+
+	def get_baby_basic_price(self, barcode: str) -> float:
+		raw = (self.baby_basic_price_list or {}).get(str(barcode or '').strip())
+		if isinstance(raw, dict):
+			raw = raw.get('price', 0)
+		return parse_numeric_value(raw)
+
+	def set_baby_basic_price(self, barcode: str, price: float) -> bool:
+		barcode = str(barcode or '').strip()
+		if not barcode:
+			return False
+		self.baby_basic_price_list[barcode] = round(float(price or 0), 2)
+		return self._save_json_dict(self.baby_basic_price_list_file, self.baby_basic_price_list)
+
+	def set_baby_basic_prices_bulk(self, barcode_prices: Dict[str, float]) -> bool:
+		for barcode, price in (barcode_prices or {}).items():
+			bc = str(barcode or '').strip()
+			if not bc:
+				continue
+			self.baby_basic_price_list[bc] = round(float(price or 0), 2)
+		return self._save_json_dict(self.baby_basic_price_list_file, self.baby_basic_price_list)
+
+	def _save_json_dict(self, path: str, data: Dict) -> bool:
+		try:
+			with open(path, 'w', encoding='utf-8') as f:
+				json.dump(data, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת קובץ {path}: {e}")
+			return False
+
+	def get_baby_basic_notes(self) -> List[Dict]:
+		return list(self.baby_basic_notes or [])
+
+	def get_baby_basic_note(self, note_id: int) -> Optional[Dict]:
+		try:
+			nid = int(note_id)
+		except Exception:
+			return None
+		for rec in self.baby_basic_notes or []:
+			try:
+				if int(rec.get('id', -1)) == nid:
+					return rec
+			except Exception:
+				continue
+		return None
+
+	def add_baby_basic_note(self, customer: str, date_str: str, lines: List[Dict], note: str = '') -> int:
+		customer = str(customer or '').strip()
+		if not customer:
+			raise ValueError("חסר שם לקוח")
+		if not lines:
+			raise ValueError("אין שורות בתעודה")
+		clean_lines = []
+		total_qty = 0
+		total_amount = 0.0
+		for line in lines:
+			qty = int(line.get('quantity') or 0)
+			price = parse_numeric_value(line.get('unit_price'))
+			if qty <= 0:
+				continue
+			line_total = round(qty * price, 2)
+			total_qty += qty
+			total_amount += line_total
+			clean_lines.append({
+				'barcode': str(line.get('barcode', '')).strip(),
+				'item_name': str(line.get('item_name', '')).strip(),
+				'print_name': str(line.get('print_name', '')).strip(),
+				'size': str(line.get('size', '')).strip(),
+				'fabric': str(line.get('fabric', '')).strip(),
+				'color': str(line.get('color', '')).strip(),
+				'pack_qty': int(line.get('pack_qty') or 5),
+				'quantity': qty,
+				'unit_price': round(price, 2),
+				'line_total': line_total,
+			})
+		if not clean_lines:
+			raise ValueError("אין שורות עם כמות בתעודה")
+		new_id = self._next_id(self.baby_basic_notes)
+		record = {
+			'id': new_id,
+			'customer': customer,
+			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+			'note': str(note or '').strip(),
+			'lines': clean_lines,
+			'total_quantity': total_qty,
+			'total_amount': round(total_amount, 2),
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+		}
+		self.baby_basic_notes.append(record)
+		self._save_json_list(self.baby_basic_notes_file, self.baby_basic_notes)
+		return new_id
+
+	def delete_baby_basic_note(self, note_id: int) -> bool:
+		try:
+			nid = int(note_id)
+		except Exception:
+			return False
+		before = len(self.baby_basic_notes)
+		self.baby_basic_notes = [r for r in self.baby_basic_notes if int(r.get('id', -1)) != nid]
+		if len(self.baby_basic_notes) == before:
+			return False
+		self._save_json_list(self.baby_basic_notes_file, self.baby_basic_notes)
+		return True
+
+	def get_baby_basic_payments(self) -> List[Dict]:
+		return list(self.baby_basic_payments or [])
+
+	def add_baby_basic_payment(self, customer: str = '', date_str: str = '', amount: float = 0, note: str = '') -> int:
+		# חשבון השותף תמיד בייבי בייסיק — לא לקוח, לא בחירה.
+		customer = self.BABY_BASIC_PARTNER_NAME
+		amount = parse_numeric_value(amount)
+		if amount == 0:
+			raise ValueError("סכום התשלום חייב להיות שונה מאפס")
+		new_id = self._next_id(self.baby_basic_payments)
+		record = {
+			'id': new_id,
+			'customer': customer,
+			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+			'amount': round(amount, 2),
+			'note': str(note or '').strip(),
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+		}
+		self.baby_basic_payments.append(record)
+		self._save_json_list(self.baby_basic_payments_file, self.baby_basic_payments)
+		return new_id
+
+	def delete_baby_basic_payment(self, payment_id: int) -> bool:
+		try:
+			pid = int(payment_id)
+		except Exception:
+			return False
+		before = len(self.baby_basic_payments)
+		self.baby_basic_payments = [r for r in self.baby_basic_payments if int(r.get('id', -1)) != pid]
+		if len(self.baby_basic_payments) == before:
+			return False
+		self._save_json_list(self.baby_basic_payments_file, self.baby_basic_payments)
+		return True
+
+	def get_baby_basic_customers(self) -> List[str]:
+		names = set()
+		for rec in self.baby_basic_notes or []:
+			name = str(rec.get('customer', '')).strip()
+			if name:
+				names.add(name)
+		for rec in self.baby_basic_payments or []:
+			name = str(rec.get('customer', '')).strip()
+			if name:
+				names.add(name)
+		return sorted(names)
+
+	def get_baby_basic_account(self, customer: str = '') -> Dict:
+		"""חשבון שותף אחד מול בייבי בייסיק — כל התעודות וכל התשלומים."""
+		notes = self.get_baby_basic_notes()
+		payments = self.get_baby_basic_payments()
+		supplied = round(sum(parse_numeric_value(n.get('total_amount')) for n in notes), 2)
+		paid = round(sum(parse_numeric_value(p.get('amount')) for p in payments), 2)
+		return {
+			'partner': self.BABY_BASIC_PARTNER_NAME,
+			'supplied': supplied,
+			'paid': paid,
+			'balance': round(supplied - paid, 2),
+			'notes': notes,
+			'payments': payments,
+		}

@@ -51,6 +51,39 @@ _BUTTON_KINDS = {
 }
 
 
+def _force_clam_tree_heading(style, heading_style, bg, fg, active_bg):
+    """Vista מתעלם מרקע Treeview.Heading; שואלים אלמנטים מ-clam כדי שהצבע ייצבע."""
+    prefix = heading_style.replace(".Heading", "")
+    for part in ("cell", "border", "padding", "image", "text"):
+        dest = f"{prefix}.Treeheading.{part}"
+        try:
+            style.element_create(dest, "from", "clam", f"Treeheading.{part}")
+        except tk.TclError:
+            pass
+    style.layout(heading_style, [
+        (f"{prefix}.Treeheading.cell", {"sticky": "nswe"}),
+        (f"{prefix}.Treeheading.border", {"sticky": "nswe", "children": [
+            (f"{prefix}.Treeheading.padding", {"sticky": "nswe", "children": [
+                (f"{prefix}.Treeheading.image", {"side": "right", "sticky": ""}),
+                (f"{prefix}.Treeheading.text", {"sticky": "we"}),
+            ]})
+        ]}),
+    ])
+    style.configure(
+        heading_style,
+        font=(FONT_FAMILY, 9, "bold"),
+        background=bg,
+        foreground=fg,
+        relief="flat",
+        padding=(6, 6),
+    )
+    style.map(
+        heading_style,
+        background=[("pressed", active_bg), ("active", active_bg), ("!disabled", bg)],
+        foreground=[("pressed", fg), ("active", fg), ("!disabled", fg)],
+    )
+
+
 def apply_theme(root):
     """החלת העיצוב הגלובלי - נקרא פעם אחת מ-main.py אחרי יצירת החלון."""
     # ביטול הצביעה האוטומטית של ttkbootstrap על ווידג'טים קלאסיים (tk.*):
@@ -160,6 +193,45 @@ def apply_theme(root):
             "Treeview",
             background=[("selected", PRIMARY)],
             foreground=[("selected", "#ffffff")],
+        )
+
+        # כותרות כחולות לקריאות מעל ttkbootstrap cosmo (רקע בהיר + טקסט לבן = בלתי נראה)
+        for heading in ("primary.Treeview.Heading", "BlueHead.Treeview.Heading"):
+            style.configure(
+                heading,
+                font=(FONT_FAMILY, 9, "bold"),
+                background=PRIMARY,
+                foreground="#ffffff",
+                relief="flat",
+                padding=(6, 6),
+            )
+            style.map(
+                heading,
+                background=[("pressed", PRIMARY_DARK), ("active", PRIMARY_DARK), ("!disabled", PRIMARY)],
+                foreground=[("pressed", "#ffffff"), ("active", "#ffffff"), ("!disabled", "#ffffff")],
+            )
+        for heading in ("primary.Treeview.Heading", "BlueHead.Treeview.Heading"):
+            try:
+                _force_clam_tree_heading(style, heading, PRIMARY, "#ffffff", PRIMARY_DARK)
+            except Exception:
+                pass
+        style.configure(
+            "primary.Treeview",
+            font=(FONT_FAMILY, 9),
+            rowheight=28,
+            background=CARD_BG,
+            fieldbackground=CARD_BG,
+            foreground=TEXT,
+            borderwidth=0,
+        )
+        style.configure(
+            "BlueHead.Treeview",
+            font=(FONT_FAMILY, 9),
+            rowheight=28,
+            background=CARD_BG,
+            fieldbackground=CARD_BG,
+            foreground=TEXT,
+            borderwidth=0,
         )
 
         # שדות קלט
@@ -288,6 +360,12 @@ def make_button(parent, text, kind="primary", command=None, **kw):
     kw.setdefault("padx", 14)
     kw.setdefault("pady", 6)
     return tk.Button(parent, text=text, command=command, **kw)
+
+
+def make_treeview(parent, **kw):
+    """Treeview עם כותרות כחולות וטקסט לבן (עובד גם בערכת Vista ב-Windows)."""
+    kw.setdefault("style", "primary.Treeview")
+    return ttk.Treeview(parent, **kw)
 
 
 def stripe_tree(tree, even_bg="#f8fafc", odd_bg=CARD_BG):

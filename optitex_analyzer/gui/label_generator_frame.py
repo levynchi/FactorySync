@@ -97,6 +97,15 @@ class LabelGeneratorFrame(ttk.Frame):
                 command=self._on_pack_size_changed,
             ).pack(side="right", padx=6)
 
+        self._turkish_size_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(
+            row_pack,
+            text="גודל ספק טורקי (80×50 מ״מ)",
+            variable=self._turkish_size_var,
+            command=self._on_turkish_size_changed,
+            font=(theme.FONT_FAMILY, 10, 'bold'),
+        ).pack(side="left", padx=10)
+
         tk.Label(
             sel,
             text="טיפ: לחץ פעמיים על תא 'כמות' כדי להזין כמות לכל מוצר, ואז 'הוסף הכל לתור'. "
@@ -150,10 +159,12 @@ class LabelGeneratorFrame(ttk.Frame):
                   command=self._delete_selected).pack(side="left", padx=5)
         tk.Button(actions, text="🧹 נקה הכל", bg=theme.MUTED, fg="white",
                   command=self._clear_queue).pack(side="left", padx=5)
-        tk.Button(actions, text="🖨️ הדפס", bg=theme.PRIMARY_DARK, fg="white",
-                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._print).pack(side="right", padx=5)
-        tk.Button(actions, text="🧾 צור דף מדבקות (PDF)", bg=theme.SUCCESS, fg="white",
-                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._generate_pdf).pack(side="right", padx=5)
+        self._print_btn = tk.Button(actions, text="🖨️ הדפס", bg=theme.PRIMARY_DARK, fg="white",
+                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._print)
+        self._print_btn.pack(side="right", padx=5)
+        self._generate_btn = tk.Button(actions, text="🧾 צור דף מדבקות (PDF)", bg=theme.SUCCESS, fg="white",
+                  font=(theme.FONT_FAMILY, 11, 'bold'), command=self._generate_pdf)
+        self._generate_btn.pack(side="right", padx=5)
         tk.Button(actions, text="📁 ייצא קבצים בודדים (PDF)", bg=theme.PURPLE, fg="white",
                   font=(theme.FONT_FAMILY, 11, 'bold'), command=self._export_single_pdfs).pack(side="right", padx=5)
 
@@ -206,6 +217,17 @@ class LabelGeneratorFrame(ttk.Frame):
         """רענון עמודת מארז בתור כשמחליפים בורר גלובלי."""
         if self._queue_data:
             self._refresh_queue_tree()
+
+    def _turkish_size_on(self) -> bool:
+        return bool(self._turkish_size_var.get())
+
+    def _on_turkish_size_changed(self):
+        """במצב 80×50 מ״מ: רק ייצוא קבצים בודדים; דף A4 מושבת."""
+        on = self._turkish_size_on()
+        state = 'disabled' if on else 'normal'
+        self._print_btn.config(state=state)
+        self._generate_btn.config(state=state)
+        self._update_summary()
 
     def _filtered_products(self):
         category = self._category_var.get()
@@ -321,12 +343,17 @@ class LabelGeneratorFrame(ttk.Frame):
         self._update_summary()
 
     def _update_summary(self):
+        total = sum(int(it.get('qty', 0) or 0) for it in self._queue_data)
+        if self._turkish_size_on():
+            self._summary_var.set(
+                f'סה"כ: {total} מדבקות | גודל ספק טורקי 80×50 מ״מ (קבצים בודדים)'
+            )
+            return
         try:
             from optitex_analyzer.core.label_sheet import PER_PAGE
             per_page = PER_PAGE or 15
         except Exception:
             per_page = 15
-        total = sum(int(it.get('qty', 0) or 0) for it in self._queue_data)
         pages = (total + per_page - 1) // per_page if total > 0 else 0
         self._summary_var.set(f'סה"כ: {total} מדבקות | {pages} דפים ({per_page} לדף)')
 
@@ -376,7 +403,9 @@ class LabelGeneratorFrame(ttk.Frame):
         if not self._queue_data:
             messagebox.showwarning("אזהרה", "התור ריק")
             return
-        from optitex_analyzer.core.label_sheet import build_single_label_pdf
+        from optitex_analyzer.core.label_sheet import (
+            TURKISH_LABEL_H, TURKISH_LABEL_W, build_single_label_pdf,
+        )
         out_dir = os.path.join(os.getcwd(), "exports", "labels", "singles")
         os.makedirs(out_dir, exist_ok=True)
         pack_qty = self._current_pack_size()
@@ -384,6 +413,8 @@ class LabelGeneratorFrame(ttk.Frame):
         missing_code = []
         errors = []
         brand_prefix = {'baby_basic': 'baby basic', 'arie': 'ARYE'}
+        turkish = self._turkish_size_on()
+        size_kw = dict(label_w=TURKISH_LABEL_W, label_h=TURKISH_LABEL_H) if turkish else {}
         for it in self._queue_data:
             code = self._safe_filename_part(it.get('model_code', ''))
             if not code:
@@ -392,7 +423,7 @@ class LabelGeneratorFrame(ttk.Frame):
             size_part = self._safe_filename_part(it.get('size', ''))
             prefix = brand_prefix.get(str(it.get('brand', '') or 'arie'), 'ARYE')
             base = f"{code}_{size_part}" if size_part else code
-            fname = f"{prefix} {base}.pdf"
+            fname = f"{prefix} {base}_80x50.pdf" if turkish else f"{prefix} {base}.pdf"
             file_path = os.path.join(out_dir, fname)
             item = {
                 "print_name": it.get("print_name", ""),
@@ -405,7 +436,7 @@ class LabelGeneratorFrame(ttk.Frame):
             }
             try:
                 build_single_label_pdf(item, file_path, logo_path=self.logo_path,
-                                       draw_border=self.draw_border)
+                                       draw_border=self.draw_border, **size_kw)
                 exported += 1
             except Exception as e:
                 errors.append(f"{fname}: {e}")
@@ -425,6 +456,12 @@ class LabelGeneratorFrame(ttk.Frame):
                 pass
 
     def _generate_pdf(self):
+        if self._turkish_size_on():
+            messagebox.showinfo(
+                "גודל ספק טורקי",
+                "במצב 80×50 מ״מ ניתן לייצא רק קבצים בודדים (לא דף A4).",
+            )
+            return
         if not self._queue_data:
             messagebox.showwarning("אזהרה", "התור ריק")
             return
@@ -446,6 +483,12 @@ class LabelGeneratorFrame(ttk.Frame):
             messagebox.showerror("שגיאה", f"שגיאה ביצירת הקובץ:\n{e}")
 
     def _print(self):
+        if self._turkish_size_on():
+            messagebox.showinfo(
+                "גודל ספק טורקי",
+                "במצב 80×50 מ״מ ניתן לייצא רק קבצים בודדים (לא דף A4).",
+            )
+            return
         if not self._queue_data:
             messagebox.showwarning("אזהרה", "התור ריק")
             return

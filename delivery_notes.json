@@ -3073,5 +3073,51 @@
     "accessories": [],
     "receipt_kind": "delivery_note",
     "created_at": "2026-08-02 13:30:35"
+  },
+  {
+    "id": 77,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-08-16",
+    "lines": [
+      {
+        "product": "בגד גוף ש.ק",
+        "size": "6-12",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 104,
+        "note": ""
+      },
+      {
+        "product": "רגליות שאקי",
+        "size": "0-3",
+        "fabric_type": "",
+        "fabric_color": "",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 104,
+        "note": ""
+      }
+    ],
+    "total_quantity": 208,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "גומי 2.5 ס\"מ",
+        "unit": "",
+        "quantity": 50.0
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-08-16 12:14:00"
   }
 ]

@@ -30,6 +30,9 @@ ROWS = 5
 # מידות שחולצו מקובץ הייחוס: מדבקה 5.91x5.05 ס"מ עם רווחים בין המדבקות
 LABEL_W = 5.91 * cm
 LABEL_H = 5.05 * cm
+# גודל מדבקה לספק הטורקי — PDF בודד (לא דף A4; 80 מ"מ לא נכנס ל-3 עמודות)
+TURKISH_LABEL_W = 80 * mm
+TURKISH_LABEL_H = 50 * mm
 H_GAP = 0.92 * cm               # רווח אופקי בין מדבקות
 V_GAP = 0.59 * cm               # רווח אנכי בין מדבקות
 PER_PAGE = COLS * ROWS
@@ -50,6 +53,9 @@ IMG_VPAD = 0.3 * cm             # ריפוד עליון/תחתון לתמונת 
 UNITS_BOX_W = 2.4 * cm          # רוחב תיבת היחידות השחורה
 UNITS_BOX_H = 0.60 * cm         # גובה תיבת היחידות
 BC_HEIGHT = 0.88 * cm           # גובה הברקוד הסרוק
+BC_MAX_W = 3.6 * cm             # תקרת רוחב ברקוד בגודל הרגיל
+NAME_FONT_MAX = 15
+NAME_FONT_MAX_TURKISH = 17      # פונט שם מעט גדול יותר במדבקה הרחבה
 
 LOGO_PATH = os.path.join('assets', 'labels', 'logo.png')
 LOGO_BABY_BASIC_PATH = os.path.join('assets', 'labels', 'logo_baby_basic.png')
@@ -209,8 +215,12 @@ def _fit_font_size(c: canvas.Canvas, text: str, font: str, max_size: float,
 
 
 def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
-                logo_path=None, draw_border=True):
-    """מצייר מדבקה אחת בעיצוב מותג בתוך תא הממוקם ב-(x_left, y_bottom)."""
+                logo_path=None, draw_border=True, label_w=None, label_h=None):
+    """מצייר מדבקה אחת בעיצוב מותג בתוך תא הממוקם ב-(x_left, y_bottom).
+
+    label_w/label_h: גודל התא; ברירת מחדל = LABEL_W/LABEL_H.
+    במדבקה רחבה יותר (ספק טורקי) האלמנטים האופקיים גדלים לפי יחס הרוחב.
+    """
     print_name = str(item.get('print_name', '')).strip()
     size = str(item.get('size', '')).strip()
     size_unit = str(item.get('size_unit', '')).strip()
@@ -228,6 +238,13 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
     barcode = str(item.get('barcode', '')).strip()
     image_rel = str(item.get('image', '')).strip()
 
+    label_w = LABEL_W if label_w is None else label_w
+    label_h = LABEL_H if label_h is None else label_h
+    scale_x = (label_w / LABEL_W) if LABEL_W else 1.0
+    units_box_w = UNITS_BOX_W * scale_x
+    bc_max_w = BC_MAX_W * scale_x
+    name_max = NAME_FONT_MAX if scale_x <= 1.05 else NAME_FONT_MAX_TURKISH
+
     # ----- גבולות התא והתוכן -----
     cell_x = x_left
     cell_y = y_bottom
@@ -237,13 +254,13 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
         c.setLineWidth(0.7)
         c.setDash(3, 2)
         c.roundRect(cell_x + BORDER_INSET, cell_y + BORDER_INSET,
-                    LABEL_W - 2 * BORDER_INSET, LABEL_H - 2 * BORDER_INSET,
+                    label_w - 2 * BORDER_INSET, label_h - 2 * BORDER_INSET,
                     radius=0.28 * cm, stroke=1, fill=0)
         c.restoreState()
 
     x0 = cell_x + BORDER_INSET + CONTENT_PAD            # שמאל התוכן
-    x1 = cell_x + LABEL_W - BORDER_INSET - CONTENT_PAD  # ימין התוכן
-    yt = cell_y + LABEL_H - BORDER_INSET - CONTENT_PAD  # ראש התוכן
+    x1 = cell_x + label_w - BORDER_INSET - CONTENT_PAD  # ימין התוכן
+    yt = cell_y + label_h - BORDER_INSET - CONTENT_PAD  # ראש התוכן
     yb = cell_y + BORDER_INSET + CONTENT_PAD            # תחתית התוכן
     content_w = x1 - x0
 
@@ -256,9 +273,9 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
 
     # ----- גוף: תמונת מוצר משמאל ברוחב תיבת "היחידות", טקסט מימין -----
     # רוחב התמונה = רוחב תיבת היחידות; מיושרת מעליה (אותו קצה שמאלי), יחס נשמר.
-    img_col_w = UNITS_BOX_W
+    img_col_w = units_box_w
     units_box_top = footer_bottom + (FOOTER_H - UNITS_BOX_H) / 2.0 + UNITS_BOX_H
-    img_region_top = cell_y + LABEL_H - BORDER_INSET - 0.06 * cm - IMG_VPAD   # ריפוד עליון
+    img_region_top = cell_y + label_h - BORDER_INSET - 0.06 * cm - IMG_VPAD   # ריפוד עליון
     img_region_bottom = units_box_top + 0.06 * cm + IMG_VPAD                 # ריפוד תחתון מעל תיבת היחידות
     img_reader = _image_reader(image_rel)
     if img_reader is not None:
@@ -275,7 +292,7 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
         _draw_image_fit(c, logo, text_left, header_bottom, text_w, HEADER_H, anchor='n')
 
     # בלוק הטקסט ממורכז אנכית באזור הגוף
-    name_size = _fit_font_size(c, _shape(print_name), _FONT_BOLD, 15, 9, text_w) if print_name else 0
+    name_size = _fit_font_size(c, _shape(print_name), _FONT_BOLD, name_max, 9, text_w) if print_name else 0
     fabric_size = 8.5 if fabric else 0
     size_size = 10.5 if size else 0
     SEP_GAP = 0.14 * cm
@@ -340,17 +357,17 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
         box_y = footer_bottom + (FOOTER_H - UNITS_BOX_H) / 2.0
         c.saveState()
         c.setFillColorRGB(0, 0, 0)
-        c.rect(x0, box_y, UNITS_BOX_W, UNITS_BOX_H, stroke=0, fill=1)
+        c.rect(x0, box_y, units_box_w, UNITS_BOX_H, stroke=0, fill=1)
         c.setFillColorRGB(1, 1, 1)
         c.setFont(_FONT_BOLD, 10)
-        c.drawCentredString(x0 + UNITS_BOX_W / 2.0,
+        c.drawCentredString(x0 + units_box_w / 2.0,
                             box_y + (UNITS_BOX_H - 10) / 2.0 + 1.5,
                             _shape(f"{pack_qty} יחידות"))
         c.restoreState()
 
     if barcode:
         bc = _make_barcode(barcode)
-        target_w = min(3.6 * cm, content_w * 0.55)
+        target_w = min(bc_max_w, content_w * 0.55)
         bc_xr = x1                                  # קצה ימני של הברקוד
         bc_xl = bc_xr - target_w
         num_size = 7.5
@@ -365,18 +382,23 @@ def _draw_label(c: canvas.Canvas, x_left: float, y_bottom: float, item: dict,
             bc.drawOn(c, bc_xl, bc_bottom)
 
 
-def build_single_label_pdf(item: dict, file_path: str, logo_path=None, draw_border=True) -> str:
-    """בונה PDF של מדבקה בודדת - עמוד בגודל המדבקה עצמה (5.91x5.05 ס"מ).
+def build_single_label_pdf(item: dict, file_path: str, logo_path=None, draw_border=True,
+                           label_w=None, label_h=None) -> str:
+    """בונה PDF של מדבקה בודדת - עמוד בגודל המדבקה עצמה.
 
+    ברירת מחדל: 5.91x5.05 ס"מ. לספק טורקי: TURKISH_LABEL_W x TURKISH_LABEL_H (80x50 מ"מ).
     item: dict {print_name,size,size_unit,fabric,pack_qty,barcode,image}.
     מחזיר את נתיב הקובץ שנכתב.
     """
     if not item:
         raise ValueError("אין נתוני מדבקה לייצוא")
+    w = LABEL_W if label_w is None else label_w
+    h = LABEL_H if label_h is None else label_h
     _register_fonts()
     os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
-    c = canvas.Canvas(file_path, pagesize=(LABEL_W, LABEL_H))
-    _draw_label(c, 0, 0, item, logo_path=logo_path, draw_border=draw_border)
+    c = canvas.Canvas(file_path, pagesize=(w, h))
+    _draw_label(c, 0, 0, item, logo_path=logo_path, draw_border=draw_border,
+                label_w=w, label_h=h)
     c.showPage()
     c.save()
     return file_path

@@ -20,6 +20,7 @@ from .shipping_costs_tab import ShippingCostsTabMixin
 from .orders_tab import OrdersTabMixin
 from .stickers_tab import StickersTabMixin
 from .rivhit_tab import RivhitTabMixin
+from .baby_basic_sales import BabyBasicSalesTabMixin
 from . import theme
 
 
@@ -40,6 +41,7 @@ class MainWindow(
     OrdersTabMixin,
     StickersTabMixin,
     RivhitTabMixin,
+    BabyBasicSalesTabMixin,
 ):
     def __init__(self, root, settings_manager, file_analyzer, data_processor):
         """Initialize the main window, assemble all tab mixins and shared UI."""
@@ -187,6 +189,15 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'ריווחית' נכשלה: {e}")
+            except Exception:
+                pass
+
+        # Baby Basic wholesale notes / price list / account
+        try:
+            self._create_baby_basic_sales_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'בייבי בייסיק' נכשלה: {e}")
             except Exception:
                 pass
 
