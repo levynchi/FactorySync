@@ -9,6 +9,17 @@ from .. import theme
 class BabyBasicSalesMethodsMixin:
     """Logic for Baby Basic wholesale notes, price list and account."""
 
+    BB_ROOM_COUNT_EXTRA_MODELS = ('אוברול', 'חולצות טורקיה', 'גופייה טורקיה')
+    BB_ROOM_COUNT_COLORS = (
+        'חום', 'כחול', 'שחור', 'מנטה', 'אפור בהיר', 'לבן',
+        'ורוד בהיר', 'כחול נייבי', 'כחול מלאנז', 'ורוד בייבי מלאנז', 'פוקסיה',
+    )
+    BB_ROOM_COUNT_PRINTS = (
+        'משולשים', 'מנומר', 'נקודות', 'חלל', 'באר שבע בנות',
+        'פרפרים', 'באר שבע בנים', 'נוצות', 'אוהלים', 'עלים',
+    )
+    BB_ROOM_COUNT_FABRICS = ('פלנל', 'טריקו', 'ופל')
+
     def _bb_money(self, value) -> str:
         try:
             return f"{parse_numeric_value(value):,.2f}"
@@ -689,6 +700,92 @@ class BabyBasicSalesMethodsMixin:
         self.data_processor.delete_baby_basic_payment(sel[0])
         self._bb_refresh_account()
 
+    def _bb_biz_name(self) -> str:
+        try:
+            return (self.settings.get('business.name', '') or '') if getattr(self, 'settings', None) else ''
+        except Exception:
+            return ''
+
+    def _bb_print_selected_payment_pdf(self, event=None):
+        tree = getattr(self, 'bb_acc_pay_tree', None)
+        if tree is None:
+            return
+        sel = tree.selection()
+        if not sel:
+            messagebox.showwarning("הדפסה", "בחר תשלום מהרשימה.")
+            return
+        rec = self.data_processor.get_baby_basic_payment(sel[0])
+        if rec:
+            self._bb_export_payment_pdf(rec)
+
+    def _bb_export_payment_pdf(self, rec: dict, path: str | None = None):
+        try:
+            from optitex_analyzer.core.baby_basic_note_pdf import generate_baby_basic_payment_pdf
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן ליצור PDF:\n{e}")
+            return
+        export_dir = os.path.join(os.getcwd(), 'exports', 'baby_basic_payments')
+        os.makedirs(export_dir, exist_ok=True)
+        safe_id = rec.get('id')
+        safe_date = str(rec.get('date') or '').replace(':', '-')
+        default_name = f"baby_basic_payment_{safe_id}_{safe_date}.pdf"
+        if not path:
+            path = os.path.join(export_dir, default_name)
+        acc = {}
+        try:
+            acc = self.data_processor.get_baby_basic_account() or {}
+        except Exception:
+            acc = {}
+        try:
+            generate_baby_basic_payment_pdf(
+                rec,
+                path,
+                biz_name=self._bb_biz_name() or 'בייבי בייסיק',
+                partner=self._bb_partner_name(),
+                supplied=acc.get('supplied'),
+                paid=acc.get('paid'),
+                balance=acc.get('balance'),
+            )
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"יצירת PDF נכשלה:\n{e}")
+            return
+        try:
+            os.startfile(path)
+        except Exception:
+            messagebox.showinfo("PDF", f"הקובץ נשמר:\n{path}")
+
+    def _bb_print_payments_report_pdf(self):
+        try:
+            from optitex_analyzer.core.baby_basic_note_pdf import generate_baby_basic_payments_report_pdf
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן ליצור PDF:\n{e}")
+            return
+        acc = self.data_processor.get_baby_basic_account() or {}
+        payments = acc.get('payments') or self.data_processor.get_baby_basic_payments()
+        if not payments:
+            messagebox.showwarning("הדפסה", "אין תשלומים להדפסה.")
+            return
+        export_dir = os.path.join(os.getcwd(), 'exports', 'baby_basic_payments')
+        os.makedirs(export_dir, exist_ok=True)
+        path = os.path.join(export_dir, f"baby_basic_payments_{datetime.now().strftime('%Y%m%d')}.pdf")
+        try:
+            generate_baby_basic_payments_report_pdf(
+                payments,
+                path,
+                biz_name=self._bb_biz_name() or 'בייבי בייסיק',
+                partner=self._bb_partner_name(),
+                supplied=acc.get('supplied'),
+                paid=acc.get('paid'),
+                balance=acc.get('balance'),
+            )
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"יצירת PDF נכשלה:\n{e}")
+            return
+        try:
+            os.startfile(path)
+        except Exception:
+            messagebox.showinfo("PDF", f"הקובץ נשמר:\n{path}")
+
     def _bb_open_account_note(self, event=None):
         tree = getattr(self, 'bb_acc_notes_tree', None)
         if tree is None:
@@ -700,3 +797,545 @@ class BabyBasicSalesMethodsMixin:
         rec = self.data_processor.get_baby_basic_note(note_id)
         if rec:
             self._bb_open_note_view(rec)
+
+    # ---------- ספירת מלאי חדר (בלי ברקודים) ----------
+    def _bb_room_size_sort_key(self, size: str):
+        order = ['0-3', '3-6', '6-12', '12-18', '18-24', '24-30']
+        s = str(size or '').strip()
+        try:
+            return (0, order.index(s))
+        except ValueError:
+            return (1, s)
+
+    def _bb_room_merge_names(self, *groups):
+        names = []
+        seen = set()
+        for group in groups:
+            for name in group or []:
+                name = str(name or '').strip()
+                if name and name not in seen:
+                    seen.add(name)
+                    names.append(name)
+        return names
+
+    def _bb_room_extra_models(self):
+        try:
+            extra = self.data_processor.get_baby_basic_room_count_extra_models()
+        except Exception:
+            extra = []
+        return self._bb_room_merge_names(self.BB_ROOM_COUNT_EXTRA_MODELS, extra)
+
+    def _bb_room_extra_colors(self):
+        try:
+            extra = self.data_processor.get_baby_basic_room_count_extra_colors()
+        except Exception:
+            extra = []
+        return self._bb_room_merge_names(self.BB_ROOM_COUNT_COLORS, extra)
+
+    def _bb_room_extra_prints(self):
+        try:
+            extra = self.data_processor.get_baby_basic_room_count_extra_prints()
+        except Exception:
+            extra = []
+        return self._bb_room_merge_names(self.BB_ROOM_COUNT_PRINTS, extra)
+
+    def _bb_room_extra_fabrics(self):
+        try:
+            extra = self.data_processor.get_baby_basic_room_count_extra_fabrics()
+        except Exception:
+            extra = []
+        catalog = []
+        for p in self._bb_products():
+            name = (p.get('fabric') or '').strip()
+            if name:
+                catalog.append(name)
+        return self._bb_room_merge_names(self.BB_ROOM_COUNT_FABRICS, catalog, extra)
+
+    def _bb_room_catalog_for_model(self, model: str = ''):
+        model = (model or '').strip()
+        sizes = set()
+        catalog_models = set()
+        extras = self._bb_room_extra_models()
+        extra_set = set(extras)
+        for p in self._bb_products():
+            name = (p.get('print_name') or p.get('item_name') or '').strip()
+            if name:
+                catalog_models.add(name)
+            if model and name != model:
+                continue
+            size = (p.get('size') or '').strip()
+            if size:
+                sizes.add(size)
+        rest = sorted(m for m in catalog_models if m not in extra_set)
+        return {
+            'models': extras + rest,
+            'colors': self._bb_room_extra_colors(),
+            'prints': self._bb_room_extra_prints(),
+            'fabrics': self._bb_room_extra_fabrics(),
+            'sizes': sorted(sizes, key=self._bb_room_size_sort_key),
+        }
+
+    def _bb_refresh_room_combos(self, event=None):
+        model = (self.bb_room_model_var.get() if hasattr(self, 'bb_room_model_var') else '').strip()
+        opts = self._bb_room_catalog_for_model(model)
+        all_opts = self._bb_room_catalog_for_model('')
+        if getattr(self, 'bb_room_model_combo', None) is not None:
+            try:
+                self.bb_room_model_combo['values'] = all_opts['models']
+            except Exception:
+                pass
+        if getattr(self, 'bb_room_color_combo', None) is not None:
+            try:
+                self.bb_room_color_combo['values'] = all_opts['colors']
+            except Exception:
+                pass
+        if getattr(self, 'bb_room_print_combo', None) is not None:
+            try:
+                self.bb_room_print_combo['values'] = all_opts['prints']
+            except Exception:
+                pass
+        if getattr(self, 'bb_room_fabric_combo', None) is not None:
+            try:
+                self.bb_room_fabric_combo['values'] = all_opts['fabrics']
+            except Exception:
+                pass
+        if getattr(self, 'bb_room_size_combo', None) is not None:
+            try:
+                sizes = opts['sizes'] or all_opts['sizes']
+                self.bb_room_size_combo['values'] = sizes
+            except Exception:
+                pass
+
+    def _bb_on_room_model_change(self, event=None):
+        self._bb_refresh_room_combos()
+
+    def _bb_refresh_room_lines(self):
+        tree = getattr(self, 'bb_room_lines_tree', None)
+        if tree is None:
+            return
+        self._bb_clear_tree(tree)
+        lines = getattr(self, '_bb_room_lines', [])
+        total = 0
+        for i, line in enumerate(lines):
+            qty = int(line.get('quantity') or 0)
+            total += qty
+            tree.insert('', 'end', iid=str(i), values=(
+                line.get('print_name') or '',
+                line.get('fabric') or '',
+                line.get('color') or '',
+                line.get('print') or '',
+                line.get('size') or '',
+                qty,
+            ))
+        theme.stripe_tree(tree)
+        if hasattr(self, 'bb_room_total_var'):
+            self.bb_room_total_var.set(f"סה״כ יחידות: {total}")
+
+    def _bb_add_room_line(self):
+        model = (self.bb_room_model_var.get() if hasattr(self, 'bb_room_model_var') else '').strip()
+        fabric = (self.bb_room_fabric_var.get() if hasattr(self, 'bb_room_fabric_var') else '').strip()
+        color = (self.bb_room_color_var.get() if hasattr(self, 'bb_room_color_var') else '').strip()
+        print_val = (self.bb_room_print_var.get() if hasattr(self, 'bb_room_print_var') else '').strip()
+        size = (self.bb_room_size_var.get() if hasattr(self, 'bb_room_size_var') else '').strip()
+        raw = (self.bb_room_qty_var.get() if hasattr(self, 'bb_room_qty_var') else '').strip()
+        if not model:
+            messagebox.showwarning("ספירת מלאי", "בחר או הקלד דגם.")
+            return
+        try:
+            qty = int(float(raw)) if raw else 0
+        except Exception:
+            qty = 0
+        if qty <= 0:
+            messagebox.showwarning("ספירת מלאי", "הזן כמות גדולה מאפס.")
+            return
+        if not hasattr(self, '_bb_room_lines'):
+            self._bb_room_lines = []
+        key = (model, fabric, color, print_val, size)
+        merged = False
+        for line in self._bb_room_lines:
+            existing = (
+                str(line.get('print_name') or '').strip(),
+                str(line.get('fabric') or '').strip(),
+                str(line.get('color') or '').strip(),
+                str(line.get('print') or '').strip(),
+                str(line.get('size') or '').strip(),
+            )
+            if existing == key:
+                line['quantity'] = int(line.get('quantity') or 0) + qty
+                merged = True
+                break
+        if not merged:
+            self._bb_room_lines.append({
+                'print_name': model,
+                'fabric': fabric,
+                'color': color,
+                'print': print_val,
+                'size': size,
+                'quantity': qty,
+            })
+        self._bb_persist_room_line_extras([{
+            'print_name': model,
+            'fabric': fabric,
+            'color': color,
+            'print': print_val,
+        }])
+        if hasattr(self, 'bb_room_qty_var'):
+            self.bb_room_qty_var.set('')
+        self._bb_refresh_room_combos()
+        self._bb_refresh_room_lines()
+
+    def _bb_edit_room_qty_cell(self, event):
+        def on_commit(iid, raw):
+            try:
+                idx = int(iid)
+            except Exception:
+                return
+            lines = getattr(self, '_bb_room_lines', [])
+            if idx < 0 or idx >= len(lines):
+                return
+            try:
+                qty = int(float(raw)) if raw else 0
+            except Exception:
+                qty = 0
+            if qty <= 0:
+                lines.pop(idx)
+            else:
+                lines[idx]['quantity'] = qty
+            self._bb_refresh_room_lines()
+        self._bb_inline_edit(self.bb_room_lines_tree, event, '#6', on_commit)
+
+    def _bb_remove_selected_room_line(self):
+        tree = getattr(self, 'bb_room_lines_tree', None)
+        if tree is None:
+            return
+        sel = tree.selection()
+        if not sel:
+            return
+        try:
+            idx = int(sel[0])
+            if 0 <= idx < len(self._bb_room_lines):
+                self._bb_room_lines.pop(idx)
+        except Exception:
+            return
+        self._bb_refresh_room_lines()
+
+    def _bb_clear_current_room_count(self):
+        self._bb_room_lines = []
+        if hasattr(self, 'bb_room_note_var'):
+            self.bb_room_note_var.set('')
+        if hasattr(self, 'bb_room_date_var'):
+            self.bb_room_date_var.set(datetime.now().strftime('%Y-%m-%d'))
+        if hasattr(self, 'bb_room_qty_var'):
+            self.bb_room_qty_var.set('')
+        self._bb_refresh_room_lines()
+
+    def _bb_save_room_count(self):
+        date_str = (self.bb_room_date_var.get() if hasattr(self, 'bb_room_date_var') else '').strip()
+        note = (self.bb_room_note_var.get() if hasattr(self, 'bb_room_note_var') else '').strip()
+        lines = list(getattr(self, '_bb_room_lines', []) or [])
+        try:
+            new_id = self.data_processor.add_baby_basic_room_count(date_str, lines, note=note)
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+            return
+        self._bb_clear_current_room_count()
+        self._bb_refresh_saved_room_counts()
+        messagebox.showinfo("נשמר", f"ספירת מלאי חדר #{new_id} נשמרה.")
+        rec = self.data_processor.get_baby_basic_room_count(new_id)
+        if rec:
+            self._bb_open_room_count_view(rec)
+
+    def _bb_persist_room_line_extras(self, lines):
+        catalog_names = set()
+        catalog_fabrics = set(self.BB_ROOM_COUNT_FABRICS)
+        for p in self._bb_products():
+            name = (p.get('print_name') or p.get('item_name') or '').strip()
+            if name:
+                catalog_names.add(name)
+            fname = (p.get('fabric') or '').strip()
+            if fname:
+                catalog_fabrics.add(fname)
+        for line in lines or []:
+            model = str(line.get('print_name') or '').strip()
+            fabric = str(line.get('fabric') or '').strip()
+            color = str(line.get('color') or '').strip()
+            print_val = str(line.get('print') or '').strip()
+            if model and model not in catalog_names and model not in self.BB_ROOM_COUNT_EXTRA_MODELS:
+                try:
+                    self.data_processor.add_baby_basic_room_count_extra_model(model)
+                    catalog_names.add(model)
+                except Exception:
+                    pass
+            if fabric and fabric not in catalog_fabrics:
+                try:
+                    self.data_processor.add_baby_basic_room_count_extra_fabric(fabric)
+                    catalog_fabrics.add(fabric)
+                except Exception:
+                    pass
+            if color and color not in self.BB_ROOM_COUNT_COLORS:
+                try:
+                    self.data_processor.add_baby_basic_room_count_extra_color(color)
+                except Exception:
+                    pass
+            if print_val and print_val not in self.BB_ROOM_COUNT_PRINTS:
+                try:
+                    self.data_processor.add_baby_basic_room_count_extra_print(print_val)
+                except Exception:
+                    pass
+
+    def _bb_import_room_count_excel(self):
+        initial = os.path.join(os.getcwd(), 'exports', 'baby_basic_room_counts')
+        if not os.path.isdir(initial):
+            initial = os.getcwd()
+        path = filedialog.askopenfilename(
+            title='ייבוא ספירת מלאי מאקסל',
+            initialdir=initial,
+            filetypes=[('Excel', '*.xlsx'), ('All files', '*.*')],
+        )
+        if not path:
+            return
+        try:
+            parsed = self.data_processor.parse_baby_basic_room_count_excel(path)
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"קריאת הקובץ נכשלה:\n{e}")
+            return
+        lines = list(parsed.get('lines') or [])
+        self._bb_persist_room_line_extras(lines)
+        try:
+            new_id = self.data_processor.add_baby_basic_room_count(
+                parsed.get('date') or '',
+                lines,
+                note=parsed.get('note') or '',
+            )
+        except Exception as e:
+            messagebox.showerror("שגיאה", str(e))
+            return
+        self._bb_refresh_room_combos()
+        self._bb_refresh_saved_room_counts()
+        messagebox.showinfo("יובא", f"ספירת מלאי חדר #{new_id} נשמרה מתוך הקובץ.\n{len(lines)} שורות.")
+        rec = self.data_processor.get_baby_basic_room_count(new_id)
+        if rec:
+            self._bb_open_room_count_view(rec)
+
+    def _bb_refresh_saved_room_counts(self):
+        tree = getattr(self, 'bb_saved_room_tree', None)
+        if tree is None:
+            return
+        self._bb_clear_tree(tree)
+        counts = sorted(
+            self.data_processor.get_baby_basic_room_counts(),
+            key=lambda n: int(n.get('id') or 0),
+            reverse=True,
+        )
+        for rec in counts:
+            tree.insert('', 'end', iid=str(rec.get('id')), values=(
+                rec.get('id', ''),
+                rec.get('date', ''),
+                rec.get('total_quantity', 0),
+                rec.get('note', ''),
+            ))
+        theme.stripe_tree(tree)
+
+    def _bb_open_selected_room_count(self, event=None):
+        tree = getattr(self, 'bb_saved_room_tree', None)
+        if tree is None:
+            return
+        sel = tree.selection()
+        if not sel:
+            return
+        rec = self.data_processor.get_baby_basic_room_count(sel[0])
+        if rec:
+            self._bb_open_room_count_view(rec)
+
+    def _bb_delete_selected_room_count(self):
+        tree = getattr(self, 'bb_saved_room_tree', None)
+        if tree is None:
+            return
+        sel = tree.selection()
+        if not sel:
+            return
+        rec = self.data_processor.get_baby_basic_room_count(sel[0])
+        if not rec:
+            return
+        if not messagebox.askyesno("מחיקה", f"למחוק ספירת מלאי #{rec.get('id')} מתאריך {rec.get('date')}?"):
+            return
+        self.data_processor.delete_baby_basic_room_count(rec.get('id'))
+        self._bb_refresh_saved_room_counts()
+
+    def _bb_previous_room_count(self, rec: dict):
+        counts = sorted(
+            self.data_processor.get_baby_basic_room_counts(),
+            key=lambda n: (str(n.get('date') or ''), int(n.get('id') or 0)),
+        )
+        prev = None
+        rec_id = int(rec.get('id') or 0)
+        for item in counts:
+            if int(item.get('id') or 0) == rec_id:
+                break
+            prev = item
+        return prev
+
+    def _bb_open_room_count_view(self, rec: dict):
+        import tkinter as tk
+        from tkinter import ttk
+        win = tk.Toplevel(self.root)
+        win.title(f"ספירת מלאי חדר #{rec.get('id')}")
+        win.configure(bg=theme.PAGE_BG)
+        win.geometry("1140x520")
+        tk.Label(
+            win,
+            text=f"ספירת מלאי חדר #{rec.get('id')}  |  {rec.get('date')}",
+            font=(theme.FONT_FAMILY, 13, 'bold'),
+            bg=theme.PAGE_BG,
+            fg=theme.DARK,
+        ).pack(pady=(10, 4))
+        if rec.get('note'):
+            tk.Label(win, text=rec.get('note'), bg=theme.PAGE_BG, fg=theme.SUBTEXT).pack()
+
+        prev = self._bb_previous_room_count(rec)
+        prev_map = {}
+        if prev:
+            for line in prev.get('lines') or []:
+                key = (
+                    str(line.get('print_name') or '').strip(),
+                    str(line.get('fabric') or '').strip(),
+                    str(line.get('color') or '').strip(),
+                    str(line.get('print') or '').strip(),
+                    str(line.get('size') or '').strip(),
+                    str(line.get('area') or '').strip(),
+                    str(line.get('box') or '').strip(),
+                )
+                prev_map[key] = int(line.get('quantity') or 0)
+            tk.Label(
+                win,
+                text=f"השוואה לספירה #{prev.get('id')} מתאריך {prev.get('date')}",
+                bg=theme.PAGE_BG,
+                fg=theme.SUBTEXT,
+                font=theme.FONT_SMALL,
+            ).pack()
+
+        cols = ('print_name', 'fabric', 'color', 'print', 'size', 'area', 'box', 'qty', 'delta')
+        headers = {
+            'print_name': 'דגם',
+            'fabric': 'סוג בד',
+            'color': 'צבע רקע',
+            'print': 'הדפס',
+            'size': 'מידה',
+            'area': 'אזור',
+            'box': 'קופסא',
+            'qty': 'כמות',
+            'delta': 'שינוי',
+        }
+        tree = theme.make_treeview(win, columns=cols, show='headings', height=14)
+        for c in cols:
+            tree.heading(c, text=headers[c])
+            w = 80 if c in ('size', 'qty', 'delta', 'area', 'box') else (110 if c in ('fabric', 'color', 'print') else 160)
+            tree.column(c, width=w, anchor='center')
+        vs = ttk.Scrollbar(win, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vs.set)
+        tree.pack(side='left', fill='both', expand=True, padx=(12, 0), pady=8)
+        vs.pack(side='left', fill='y', pady=8)
+        for line in rec.get('lines') or []:
+            qty = int(line.get('quantity') or 0)
+            key = (
+                str(line.get('print_name') or '').strip(),
+                str(line.get('fabric') or '').strip(),
+                str(line.get('color') or '').strip(),
+                str(line.get('print') or '').strip(),
+                str(line.get('size') or '').strip(),
+                str(line.get('area') or '').strip(),
+                str(line.get('box') or '').strip(),
+            )
+            delta = ''
+            if prev_map:
+                old = prev_map.get(key, 0)
+                diff = qty - old
+                if diff > 0:
+                    delta = f"+{diff}"
+                elif diff < 0:
+                    delta = str(diff)
+                else:
+                    delta = '0'
+            tree.insert('', 'end', values=(
+                line.get('print_name') or '',
+                line.get('fabric') or '',
+                line.get('color') or '',
+                line.get('print') or '',
+                line.get('size') or '',
+                line.get('area') or '',
+                line.get('box') or '',
+                qty,
+                delta,
+            ))
+        theme.stripe_tree(tree)
+
+        footer = tk.Frame(win, bg=theme.PAGE_BG)
+        footer.pack(fill='x', padx=12, pady=(0, 10))
+        tk.Label(
+            footer,
+            text=f"סה״כ יחידות: {rec.get('total_quantity', 0)}",
+            font=(theme.FONT_FAMILY, 11, 'bold'),
+            bg=theme.PAGE_BG,
+        ).pack(side='right')
+        theme.make_button(footer, "PDF להדפסה (A4)", kind="primary", command=lambda: self._bb_export_room_count_pdf(rec)).pack(side='left')
+
+    def _bb_print_selected_room_count_pdf(self):
+        tree = getattr(self, 'bb_saved_room_tree', None)
+        if tree is None:
+            return
+        sel = tree.selection()
+        if not sel:
+            messagebox.showwarning("הדפסה", "בחר ספירה מהרשימה.")
+            return
+        rec = self.data_processor.get_baby_basic_room_count(sel[0])
+        if rec:
+            self._bb_export_room_count_pdf(rec)
+
+    def _bb_export_room_count_pdf(self, rec: dict, path: str | None = None):
+        try:
+            from optitex_analyzer.core.baby_basic_note_pdf import generate_baby_basic_room_count_pdf
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן ליצור PDF:\n{e}")
+            return
+        export_dir = os.path.join(os.getcwd(), 'exports', 'baby_basic_room_counts')
+        os.makedirs(export_dir, exist_ok=True)
+        safe_id = rec.get('id')
+        safe_date = str(rec.get('date') or '').replace(':', '-')
+        default_name = f"baby_basic_room_count_{safe_id}_{safe_date}.pdf"
+        if not path:
+            path = os.path.join(export_dir, default_name)
+        try:
+            generate_baby_basic_room_count_pdf(rec, path, biz_name=self._bb_biz_name() or 'בייבי בייסיק')
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"יצירת PDF נכשלה:\n{e}")
+            return
+        try:
+            os.startfile(path)
+        except Exception:
+            messagebox.showinfo("PDF", f"הקובץ נשמר:\n{path}")
+
+    def _bb_print_count_sheet_pdf(self):
+        try:
+            from optitex_analyzer.core.baby_basic_note_pdf import generate_baby_basic_count_sheet_pdf
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"לא ניתן ליצור PDF:\n{e}")
+            return
+        export_dir = os.path.join(os.getcwd(), 'exports', 'baby_basic_room_counts')
+        os.makedirs(export_dir, exist_ok=True)
+        path = os.path.join(
+            export_dir,
+            f"baby_basic_count_sheet_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+        )
+        try:
+            generate_baby_basic_count_sheet_pdf(
+                file_path=path,
+                biz_name=self._bb_biz_name() or 'בייבי בייסיק',
+                location='חדר בייבי בייסיק',
+            )
+        except Exception as e:
+            messagebox.showerror("שגיאה", f"יצירת PDF נכשלה:\n{e}")
+            return
+        try:
+            os.startfile(path)
+        except Exception:
+            messagebox.showinfo("PDF", f"הקובץ נשמר:\n{path}")

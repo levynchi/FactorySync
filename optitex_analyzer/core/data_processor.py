@@ -127,9 +127,13 @@ class DataProcessor:
 		self.baby_basic_price_list_file = 'baby_basic_price_list.json'
 		self.baby_basic_notes_file = 'baby_basic_delivery_notes.json'
 		self.baby_basic_payments_file = 'baby_basic_payments.json'
+		self.baby_basic_room_counts_file = 'baby_basic_room_counts.json'
+		self.baby_basic_room_count_models_file = 'baby_basic_room_count_models.json'
 		self.baby_basic_price_list = self._load_json_dict(self.baby_basic_price_list_file)
 		self.baby_basic_notes = self._load_json_list(self.baby_basic_notes_file)
 		self.baby_basic_payments = self._load_json_list(self.baby_basic_payments_file)
+		self.baby_basic_room_counts = self._load_json_list(self.baby_basic_room_counts_file)
+		self.baby_basic_room_count_models = self._load_baby_basic_room_count_extras()
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -3121,6 +3125,19 @@ class DataProcessor:
 	def get_baby_basic_payments(self) -> List[Dict]:
 		return list(self.baby_basic_payments or [])
 
+	def get_baby_basic_payment(self, payment_id: int) -> Optional[Dict]:
+		try:
+			pid = int(payment_id)
+		except Exception:
+			return None
+		for rec in self.baby_basic_payments or []:
+			try:
+				if int(rec.get('id', -1)) == pid:
+					return rec
+			except Exception:
+				continue
+		return None
+
 	def add_baby_basic_payment(self, customer: str = '', date_str: str = '', amount: float = 0, note: str = '') -> int:
 		# חשבון השותף תמיד בייבי בייסיק — לא לקוח, לא בחירה.
 		customer = self.BABY_BASIC_PARTNER_NAME
@@ -3178,3 +3195,308 @@ class DataProcessor:
 			'notes': notes,
 			'payments': payments,
 		}
+
+	def _normalize_extra_names(self, items) -> List[str]:
+		names = []
+		seen = set()
+		for item in items or []:
+			if isinstance(item, str):
+				name = item.strip()
+			elif isinstance(item, dict):
+				name = str(item.get('name') or item.get('print_name') or '').strip()
+			else:
+				continue
+			if not name or name in seen:
+				continue
+			seen.add(name)
+			names.append(name)
+		return names
+
+	def _load_baby_basic_room_count_extras(self) -> Dict[str, List[str]]:
+		empty = {'models': [], 'colors': [], 'prints': [], 'fabrics': []}
+		try:
+			if not os.path.exists(self.baby_basic_room_count_models_file):
+				return empty
+			with open(self.baby_basic_room_count_models_file, 'r', encoding='utf-8') as f:
+				data = json.load(f)
+			if isinstance(data, dict):
+				return {
+					'models': self._normalize_extra_names(data.get('models')),
+					'colors': self._normalize_extra_names(data.get('colors')),
+					'prints': self._normalize_extra_names(data.get('prints')),
+					'fabrics': self._normalize_extra_names(data.get('fabrics')),
+				}
+			if isinstance(data, list):
+				return {'models': self._normalize_extra_names(data), 'colors': [], 'prints': [], 'fabrics': []}
+			return empty
+		except Exception:
+			return empty
+
+	def _save_baby_basic_room_count_extras(self, extras: Dict[str, List[str]]) -> bool:
+		payload = {
+			'models': list(extras.get('models') or []),
+			'colors': list(extras.get('colors') or []),
+			'prints': list(extras.get('prints') or []),
+			'fabrics': list(extras.get('fabrics') or []),
+		}
+		self.baby_basic_room_count_models = payload
+		return self._save_json_dict(self.baby_basic_room_count_models_file, payload)
+
+	def get_baby_basic_room_count_extra_models(self) -> List[str]:
+		return list((self.baby_basic_room_count_models or {}).get('models') or [])
+
+	def get_baby_basic_room_count_extra_colors(self) -> List[str]:
+		return list((self.baby_basic_room_count_models or {}).get('colors') or [])
+
+	def get_baby_basic_room_count_extra_prints(self) -> List[str]:
+		return list((self.baby_basic_room_count_models or {}).get('prints') or [])
+
+	def get_baby_basic_room_count_extra_fabrics(self) -> List[str]:
+		return list((self.baby_basic_room_count_models or {}).get('fabrics') or [])
+
+	def add_baby_basic_room_count_extra_model(self, name: str) -> bool:
+		return self._add_baby_basic_room_count_extra('models', name)
+
+	def add_baby_basic_room_count_extra_color(self, name: str) -> bool:
+		return self._add_baby_basic_room_count_extra('colors', name)
+
+	def add_baby_basic_room_count_extra_print(self, name: str) -> bool:
+		return self._add_baby_basic_room_count_extra('prints', name)
+
+	def add_baby_basic_room_count_extra_fabric(self, name: str) -> bool:
+		return self._add_baby_basic_room_count_extra('fabrics', name)
+
+	def _add_baby_basic_room_count_extra(self, key: str, name: str) -> bool:
+		name = str(name or '').strip()
+		if not name:
+			return False
+		extras = {
+			'models': self.get_baby_basic_room_count_extra_models(),
+			'colors': self.get_baby_basic_room_count_extra_colors(),
+			'prints': self.get_baby_basic_room_count_extra_prints(),
+			'fabrics': self.get_baby_basic_room_count_extra_fabrics(),
+		}
+		bucket = extras.get(key) or []
+		if name in bucket:
+			return True
+		bucket.append(name)
+		extras[key] = bucket
+		return self._save_baby_basic_room_count_extras(extras)
+
+	def get_baby_basic_room_counts(self) -> List[Dict]:
+		return list(self.baby_basic_room_counts or [])
+
+	def get_baby_basic_room_count(self, count_id: int) -> Optional[Dict]:
+		try:
+			cid = int(count_id)
+		except Exception:
+			return None
+		for rec in self.baby_basic_room_counts or []:
+			try:
+				if int(rec.get('id', -1)) == cid:
+					return rec
+			except Exception:
+				continue
+		return None
+
+	def add_baby_basic_room_count(self, date_str: str, lines: List[Dict], note: str = '') -> int:
+		merged = {}
+		for line in lines or []:
+			qty = int(line.get('quantity') or 0)
+			if qty <= 0:
+				continue
+			print_name = str(line.get('print_name') or '').strip()
+			fabric = str(line.get('fabric') or '').strip()
+			color = str(line.get('color') or '').strip()
+			print_val = str(line.get('print') or '').strip()
+			size = str(line.get('size') or '').strip()
+			area = str(line.get('area') or '').strip()
+			box = str(line.get('box') or '').strip()
+			if not print_name:
+				continue
+			key = (print_name, fabric, color, print_val, size, area, box)
+			if key in merged:
+				merged[key]['quantity'] += qty
+			else:
+				merged[key] = {
+					'print_name': print_name,
+					'fabric': fabric,
+					'color': color,
+					'print': print_val,
+					'size': size,
+					'area': area,
+					'box': box,
+					'quantity': qty,
+				}
+		clean_lines = list(merged.values())
+		if not clean_lines:
+			raise ValueError("אין שורות עם כמות בספירה")
+		clean_lines.sort(key=lambda r: (
+			r.get('print_name') or '',
+			r.get('fabric') or '',
+			r.get('color') or '',
+			r.get('print') or '',
+			r.get('size') or '',
+			r.get('area') or '',
+			r.get('box') or '',
+		))
+		total_qty = sum(int(r.get('quantity') or 0) for r in clean_lines)
+		new_id = self._next_id(self.baby_basic_room_counts)
+		record = {
+			'id': new_id,
+			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+			'note': str(note or '').strip(),
+			'lines': clean_lines,
+			'total_quantity': total_qty,
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+		}
+		self.baby_basic_room_counts.append(record)
+		self._save_json_list(self.baby_basic_room_counts_file, self.baby_basic_room_counts)
+		return new_id
+
+	def parse_baby_basic_room_count_excel(self, file_path: str) -> Dict:
+		path = str(file_path or '').strip()
+		if not path or not os.path.exists(path):
+			raise ValueError("קובץ Excel לא נמצא")
+		xl = pd.ExcelFile(path)
+		sheet_names = list(xl.sheet_names or [])
+		count_sheet = 'ספירה' if 'ספירה' in sheet_names else (sheet_names[0] if sheet_names else None)
+		if not count_sheet:
+			raise ValueError("אין גיליונות בקובץ")
+		df = pd.read_excel(xl, sheet_name=count_sheet, dtype=str)
+		if df is None or df.empty:
+			raise ValueError("גיליון הספירה ריק")
+		col_map = self._bb_room_excel_column_map(list(df.columns))
+		if 'print_name' not in col_map or 'quantity' not in col_map:
+			raise ValueError("חסרות עמודות חובה: דגם, כמות")
+
+		def cell(row, key: str) -> str:
+			col = col_map.get(key)
+			if not col:
+				return ''
+			raw = row.get(col)
+			if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+				return ''
+			text = str(raw).strip()
+			if text.lower() in ('nan', 'none', '-'):
+				return ''
+			if text.endswith('.0') and text[:-2].isdigit():
+				return text[:-2]
+			return text
+
+		lines = []
+		for _, row in df.iterrows():
+			model = cell(row, 'print_name')
+			if not model or model.startswith('סה') or model.startswith('=') :
+				continue
+			qty_raw = cell(row, 'quantity')
+			try:
+				qty = int(float(str(qty_raw).replace(',', ''))) if qty_raw else 0
+			except Exception:
+				qty = 0
+			if qty <= 0:
+				continue
+			lines.append({
+				'print_name': model,
+				'fabric': cell(row, 'fabric'),
+				'color': cell(row, 'color'),
+				'print': cell(row, 'print'),
+				'size': cell(row, 'size'),
+				'area': cell(row, 'area'),
+				'box': cell(row, 'box'),
+				'quantity': qty,
+			})
+		if not lines:
+			raise ValueError("אין שורות עם דגם וכמות בקובץ")
+
+		details = {}
+		if 'פרטים' in sheet_names:
+			det = pd.read_excel(xl, sheet_name='פרטים', header=None, dtype=str)
+			for _, drow in det.iterrows():
+				key = str(drow.iloc[0] if len(drow) else '').strip()
+				val = str(drow.iloc[1] if len(drow) > 1 else '').strip()
+				if key.lower() in ('nan', 'none', 'שדה', ''):
+					continue
+				if val.lower() in ('nan', 'none'):
+					val = ''
+				details[key] = val
+
+		date_str = self._bb_room_excel_date(details.get('תאריך') or details.get('תאריך כפי שנכתב') or '')
+		area = str(details.get('אזור') or '').strip()
+		if not area:
+			areas = sorted({str(l.get('area') or '').strip() for l in lines if str(l.get('area') or '').strip()})
+			area = ', '.join(areas)
+		if area:
+			for line in lines:
+				if not str(line.get('area') or '').strip():
+					line['area'] = area
+		counter = str(details.get('שם הסופר') or '').strip()
+		note_parts = []
+		if area:
+			note_parts.append(f"אזור {area}")
+		if counter:
+			note_parts.append(f"סופר: {counter}")
+		note_parts.append('ייבוא Excel')
+		base = os.path.basename(path)
+		if base:
+			note_parts.append(base)
+		return {
+			'date': date_str,
+			'note': ' · '.join(note_parts),
+			'lines': lines,
+			'area': area,
+		}
+
+	def _bb_room_excel_column_map(self, columns: List) -> Dict[str, str]:
+		aliases = {
+			'print_name': ('דגם', 'model', 'print_name'),
+			'fabric': ('סוג בד', 'בד', 'fabric'),
+			'color': ('צבע רקע', 'צבע', 'color'),
+			'print': ('הדפס', 'print'),
+			'size': ('מידה', 'size'),
+			'quantity': ('כמות', 'qty', 'quantity'),
+			'area': ('אזור', 'area'),
+			'box': ('מספר קופסא', 'מספר קופסה', 'קופסא', 'box'),
+		}
+		normed = {self._bb_room_excel_norm_header(c): c for c in columns}
+		mapped = {}
+		for key, names in aliases.items():
+			for name in names:
+				found = normed.get(self._bb_room_excel_norm_header(name))
+				if found is not None:
+					mapped[key] = found
+					break
+		return mapped
+
+	def _bb_room_excel_norm_header(self, value) -> str:
+		text = str(value or '').strip().replace('״', '"').replace('׳', "'").replace('’', "'")
+		return text.replace('"', '').replace("'", '').replace(' ', '')
+
+	def _bb_room_excel_date(self, raw: str) -> str:
+		text = str(raw or '').strip()
+		if not text or text.lower() in ('nan', 'none'):
+			return datetime.now().strftime('%Y-%m-%d')
+		for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y', '%d.%m.%Y', '%d.%m.%y'):
+			try:
+				return datetime.strptime(text, fmt).strftime('%Y-%m-%d')
+			except Exception:
+				continue
+		try:
+			parsed = pd.to_datetime(text, dayfirst=True, errors='coerce')
+			if pd.notna(parsed):
+				return parsed.strftime('%Y-%m-%d')
+		except Exception:
+			pass
+		return datetime.now().strftime('%Y-%m-%d')
+
+	def delete_baby_basic_room_count(self, count_id: int) -> bool:
+		try:
+			cid = int(count_id)
+		except Exception:
+			return False
+		before = len(self.baby_basic_room_counts)
+		self.baby_basic_room_counts = [r for r in self.baby_basic_room_counts if int(r.get('id', -1)) != cid]
+		if len(self.baby_basic_room_counts) == before:
+			return False
+		self._save_json_list(self.baby_basic_room_counts_file, self.baby_basic_room_counts)
+		return True
