@@ -10,7 +10,7 @@ class RivhitTabMixin:
     """Mixin לטאב 'ריווחית'."""
 
     # מיפוי עמודות לכותרות בעברית
-    _RIVHIT_COLS = ('item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'compute_0036')
+    _RIVHIT_COLS = ('item_num', 'item_name', 'item_part_num', 'item_cost_nis', 'item_sale_nis', 'digital_price', 'compute_0036')
     _RIVHIT_HEADERS = {
         'item_num': 'מספר פריט',
         'item_name': 'שם הפריט',
@@ -146,7 +146,8 @@ class RivhitTabMixin:
         # סדר העמודות: item_num, item_name, item_part_num, ..., compute_0036 (קטגוריה)
         name = vals[1] if len(vals) > 1 else ''
         barcode = str(vals[2]).strip() if len(vals) > 2 else ''
-        category = str(vals[5]).strip() if len(vals) > 5 else ''
+        cat_idx = self._RIVHIT_COLS.index('compute_0036')
+        category = str(vals[cat_idx]).strip() if len(vals) > cat_idx else ''
         brand = self.data_processor.brand_key_from_category(category)
         if not barcode:
             messagebox.showwarning("אין ברקוד", "למוצר זה אין מק\"ט/ברקוד; לא ניתן לשמור שדות מדבקה")

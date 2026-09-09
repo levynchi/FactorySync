@@ -106,9 +106,13 @@ class DataProcessor:
 		self.rivhit_meta_file = 'rivhit_meta.json'
 		self.rivhit_products = self._load_json_list(self.rivhit_products_file)
 		self.rivhit_meta = self.load_rivhit_meta()
+		# מחיר לצרכן דיגיטלי לפי ברקוד — נשמר בנפרד כדי לשרוד ייבוא מריווחית
+		self.rivhit_digital_prices_file = 'rivhit_digital_prices.json'
+		self.rivhit_digital_prices = self._load_json_dict(self.rivhit_digital_prices_file)
 		# מוצרים חדשים שנוספו ידנית וממתינים לייצוא לריווחית
 		self.rivhit_new_products_file = 'rivhit_new_products.json'
 		self.rivhit_new_products = self._load_json_list(self.rivhit_new_products_file)
+		self._overlay_digital_prices()
 		# מיפוי עונה/קטגוריה -> מספר קבוצה (לייצוא בפורמט הייבוא הרשמי)
 		self.rivhit_groups_file = 'item_group.txt'
 		self.rivhit_groups = self.load_rivhit_groups()
@@ -813,6 +817,38 @@ class DataProcessor:
 		"""טעינה מחדש של רשימת המוצרים מריווחית מהדיסק."""
 		self.rivhit_products = self._load_json_list(self.rivhit_products_file)
 		self.rivhit_meta = self.load_rivhit_meta()
+		self._overlay_digital_prices()
+
+	def save_rivhit_digital_prices(self) -> bool:
+		"""שמירת מחירי הצרכן הדיגיטליים לפי ברקוד."""
+		return self._save_json_dict(self.rivhit_digital_prices_file, self.rivhit_digital_prices)
+
+	def _overlay_digital_prices(self) -> None:
+		"""מדביק מחיר לצרכן דיגיטלי על פריטי ריווחית לפי ברקוד."""
+		prices = self.rivhit_digital_prices or {}
+		if not prices:
+			return
+		for rec in (self.rivhit_products or []) + (self.rivhit_new_products or []):
+			barcode = str(rec.get('item_part_num', '')).strip()
+			if barcode and barcode in prices:
+				rec['digital_price'] = str(prices[barcode]).strip()
+
+	def set_rivhit_digital_prices(self, mapping: Dict[str, str]) -> int:
+		"""מעדכן מחיר לצרכן דיגיטלי לפי ברקוד. מחזיר כמה ברקודים נשמרו."""
+		updated = 0
+		for barcode, price in (mapping or {}).items():
+			bc = str(barcode or '').strip()
+			val = str(price or '').strip()
+			if not bc or not val:
+				continue
+			self.rivhit_digital_prices[bc] = val
+			updated += 1
+		self.save_rivhit_digital_prices()
+		self._overlay_digital_prices()
+		self._save_json_list(self.rivhit_products_file, self.rivhit_products)
+		if self.rivhit_new_products:
+			self._save_json_list(self.rivhit_new_products_file, self.rivhit_new_products)
+		return updated
 
 	def import_rivhit_products(self, file_path: str) -> int:
 		"""ייבוא רשימת מוצרים מקובץ ייצוא של ריווחית (TSV).
@@ -846,8 +882,9 @@ class DataProcessor:
 			record = {col: cleaned.get(col, '') for col in self.RIVHIT_COLUMNS}
 			products.append(record)
 
-		# החלפה מלאה של הרשימה
+		# החלפה מלאה של הרשימה — מחיר לצרכן דיגיטלי נשמר לפי ברקוד בנפרד
 		self.rivhit_products = products
+		self._overlay_digital_prices()
 		self._save_json_list(self.rivhit_products_file, self.rivhit_products)
 		self.save_rivhit_meta(os.path.basename(file_path), len(products))
 		return len(products)
