@@ -17,6 +17,7 @@ from .products_balance_tab import ProductsBalanceTabMixin
 from .business_details_tab import BusinessDetailsTabMixin
 from .formulas_tab import FormulasTabMixin
 from .shipping_costs_tab import ShippingCostsTabMixin
+from .import_history_tab import ImportHistoryTabMixin
 from .orders_tab import OrdersTabMixin
 from .stickers_tab import StickersTabMixin
 from .rivhit_tab import RivhitTabMixin
@@ -38,6 +39,7 @@ class MainWindow(
     BusinessDetailsTabMixin,
     FormulasTabMixin,
     ShippingCostsTabMixin,
+    ImportHistoryTabMixin,
     OrdersTabMixin,
     StickersTabMixin,
     RivhitTabMixin,
@@ -163,6 +165,14 @@ class MainWindow(
         except Exception as e:
             try:
                 messagebox.showerror("שגיאה", f"טעינת טאב 'עלויות משלוחים ובדים' נכשלה: {e}")
+            except Exception:
+                pass
+        # Import history (Turkey shipments / payments)
+        try:
+            self._create_import_history_tab()
+        except Exception as e:
+            try:
+                messagebox.showerror("שגיאה", f"טעינת טאב 'יבוא' נכשלה: {e}")
             except Exception:
                 pass
         # Orders management tab

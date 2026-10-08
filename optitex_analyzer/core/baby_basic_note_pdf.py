@@ -108,26 +108,48 @@ def _qty(value) -> str:
         return "0"
 
 
-def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') -> str:
-    """יוצר PDF A4 של תעודת סחורה. מחזיר את הנתיב."""
+def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '', show_prices: bool = True,
+                                 title: str = '', subtitle: str = '', total_label: str = '') -> str:
+    """יוצר PDF A4 של תעודת סחורה. מחזיר את הנתיב.
+
+    show_prices=False מסתיר את עמודות 'מחיר ליחידה' ו'סה״כ' ואת שורת 'סה״כ לתשלום'.
+    title: כותרת התעודה (ברירת מחדל «תעודת סחורה #N»; למשיכה «משיכת סחורה לאריה #N»).
+    subtitle: שורת הסבר מתחת לכותרת (אופציונלי). total_label: תווית הסכום (ברירת מחדל «סה״כ לתשלום»).
+    """
     _register_fonts()
     os.makedirs(os.path.dirname(file_path) or '.', exist_ok=True)
+
+    doc_title = (title or '').strip() or f"תעודת סחורה #{rec.get('id')}"
+    total_label = (total_label or '').strip() or 'סה״כ לתשלום'
 
     left, right = MARGIN, PAGE_W - MARGIN
     usable_w = right - left
     lines = list(rec.get('lines') or [])
 
-    # visual RTL: מוצר | מידה | בד | צבע | ברקוד | יחידות | מחיר | סה״כ
-    col_defs = [
-        ('name', 4.0 * cm),
-        ('size', 1.7 * cm),
-        ('fabric', 1.6 * cm),
-        ('color', 1.5 * cm),
-        ('barcode', 3.1 * cm),
-        ('qty', 1.7 * cm),
-        ('price', 2.1 * cm),
-        ('total', 2.2 * cm),
-    ]
+    # visual RTL: מוצר | מידה | בד | צבע | הדפס | ברקוד | יחידות | מחיר | סה״כ
+    if show_prices:
+        col_defs = [
+            ('name', 3.3 * cm),
+            ('size', 1.5 * cm),
+            ('fabric', 1.4 * cm),
+            ('color', 1.4 * cm),
+            ('print', 1.8 * cm),
+            ('barcode', 2.4 * cm),
+            ('qty', 1.5 * cm),
+            ('price', 2.0 * cm),
+            ('total', 2.1 * cm),
+        ]
+    else:
+        # ללא מחירים: אותן עמודות בלי מחיר/סה״כ, רחבות יותר
+        col_defs = [
+            ('name', 4.5 * cm),
+            ('size', 1.9 * cm),
+            ('fabric', 2.0 * cm),
+            ('color', 2.0 * cm),
+            ('print', 2.4 * cm),
+            ('barcode', 3.0 * cm),
+            ('qty', 1.8 * cm),
+        ]
     widths = [w for _, w in col_defs]
     leftover = usable_w - sum(widths)
     if leftover != 0:
@@ -143,6 +165,7 @@ def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') 
         'size': 'מידה',
         'fabric': 'בד',
         'color': 'צבע',
+        'print': 'הדפס',
         'barcode': 'ברקוד',
         'qty': 'יחידות',
         'price': 'מחיר ליחידה',
@@ -170,8 +193,11 @@ def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') 
             title = biz_name.strip() or 'בייבי בייסיק'
             _draw_center(c, title, PAGE_W / 2, y, _FONT_BOLD, 16)
             y -= 0.65 * cm
-            _draw_center(c, f"תעודת סחורה #{rec.get('id')}", PAGE_W / 2, y, _FONT_BOLD, 13)
+            _draw_center(c, doc_title, PAGE_W / 2, y, _FONT_BOLD, 13)
             y -= 0.7 * cm
+            if subtitle:
+                _draw_center(c, subtitle, PAGE_W / 2, y + 0.15 * cm, _FONT, 9.5, color=(0.4, 0.45, 0.5))
+                y -= 0.5 * cm
             _draw_right(c, f"לקוח: {rec.get('customer') or ''}", right, y, _FONT, 11)
             _draw_right(c, f"תאריך: {rec.get('date') or ''}", left + 5.5 * cm, y, _FONT, 11)
             y -= 0.5 * cm
@@ -183,7 +209,7 @@ def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') 
             c.line(left, y, right, y)
             y -= 0.45 * cm
         else:
-            _draw_right(c, f"תעודת סחורה #{rec.get('id')} (המשך)", right, y, _FONT_BOLD, 11)
+            _draw_right(c, f"{doc_title} (המשך)", right, y, _FONT_BOLD, 11)
             y -= 0.55 * cm
         return y
 
@@ -213,12 +239,17 @@ def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') 
         if idx % 2 == 0:
             c.setFillColorRGB(0.96, 0.97, 0.99)
             c.rect(left, y - row_h + 0.18 * cm, usable_w, row_h, fill=1, stroke=0)
+        barcode = str(line.get('barcode', '') or '').strip()
+        color = str(line.get('color', '') or '').strip()
+        if barcode and not color:
+            color = 'לבן'
         values = {
             'name': line.get('print_name') or line.get('item_name') or '',
             'size': line.get('size', ''),
             'fabric': line.get('fabric', ''),
-            'color': line.get('color', '') or 'לבן',
-            'barcode': str(line.get('barcode', '')),
+            'color': color,
+            'print': str(line.get('print', '') or ''),
+            'barcode': barcode or '—',
             'qty': _qty(line.get('quantity')),
             'price': _money(line.get('unit_price')),
             'total': _money(line.get('line_total')),
@@ -228,38 +259,49 @@ def generate_baby_basic_note_pdf(rec: Dict, file_path: str, biz_name: str = '') 
         y -= row_h
 
     y -= 0.35 * cm
-    box_h = 1.35 * cm
+    box_h = 1.35 * cm if show_prices else 1.15 * cm
     if y - box_h < MARGIN:
         draw_footer()
         c.showPage()
         y = PAGE_H - MARGIN - 0.3 * cm
     c.setFillColorRGB(0.93, 0.96, 1.0)
     c.roundRect(left, y - box_h + 0.35 * cm, usable_w, box_h, 5, fill=1, stroke=0)
-    _draw_right(
-        c,
-        f"סה״כ יחידות: {_qty(rec.get('total_quantity'))}",
-        right - 0.35 * cm,
-        y - 0.05 * cm,
-        _FONT_BOLD,
-        11,
-        color=(0.12, 0.16, 0.23),
-    )
-    _draw_right(
-        c,
-        f"סה״כ לתשלום: {_money(rec.get('total_amount'))} ₪",
-        right - 0.35 * cm,
-        y - 0.6 * cm,
-        _FONT_BOLD,
-        13,
-        color=(0.15, 0.35, 0.75),
-    )
+    if show_prices:
+        _draw_right(
+            c,
+            f"סה״כ יחידות: {_qty(rec.get('total_quantity'))}",
+            right - 0.35 * cm,
+            y - 0.05 * cm,
+            _FONT_BOLD,
+            11,
+            color=(0.12, 0.16, 0.23),
+        )
+        _draw_right(
+            c,
+            f"{total_label}: {_money(rec.get('total_amount'))} ₪",
+            right - 0.35 * cm,
+            y - 0.6 * cm,
+            _FONT_BOLD,
+            13,
+            color=(0.15, 0.35, 0.75),
+        )
+    else:
+        _draw_right(
+            c,
+            f"סה״כ יחידות: {_qty(rec.get('total_quantity'))}",
+            right - 0.35 * cm,
+            y - 0.15 * cm,
+            _FONT_BOLD,
+            13,
+            color=(0.15, 0.35, 0.75),
+        )
     draw_footer()
     c.save()
     return file_path
 
 
-def _draw_brand_header(c: canvas.Canvas, y: float, title: str, biz_name: str) -> float:
-    logo = _abs_path(LOGO_PATH)
+def _draw_brand_header(c: canvas.Canvas, y: float, title: str, biz_name: str, show_logo: bool = True) -> float:
+    logo = _abs_path(LOGO_PATH) if show_logo else ''
     if logo and os.path.exists(logo):
         try:
             img = ImageReader(logo)
@@ -282,7 +324,7 @@ def _draw_brand_header(c: canvas.Canvas, y: float, title: str, biz_name: str) ->
 
 
 def generate_baby_basic_payment_pdf(rec: Dict, file_path: str, biz_name: str = '',
-                                   partner: str = '', supplied=None, paid=None, balance=None) -> str:
+                                   partner: str = '', supplied=None, paid=None, balance=None, withdrawn=None) -> str:
     """יוצר PDF A4 של אישור תשלום בודד."""
     _register_fonts()
     os.makedirs(os.path.dirname(file_path) or '.', exist_ok=True)
@@ -318,6 +360,9 @@ def generate_baby_basic_payment_pdf(rec: Dict, file_path: str, biz_name: str = '
         y -= 0.5 * cm
         if supplied is not None:
             _draw_right(c, f"סופק: {_money(supplied)} ₪", right, y, _FONT, 10)
+            y -= 0.42 * cm
+        if withdrawn is not None and abs(float(withdrawn or 0)) > 0.004:
+            _draw_right(c, f"נלקח לאריה (משיכות): {_money(withdrawn)} ₪", right, y, _FONT, 10)
             y -= 0.42 * cm
         if paid is not None:
             _draw_right(c, f"שולם כולל תשלום זה: {_money(paid)} ₪", right, y, _FONT, 10)
@@ -434,6 +479,194 @@ def generate_baby_basic_payments_report_pdf(payments: list, file_path: str, biz_
             _FONT,
             10,
         )
+    draw_footer()
+    c.save()
+    return file_path
+
+
+def _wrap_text(text: str, font: str, size: float, max_w: float) -> List[str]:
+    """שובר טקסט לשורות לפי רוחב זמין (לפני היפוך RTL)."""
+    text = str(text if text is not None else '').strip()
+    if not text:
+        return ['']
+    lines: List[str] = []
+    for para in text.replace('\r', '').split('\n'):
+        words = para.split(' ')
+        cur = ''
+        for word in words:
+            cand = word if not cur else f"{cur} {word}"
+            if pdfmetrics.stringWidth(cand, font, size) <= max_w or not cur:
+                # מילה בודדת ארוכה מהעמודה — חותכים אותה לפי תווים
+                while pdfmetrics.stringWidth(cand, font, size) > max_w and len(cand) > 1:
+                    cut = len(cand)
+                    while cut > 1 and pdfmetrics.stringWidth(cand[:cut], font, size) > max_w:
+                        cut -= 1
+                    lines.append(cand[:cut])
+                    cand = cand[cut:]
+                cur = cand
+            else:
+                lines.append(cur)
+                cur = word
+        lines.append(cur)
+    return lines or ['']
+
+
+def generate_baby_basic_ledger_pdf(rows: list, file_path: str, biz_name: str = '', partner: str = '',
+                                  source_label: str = '', supplied=None, paid=None, balance=None,
+                                  title: str = 'כרטסת חשבון — בייבי בייסיק', partner_label: str = 'שותף',
+                                  filter_label: str = 'פילוח', money_fmt=None, show_logo: bool = True,
+                                  show_source: bool = True, headers: Optional[Dict[str, str]] = None,
+                                  summary_labels: Optional[Dict[str, str]] = None, withdrawn=None) -> str:
+    """יוצר PDF A4 של כרטסת חשבון (חיובים/תעודות + תשלומים + יתרה רצה) עם הערות.
+
+    כל שורה ב-rows היא dict עם: date, type, id, source, debit, credit, balance, note.
+    השורות מודפסות בסדר שבו הן מתקבלות (כרונולוגי).
+    money_fmt: פונקציה לעיצוב סכום (ברירת מחדל: "1,234.00 ₪").
+    withdrawn: סכום משיכות לאריה (זיכוי) — אם קיים מודפס בשורת הסיכום.
+    """
+    from datetime import datetime as _dt
+
+    _register_fonts()
+    os.makedirs(os.path.dirname(file_path) or '.', exist_ok=True)
+    left, right = MARGIN, PAGE_W - MARGIN
+    usable_w = right - left
+    partner = partner or 'בייבי בייסיק'
+    rows = list(rows or [])
+    fmt = money_fmt or (lambda v: f"{_money(v)} ₪")
+    labels = {'supplied': 'סופק', 'paid': 'שולם', 'balance': 'יתרה לספק', 'count': 'מספר תנועות', 'withdrawn': 'נלקח לאריה'}
+    labels.update(summary_labels or {})
+
+    col_defs = [
+        ('date', 2.1 * cm),
+        ('type', 2.1 * cm),
+        ('id', 1.1 * cm),
+        ('source', 2.9 * cm if show_source else 0),
+        ('debit', 2.3 * cm),
+        ('credit', 2.3 * cm),
+        ('balance', 2.4 * cm),
+        ('note', 0),  # שארית
+    ]
+    if not show_source:
+        col_defs = [cd for cd in col_defs if cd[0] != 'source']
+    widths = [w for _, w in col_defs]
+    widths[-1] = max(3.0 * cm, usable_w - sum(widths[:-1]))
+    col_rights = []
+    x = right
+    for w in widths:
+        col_rights.append(x)
+        x -= w
+    note_w = widths[-1] - 0.3 * cm
+    headers_he = {
+        'date': 'תאריך', 'type': 'סוג', 'id': 'מס׳', 'source': 'מקור',
+        'debit': 'סופק', 'credit': 'שולם', 'balance': 'יתרה', 'note': 'הערה',
+    }
+    headers_he.update(headers or {})
+    font_size = 8
+    line_h = 0.42 * cm
+    min_row_h = 0.62 * cm
+    header_h = 0.7 * cm
+    bottom_limit = MARGIN + 1.4 * cm
+
+    c = canvas.Canvas(file_path, pagesize=A4)
+
+    def draw_header(y: float, first_page: bool) -> float:
+        if first_page:
+            y = _draw_brand_header(c, y, title, biz_name, show_logo=show_logo)
+            _draw_right(c, f"{partner_label}: {partner}", right, y, _FONT, 11)
+            _draw_right(c, f"הופק: {_dt.now().strftime('%d/%m/%Y %H:%M')}", left + 5.5 * cm, y, _FONT, 9, color=(0.4, 0.45, 0.5))
+            y -= 0.55 * cm
+            if source_label:
+                _draw_right(c, f"{filter_label}: {source_label}", right, y, _FONT_BOLD, 10, color=(0.15, 0.35, 0.75))
+                y -= 0.6 * cm
+            else:
+                y -= 0.15 * cm
+        else:
+            cont = f"{title} — {source_label} (המשך)" if source_label else f"{title} (המשך)"
+            _draw_right(c, cont, right, y, _FONT_BOLD, 11)
+            y -= 0.55 * cm
+        return y
+
+    def draw_table_header(y: float) -> float:
+        c.setFillColorRGB(0.23, 0.51, 0.96)
+        c.rect(left, y - header_h + 0.18 * cm, usable_w, header_h, fill=1, stroke=0)
+        for i, (key, _) in enumerate(col_defs):
+            _draw_right(c, headers_he[key], col_rights[i] - 0.12 * cm, y - 0.28 * cm, _FONT_BOLD, 8, color=(1, 1, 1))
+        return y - header_h - 0.08 * cm
+
+    def draw_footer():
+        c.setFillColorRGB(0.4, 0.45, 0.5)
+        c.setFont(_FONT, 8)
+        c.drawCentredString(PAGE_W / 2, MARGIN * 0.45, _rtl(f"עמוד {c.getPageNumber()}"))
+
+    y = PAGE_H - MARGIN
+    y = draw_header(y, True)
+    y = draw_table_header(y)
+
+    if not rows:
+        _draw_right(c, 'אין תנועות.', right, y, _FONT, 11, color=(0.4, 0.45, 0.5))
+        y -= 0.8 * cm
+
+    for idx, rec in enumerate(rows):
+        note_lines = _wrap_text(rec.get('note') or '', _FONT, font_size, note_w)
+        row_h = max(min_row_h, line_h * len(note_lines) + 0.2 * cm)
+        if y - row_h < bottom_limit:
+            draw_footer()
+            c.showPage()
+            y = PAGE_H - MARGIN
+            y = draw_header(y, False)
+            y = draw_table_header(y)
+        if idx % 2 == 0:
+            c.setFillColorRGB(0.96, 0.97, 0.99)
+            c.rect(left, y - row_h + 0.18 * cm, usable_w, row_h, fill=1, stroke=0)
+        debit = rec.get('debit') or 0
+        credit = rec.get('credit') or 0
+        bal = float(rec.get('balance') or 0)
+        values = {
+            'date': rec.get('date') or '',
+            'type': rec.get('type') or '',
+            'id': str(rec.get('id') or ''),
+            'source': rec.get('source') or '',
+            'debit': fmt(debit) if debit else '',
+            'credit': fmt(credit) if credit else '',
+            'balance': fmt(bal),
+        }
+        text_y = y - 0.22 * cm
+        for i, (key, _) in enumerate(col_defs):
+            if key == 'note':
+                continue
+            if key == 'balance':
+                color = (0.13, 0.55, 0.3) if bal <= 0.009 else (0.15, 0.35, 0.75)
+                _draw_right(c, values[key], col_rights[i] - 0.12 * cm, text_y, _FONT_BOLD, font_size, color=color)
+            else:
+                _draw_right(c, values[key], col_rights[i] - 0.12 * cm, text_y, _FONT, font_size)
+        note_right = col_rights[-1] - 0.12 * cm
+        for li, ln in enumerate(note_lines):
+            _draw_right(c, ln, note_right, text_y - li * line_h, _FONT, font_size)
+        # קו מפריד דק
+        c.setStrokeColorRGB(0.88, 0.9, 0.93)
+        c.setLineWidth(0.4)
+        c.line(left, y - row_h + 0.18 * cm, right, y - row_h + 0.18 * cm)
+        y -= row_h
+
+    y -= 0.4 * cm
+    box_h = 2.0 * cm
+    if y - box_h < MARGIN:
+        draw_footer()
+        c.showPage()
+        y = PAGE_H - MARGIN - 0.3 * cm
+    total_supplied = supplied if supplied is not None else sum(float(r.get('debit') or 0) for r in rows)
+    total_paid = paid if paid is not None else sum(float(r.get('credit') or 0) for r in rows)
+    total_balance = balance if balance is not None else round(total_supplied - total_paid, 2)
+    c.setFillColorRGB(0.93, 0.96, 1.0)
+    c.roundRect(left, y - box_h + 0.35 * cm, usable_w, box_h, 5, fill=1, stroke=0)
+    _draw_right(c, f"{labels['count']}: {len(rows)}", right - 0.35 * cm, y - 0.05 * cm, _FONT_BOLD, 10)
+    summary_line = f"{labels['supplied']}: {fmt(total_supplied)}"
+    if withdrawn is not None and abs(float(withdrawn or 0)) > 0.004:
+        summary_line += f"    {labels['withdrawn']}: {fmt(withdrawn)}"
+    summary_line += f"    {labels['paid']}: {fmt(total_paid)}"
+    _draw_right(c, summary_line, right - 0.35 * cm, y - 0.6 * cm, _FONT, 10)
+    bal_color = (0.13, 0.55, 0.3) if float(total_balance) <= 0.009 else (0.8, 0.2, 0.2)
+    _draw_right(c, f"{labels['balance']}: {fmt(total_balance)}", right - 0.35 * cm, y - 1.2 * cm, _FONT_BOLD, 13, color=bal_color)
     draw_footer()
     c.save()
     return file_path

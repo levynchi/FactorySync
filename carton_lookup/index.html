@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>חיפוש קרטון - משלוח 025/204</title>
+<meta name="theme-color" content="#1f2937">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="קרטונים">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f2937'/%3E%3Cpath d='M14 24l18-9 18 9v18l-18 9-18-9z' fill='none' stroke='%23fbbf24' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M14 24l18 9 18-9M32 33v18' fill='none' stroke='%23fbbf24' stroke-width='4'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231f2937'/%3E%3Cpath d='M14 24l18-9 18 9v18l-18 9-18-9z' fill='none' stroke='%23fbbf24' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M14 24l18 9 18-9M32 33v18' fill='none' stroke='%23fbbf24' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f3f4f6; --card: #ffffff; --text: #111827; --muted: #6b7280; --line: #e5e7eb;
+    --arye: #1d4ed8; --arye-bg: #dbeafe; --arye-dark: #1e3a8a;
+    --baby: #be185d; --baby-bg: #fce7f3; --baby-dark: #831843;
+    --warn: #b45309; --warn-bg: #fef3c7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Heebo", Arial, sans-serif; }
+  body { min-height: 100vh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  header { background: #1f2937; color: #fff; padding: 8px 14px 7px; }
+  header h1 { margin: 0; font-size: 15px; font-weight: 700; }
+  header p { margin: 2px 0 0; font-size: 11px; color: #d1d5db; }
+  main { max-width: 520px; margin: 0 auto; padding: 8px 12px 16px; }
+  .search { position: relative; }
+  .search input {
+    width: 100%; font-size: 32px; font-weight: 800; text-align: center; letter-spacing: 2px;
+    padding: 8px 48px; border: 2px solid var(--line); border-radius: 14px;
+    background: var(--card); color: var(--text); outline: none; direction: ltr;
+    -webkit-appearance: none; appearance: none;
+  }
+  .search input:focus { border-color: #9ca3af; }
+  .search input::placeholder { color: #d1d5db; font-weight: 600; letter-spacing: 0; font-size: 22px; }
+  .search button {
+    position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--line);
+    color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; display: none;
+  }
+  .search.has-value button { display: block; }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+  body.has-result .hint { display: none; }
+
+  .card { margin-top: 8px; border-radius: 16px; padding: 10px 12px 12px; background: var(--card);
+    border: 2px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,.06); display: none; }
+  .card.show { display: block; animation: pop .18s ease-out; }
+  @keyframes pop { from { transform: scale(.97); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+  .card.arye { background: var(--arye-bg); border-color: var(--arye); }
+  .card.baby { background: var(--baby-bg); border-color: var(--baby); }
+  .card.missing { background: var(--warn-bg); border-color: var(--warn); text-align: center; }
+  .card.missing .big { font-size: 22px; font-weight: 700; color: var(--warn); }
+  .card.missing .sub { color: var(--muted); margin-top: 6px; font-size: 14px; }
+
+  .size-hero { background: rgba(255,255,255,.85); border-radius: 14px; padding: 6px 10px 8px; text-align: center; }
+  .size-hero .lbl { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .size-hero .val { font-size: 64px; font-weight: 900; line-height: .95; margin-top: 0; direction: ltr; letter-spacing: 1px; }
+  .who { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  .brand { font-size: 26px; font-weight: 900; line-height: 1; }
+  .arye .brand { color: var(--arye-dark); }
+  .baby .brand { color: var(--baby-dark); }
+  .carton-no { font-size: 15px; color: var(--muted); font-weight: 700; }
+  .carton-no b { color: var(--text); }
+  .model-name { margin-top: 4px; font-size: 18px; font-weight: 800; line-height: 1.2; }
+  .model-name .tag { display: inline-block; margin-inline-start: 6px; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.85); border: 1px solid var(--line); color: var(--muted); vertical-align: middle; }
+  body.keyboard details, body.keyboard footer { display: none; }
+
+  details { margin-top: 26px; background: var(--card); border-radius: 16px; border: 1px solid var(--line); }
+  summary { cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
+  details[open] summary::after { transform: rotate(180deg); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 8px; text-align: right; border-top: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; background: #fafafa; }
+  td.num { direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+  tr.arye td:first-child { border-right: 4px solid var(--arye); }
+  tr.baby td:first-child { border-right: 4px solid var(--baby); }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:active { background: #f3f4f6; }
+  .brand-head td { background: #f9fafb; font-weight: 800; font-size: 14px; }
+  .brand-head.arye td { color: var(--arye-dark); }
+  .brand-head.baby td { color: var(--baby-dark); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>חיפוש קרטון - משלוח עומר 025 / 204</h1>
+  <p id="meta"></p>
+</header>
+<main>
+  <div class="search" id="search">
+    <input id="q" type="text" inputmode="numeric" pattern="[0-9Xx ]*" placeholder="הקלד מספר קרטון" autofocus autocomplete="off" aria-label="מספר קרטון">
+    <button id="clear" type="button" aria-label="נקה">×</button>
+  </div>
+  <p class="hint" id="hint"></p>
+
+  <section class="card" id="card" aria-live="polite"></section>
+
+  <details id="ranges">
+    <summary>טבלת טווחים - איזה קרטונים שייכים למי</summary>
+    <table>
+      <thead><tr><th>קרטונים</th><th>דגם</th><th>מידה</th><th>כמות</th></tr></thead>
+      <tbody id="ranges-body"></tbody>
+    </table>
+  </details>
+
+  <footer id="footer"></footer>
+</main>
+
+<script id="data" type="application/json">{"updated":"05.10.2026","source":"025-204 second shipment_20261005_080242.xlsx","brands":{"ARYE":"אריה","BABY BASIC":"בייבי בייסיק"},"models":{"25":"בגד גוף שרוול ארוך","204":"גופיות פלנל"},"flannel":[25,204],"cartons":[{"n":1,"brand":"BABY BASIC","model":25,"size":"0-3","packets":50,"pieces":250},{"n":2,"brand":"BABY BASIC","model":25,"size":"0-3","packets":50,"pieces":250},{"n":3,"brand":"BABY BASIC","model":25,"size":"3-6","packets":47,"pieces":235},{"n":4,"brand":"BABY BASIC","model":25,"size":"3-6","packets":47,"pieces":235},{"n":5,"brand":"BABY BASIC","model":25,"size":"3-6","packets":48,"pieces":240},{"n":6,"brand":"BABY BASIC","model":25,"size":"6-12","packets":34,"pieces":170},{"n":7,"brand":"BABY BASIC","model":25,"size":"6-12","packets":34,"pieces":170},{"n":8,"brand":"BABY BASIC","model":25,"size":"6-12","packets":34,"pieces":170},{"n":9,"brand":"BABY BASIC","model":25,"size":"12-18","packets":35,"pieces":175},{"n":10,"brand":"BABY BASIC","model":25,"size":"12-18","packets":35,"pieces":175},{"n":11,"brand":"BABY BASIC","model":25,"size":"12-18","packets":35,"pieces":175},{"n":12,"brand":"BABY BASIC","model":25,"size":"12-18","packets":37,"pieces":185},{"n":13,"brand":"BABY BASIC","model":25,"size":"18-24","packets":33,"pieces":165},{"n":14,"brand":"BABY BASIC","model":25,"size":"18-24","packets":33,"pieces":165},{"n":15,"brand":"BABY BASIC","model":25,"size":"18-24","packets":34,"pieces":170},{"n":16,"brand":"BABY BASIC","model":25,"size":"24-30","packets":34,"pieces":170},{"n":17,"brand":"BABY BASIC","model":25,"size":"24-30","packets":34,"pieces":170},{"n":18,"brand":"BABY BASIC","model":25,"size":"24-30","packets":34,"pieces":170},{"n":19,"brand":"ARYE","model":25,"size":"0-3","packets":84,"pieces":252},{"n":20,"brand":"ARYE","model":25,"size":"0-3","packets":84,"pieces":252},{"n":21,"brand":"ARYE","model":25,"size":"0-3","packets":84,"pieces":252},{"n":22,"brand":"ARYE","model":25,"size":"0-3","packets":86,"pieces":258},{"n":23,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":24,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":25,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":26,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":27,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":28,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":29,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":30,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":31,"brand":"ARYE","model":25,"size":"3-6","packets":77,"pieces":231},{"n":32,"brand":"ARYE","model":25,"size":"3-6","packets":79,"pieces":237},{"n":33,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":34,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":35,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":36,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":37,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":38,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":39,"brand":"ARYE","model":25,"size":"6-12","packets":58,"pieces":174},{"n":40,"brand":"ARYE","model":25,"size":"6-12","packets":62,"pieces":186},{"n":41,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":42,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":43,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":44,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":45,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":46,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":47,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":48,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":49,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":50,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":51,"brand":"ARYE","model":25,"size":"12-18","packets":64,"pieces":192},{"n":52,"brand":"ARYE","model":25,"size":"12-18","packets":65,"pieces":195},{"n":53,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":54,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":55,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":56,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":57,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":58,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":59,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":60,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":61,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":62,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":63,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":64,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":65,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":66,"brand":"ARYE","model":25,"size":"18-24","packets":56,"pieces":168},{"n":67,"brand":"ARYE","model":25,"size":"18-24","packets":61,"pieces":183},{"n":68,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":69,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":70,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":71,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":72,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":73,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":74,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":75,"brand":"ARYE","model":25,"size":"24-30","packets":52,"pieces":156},{"n":76,"brand":"ARYE","model":25,"size":"24-30","packets":55,"pieces":165},{"n":77,"brand":"BABY BASIC","model":204,"size":"4","packets":26,"pieces":130},{"n":78,"brand":"BABY BASIC","model":204,"size":"4","packets":26,"pieces":130},{"n":79,"brand":"BABY BASIC","model":204,"size":"4","packets":26,"pieces":130},{"n":80,"brand":"BABY BASIC","model":204,"size":"4","packets":26,"pieces":130},{"n":81,"brand":"BABY BASIC","model":204,"size":"6","packets":26,"pieces":130},{"n":82,"brand":"BABY BASIC","model":204,"size":"6","packets":26,"pieces":130},{"n":83,"brand":"BABY BASIC","model":204,"size":"6","packets":26,"pieces":130},{"n":84,"brand":"BABY BASIC","model":204,"size":"6","packets":25,"pieces":125},{"n":85,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":86,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":87,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":88,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":89,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":90,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":91,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":92,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":93,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":94,"brand":"ARYE","model":204,"size":"4","packets":43,"pieces":129},{"n":95,"brand":"ARYE","model":204,"size":"4","packets":40,"pieces":120},{"n":96,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":97,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":98,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":99,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":100,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":101,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":102,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":103,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":104,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":105,"brand":"ARYE","model":204,"size":"6","packets":43,"pieces":129},{"n":106,"brand":"ARYE","model":204,"size":"6","packets":38,"pieces":114}],"ranges":[{"brand":"BABY BASIC","model":25,"size":"0-3","from":1,"to":2,"cartons":2,"pieces":500},{"brand":"BABY BASIC","model":25,"size":"3-6","from":3,"to":5,"cartons":3,"pieces":710},{"brand":"BABY BASIC","model":25,"size":"6-12","from":6,"to":8,"cartons":3,"pieces":510},{"brand":"BABY BASIC","model":25,"size":"12-18","from":9,"to":12,"cartons":4,"pieces":710},{"brand":"BABY BASIC","model":25,"size":"18-24","from":13,"to":15,"cartons":3,"pieces":500},{"brand":"BABY BASIC","model":25,"size":"24-30","from":16,"to":18,"cartons":3,"pieces":510},{"brand":"ARYE","model":25,"size":"0-3","from":19,"to":22,"cartons":4,"pieces":1014},{"brand":"ARYE","model":25,"size":"3-6","from":23,"to":32,"cartons":10,"pieces":2316},{"brand":"ARYE","model":25,"size":"6-12","from":33,"to":40,"cartons":8,"pieces":1404},{"brand":"ARYE","model":25,"size":"12-18","from":41,"to":52,"cartons":12,"pieces":2307},{"brand":"ARYE","model":25,"size":"18-24","from":53,"to":67,"cartons":15,"pieces":2535},{"brand":"ARYE","model":25,"size":"24-30","from":68,"to":76,"cartons":9,"pieces":1413},{"brand":"BABY BASIC","model":204,"size":"4","from":77,"to":80,"cartons":4,"pieces":520},{"brand":"BABY BASIC","model":204,"size":"6","from":81,"to":84,"cartons":4,"pieces":515},{"brand":"ARYE","model":204,"size":"4","from":85,"to":95,"cartons":11,"pieces":1410},{"brand":"ARYE","model":204,"size":"6","from":96,"to":106,"cartons":11,"pieces":1404}]}</script>
+<script>
+(function () {
+  var DATA = JSON.parse(document.getElementById('data').textContent);
+  var byNo = {};
+  DATA.cartons.forEach(function (c) { byNo[c.n] = c; });
+  var nums = DATA.cartons.map(function (c) { return c.n; });
+  var minNo = Math.min.apply(null, nums), maxNo = Math.max.apply(null, nums);
+  var flannel = {};
+  DATA.flannel.forEach(function (m) { flannel[m] = true; });
+
+  function brandClass(b) { return b === 'ARYE' ? 'arye' : 'baby'; }
+  function brandLabel(b) { return DATA.brands[b] || b; }
+  function modelCode(m) { return String(m).padStart(3, '0'); }
+  function modelName(m) { return DATA.models[String(m)] || ''; }
+  var input = document.getElementById('q');
+  var search = document.getElementById('search');
+  var card = document.getElementById('card');
+  var hint = document.getElementById('hint');
+  var debounceTimer = null;
+  var DEBOUNCE_MS = 550;
+
+  document.getElementById('meta').textContent = 'עודכן ' + DATA.updated + ' · ' + DATA.cartons.length + ' קרטונים (' + minNo + 'X–' + maxNo + 'X)';
+  document.getElementById('footer').textContent = 'מקור: ' + DATA.source;
+  hint.textContent = 'אחרי ההקלדה השדה מתנקה — אפשר להקליד מספר חדש';
+
+  function parseNo(raw) {
+    var digits = String(raw || '').replace(/\D/g, '');
+    return digits ? parseInt(digits, 10) : null;
+  }
+
+  function syncClearBtn() {
+    search.classList.toggle('has-value', input.value.trim().length > 0);
+  }
+
+  function showCard(n) {
+    if (n === null) return;
+    var c = byNo[n];
+    if (!c) {
+      card.className = 'card missing show';
+      card.innerHTML = '<div class="big">קרטון ' + n + 'X לא נמצא</div>' +
+        '<div class="sub">במשלוח הזה יש קרטונים ' + minNo + 'X עד ' + maxNo + 'X בלבד</div>';
+      document.body.classList.add('has-result');
+      return;
+    }
+    var cls = brandClass(c.brand);
+    var tags = '<span class="tag">דגם ' + modelCode(c.model) + '</span>';
+    tags += flannel[c.model] ? '<span class="tag">פלנל</span>' : '<span class="tag">לא פלנל</span>';
+    card.className = 'card ' + cls + ' show';
+    card.innerHTML =
+      '<div class="size-hero"><div class="lbl">מידה</div><div class="val">' + c.size + '</div></div>' +
+      '<div class="who"><div class="brand">' + brandLabel(c.brand) + '</div>' +
+        '<div class="carton-no">קרטון <b>' + c.n + 'X</b></div></div>' +
+      '<div class="model-name">' + modelName(c.model) + tags + '</div>';
+    document.body.classList.add('has-result');
+    keepSizeVisible();
+  }
+
+  function clearInputKeepCard() {
+    input.value = '';
+    syncClearBtn();
+    input.focus();
+  }
+
+  function scheduleClear() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(clearInputKeepCard, DEBOUNCE_MS);
+  }
+
+  function onType() {
+    syncClearBtn();
+    var n = parseNo(input.value);
+    if (n === null) return;
+    showCard(n);
+    scheduleClear();
+  }
+
+  input.addEventListener('input', onType);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var n = parseNo(input.value);
+      if (n !== null) showCard(n);
+      clearTimeout(debounceTimer);
+      clearInputKeepCard();
+    }
+  });
+  document.getElementById('clear').addEventListener('click', function () {
+    clearTimeout(debounceTimer);
+    clearInputKeepCard();
+  });
+
+  var body = document.getElementById('ranges-body');
+  var lastBrand = null;
+  var html = '';
+  DATA.ranges.forEach(function (r) {
+    var cls = brandClass(r.brand);
+    if (r.brand !== lastBrand) {
+      html += '<tr class="brand-head ' + cls + '"><td colspan="4">' + brandLabel(r.brand) + '</td></tr>';
+      lastBrand = r.brand;
+    }
+    var span = r.from === r.to ? (r.from + 'X') : (r.from + 'X–' + r.to + 'X');
+    html += '<tr class="clickable ' + cls + '" data-from="' + r.from + '">' +
+      '<td class="num">' + span + '</td>' +
+      '<td>' + modelCode(r.model) + ' ' + modelName(r.model) + '</td>' +
+      '<td class="num">' + r.size + '</td>' +
+      '<td class="num">' + r.cartons + '</td></tr>';
+  });
+  body.innerHTML = html;
+  body.addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-from]');
+    if (!tr) return;
+    var n = parseInt(tr.getAttribute('data-from'), 10);
+    showCard(n);
+    clearTimeout(debounceTimer);
+    clearInputKeepCard();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  function keepSizeVisible() {
+    var hero = card.querySelector('.size-hero') || card;
+    if (!card.classList.contains('show')) return;
+    var vv = window.visualViewport;
+    var visibleBottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 8;
+    var rect = hero.getBoundingClientRect();
+    if (rect.bottom > visibleBottom) window.scrollBy(0, rect.bottom - visibleBottom);
+  }
+
+  function onViewport() {
+    var vv = window.visualViewport;
+    var keyboard = vv && (window.innerHeight - vv.height) > 80;
+    document.body.classList.toggle('keyboard', !!keyboard);
+    keepSizeVisible();
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewport);
+    window.visualViewport.addEventListener('scroll', onViewport);
+  }
+
+  var m = location.search.match(/[?&]c=(\d+)/);
+  if (m) showCard(parseInt(m[1], 10));
+})();
+</script>
+</body>
+</html>

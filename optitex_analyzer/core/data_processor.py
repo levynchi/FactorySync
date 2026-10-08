@@ -133,11 +133,27 @@ class DataProcessor:
 		self.baby_basic_payments_file = 'baby_basic_payments.json'
 		self.baby_basic_room_counts_file = 'baby_basic_room_counts.json'
 		self.baby_basic_room_count_models_file = 'baby_basic_room_count_models.json'
+		self.baby_basic_note_lists_file = 'baby_basic_note_lists.json'
 		self.baby_basic_price_list = self._load_json_dict(self.baby_basic_price_list_file)
+		self._seed_baby_basic_model_prices()
 		self.baby_basic_notes = self._load_json_list(self.baby_basic_notes_file)
 		self.baby_basic_payments = self._load_json_list(self.baby_basic_payments_file)
 		self.baby_basic_room_counts = self._load_json_list(self.baby_basic_room_counts_file)
 		self.baby_basic_room_count_models = self._load_baby_basic_room_count_extras()
+		self.baby_basic_note_lists = self._load_baby_basic_note_lists()
+		self._learn_baby_basic_model_fabrics_from_notes()
+		# בייבי בייסיק: מיילים ומסמכים שנדלו מ-Gmail + קבצים שצורפו ידנית
+		self.baby_basic_emails_file = 'baby_basic_emails.json'
+		self.baby_basic_documents_root = 'baby_basic_documents'
+		self.baby_basic_emails = self._load_json_dict(self.baby_basic_emails_file)
+		# היסטוריית יבוא מטורקיה (משלוחים / תשלומים / מסמכים)
+		self.import_history_file = 'import_history.json'
+		self.import_documents_root = 'import_documents'
+		self.import_history_meta: Dict = {}
+		self.import_history = self.load_import_history()
+		# כרטסת ספקים: חיובים (לפני מע"מ) ותשלומים בדולרים
+		self.supplier_ledger_file = 'supplier_ledger.json'
+		self.supplier_ledger = self._load_json_list(self.supplier_ledger_file)
 
 	def load_suppliers(self) -> List[Dict]:
 		"""טעינת רשימת ספקים"""
@@ -281,6 +297,300 @@ class DataProcessor:
 			self.save_suppliers()
 			return True
 		return False
+
+	# ===== Import history (היסטוריית יבוא מטורקיה) =====
+	# ===== Baby Basic: מיילים ומסמכים =====
+	def save_baby_basic_emails(self) -> bool:
+		return self._save_json_dict(self.baby_basic_emails_file, self.baby_basic_emails or {})
+
+	def get_baby_basic_customer(self) -> Dict:
+		return dict((self.baby_basic_emails or {}).get('customer') or {})
+
+	def get_baby_basic_email_categories(self) -> List[str]:
+		cats = list((self.baby_basic_emails or {}).get('categories') or [])
+		for t in self.get_baby_basic_email_threads():
+			c = t.get('category') or ''
+			if c and c not in cats:
+				cats.append(c)
+		return cats
+
+	def get_baby_basic_email_threads(self) -> List[Dict]:
+		return list((self.baby_basic_emails or {}).get('threads') or [])
+
+	def get_baby_basic_email_thread(self, thread_id: str) -> Optional[Dict]:
+		for t in self.get_baby_basic_email_threads():
+			if str(t.get('id')) == str(thread_id):
+				return t
+		return None
+
+	def baby_basic_thread_documents_dir(self, thread_id: str) -> str:
+		safe = ''.join(ch for ch in str(thread_id) if ch.isalnum() or ch in '-_') or 'misc'
+		return os.path.join(self.baby_basic_documents_root, safe)
+
+	def iter_baby_basic_documents(self) -> List[Dict]:
+		"""רשימה שטוחה של כל הקבצים (מכל ההודעות + קבצים שצורפו ידנית)."""
+		out: List[Dict] = []
+		for t in self.get_baby_basic_email_threads():
+			for m in t.get('messages') or []:
+				for a in m.get('attachments') or []:
+					out.append({
+						'thread_id': t.get('id'),
+						'subject': t.get('subject') or '',
+						'category': t.get('category') or '',
+						'date': m.get('date') or t.get('date') or '',
+						'from': m.get('from') or '',
+						'filename': a.get('filename') or '',
+						'path': a.get('path') or '',
+						'status': a.get('status') or ('ok' if a.get('path') else 'missing'),
+						'manual': False,
+					})
+			for a in t.get('extra_attachments') or []:
+				out.append({
+					'thread_id': t.get('id'),
+					'subject': t.get('subject') or '',
+					'category': t.get('category') or '',
+					'date': a.get('added_at') or t.get('date') or '',
+					'from': 'ידני',
+					'filename': a.get('label') or os.path.basename(a.get('path') or ''),
+					'path': a.get('path') or '',
+					'status': 'ok' if os.path.exists(a.get('path') or '') else 'missing',
+					'manual': True,
+				})
+		out.sort(key=lambda r: r.get('date') or '', reverse=True)
+		return out
+
+	def add_baby_basic_manual_thread(self, subject: str, category: str, date: str, body: str = '') -> Dict:
+		threads = (self.baby_basic_emails or {}).setdefault('threads', [])
+		tid = f"manual_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+		rec = {
+			'id': tid,
+			'date': (date or datetime.now().strftime('%Y-%m-%d'))[:10],
+			'subject': (subject or 'רשומה ידנית').strip(),
+			'category': category or 'אחר',
+			'summary': (body or '').strip()[:200],
+			'gmail_ids': [],
+			'gmail_url': '',
+			'messages': [{'date': (date or datetime.now().strftime('%Y-%m-%d'))[:10], 'from': 'ידני', 'body': (body or '').strip(), 'attachments': []}] if body else [],
+			'source': 'manual',
+			'notes': '',
+			'extra_attachments': [],
+		}
+		threads.append(rec)
+		threads.sort(key=lambda r: r.get('date') or '', reverse=True)
+		if not isinstance(self.baby_basic_emails, dict):
+			self.baby_basic_emails = {}
+		self.baby_basic_emails['threads'] = threads
+		self.save_baby_basic_emails()
+		return rec
+
+	def set_baby_basic_thread_notes(self, thread_id: str, notes: str) -> bool:
+		t = self.get_baby_basic_email_thread(thread_id)
+		if not t:
+			return False
+		t['notes'] = (notes or '').strip()
+		return self.save_baby_basic_emails()
+
+	def add_baby_basic_attachment(self, thread_id: str, source_path: str, label: str = '') -> Dict:
+		t = self.get_baby_basic_email_thread(thread_id)
+		if not t:
+			raise ValueError(f"רשומה {thread_id} לא נמצאה")
+		if not source_path or not os.path.isfile(source_path):
+			raise ValueError("קובץ לא נמצא")
+		dest_dir = self.baby_basic_thread_documents_dir(thread_id)
+		os.makedirs(dest_dir, exist_ok=True)
+		original_name = os.path.basename(source_path)
+		name, ext = os.path.splitext(original_name)
+		filename = original_name
+		dest_path = os.path.join(dest_dir, filename)
+		if os.path.exists(dest_path) and not os.path.samefile(source_path, dest_path):
+			filename = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
+			dest_path = os.path.join(dest_dir, filename)
+		if not os.path.exists(dest_path):
+			shutil.copy2(source_path, dest_path)
+		rel = dest_path.replace('\\', '/')
+		rec = {
+			'label': (label or original_name).strip(),
+			'path': rel,
+			'added_at': datetime.now().strftime('%Y-%m-%d'),
+		}
+		t.setdefault('extra_attachments', []).append(rec)
+		self.save_baby_basic_emails()
+		return rec
+
+	def delete_baby_basic_attachment(self, thread_id: str, path: str) -> bool:
+		t = self.get_baby_basic_email_thread(thread_id)
+		if not t:
+			return False
+		norm = (path or '').replace('\\', '/')
+		remaining = []
+		removed = None
+		for a in t.get('extra_attachments') or []:
+			if (a.get('path') or '').replace('\\', '/') == norm and removed is None:
+				removed = a
+			else:
+				remaining.append(a)
+		if removed is None:
+			return False
+		t['extra_attachments'] = remaining
+		try:
+			owned_abs = os.path.abspath(self.baby_basic_thread_documents_dir(thread_id))
+			full_abs = os.path.abspath(norm)
+			if full_abs.startswith(owned_abs) and os.path.isfile(full_abs):
+				os.remove(full_abs)
+		except OSError:
+			pass
+		self.save_baby_basic_emails()
+		return True
+
+	def load_import_history(self) -> List[Dict]:
+		"""טעינת אירועי יבוא. תומך גם ברשימה וגם ב-{'events': [...]}."""
+		self.import_history_meta = {}
+		try:
+			if not os.path.exists(self.import_history_file):
+				return []
+			with open(self.import_history_file, 'r', encoding='utf-8') as f:
+				data = json.load(f)
+			if isinstance(data, list):
+				return data
+			if isinstance(data, dict):
+				self.import_history_meta = {k: v for k, v in data.items() if k != 'events'}
+				events = data.get('events') or []
+				return events if isinstance(events, list) else []
+			return []
+		except Exception as e:
+			print(f"שגיאה בטעינת היסטוריית יבוא: {e}")
+			return []
+
+	def save_import_history(self) -> bool:
+		try:
+			payload = dict(self.import_history_meta or {})
+			payload['events'] = self.import_history
+			with open(self.import_history_file, 'w', encoding='utf-8') as f:
+				json.dump(payload, f, indent=2, ensure_ascii=False)
+			return True
+		except Exception as e:
+			print(f"שגיאה בשמירת היסטוריית יבוא: {e}")
+			return False
+
+	def get_import_event(self, event_id: int) -> Optional[Dict]:
+		for ev in self.import_history:
+			try:
+				if int(ev.get('id', 0)) == int(event_id):
+					return ev
+			except (TypeError, ValueError):
+				continue
+		return None
+
+	def _next_import_event_id(self) -> int:
+		return max([int(e.get('id', 0) or 0) for e in self.import_history], default=0) + 1
+
+	def add_import_event(self, data: Dict) -> int:
+		new_id = self._next_import_event_id()
+		record = {
+			'id': new_id,
+			'date': (data.get('date') or '').strip(),
+			'kind': (data.get('kind') or 'מסמך').strip(),
+			'party': (data.get('party') or '').strip(),
+			'description': (data.get('description') or '').strip(),
+			'amount': data.get('amount'),
+			'currency': (data.get('currency') or '').strip(),
+			'ils': data.get('ils'),
+			'qty': (data.get('qty') or '').strip(),
+			'certainty': (data.get('certainty') or 'סביר').strip(),
+			'source': (data.get('source') or 'הוזן ידנית').strip(),
+			'notes': (data.get('notes') or '').strip(),
+			'attachments': list(data.get('attachments') or []),
+			'gmail_threads': list(data.get('gmail_threads') or []),
+		}
+		self.import_history.append(record)
+		self.save_import_history()
+		return new_id
+
+	def update_import_event(self, event_id: int, data: Dict) -> bool:
+		ev = self.get_import_event(event_id)
+		if not ev:
+			return False
+		for key in ('date', 'kind', 'party', 'description', 'amount', 'currency', 'ils', 'qty', 'certainty', 'source', 'notes'):
+			if key in data:
+				ev[key] = data[key]
+		self.save_import_history()
+		return True
+
+	def import_event_documents_dir(self, event_id: int) -> str:
+		return os.path.join(self.import_documents_root, str(int(event_id)))
+
+	def delete_import_event(self, event_id: int) -> bool:
+		before = len(self.import_history)
+		self.import_history = [e for e in self.import_history if int(e.get('id', 0) or 0) != int(event_id)]
+		if len(self.import_history) == before:
+			return False
+		dest_dir = self.import_event_documents_dir(event_id)
+		if os.path.isdir(dest_dir):
+			shutil.rmtree(dest_dir, ignore_errors=True)
+		self.save_import_history()
+		return True
+
+	def add_import_attachment(self, event_id: int, source_path: str, label: str = '') -> Dict:
+		ev = self.get_import_event(event_id)
+		if not ev:
+			raise ValueError(f"אירוע {event_id} לא נמצא")
+		if not source_path or not os.path.isfile(source_path):
+			raise ValueError("קובץ לא נמצא")
+		dest_dir = self.import_event_documents_dir(event_id)
+		os.makedirs(dest_dir, exist_ok=True)
+		original_name = os.path.basename(source_path)
+		name, ext = os.path.splitext(original_name)
+		filename = original_name
+		dest_path = os.path.join(dest_dir, filename)
+		if os.path.exists(dest_path):
+			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+			filename = f"{name}_{timestamp}{ext}"
+			dest_path = os.path.join(dest_dir, filename)
+		shutil.copy2(source_path, dest_path)
+		rel = os.path.join(self.import_documents_root, str(int(event_id)), filename).replace('\\', '/')
+		record = {
+			'label': (label or original_name).strip(),
+			'path': rel,
+		}
+		ev.setdefault('attachments', []).append(record)
+		self.save_import_history()
+		return record
+
+	def delete_import_attachment(self, event_id: int, path: str) -> bool:
+		ev = self.get_import_event(event_id)
+		if not ev:
+			return False
+		norm = (path or '').replace('\\', '/')
+		remaining = []
+		removed = None
+		for att in ev.get('attachments') or []:
+			att_path = (att.get('path') or '').replace('\\', '/')
+			if att_path == norm and removed is None:
+				removed = att
+			else:
+				remaining.append(att)
+		if removed is None:
+			return False
+		ev['attachments'] = remaining
+		owned_prefix = self.import_event_documents_dir(event_id).replace('\\', '/')
+		if norm.startswith(owned_prefix) or norm.startswith(owned_prefix.replace('/', '\\')):
+			try:
+				if os.path.isfile(norm):
+					os.remove(norm)
+			except OSError:
+				pass
+		else:
+			# relative path under this event's folder
+			full = os.path.normpath(norm)
+			try:
+				owned_abs = os.path.abspath(self.import_event_documents_dir(event_id))
+				full_abs = os.path.abspath(full)
+				if full_abs.startswith(owned_abs) and os.path.isfile(full_abs):
+					os.remove(full_abs)
+			except OSError:
+				pass
+		self.save_import_history()
+		return True
 
 	def load_barcodes_data(self) -> Dict:
 		"""טעינת נתוני ברקודים"""
@@ -3027,6 +3337,192 @@ class DataProcessor:
 
 	# ===== בייבי בייסיק: מחירון, תעודות סחורה, תשלומים =====
 	BABY_BASIC_PARTNER_NAME = 'בייבי בייסיק'
+	# מקור סחורה — פילוח תעודות ותשלומים (ייצור מקומי מול סחורה טורקית, למשל OMER)
+	BABY_BASIC_SOURCE_LOCAL = 'local'
+	BABY_BASIC_SOURCE_TURKEY = 'turkey'
+	BABY_BASIC_SOURCES = {
+		BABY_BASIC_SOURCE_LOCAL: 'ייצור מקומי',
+		BABY_BASIC_SOURCE_TURKEY: 'סחורה טורקית (OMER)',
+	}
+	# סוג תעודה: אספקה לבייבי בייסיק (חיוב) / משיכה — אריה לוקח מהחדר של בייבי בייסיק (זיכוי)
+	BABY_BASIC_NOTE_KIND_SUPPLY = 'supply'
+	BABY_BASIC_NOTE_KIND_WITHDRAWAL = 'withdrawal'
+	BABY_BASIC_NOTE_KINDS = {
+		BABY_BASIC_NOTE_KIND_SUPPLY: 'תעודת סחורה',
+		BABY_BASIC_NOTE_KIND_WITHDRAWAL: 'משיכה לאריה',
+	}
+	BABY_BASIC_NOTE_LIST_DEFAULTS = {
+		'models': [
+			'סדין למיטת תינוק',
+			'סדין לעגלה',
+			'סדין לעריסה',
+			'סדין למשטח החתלה',
+			'סדין לול',
+			'סדיניות',
+			'ציפה למיטת תינוק',
+			'שמיכה למיטת תינוק',
+			'שמיכה לעגלה',
+			'שמיכת מילוי מיטה',
+			'נחשוש',
+			'מגבת תינוק',
+			'חיתולי פלנל',
+			'חיתולי טטרה לבן 5',
+			'זוג חיתולי טטרה ענקיים',
+			'חיתולי מודפס טטרה 3',
+			'אוברול',
+			'גופיות סבא',
+			'בגד גוף גופיה',
+			'בגד גוף קצר',
+		],
+		'fabrics': ['פלנל', 'טריקו', 'ופל', 'טטרה'],
+		'colors': ['לבן', 'שחור', 'אפור', 'שמנת', 'מוקה', 'ורוד'],
+		'prints': ['כדור פורח', 'פרפרים', 'חד קרן'],
+		'sizes': ['0-3', '3-6', '6-12', '12-18', '18-24', '24-30', '3', '4', '5', '6', '8', '10'],
+	}
+	BABY_BASIC_NOTE_LIST_KEYS = ('models', 'fabrics', 'colors', 'prints', 'sizes')
+	BABY_BASIC_MODEL_FABRIC_DEFAULTS = {
+		'סדין למיטת תינוק': ['טריקו'],
+		'סדין לעגלה': ['טריקו'],
+		'סדין לעריסה': ['טריקו'],
+		'סדין למשטח החתלה': ['טריקו'],
+		'סדין לול': ['טריקו'],
+		'ציפה למיטת תינוק': ['טריקו'],
+		'שמיכה למיטת תינוק': ['טריקו'],
+		'שמיכה לעגלה': ['טריקו'],
+		'מגבת תינוק': ['מגבת'],
+		'מגבת כובע': ['מגבת'],
+		'נחשוש': ['כותנה ארוגה'],
+		'חיתולי פלנל': ['פלנל'],
+		'חיתולי טטרה לבן 5': ['טטרה'],
+		'חיתולי מודפס טטרה 3': ['טטרה'],
+		'זוג חיתולי טטרה ענקיים': ['טטרה'],
+		'אוברול': ['פלנל'],
+		'גופיות סבא': ['טריקו'],
+		'בגד גוף גופיה': ['טריקו'],
+		'בגד גוף קצר': ['טריקו'],
+	}
+	# מחיר ייצור סופי +20% לעומר — לפי דגם, לשורות ללא ברקוד בתעודות סחורה
+	BABY_BASIC_MODEL_PRICE_DEFAULTS = {
+		'סדין למיטת תינוק': 15.4,
+		'סדין לעריסה': 12.0,
+		'סדין לעגלה': 10.3,
+		'סדין לול': 13.7,
+		'שמיכת מילוי מיטה': 40.8,
+		'נחשוש': 48.0,
+		'ציפה למיטת תינוק': 32.4,
+		'חיתולי טטרה לבן 5': 20.9,
+		'חיתולי מודפס טטרה 3': 16.2,
+	}
+	# מחירון חורף 2026-27 (מייל 10.08.2026) — לפי דגם+בד+מידה, צבע לבן, לשורות ללא ברקוד
+	BABY_BASIC_SIZE_PRICE_DEFAULTS = (
+		('אוברול', 'פלנל', '0-3', 12.5),
+		('אוברול', 'פלנל', '3-6', 12.7),
+		('אוברול', 'פלנל', '6-12', 13.5),
+		('גופיות סבא', 'טריקו', '3', 5.5),
+		('גופיות סבא', 'טריקו', '4', 5.7),
+		('גופיות סבא', 'טריקו', '5', 5.9),
+		('גופיות סבא', 'טריקו', '6', 6.0),
+		('גופיות סבא', 'טריקו', '8', 6.2),
+		('גופיות סבא', 'טריקו', '10', 6.4),
+		('בגד גוף גופיה', 'טריקו', '0-3', 6.5),
+		('בגד גוף גופיה', 'טריקו', '3-6', 6.5),
+		('בגד גוף גופיה', 'טריקו', '6-12', 6.5),
+		('בגד גוף גופיה', 'טריקו', '12-18', 6.8),
+		('בגד גוף גופיה', 'טריקו', '18-24', 6.8),
+		('בגד גוף גופיה', 'טריקו', '24-30', 7.2),
+		('בגד גוף קצר', 'טריקו', '0-3', 7.5),
+		('בגד גוף קצר', 'טריקו', '3-6', 7.8),
+		('בגד גוף קצר', 'טריקו', '6-12', 7.8),
+		('בגד גוף קצר', 'טריקו', '12-18', 8.2),
+		('בגד גוף קצר', 'טריקו', '18-24', 8.2),
+		('בגד גוף קצר', 'טריקו', '24-30', 8.2),
+	)
+	BABY_BASIC_SIZE_PRICE_COLOR = 'לבן'
+
+	@staticmethod
+	def baby_basic_unbarcoded_price_key(model='', fabric='', color='', print_val='', size='') -> str:
+		parts = [str(x or '').strip() for x in (model, fabric, color, print_val, size)]
+		return 'nb|' + '|'.join(parts)
+
+	def _seed_baby_basic_model_prices(self) -> None:
+		"""מוסיף מחירי עומר לפי דגם אם עדיין אין מפתח nb|<דגם>|||| במחירון."""
+		changed = False
+		prices = dict(self.baby_basic_price_list or {})
+		for model, price in (self.BABY_BASIC_MODEL_PRICE_DEFAULTS or {}).items():
+			name = str(model or '').strip()
+			if not name:
+				continue
+			key = self.baby_basic_unbarcoded_price_key(name)
+			if key in prices:
+				continue
+			prices[key] = round(float(price or 0), 2)
+			changed = True
+		# מחירים לפי דגם+בד+מידה (מחירון 2026-27) — לא דורסים מחיר שנערך ידנית
+		for model, fabric, size, price in (self.BABY_BASIC_SIZE_PRICE_DEFAULTS or ()):
+			key = self.baby_basic_unbarcoded_price_key(model, fabric, self.BABY_BASIC_SIZE_PRICE_COLOR, '', size)
+			if key in prices:
+				continue
+			prices[key] = round(float(price or 0), 2)
+			changed = True
+		if changed:
+			self.baby_basic_price_list = prices
+			self._save_json_dict(self.baby_basic_price_list_file, self.baby_basic_price_list)
+
+	def get_baby_basic_unbarcoded_price(self, model='', fabric='', color='', print_val='', size='') -> float:
+		"""מחיר לשורה ללא ברקוד: מפתח מלא → בלי הדפס → דגם+בד+מידה (לבן) → דגם+בד → דגם בלבד."""
+		model = str(model or '').strip()
+		fabric = str(fabric or '').strip()
+		color = str(color or '').strip()
+		print_val = str(print_val or '').strip()
+		size = str(size or '').strip()
+		keys = [
+			self.baby_basic_unbarcoded_price_key(model, fabric, color, print_val, size),
+			self.baby_basic_unbarcoded_price_key(model, fabric, color, '', size),
+			self.baby_basic_unbarcoded_price_key(model, fabric, '', '', size),
+			self.baby_basic_unbarcoded_price_key(model, fabric, self.BABY_BASIC_SIZE_PRICE_COLOR, '', size),
+			self.baby_basic_unbarcoded_price_key(model, fabric),
+			self.baby_basic_unbarcoded_price_key(model),
+		]
+		seen = set()
+		for key in keys:
+			if key in seen:
+				continue
+			seen.add(key)
+			price = self.get_baby_basic_price(key)
+			if price > 0:
+				return price
+		return 0.0
+
+	def get_baby_basic_unbarcoded_price_items(self) -> List[Dict]:
+		"""כל המחירים לפריטים ללא ברקוד (מפתחות nb|דגם|בד|צבע|הדפס|מידה) — לתצוגה ועריכה בטאב המחירון."""
+		items = []
+		for key, raw in (self.baby_basic_price_list or {}).items():
+			key = str(key or '')
+			if not key.startswith('nb|'):
+				continue
+			parts = (key.split('|')[1:] + ['', '', '', '', ''])[:5]
+			model, fabric, color, print_val, size = [str(p or '').strip() for p in parts]
+			if not model:
+				continue
+			if isinstance(raw, dict):
+				raw = raw.get('price', 0)
+			items.append({
+				'key': key,
+				'model': model,
+				'fabric': fabric,
+				'color': color,
+				'print': print_val,
+				'size': size,
+				'price': parse_numeric_value(raw),
+			})
+		return items
+
+	def delete_baby_basic_price(self, key: str) -> bool:
+		key = str(key or '').strip()
+		if not key or key not in (self.baby_basic_price_list or {}):
+			return False
+		del self.baby_basic_price_list[key]
+		return self._save_json_dict(self.baby_basic_price_list_file, self.baby_basic_price_list)
 
 	def get_baby_basic_products(self) -> List[Dict]:
 		"""מוצרי בייבי בייסיק מריווחית, עם שדות מדבקה ומחיר סיטונאי."""
@@ -3085,8 +3581,50 @@ class DataProcessor:
 			print(f"שגיאה בשמירת קובץ {path}: {e}")
 			return False
 
+	def normalize_baby_basic_source(self, source) -> str:
+		"""מחזיר מפתח מקור תקין: 'turkey' או 'local' (ברירת מחדל)."""
+		key = str(source or '').strip().lower()
+		if key in self.BABY_BASIC_SOURCES:
+			return key
+		# תמיכה בטקסט חופשי / תווית בעברית
+		if key and ('turk' in key or 'omer' in key or 'טורק' in key or 'עומר' in key):
+			return self.BABY_BASIC_SOURCE_TURKEY
+		return self.BABY_BASIC_SOURCE_LOCAL
+
+	def baby_basic_source_label(self, source) -> str:
+		return self.BABY_BASIC_SOURCES.get(self.normalize_baby_basic_source(source), '')
+
+	def normalize_baby_basic_note_kind(self, kind) -> str:
+		"""מחזיר סוג תעודה תקין: 'withdrawal' (משיכה לאריה) או 'supply' (ברירת מחדל, גם לרשומות ישנות)."""
+		key = str(kind or '').strip().lower()
+		if key in self.BABY_BASIC_NOTE_KINDS:
+			return key
+		if key and ('withdraw' in key or 'משיכ' in key or 'לאריה' in key):
+			return self.BABY_BASIC_NOTE_KIND_WITHDRAWAL
+		return self.BABY_BASIC_NOTE_KIND_SUPPLY
+
+	def baby_basic_note_kind_label(self, kind) -> str:
+		return self.BABY_BASIC_NOTE_KINDS.get(self.normalize_baby_basic_note_kind(kind), '')
+
+	def is_baby_basic_withdrawal(self, rec) -> bool:
+		return self.normalize_baby_basic_note_kind((rec or {}).get('kind')) == self.BABY_BASIC_NOTE_KIND_WITHDRAWAL
+
 	def get_baby_basic_notes(self) -> List[Dict]:
 		return list(self.baby_basic_notes or [])
+
+	def set_baby_basic_note_source(self, note_id: int, source: str) -> bool:
+		rec = self.get_baby_basic_note(note_id)
+		if not rec:
+			return False
+		rec['source'] = self.normalize_baby_basic_source(source)
+		return self._save_json_list(self.baby_basic_notes_file, self.baby_basic_notes)
+
+	def set_baby_basic_payment_source(self, payment_id: int, source: str) -> bool:
+		rec = self.get_baby_basic_payment(payment_id)
+		if not rec:
+			return False
+		rec['source'] = self.normalize_baby_basic_source(source)
+		return self._save_json_list(self.baby_basic_payments_file, self.baby_basic_payments)
 
 	def get_baby_basic_note(self, note_id: int) -> Optional[Dict]:
 		try:
@@ -3101,8 +3639,12 @@ class DataProcessor:
 				continue
 		return None
 
-	def add_baby_basic_note(self, customer: str, date_str: str, lines: List[Dict], note: str = '') -> int:
+	def add_baby_basic_note(self, customer: str, date_str: str, lines: List[Dict], note: str = '', source: str = '', kind: str = '') -> int:
+		kind = self.normalize_baby_basic_note_kind(kind)
 		customer = str(customer or '').strip()
+		if kind == self.BABY_BASIC_NOTE_KIND_WITHDRAWAL:
+			# משיכה לאריה — תמיד מול חשבון השותף בייבי בייסיק
+			customer = self.BABY_BASIC_PARTNER_NAME
 		if not customer:
 			raise ValueError("חסר שם לקוח")
 		if not lines:
@@ -3125,6 +3667,7 @@ class DataProcessor:
 				'size': str(line.get('size', '')).strip(),
 				'fabric': str(line.get('fabric', '')).strip(),
 				'color': str(line.get('color', '')).strip(),
+				'print': str(line.get('print', '')).strip(),
 				'pack_qty': int(line.get('pack_qty') or 5),
 				'quantity': qty,
 				'unit_price': round(price, 2),
@@ -3138,6 +3681,8 @@ class DataProcessor:
 			'customer': customer,
 			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
 			'note': str(note or '').strip(),
+			'source': self.normalize_baby_basic_source(source),
+			'kind': kind,
 			'lines': clean_lines,
 			'total_quantity': total_qty,
 			'total_amount': round(total_amount, 2),
@@ -3175,7 +3720,7 @@ class DataProcessor:
 				continue
 		return None
 
-	def add_baby_basic_payment(self, customer: str = '', date_str: str = '', amount: float = 0, note: str = '') -> int:
+	def add_baby_basic_payment(self, customer: str = '', date_str: str = '', amount: float = 0, note: str = '', source: str = '') -> int:
 		# חשבון השותף תמיד בייבי בייסיק — לא לקוח, לא בחירה.
 		customer = self.BABY_BASIC_PARTNER_NAME
 		amount = parse_numeric_value(amount)
@@ -3188,6 +3733,7 @@ class DataProcessor:
 			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
 			'amount': round(amount, 2),
 			'note': str(note or '').strip(),
+			'source': self.normalize_baby_basic_source(source),
 			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 		}
 		self.baby_basic_payments.append(record)
@@ -3218,20 +3764,296 @@ class DataProcessor:
 				names.add(name)
 		return sorted(names)
 
-	def get_baby_basic_account(self, customer: str = '') -> Dict:
-		"""חשבון שותף אחד מול בייבי בייסיק — כל התעודות וכל התשלומים."""
-		notes = self.get_baby_basic_notes()
+	def get_baby_basic_account(self, customer: str = '', source: str = '') -> Dict:
+		"""חשבון שותף אחד מול בייבי בייסיק — כל התעודות וכל התשלומים.
+
+		source ריק = הכל. 'turkey' / 'local' = רק תעודות ותשלומים מאותו מקור.
+		notes = תעודות אספקה בלבד; withdrawals = משיכות לאריה (זיכוי לבייבי בייסיק).
+		יתרה = סופק - נלקח לאריה - שולם.
+		"""
+		all_notes = self.get_baby_basic_notes()
 		payments = self.get_baby_basic_payments()
+		source_key = str(source or '').strip().lower()
+		if source_key:
+			source_key = self.normalize_baby_basic_source(source_key)
+			all_notes = [n for n in all_notes if self.normalize_baby_basic_source(n.get('source')) == source_key]
+			payments = [p for p in payments if self.normalize_baby_basic_source(p.get('source')) == source_key]
+		notes = [n for n in all_notes if not self.is_baby_basic_withdrawal(n)]
+		withdrawals = [n for n in all_notes if self.is_baby_basic_withdrawal(n)]
 		supplied = round(sum(parse_numeric_value(n.get('total_amount')) for n in notes), 2)
+		withdrawn = round(sum(parse_numeric_value(n.get('total_amount')) for n in withdrawals), 2)
 		paid = round(sum(parse_numeric_value(p.get('amount')) for p in payments), 2)
 		return {
 			'partner': self.BABY_BASIC_PARTNER_NAME,
+			'source': source_key,
+			'source_label': self.BABY_BASIC_SOURCES.get(source_key, 'הכל'),
 			'supplied': supplied,
+			'withdrawn': withdrawn,
 			'paid': paid,
-			'balance': round(supplied - paid, 2),
+			'balance': round(supplied - withdrawn - paid, 2),
 			'notes': notes,
+			'withdrawals': withdrawals,
 			'payments': payments,
 		}
+
+	# ------------------------------------------------------------------
+	# כרטסת ספקים (supplier_ledger.json)
+	# ------------------------------------------------------------------
+	SUPPLIER_LEDGER_TYPES = ('charge', 'payment')
+
+	def get_supplier_ledger(self, supplier_id: int) -> List[Dict]:
+		"""כל רשומות הכרטסת של ספק, ממוינות לפי תאריך ואז לפי id."""
+		try:
+			sid = int(supplier_id)
+		except (TypeError, ValueError):
+			return []
+		rows = []
+		for rec in self.supplier_ledger or []:
+			try:
+				if int(rec.get('supplier_id', -1)) == sid:
+					rows.append(rec)
+			except (TypeError, ValueError):
+				continue
+		rows.sort(key=lambda r: (str(r.get('date') or ''), int(r.get('id') or 0)))
+		return rows
+
+	def get_supplier_ledger_entry(self, entry_id: int) -> Optional[Dict]:
+		try:
+			eid = int(entry_id)
+		except (TypeError, ValueError):
+			return None
+		for rec in self.supplier_ledger or []:
+			try:
+				if int(rec.get('id', -1)) == eid:
+					return rec
+			except (TypeError, ValueError):
+				continue
+		return None
+
+	def add_supplier_ledger_entry(self, supplier_id: int, entry_type: str, amount: float, date_str: str = '', vat_pct: float = 0, note: str = '', currency: str = 'USD') -> int:
+		"""הוספת חיוב/תשלום לספק. בחיוב amount הוא לפני מע"מ; vat_pct באחוזים (10 = 10%)."""
+		sid = int(supplier_id)
+		if not self.get_supplier(sid):
+			raise ValueError("ספק לא נמצא")
+		entry_type = str(entry_type or '').strip().lower()
+		if entry_type not in self.SUPPLIER_LEDGER_TYPES:
+			raise ValueError("סוג רשומה חייב להיות חיוב או תשלום")
+		amount = parse_numeric_value(amount)
+		if amount <= 0:
+			raise ValueError("הסכום חייב להיות גדול מאפס")
+		vat = parse_numeric_value(vat_pct) if entry_type == 'charge' else 0.0
+		if vat < 0 or vat > 100:
+			raise ValueError("אחוז מע\"מ לא תקין")
+		new_id = self._next_id(self.supplier_ledger)
+		record = {
+			'id': new_id,
+			'supplier_id': sid,
+			'date': date_str or datetime.now().strftime('%Y-%m-%d'),
+			'type': entry_type,
+			'amount': round(amount, 2),
+			'vat_pct': round(vat, 2),
+			'currency': str(currency or 'USD').upper(),
+			'note': str(note or '').strip(),
+			'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+		}
+		self.supplier_ledger.append(record)
+		self._save_json_list(self.supplier_ledger_file, self.supplier_ledger)
+		return new_id
+
+	def delete_supplier_ledger_entry(self, entry_id: int) -> bool:
+		try:
+			eid = int(entry_id)
+		except (TypeError, ValueError):
+			return False
+		before = len(self.supplier_ledger)
+		self.supplier_ledger = [r for r in self.supplier_ledger if int(r.get('id', -1)) != eid]
+		if len(self.supplier_ledger) == before:
+			return False
+		self._save_json_list(self.supplier_ledger_file, self.supplier_ledger)
+		return True
+
+	def get_supplier_balance(self, supplier_id: int) -> Dict:
+		"""מאזן ספק: חויב לפני/כולל מע"מ, שולם, יתרה — ורשומות עם יתרה רצה (לפני מע"מ וכולל מע"מ)."""
+		entries = []
+		charged_net = charged_vat = paid = 0.0
+		run_net = run_gross = 0.0
+		for rec in self.get_supplier_ledger(supplier_id):
+			amount = parse_numeric_value(rec.get('amount'))
+			if rec.get('type') == 'charge':
+				vat_pct = parse_numeric_value(rec.get('vat_pct'))
+				vat_amt = round(amount * vat_pct / 100.0, 2)
+				gross = round(amount + vat_amt, 2)
+				charged_net += amount
+				charged_vat += vat_amt
+				run_net += amount
+				run_gross += gross
+				row = dict(rec, net=round(amount, 2), vat_amount=vat_amt, gross=gross, paid=0.0)
+			else:
+				paid += amount
+				run_net -= amount
+				run_gross -= amount
+				row = dict(rec, net=0.0, vat_amount=0.0, gross=0.0, paid=round(amount, 2))
+			row['balance_net'] = round(run_net, 2)
+			row['balance_gross'] = round(run_gross, 2)
+			entries.append(row)
+		charged_net = round(charged_net, 2)
+		charged_vat = round(charged_vat, 2)
+		paid = round(paid, 2)
+		currency = next((str(e.get('currency') or 'USD') for e in entries), 'USD')
+		return {
+			'supplier_id': int(supplier_id) if str(supplier_id).lstrip('-').isdigit() else supplier_id,
+			'currency': currency,
+			'charged_net': charged_net,
+			'charged_vat': charged_vat,
+			'charged_gross': round(charged_net + charged_vat, 2),
+			'paid': paid,
+			'balance_net': round(charged_net - paid, 2),
+			'balance_gross': round(charged_net + charged_vat - paid, 2),
+			'entries': entries,
+		}
+
+	def _empty_baby_basic_note_lists(self) -> Dict:
+		empty = {key: [] for key in self.BABY_BASIC_NOTE_LIST_KEYS}
+		empty['model_fabrics'] = {}
+		return empty
+
+	def _default_baby_basic_model_fabrics(self) -> Dict[str, List[str]]:
+		return {
+			model: list(fabrics)
+			for model, fabrics in (self.BABY_BASIC_MODEL_FABRIC_DEFAULTS or {}).items()
+		}
+
+	def _normalize_model_fabrics(self, mapping) -> Dict[str, List[str]]:
+		result = {}
+		if not isinstance(mapping, dict):
+			return result
+		for model, fabrics in mapping.items():
+			name = str(model or '').strip()
+			names = self._normalize_extra_names(fabrics)
+			if name and names:
+				result[name] = names
+		return result
+
+	def _merge_model_fabrics(self, stored: Dict[str, List[str]]) -> Dict[str, List[str]]:
+		merged = self._default_baby_basic_model_fabrics()
+		for model, fabrics in (stored or {}).items():
+			current = list(merged.get(model) or [])
+			for fabric in fabrics or []:
+				if fabric and fabric not in current:
+					current.append(fabric)
+			if current:
+				merged[model] = current
+		return merged
+
+	def _default_baby_basic_note_lists(self) -> Dict:
+		payload = {key: list(self.BABY_BASIC_NOTE_LIST_DEFAULTS.get(key) or []) for key in self.BABY_BASIC_NOTE_LIST_KEYS}
+		payload['model_fabrics'] = self._default_baby_basic_model_fabrics()
+		return payload
+
+	def _load_baby_basic_note_lists(self) -> Dict:
+		defaults = self._default_baby_basic_note_lists()
+		try:
+			if not os.path.exists(self.baby_basic_note_lists_file):
+				self._save_baby_basic_note_lists(defaults)
+				return defaults
+			with open(self.baby_basic_note_lists_file, 'r', encoding='utf-8') as f:
+				data = json.load(f)
+			if not isinstance(data, dict):
+				return defaults
+			result = self._empty_baby_basic_note_lists()
+			changed = False
+			for key in self.BABY_BASIC_NOTE_LIST_KEYS:
+				names = self._normalize_extra_names(data.get(key))
+				if not names:
+					result[key] = list(defaults[key])
+					changed = True
+					continue
+				merged = list(names)
+				for name in defaults.get(key) or []:
+					if name and name not in merged:
+						merged.append(name)
+						changed = True
+				result[key] = merged
+			stored_map = self._normalize_model_fabrics(data.get('model_fabrics'))
+			merged_map = self._merge_model_fabrics(stored_map)
+			result['model_fabrics'] = merged_map
+			if stored_map != merged_map:
+				changed = True
+			if changed:
+				self._save_baby_basic_note_lists(result)
+			return result
+		except Exception:
+			return defaults
+
+	def _save_baby_basic_note_lists(self, lists: Dict) -> bool:
+		payload = {key: list(lists.get(key) or []) for key in self.BABY_BASIC_NOTE_LIST_KEYS}
+		mapping = lists.get('model_fabrics')
+		if mapping is None:
+			mapping = (self.baby_basic_note_lists or {}).get('model_fabrics') or {}
+		payload['model_fabrics'] = self._normalize_model_fabrics(mapping)
+		self.baby_basic_note_lists = payload
+		return self._save_json_dict(self.baby_basic_note_lists_file, payload)
+
+	def get_baby_basic_note_lists(self) -> Dict[str, List[str]]:
+		data = self.baby_basic_note_lists or self._empty_baby_basic_note_lists()
+		return {key: list(data.get(key) or []) for key in self.BABY_BASIC_NOTE_LIST_KEYS}
+
+	def add_baby_basic_note_list_item(self, key: str, name: str) -> bool:
+		key = str(key or '').strip()
+		name = str(name or '').strip()
+		if key not in self.BABY_BASIC_NOTE_LIST_KEYS or not name:
+			return False
+		lists = dict(self.baby_basic_note_lists or self._empty_baby_basic_note_lists())
+		bucket = list(lists.get(key) or [])
+		if name in bucket:
+			return True
+		bucket.append(name)
+		lists[key] = bucket
+		return self._save_baby_basic_note_lists(lists)
+
+	def get_baby_basic_model_fabrics(self, model: str = '') -> List[str]:
+		model = str(model or '').strip()
+		if not model:
+			return []
+		mapping = (self.baby_basic_note_lists or {}).get('model_fabrics') or {}
+		return list(mapping.get(model) or [])
+
+	def remember_baby_basic_model_fabric(self, model: str, fabric: str) -> bool:
+		model = str(model or '').strip()
+		fabric = str(fabric or '').strip()
+		if not model or not fabric:
+			return False
+		lists = dict(self.baby_basic_note_lists or self._empty_baby_basic_note_lists())
+		mapping = dict(lists.get('model_fabrics') or {})
+		current = list(mapping.get(model) or [])
+		if fabric in current:
+			return True
+		current.append(fabric)
+		mapping[model] = current
+		lists['model_fabrics'] = mapping
+		return self._save_baby_basic_note_lists(lists)
+
+	def _learn_baby_basic_model_fabrics_from_notes(self):
+		lists = dict(self.baby_basic_note_lists or self._empty_baby_basic_note_lists())
+		mapping = dict(lists.get('model_fabrics') or {})
+		changed = False
+		for rec in self.baby_basic_notes or []:
+			for line in rec.get('lines') or []:
+				if str(line.get('barcode') or '').strip():
+					continue
+				model = str(line.get('print_name') or line.get('item_name') or '').strip()
+				fabric = str(line.get('fabric') or '').strip()
+				if not model or not fabric:
+					continue
+				current = list(mapping.get(model) or [])
+				if fabric in current:
+					continue
+				current.append(fabric)
+				mapping[model] = current
+				changed = True
+		if changed:
+			lists['model_fabrics'] = mapping
+			self._save_baby_basic_note_lists(lists)
 
 	def _normalize_extra_names(self, items) -> List[str]:
 		names = []

@@ -21316,5 +21316,29 @@
     "item_sale_nis": "14.80",
     "compute_0036": "אריה חורף",
     "digital_price": "99"
+  },
+  {
+    "item_num": "2701",
+    "item_name": "אוברול ארוך פלנל (3-6)",
+    "item_part_num": "7297555022639",
+    "item_cost_nis": "19.00",
+    "item_sale_nis": "26.00",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2702",
+    "item_name": "אוברול ארוך פלנל (6-12)",
+    "item_part_num": "7297555022646",
+    "item_cost_nis": "19.00",
+    "item_sale_nis": "26.00",
+    "compute_0036": "אריה חורף"
+  },
+  {
+    "item_num": "2703",
+    "item_name": "אוברול ארוך טריקו (0-3)",
+    "item_part_num": "7297555022653",
+    "item_cost_nis": "19.00",
+    "item_sale_nis": "26.00",
+    "compute_0036": "אריה קיץ/מעבר"
   }
 ]

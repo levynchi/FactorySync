@@ -3119,5 +3119,170 @@
     ],
     "receipt_kind": "delivery_note",
     "created_at": "2026-08-16 12:14:00"
+  },
+  {
+    "id": 78,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-10-04",
+    "lines": [
+      {
+        "product": "בגד גוף מעטפת",
+        "size": "0-3",
+        "fabric_type": "טריקו",
+        "fabric_color": "לבן",
+        "fabric_category": "טריקו לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 194,
+        "note": ""
+      },
+      {
+        "product": "רגליות",
+        "size": "0-3",
+        "fabric_type": "",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 280,
+        "note": ""
+      }
+    ],
+    "total_quantity": 474,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-10-04 14:08:02"
+  },
+  {
+    "id": 79,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-10-06",
+    "lines": [
+      {
+        "product": "רגליות",
+        "size": "6-12",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 565,
+        "note": "דחוף"
+      },
+      {
+        "product": "רגליות",
+        "size": "12-18",
+        "fabric_type": "פלנל",
+        "fabric_color": "לבן",
+        "fabric_category": "פלנל לבן",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 452,
+        "note": "דחוף"
+      }
+    ],
+    "total_quantity": 1017,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 2,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-10-06 13:04:14"
+  },
+  {
+    "id": 80,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-10-07",
+    "lines": [],
+    "total_quantity": 0,
+    "packages": [
+      {
+        "package_type": "שקית קטנה",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [
+      {
+        "accessory": "גומי 1.5 בתפזורת",
+        "unit": "ק\"ג",
+        "quantity": 8.5
+      }
+    ],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-10-07 13:12:13"
+  },
+  {
+    "id": 81,
+    "supplier": "אלשראר מסחר ותעשייה בע\"מ",
+    "date": "2026-10-08",
+    "lines": [
+      {
+        "product": "סט פיגמה בייבי בייסיק",
+        "size": "18-24",
+        "fabric_type": "",
+        "fabric_color": "ורוד",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 44,
+        "note": ""
+      },
+      {
+        "product": "סט פיגמה בייבי בייסיק",
+        "size": "24-30",
+        "fabric_type": "",
+        "fabric_color": "ורוד",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 44,
+        "note": ""
+      },
+      {
+        "product": "סט פיגמה בייבי בייסיק",
+        "size": "18-24",
+        "fabric_type": "",
+        "fabric_color": "תכלת",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 48,
+        "note": ""
+      },
+      {
+        "product": "סט פיגמה בייבי בייסיק",
+        "size": "24-30",
+        "fabric_type": "",
+        "fabric_color": "תכלת",
+        "fabric_category": "",
+        "print_name": "חלק",
+        "category": "גזרות לא תפורות",
+        "quantity": 48,
+        "note": ""
+      }
+    ],
+    "total_quantity": 184,
+    "packages": [
+      {
+        "package_type": "שק",
+        "quantity": 1,
+        "driver": "מוחמד"
+      }
+    ],
+    "accessories": [],
+    "receipt_kind": "delivery_note",
+    "created_at": "2026-10-08 13:48:35"
   }
 ]

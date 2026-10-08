@@ -1154,7 +1154,7 @@
     "print_name": "בגד גוף מעטפת",
     "size": "0-3",
     "size_unit": "חודשים",
-    "fabric": "טריקו",
+    "fabric": "פלנל",
     "pack_qty": 3,
     "image": "assets\\labels\\products\\family_arie_201.png",
     "model_code": "201",
@@ -1587,5 +1587,38 @@
     "model_code": "",
     "brand": "arie",
     "color": "חיות אוריגמי שחור"
+  },
+  "7297555022639": {
+    "print_name": "אוברול ארוך ריץ רץ כפול",
+    "size": "3-6",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": ""
+  },
+  "7297555022646": {
+    "print_name": "אוברול ארוך ריץ רץ כפול",
+    "size": "6-12",
+    "size_unit": "חודשים",
+    "fabric": "פלנל",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": ""
+  },
+  "7297555022653": {
+    "print_name": "אוברול ארוך ריץ רץ כפול",
+    "size": "0-3",
+    "size_unit": "חודשים",
+    "fabric": "טריקו",
+    "pack_qty": 1,
+    "image": "",
+    "model_code": "",
+    "brand": "arie",
+    "color": ""
   }
 }

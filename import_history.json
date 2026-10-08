@@ -1,0 +1,3017 @@
+{
+  "akdem_claimed_balance_usd": 22532.06,
+  "akdem_ledger": {
+    "charges_usd": 116638.81,
+    "paid_usd": 94106.75,
+    "claimed_balance_usd": 22532.06,
+    "our_split": [
+      [
+        "חוב 2023 ישיר (Arye)",
+        6383.48,
+        0.0,
+        -6383.48
+      ],
+      [
+        "ADEL GROUP",
+        61038.35,
+        49845.35,
+        -11193.0
+      ],
+      [
+        "Express Line / Sakis",
+        46371.15,
+        36716.4,
+        -9654.75
+      ],
+      [
+        "LEVI MOSHE ישיר (virman + תקבול 7545)",
+        2845.83,
+        7545.0,
+        4699.17
+      ]
+    ],
+    "our_view_open": [
+      [
+        "Adel — שולם לאדל, אקדם טוענת שלא קיבלה",
+        11193.0
+      ],
+      [
+        "Sakis/Express — הפרש מע״מ/קיזוז",
+        9654.75
+      ],
+      [
+        "ישיר 2023+virman אחרי קיזוז 7545",
+        1684.0
+      ]
+    ]
+  },
+  "events": [
+    {
+      "date": "2020-07-21",
+      "kind": "מסמך",
+      "party": "חיים נתנאל",
+      "description": "הצעת מחיר הובלה ימית מכל נמלי טורקיה; סוכן ימי Mega Alfa (Sarper Demir)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 173707916382ec7c alon@nathaniel.co.il",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 1,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "173707916382ec7c",
+          "label": "Gmail 173707916382ec7c"
+        }
+      ]
+    },
+    {
+      "date": "2020-07-26",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה לבנק דיסקונט (טופס יבוא טובין) — סכום לא בגוף המייל",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1738a229ff532ae4",
+      "certainty": "חלקי",
+      "notes": "רק בקשה לטופס; סכום לא מתועד בשיחה",
+      "id": 2,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1738a229ff532ae4",
+          "label": "Gmail 1738a229ff532ae4"
+        }
+      ]
+    },
+    {
+      "date": "2020-08-10",
+      "kind": "משלוח יצא",
+      "party": "IREMAK",
+      "description": "נשלחו 4 packing lists IREMAK – ARYE MOSHE PL 1–4",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail lftamar2007 → arye.baby 173d7210 / PL 1–4",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 3,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2020-10-19",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה 39,419.16 USD לספק טורקי",
+      "amount": 39419.16,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1753fd70bf3e3723 yarden.ftrade",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 4,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1753fd70bf3e3723",
+          "label": "Gmail 1753fd70bf3e3723"
+        }
+      ]
+    },
+    {
+      "date": "2020-10-27",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / IREMAK",
+      "description": "Telex release Arye (Mega Alfa)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1756a47cf0e2c41e ihracat@akdem",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 5,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1756a47cf0e2c41e",
+          "label": "Gmail 1756a47cf0e2c41e"
+        }
+      ]
+    },
+    {
+      "date": "2020-10-27",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "בקשת תשלום Our ref/369511",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1756927c28815949",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 6,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1756927c28815949",
+          "label": "Gmail 1756927c28815949"
+        }
+      ]
+    },
+    {
+      "date": "2020-12-28",
+      "kind": "משלוח יצא",
+      "party": "IREMAK",
+      "description": "ייצוא IREMAK EX 251373 — מסמכי מכס/משלח Mega Alfa",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 176a8139969018f3",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 7,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "176a8139969018f3",
+          "label": "Gmail 176a8139969018f3"
+        }
+      ]
+    },
+    {
+      "date": "2020-12-30",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה 13,095.20 USD",
+      "amount": 13095.2,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 176b366611c0fd94",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 8,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "176b366611c0fd94",
+          "label": "Gmail 176b366611c0fd94"
+        }
+      ]
+    },
+    {
+      "date": "2020-12-30",
+      "kind": "תשלום ספק",
+      "party": "Stilteks",
+      "description": "הוראת העברה 607.50 USD (גרביים / מסמכי ייצוא Stilteks דרך Bilal)",
+      "amount": 607.5,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 176b33d1661716cd + 176b356947692077 Stilteks evrakları",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 9,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "176b33d1661716cd",
+          "label": "Gmail 176b33d1661716cd"
+        },
+        {
+          "id": "176b356947692077",
+          "label": "Gmail 176b356947692077"
+        }
+      ]
+    },
+    {
+      "date": "2021-03-14",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה 41,668.23 USD",
+      "amount": 41668.23,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1783022551719d01",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 10,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1783022551719d01",
+          "label": "Gmail 1783022551719d01"
+        }
+      ]
+    },
+    {
+      "date": "2021-04-20",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 1,600 USD — 50% מהעסקה",
+      "amount": 1600,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 178eed13aad603ac",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 11,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "178eed13aad603ac",
+          "label": "Gmail 178eed13aad603ac"
+        }
+      ]
+    },
+    {
+      "date": "2021-05-24",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / Akdem",
+      "description": "Telex release — ARIE MANUFACTURE OF BABY CLOTHING ישראל",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1799e31cc650c907 (הועבר גם ל-alon@nathaniel)",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 12,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1799e31cc650c907",
+          "label": "Gmail 1799e31cc650c907"
+        }
+      ]
+    },
+    {
+      "date": "2021-06-01",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 26,294.20 USD",
+      "amount": 26294.2,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 179c6cd4d7ed86ab",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 13,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "179c6cd4d7ed86ab",
+          "label": "Gmail 179c6cd4d7ed86ab"
+        }
+      ]
+    },
+    {
+      "date": "2021-08-11",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / Akdem",
+      "description": "Telex Arye Moshe Levy",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17b359502ef3d3bc",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 14,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17b359502ef3d3bc",
+          "label": "Gmail 17b359502ef3d3bc"
+        }
+      ]
+    },
+    {
+      "date": "2021-08-20",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / Akdem",
+      "description": "FW Arye Moshe — מסמכי ייצוא Mega Alfa",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17b6404688bd5c86",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 15,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17b6404688bd5c86",
+          "label": "Gmail 17b6404688bd5c86"
+        }
+      ]
+    },
+    {
+      "date": "2021-08-26",
+      "kind": "תשלום ספק",
+      "party": "Nibby / עומר",
+      "description": "מייל בנק דיסקונט בנושא 867 של עומר",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17b8197f1e72d2ab",
+      "certainty": "חלקי",
+      "notes": "סכום לא בגוף המייל",
+      "id": 16,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17b8197f1e72d2ab",
+          "label": "Gmail 17b8197f1e72d2ab"
+        }
+      ]
+    },
+    {
+      "date": "2021-08-30",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 23,084.96 USD מחשבון דולרי 140221",
+      "amount": 23084.96,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17ba5a6fcf52c1dd",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 17,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17ba5a6fcf52c1dd",
+          "label": "Gmail 17ba5a6fcf52c1dd"
+        }
+      ]
+    },
+    {
+      "date": "2021-09-19",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "בקשת תשלום Our ref/388885 s/ IREMAK TEKSTIL",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17bfd562fff2b6e0 amir@nathaniel",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 18,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17bfd562fff2b6e0",
+          "label": "Gmail 17bfd562fff2b6e0"
+        }
+      ]
+    },
+    {
+      "date": "2021-09-21",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / Akdem",
+      "description": "Telex Arye Moshe",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17c0709271794787",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 19,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17c0709271794787",
+          "label": "Gmail 17c0709271794787"
+        }
+      ]
+    },
+    {
+      "date": "2021-09-29",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה 41,438.96 USD מחשבון דולרי 140221",
+      "amount": 41438.96,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17c2fd2e5192513d",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 20,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17c2fd2e5192513d",
+          "label": "Gmail 17c2fd2e5192513d"
+        }
+      ]
+    },
+    {
+      "date": "2021-10-11",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 1,432.80 USD מחשבון דולרי 140221",
+      "amount": 1432.8,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17c6dca70dee6942",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 21,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17c6dca70dee6942",
+          "label": "Gmail 17c6dca70dee6942"
+        }
+      ]
+    },
+    {
+      "date": "2021-10-17",
+      "kind": "תשלום ספק",
+      "party": "Akdem / IREMAK",
+      "description": "הוראת העברה 23,273 USD מחשבון דולרי",
+      "amount": 23273,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17c8dc84f5f9763a",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 22,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17c8dc84f5f9763a",
+          "label": "Gmail 17c8dc84f5f9763a"
+        }
+      ]
+    },
+    {
+      "date": "2022-01-03",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 3,344 USD מחשבון דולרי 140221",
+      "amount": 3344,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17e1ee889431428e",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 23,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17e1ee889431428e",
+          "label": "Gmail 17e1ee889431428e"
+        }
+      ]
+    },
+    {
+      "date": "2022-03-08",
+      "kind": "משלוח יצא",
+      "party": "Akdem",
+      "description": "מסמכי משלוח ARYEE MOSHE LEVY — הועברו גם לחיים נתנאל",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17f69b86bfc4292a",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 24,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17f69b86bfc4292a",
+          "label": "Gmail 17f69b86bfc4292a"
+        }
+      ]
+    },
+    {
+      "date": "2022-04-03",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 25,272.04 USD",
+      "amount": 25272.04,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 17fee452f6dbfac3",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 25,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "17fee452f6dbfac3",
+          "label": "Gmail 17fee452f6dbfac3"
+        }
+      ]
+    },
+    {
+      "date": "2022-04-25",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 18,000 USD + הצעת מחיר. בוואטסאפ: תשלום 18,000$ (SWIFT נשלח לבילאל); תאריך ערך שצוין בצ'אט 26.04.2022",
+      "amount": 18000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18060157f1ac5996 + WhatsApp Bilal",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 26,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18060157f1ac5996",
+          "label": "Gmail 18060157f1ac5996"
+        }
+      ]
+    },
+    {
+      "date": "2022-08-04",
+      "kind": "משלוח יצא",
+      "party": "Akdem",
+      "description": "Packing list 04.08.2022 Arye Moshe Levy Çeki Listesi",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "OneDrive ביללאל/03_רשימות_משקל + WhatsApp Bilal",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 27,
+      "attachments": [
+        {
+          "label": "Packing list 04.08.2022",
+          "path": "import_documents/27/04.08.2022 - Arye Moshe Levy Çeki Listesi.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2022-08-16",
+      "kind": "פרופורמה",
+      "party": "Stilteks",
+      "description": "פרופורמת גרביים — 1,000 מארזי חמישיות לבן @ 2.20$ = 2,200$",
+      "amount": 2200,
+      "currency": "USD",
+      "ils": null,
+      "qty": "1000 packs / 5000 pairs",
+      "source": "supplier_documents/5/Stilteks_proforma_16.08.2022.pdf",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 28,
+      "attachments": [
+        {
+          "label": "פרופורמת Stilteks 16.08.2022",
+          "path": "supplier_documents/5/Stilteks_proforma_16.08.2022.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2022-08-23",
+      "kind": "חשבונית",
+      "party": "Akdem",
+      "description": "חשבונית + packing list 23.08.2022 Arye Moshe",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "OneDrive ביללאל/02_חשבוניות + 03_רשימות_משקל",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 29,
+      "attachments": [
+        {
+          "label": "חשבונית 23.08.2022",
+          "path": "import_documents/29/23.08.2022 - Arye Moshe Invoice.pdf"
+        },
+        {
+          "label": "Packing list 23.08.2022",
+          "path": "import_documents/29/23.08.2022 - Arye Moshe Levy Çeki Listesi.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2022-08-31",
+      "kind": "תשלום ספק",
+      "party": "Stilteks",
+      "description": "SWIFT 2,200 USD ל-Stilteks (QNB Finansbank) — שולם במלואו על הזמנת הגרביים",
+      "amount": 2200,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 182f306316be5549 + supplier_documents/5/Stilteks_SWIFT_31.08.2022.pdf",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 30,
+      "attachments": [
+        {
+          "label": "SWIFT Stilteks 31.08.2022",
+          "path": "supplier_documents/5/Stilteks_SWIFT_31.08.2022.pdf"
+        },
+        {
+          "label": "CCF 31.08.2022",
+          "path": "import_documents/30/CCF31082022_0001.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "182f306316be5549",
+          "label": "Gmail 182f306316be5549"
+        }
+      ]
+    },
+    {
+      "date": "2022-09-01",
+      "kind": "משלוח יצא",
+      "party": "Mega Alfa / Akdem",
+      "description": "BL / תיק YK105925 — ARYE MOSHE LEVY // 2566321",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 182f79c0c53a0500 + OneDrive ביללאל/05_שילוח_Telex_HBL/YK105925 TELEX_000638.pdf",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 31,
+      "attachments": [
+        {
+          "label": "YK105925 TELEX",
+          "path": "import_documents/31/YK105925 TELEX_000638.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "182f79c0c53a0500",
+          "label": "Gmail 182f79c0c53a0500"
+        }
+      ]
+    },
+    {
+      "date": "2022-10-12",
+      "kind": "משלוח יצא",
+      "party": "Akdem",
+      "description": "בדים נשלחו לאיסטנבול למשלוח; packing list 12.10.2022 (KALANLAR)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal + OneDrive ביללאל/03_רשימות_משקל",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 32,
+      "attachments": [
+        {
+          "label": "Packing list 12.10.2022 KALANLAR",
+          "path": "import_documents/32/12.10.2022 - Arye Moshe Levy Çeki Listesi KALANLAR.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2022-11-08",
+      "kind": "משלוח יצא",
+      "party": "Nora / Mega Alfa",
+      "description": "פרסל ייצוא CNS3570 // ALICI MOSHE LEVY // YK107532",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 184560fbe32005c3",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 33,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "184560fbe32005c3",
+          "label": "Gmail 184560fbe32005c3"
+        }
+      ]
+    },
+    {
+      "date": "2022-12-05",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "העברה 5,000 USD ל-Garanti Uludag (IBAN Akdem). SWIFT מתועד כ-5.12.2022",
+      "amount": 5000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 184e118fe3472cc4 + OneDrive ביללאל/04_SWIFT/swift for 5000 dollar 5.12.2022.pdf + WhatsApp",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 34,
+      "attachments": [
+        {
+          "label": "SWIFT 5,000$ 5.12.2022",
+          "path": "import_documents/34/swift for 5000 dollar 5.12.2022.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "184e118fe3472cc4",
+          "label": "Gmail 184e118fe3472cc4"
+        }
+      ]
+    },
+    {
+      "date": "2022-12-08",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 8,000 USD לאותו חשבון Garanti Akdem",
+      "amount": 8000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 184f11250cb2f34e + WhatsApp Bilal (תשלום נוסף באותה תקופה)",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 35,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "184f11250cb2f34e",
+          "label": "Gmail 184f11250cb2f34e"
+        }
+      ]
+    },
+    {
+      "date": "2023-02-22",
+      "kind": "חשבונית",
+      "party": "Stilteks",
+      "description": "חשבונית מסחרית #3 — 996 מארזים (4,980 זוגות) לבן @ 2.20$ = 2,191.20$; 5 קרטונים, נטו 54.75 ק״ג",
+      "amount": 2191.2,
+      "currency": "USD",
+      "ils": null,
+      "qty": "996 packs / 5 cartons / 54.75 kg net",
+      "source": "supplier_documents/5/Stilteks_commercial_invoice_22.02.2023.pdf + packing list",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 36,
+      "attachments": [
+        {
+          "label": "חשבונית מסחרית Stilteks 22.02.2023",
+          "path": "supplier_documents/5/Stilteks_commercial_invoice_22.02.2023.pdf"
+        },
+        {
+          "label": "Packing list Stilteks 22.02.2023",
+          "path": "supplier_documents/5/Stilteks_packing_list_22.02.2023.pdf"
+        },
+        {
+          "label": "פרופורמת Stilteks 22.02.2023",
+          "path": "supplier_documents/5/Stilteks_proforma_22.02.2023.pdf"
+        },
+        {
+          "label": "חשבונית Arye 22.02.2023",
+          "path": "import_documents/36/22.02.2023 - Arye Moshe Invoice.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-02-22",
+      "kind": "משלוח יצא",
+      "party": "Akdem + Stilteks",
+      "description": "Packing list 22.02.2023 Arye Moshe Levy — בד + גרביים Stilteks באותו משלוח",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "כולל 5 קרטוני גרביים",
+      "source": "OneDrive ביללאל/01_שנת_2023 + supplier_documents/5 packing list",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 37,
+      "attachments": [
+        {
+          "label": "Packing list 22.02.2023 Arye Moshe Levy",
+          "path": "import_documents/37/22.02.2023 Arye Moshe Levy Çeki Listesi.xlsx"
+        },
+        {
+          "label": "Packing list Stilteks 22.02.2023",
+          "path": "supplier_documents/5/Stilteks_packing_list_22.02.2023.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-02-22",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 15,000 USD ל-Garanti Uludag. בוואטסאפ: SWIFT 15,000$ נשלח לבילאל",
+      "amount": 15000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18679196725581b7 + WhatsApp Bilal",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 38,
+      "attachments": [
+        {
+          "label": "CCF 23.02.2023",
+          "path": "import_documents/38/CCF23022023.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "18679196725581b7",
+          "label": "Gmail 18679196725581b7"
+        }
+      ]
+    },
+    {
+      "date": "2023-04-03",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 3,884.76 USD",
+      "amount": 3884.76,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 187465b6dd893f8b",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 39,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "187465b6dd893f8b",
+          "label": "Gmail 187465b6dd893f8b"
+        }
+      ]
+    },
+    {
+      "date": "2023-07-05",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 5,000 USD ל-Garanti Uludag",
+      "amount": 5000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18924af0704fcde3 + WhatsApp Bilal (תשלום יולי)",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 40,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18924af0704fcde3",
+          "label": "Gmail 18924af0704fcde3"
+        }
+      ]
+    },
+    {
+      "date": "2023-07-17",
+      "kind": "משלוח יצא",
+      "party": "Akdem",
+      "description": "Packing list / invoice 17.07.2023 Arye Moshe (שחרור אוויר/ים)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 7.8.2023 — מסמכי שחרור 17.07.2023",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 41,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-08-07",
+      "kind": "חשבונית",
+      "party": "Akdem",
+      "description": "חשבונית 07.08.2023 Arye Moshe + Çeki Listesi (מספר חשבונית נוסף אחרי דרישת העמיל)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "OneDrive ביללאל/01_שנת_2023 + WhatsApp Bilal",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 42,
+      "attachments": [
+        {
+          "label": "חשבונית 07.08.2023",
+          "path": "import_documents/42/07.08.2023 - Arye Moshe Invoice.pdf"
+        },
+        {
+          "label": "Çeki Listesi 07.08.2023",
+          "path": "import_documents/42/07.08.2023 Arye Moshe Levy Çeki Listesi.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-10-13",
+      "kind": "משלוח יצא",
+      "party": "Nibby / עומר",
+      "description": "משלוח ראשון מוכן — דגם 204 ארוז; רשימות נשלחו למייל. בהמשך נוספו כמויות 025",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "204: ~8,470 יח' (לפי דיון חשבונית)",
+      "source": "WhatsApp Omer 12–18.10.2023",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 43,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-10-19",
+      "kind": "חשבונית",
+      "party": "Akdem / IREMAK",
+      "description": "חשבונית סופית + packing list 19.10.2023 מ-IREMAK export (בד שנשלח לעומר לתפירה)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 19.10.2023 + OneDrive ביללאל/01_שנת_2023",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 44,
+      "attachments": [
+        {
+          "label": "חשבונית 19.10.2023",
+          "path": "import_documents/44/19.10.2023 - Arye Moshe Invoice.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-10-19",
+      "kind": "משלוח יצא",
+      "party": "Nibby / Mega Alfa",
+      "description": "ייצוא בגדים ראשון דרך Nibby (Akdem לא יכולה לייצא בגדים). הובלה פנימית בורסה–איסטנבול על Akdem; הובלה ימית לישראל על אריה. סוכן: Deniz / Mega Alfa",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Omer 19.10.2023",
+      "certainty": "ודאי",
+      "notes": "מחלוקת מע״מ טורקי ~2,000$ על חשבונית Akdem לעומר; בסוף הוסכם לקזז מע״מ מהחשבונית",
+      "id": 45,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-10-25",
+      "kind": "חשבונית",
+      "party": "Nibby / עומר",
+      "description": "סיכום שתי חשבוניות ייצור: בד 22,601.15$ + ייצור 25,706.10$ = 48,307$ (לא 49,623.83$ של עומר). חשבונית סופית אמורה להיות 23,302.67$ אחרי קיזוז החזרות בד",
+      "amount": 48307,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Omer 25.10.2023",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 46,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-11-01",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "בקשת תשלום Our ref/3031770 s/ NIBBY BABY",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18b8ae828597b519 amir@nathaniel",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 47,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18b8ae828597b519",
+          "label": "Gmail 18b8ae828597b519"
+        }
+      ]
+    },
+    {
+      "date": "2023-11-02",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 10,000 USD (יתרת בד ישנה, לא בגדי עומר). בוואטסאפ: הוראה לבנק באותו יום",
+      "amount": 10000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18b902149587e72f + WhatsApp Bilal/Omer",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 48,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18b902149587e72f",
+          "label": "Gmail 18b902149587e72f"
+        }
+      ]
+    },
+    {
+      "date": "2023-11-05",
+      "kind": "משלוח הגיע",
+      "party": "Nibby / חיים נתנאל",
+      "description": "Pre-alert / הודעת הגעה למשלוח בגדים ראשון. המשלוח בנמל בתחילת נובמבר",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Omer 6.11.2023 + Gmail Nathaniel 3031770",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 49,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-11-13",
+      "kind": "תשלום ספק",
+      "party": "Nibby / עומר",
+      "description": "SWIFT 7,000 USD ל-Nibby Baby Tekstil, Ziraat Bank, IBAN TR310001001966977612035002, ערך 13.11.2023, חשבונית GIB2023000000022. עומר קיבל פחות 32$ עמלה",
+      "amount": 7000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18bc319b1e662c53 SWIFT body 14.11.2023 + WhatsApp Omer",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 50,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18bc319b1e662c53",
+          "label": "Gmail 18bc319b1e662c53"
+        }
+      ]
+    },
+    {
+      "date": "2023-11-23",
+      "kind": "חשבונית",
+      "party": "Nibby / חיים נתנאל",
+      "description": "Customs Invoice Our ref/3031770 s/NIBBY BABY",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18bfca20e01a69ef micheala@nathaniel",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 51,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18bfca20e01a69ef",
+          "label": "Gmail 18bfca20e01a69ef"
+        }
+      ]
+    },
+    {
+      "date": "2023-11-29",
+      "kind": "משלוח הגיע",
+      "party": "Nibby / חיים נתנאל",
+      "description": "Pre Alert Our ref/3033236 s/NIBBY BABY TEKSTIL — משלוח בגדים שני",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c1b6c8f1d5607a",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 52,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c1b6c8f1d5607a",
+          "label": "Gmail 18c1b6c8f1d5607a"
+        }
+      ]
+    },
+    {
+      "date": "2023-11-30",
+      "kind": "תשלום ספק",
+      "party": "Nibby / עומר",
+      "description": "הוראת העברה 18,004.58 USD מול חשבונית Nibby 31.10.23 (יתרת חשבונית ראשונה אחרי 7,000$)",
+      "amount": 18004.58,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c1f4ad14a29025 + WhatsApp Omer 27.11.2023",
+      "certainty": "סביר",
+      "notes": "אין SWIFT בגוף השיחה; הוראה לבנק + חשבונית מצורפת",
+      "id": 53,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c1f4ad14a29025",
+          "label": "Gmail 18c1f4ad14a29025"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-04",
+      "kind": "מסמך",
+      "party": "Nibby / חיים נתנאל",
+      "description": "נשלחו מסמכי שחרור למשלוח הצפוי 05.12.23",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c33e7fd5a030bd / 18c33e2d0311622b",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 54,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c33e7fd5a030bd",
+          "label": "Gmail 18c33e7fd5a030bd"
+        },
+        {
+          "id": "18c33e2d0311622b",
+          "label": "Gmail 18c33e2d0311622b"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-05",
+      "kind": "משלוח הגיע",
+      "party": "Nibby / חיים נתנאל",
+      "description": "Notice of Arrival Our ref/3033236 s/NIBBY BABY TEKSTIL + בקשת תשלום עמילות",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c3900d0b57af1e + 18c39b2e707b6523",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 55,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c3900d0b57af1e",
+          "label": "Gmail 18c3900d0b57af1e"
+        },
+        {
+          "id": "18c39b2e707b6523",
+          "label": "Gmail 18c39b2e707b6523"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-06",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "העברה 20,000 ₪ לחיים נתנאל (אמיר אישר קבלה). חלק מעלות שחרור משלוח Nibby",
+      "amount": 20000,
+      "currency": "ILS",
+      "ils": 20000,
+      "qty": "",
+      "source": "Gmail 18c3e06cda12c75f",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 56,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c3e06cda12c75f",
+          "label": "Gmail 18c3e06cda12c75f"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-10",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "העברה נוספת 25,900 ₪ לחיים נתנאל (אמיר אישר). כולל תיקון העברה קודמת שעברה בטעות",
+      "amount": 25900,
+      "currency": "ILS",
+      "ils": 25900,
+      "qty": "",
+      "source": "Gmail 18c3e06cda12c75f 10.12.2023",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 57,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c3e06cda12c75f",
+          "label": "Gmail 18c3e06cda12c75f"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-14",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חיים נתנאל",
+      "description": "רשומת עלויות בתוכנה: 6.53 קוב, 1,224 ק״ג, 68 גלילים, הובלה 5,106 ₪ + פנים-ארצי 750 ₪ = 5,856 ₪",
+      "amount": 5856,
+      "currency": "ILS",
+      "ils": 5856,
+      "qty": "68 rolls / 1224 kg / 6.53 cbm",
+      "source": "shipping_costs.json תאריך 14/12/2023",
+      "certainty": "ודאי",
+      "notes": "יתכן שזה חלק מאותו תיק Nibby/בד; 20,000+25,900 ₪ ששולמו במייל כוללים גם תיקים/מע״מ נוספים",
+      "id": 58,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2023-12-20",
+      "kind": "תשלום ספק",
+      "party": "Nibby / עומר",
+      "description": "הוראת העברה 23,310.72 USD מול İHRACAT FATURASI 2. בוואטסאפ: We made payment today",
+      "amount": 23310.72,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c86a6f846f1cd7 + WhatsApp Omer 20.12.2023",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 59,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18c86a6f846f1cd7",
+          "label": "Gmail 18c86a6f846f1cd7"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-25",
+      "kind": "משלוח הגיע",
+      "party": "IREMAK / On Express",
+      "description": "Pre Alert On Express 832887 s/IREMAK + Logfreight 1000286 IREMAK + MIDAS BL Ambarli→Ashdod. Customs Invoice Nathaniel 3033236 NIBBY",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18c9fdc1 / 18ca66d45276badb / 18c9fb76 / 18ca00e0",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 60,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18ca66d45276badb",
+          "label": "Gmail 18ca66d45276badb"
+        },
+        {
+          "id": "18c9fdc1",
+          "label": "Gmail 18c9fdc1"
+        }
+      ]
+    },
+    {
+      "date": "2023-12-27",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 5,000 USD (יתרת בד). בוואטסאפ: הוראה לבנק 27.12",
+      "amount": 5000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18caab515eb4b4f8 + WhatsApp Bilal",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 61,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18caab515eb4b4f8",
+          "label": "Gmail 18caab515eb4b4f8"
+        }
+      ]
+    },
+    {
+      "date": "2024-01-08",
+      "kind": "משלוח הגיע",
+      "party": "IREMAK / On Express",
+      "description": "On Express: המשלוח שוחרר; ניירת באשדוד (אדיב / AMA)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18ce8012e0d71aae",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 62,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18ce8012e0d71aae",
+          "label": "Gmail 18ce8012e0d71aae"
+        }
+      ]
+    },
+    {
+      "date": "2024-01-16",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "און אקספרס",
+      "description": "רשומת עלויות: 2.04 קוב, 620 ק״ג, 28 גלילים, הובלה 3,022 ₪ + פנים-ארצי 750 ₪ = 3,772 ₪",
+      "amount": 3772,
+      "currency": "ILS",
+      "ils": 3772,
+      "qty": "28 rolls / 620 kg / 2.04 cbm",
+      "source": "shipping_costs.json 16/1/2024 + Gmail ניירת שחרור 616315/832887",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 63,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-01-30",
+      "kind": "משלוח יצא",
+      "party": "Akdem / On Express",
+      "description": "בקשת שילוח ימי ~1,000 ק״ג בד מוכן; איש קשר Bilal. תיק On Express 833149",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "~1000 kg",
+      "source": "Gmail 18d5a39d8f925aa2",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 64,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18d5a39d8f925aa2",
+          "label": "Gmail 18d5a39d8f925aa2"
+        }
+      ]
+    },
+    {
+      "date": "2024-01-30",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "הוראת העברה 5,000 USD. SWIFT מקומי: swift 30.01.24 akdem.pdf",
+      "amount": 5000,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18d59a2499125f3c + Downloads/swift 30.01.24 akdem.pdf",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 65,
+      "attachments": [
+        {
+          "label": "SWIFT 5,000$ 30.01.2024",
+          "path": "import_documents/65/swift 30.01.24 akdem.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "18d59a2499125f3c",
+          "label": "Gmail 18d59a2499125f3c"
+        }
+      ]
+    },
+    {
+      "date": "2024-02-05",
+      "kind": "חשבונית",
+      "party": "Akdem",
+      "description": "כרטסת Akdem: חשבונית מכירה 23/3264 ARYE 6,383.48 USD — חוב 2023 שנשאר פתוח בכרטסת",
+      "amount": 6383.48,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "לפי מכתב 15.7.2026: חוב 2023 6,383.48 + חשבונית 2,845 − שולם 7,545 = 1,684$",
+      "id": 66,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/66/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-02-21",
+      "kind": "משלוח הגיע",
+      "party": "Akdem / On Express",
+      "description": "Pre Alert Our ref/833149 — דרישת ניירת ספק לשחרור",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18dcb1180e80be72",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 67,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18dcb1180e80be72",
+          "label": "Gmail 18dcb1180e80be72"
+        }
+      ]
+    },
+    {
+      "date": "2024-02-28",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "און אקספרס",
+      "description": "בקשת תשלום תיק 833149 (תחשיב שחרור+הובלה). ב-29.2 ליאור: ביצענו העברה. שוחרר; 4 משטחים; נהג אסף ~4.3",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "4 pallets",
+      "source": "Gmail 18def1f74a683aec",
+      "certainty": "ודאי",
+      "notes": "סכום הבקשה ב-PDF מצורף; בתוכנה 29/2/2024: 7,300 ₪ כולל פנים-ארצי",
+      "id": 68,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18def1f74a683aec",
+          "label": "Gmail 18def1f74a683aec"
+        }
+      ]
+    },
+    {
+      "date": "2024-02-29",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "און אקספרס",
+      "description": "רשומת עלויות: 3.44 קוב, 1,030 ק״ג, 49 גלילים, הובלה 6,550 ₪ + פנים-ארצי 750 ₪ = 7,300 ₪",
+      "amount": 7300,
+      "currency": "ILS",
+      "ils": 7300,
+      "qty": "49 rolls / 1030 kg / 3.44 cbm",
+      "source": "shipping_costs.json 29/2/2024",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 69,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-04-04",
+      "kind": "משלוח הגיע",
+      "party": "DHL",
+      "description": "DHL AWB 5138503635 נמסר בישראל (דגימות/חבילה לעומר או חזרה)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 18ea96bff07c3c92 + WhatsApp Omer שינוי כתובת באפריל",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 70,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "18ea96bff07c3c92",
+          "label": "Gmail 18ea96bff07c3c92"
+        }
+      ]
+    },
+    {
+      "date": "2024-05-28",
+      "kind": "חשבונית",
+      "party": "Akdem → Adel",
+      "description": "כרטסת: חשבונית 24/917 ADEL 12,429.31$ + מע״מ טורקי AKD2024/846 764.88$",
+      "amount": 13194.19,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx + ADEL.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 71,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/71/ARYE MOSHE balance.xlsx"
+        },
+        {
+          "label": "כרטסת Adel",
+          "path": "import_documents/71/ADEL.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-05-28",
+      "kind": "משלוח יצא",
+      "party": "Akdem / Adel / חמודי",
+      "description": "Check List 28.05.2024 — בד דרך Adel/חמודי. בתוכנה הובלה 20/6/2024: 8 קוב, 1,912 ק״ג, 89 גלילים, 8,800 ₪",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "89 rolls / 1912 kg / 8 cbm (רשומת הובלה 20/6)",
+      "source": "Downloads Arye Moshe Check List 28.05.2024.xlsx + shipping_costs.json + סיכום חמודי",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 72,
+      "attachments": [
+        {
+          "label": "Check List 28.05.2024",
+          "path": "import_documents/72/Arye Moshe Check List 28.05.2024.xlsx"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/72/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-06-20",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חמודי",
+      "description": "הובלה: 8 קוב × 1,100 = 8,800 ₪, 1,912.2 ק״ג, 89 גלילים",
+      "amount": 8800,
+      "currency": "ILS",
+      "ils": 8800,
+      "qty": "89 rolls / 1912 kg / 8 cbm",
+      "source": "shipping_costs.json 20/6/2024 + סיכום חמודי",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 73,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/73/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-07-08",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Adel / חמודי / Akdem",
+      "description": "הוראת העברה 13,673 USD ל-Garanti Uludag (Tatiana). תואם חשבונית 12,429$ + מע״מ. בוואטסאפ/חמודי: מקדמה ~12,430$ / 59,797 ₪ כולל מע״מ ישראל",
+      "amount": 13673,
+      "currency": "USD",
+      "ils": 59797,
+      "qty": "",
+      "source": "Gmail 19091b1bdc17ff35 + סיכום חמודי + כרטסת (תקבולים 6,000+4,215+2,215 ביולי)",
+      "certainty": "ודאי",
+      "notes": "כרטסת רושמת תקבולים מפוצלים ביולי (העברה בנקאית TL + מזומן Cerenak + ADEL) ולא שורה אחת של 13,673",
+      "id": 74,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/74/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        },
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/74/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "19091b1bdc17ff35",
+          "label": "Gmail 19091b1bdc17ff35"
+        }
+      ]
+    },
+    {
+      "date": "2024-07-25",
+      "kind": "משלוח יצא",
+      "party": "Akdem / Adel / חמודי",
+      "description": "Packing list 25.07.2024 — 111 גלילים, 2,299 ק״ג (CONT 3091). הובלה בתוכנה 14/8/2024: 11 קוב, 14,157 ₪",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "111 rolls / 2299 kg / ~11 cbm",
+      "source": "Arye Moshe Packing List 25.07.2024.xlsx + shipping_costs.json 14/8/2024 + סיכום חמודי",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 75,
+      "attachments": [
+        {
+          "label": "Packing list 25.07.2024",
+          "path": "import_documents/75/Arye Moshe Packing List 25.07.2024.xlsx"
+        },
+        {
+          "label": "CONT 3091 01.08.2024",
+          "path": "import_documents/75/3091  CONT 01.08.2024.pdf"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/75/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        },
+        {
+          "label": "20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx",
+          "path": "packing_lists/20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx"
+        },
+        {
+          "label": "30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
+          "path": "packing_lists/30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx"
+        },
+        {
+          "label": "arye new_20250910_161320.xls",
+          "path": "packing_lists/arye new_20250910_161320.xls"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-07-30",
+      "kind": "חשבונית",
+      "party": "Akdem → Adel",
+      "description": "כרטסת: חשבונית 24/588 ADEL 14,943.86$ + מע״מ 1,034.57$",
+      "amount": 15978.43,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 76,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/76/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-08-14",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חמודי",
+      "description": "הובלה CONT אוגוסט: 11 קוב, 2,299.1 ק״ג, 111 גלילים, 14,157 ₪ (בצ'אט סוכם ~12,870 ₪ על 10 קוב — מחלוקת קוב)",
+      "amount": 14157,
+      "currency": "ILS",
+      "ils": 14157,
+      "qty": "111 rolls / 2299 kg / 11 cbm",
+      "source": "shipping_costs.json 14/8/2024 + סיכום חמודי",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 77,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/77/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-08-15",
+      "kind": "חשבונית",
+      "party": "Akdem",
+      "description": "כרטסת: virman LEVI MOSHE 2,845.83 USD",
+      "amount": 2845.83,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 78,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/78/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-09-04",
+      "kind": "חשבונית",
+      "party": "Akdem → Adel",
+      "description": "כרטסת: חשבונית 24/1495 ADEL 6,532.71$ + מע״מ 414.25$",
+      "amount": 6946.96,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx + סיכום חמודי (חוב 6,532.7$ שנסגר בפברואר 2025)",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 79,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/79/ARYE MOSHE balance.xlsx"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/79/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-09-04",
+      "kind": "משלוח הגיע",
+      "party": "Akdem / Adel / חמודי",
+      "description": "משלוח ספטמבר (העמסה תחילת ספטמבר, קליטה ~26.9). Check List 04.09.2024",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Downloads Arye Moshe Check List 04.09.2024.xlsx + סיכום חמודי משלוח #3",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 80,
+      "attachments": [
+        {
+          "label": "Check List 04.09.2024",
+          "path": "import_documents/80/Arye Moshe Check List 04.09.2024.xlsx"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/80/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-10-01",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חמודי",
+      "description": "הובלה: 4.9 קוב, 920.6 ק״ג, 45 גלילים, 5,390 ₪",
+      "amount": 5390,
+      "currency": "ILS",
+      "ils": 5390,
+      "qty": "45 rolls / 921 kg / 4.9 cbm",
+      "source": "shipping_costs.json 1/10/2024",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 81,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-10-15",
+      "kind": "מסמך",
+      "party": "Akdem",
+      "description": "בילאל שלח FATURALAR (חשבוניות) למייל",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1928f4ecc0954812",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 82,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1928f4ecc0954812",
+          "label": "Gmail 1928f4ecc0954812"
+        }
+      ]
+    },
+    {
+      "date": "2024-10-28",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Adel / חמודי",
+      "description": "תשלום סחורה ~14,943$ / 56,006 ₪ לפני מע״מ (חמודי: נקי לספק). תואם חשבונית 24/588",
+      "amount": 14943,
+      "currency": "USD",
+      "ils": 56006,
+      "qty": "",
+      "source": "סיכום חמודי + WhatsApp/תמלולים 28–29.10.2024",
+      "certainty": "סביר",
+      "notes": "אין SWIFT בתיקייה",
+      "id": 83,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/83/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-11-09",
+      "kind": "חשבונית",
+      "party": "Akdem → Adel",
+      "description": "כרטסת: חשבונית 24/2073 ADEL 15,804.44$ + מע״מ 1,094.15$. תקבול 14,915.35$ ב-13.11",
+      "amount": 15804.44,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 84,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/84/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-11-26",
+      "kind": "משלוח הגיע",
+      "party": "Akdem / Adel / חמודי",
+      "description": "הזמנה 24/00010627 — בד לבן 114 גלילים / 2,431.45 ק״ג / 15,804$. מחלוקת קוב: חמודי 11.92 מול אריה 8.53",
+      "amount": 15804.43,
+      "currency": "USD",
+      "ils": null,
+      "qty": "114 rolls / 2431 kg / 11.92 cbm (חמודי)",
+      "source": "סיכום חמודי + shipping_costs.json 26/11/2024 (קוב בלבד, עלות 0) + AKDEM 26.11.24.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 85,
+      "attachments": [
+        {
+          "label": "AKDEM 26.11.24",
+          "path": "import_documents/85/AKDEM 26.11.24 EDIT FOR AIR TABLE.xlsx"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/85/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-12-02",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "חמודי / בוספור",
+      "description": "הודעת קול: העברתי כסף אחרי משלוח נובמבר — סכום לא מתועד",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "סיכום חמודי תמלול 2.12.2024",
+      "certainty": "חלקי",
+      "notes": "",
+      "id": 86,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/86/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2024-12-15",
+      "kind": "תשלום ספק",
+      "party": "Onimpeks / מגבת טורקיה",
+      "description": "הוראת העברה 1,848 USD (packing list + טופס חתום). דיסקונט ביקש פרטי מוטב מלאים ב-16.12",
+      "amount": 1848,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 193c9a9a1ac68212 + 193cf0ddd94f39a9 + הזמנה ל-sales@onimpeks.com",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 87,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "193c9a9a1ac68212",
+          "label": "Gmail 193c9a9a1ac68212"
+        },
+        {
+          "id": "193cf0ddd94f39a9",
+          "label": "Gmail 193cf0ddd94f39a9"
+        }
+      ]
+    },
+    {
+      "date": "2025-02-06",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Adel / בוספור",
+      "description": "סגירת חוב 6,532.70$ — 29,004 ₪ לבוספור קארגו",
+      "amount": 6532.7,
+      "currency": "USD",
+      "ils": 29004,
+      "qty": "",
+      "source": "WhatsApp Bilal 6,859$ ב-10.2 (קרוב) + סיכום חמודי 06.02.2025",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 88,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/88/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        },
+        {
+          "label": "CamScanner 22.02.2025",
+          "path": "import_documents/88/CamScanner 22-02-2025 12.53.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-02-10",
+      "kind": "מסמך",
+      "party": "Adel Group",
+      "description": "בוואטסאפ לבילאל: שולם 6,859$ דרך Adel. כנראה אותו תשלום כמו 6.2.2025 (6,532.70$ / 29,004 ₪) כולל מע״מ/5%",
+      "amount": 6859,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 10.02.2025",
+      "certainty": "סביר",
+      "notes": "לא נספר בסה״כ תשלומים — כפילות סבירה של 06.02.2025",
+      "id": 89,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-02-20",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Adel / בוספור",
+      "description": "שולם 16,594$ / 69,903 ₪ לבוספור — יבוא בדים 114 גלילים (חשבונית 15,804$). אישור בנק אסמכתא 75294",
+      "amount": 16594,
+      "currency": "USD",
+      "ils": 69903,
+      "qty": "",
+      "source": "WhatsApp Bilal 20.02.2025 + סיכום חמודי אישור בנק 20.02.2025",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 90,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/90/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        },
+        {
+          "label": "CamScanner 27.02.2025",
+          "path": "import_documents/90/CamScanner 27-02-2025 13.29.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-03-03",
+      "kind": "מסמך",
+      "party": "Adel / Akdem",
+      "description": "כרטסת: תקבול בנקאי 22,500 USD (812,580 TL) — כנראה קיבוץ תשלומי פברואר דרך Adel (6,859$ + 16,594$), לא תשלום נוסף",
+      "amount": 22500,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx H/13375",
+      "certainty": "ודאי",
+      "notes": "לא נספר בסה״כ תשלומים — כפילות של תשלומי 6.2/20.2.2025",
+      "id": 91,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/91/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-03-11",
+      "kind": "חשבונית",
+      "party": "Akdem → Adel",
+      "description": "כרטסת: חשבונית 25/208 ADEL 7,582.85$ + מע״מ 437.33$ — החשבונית הישירה האחרונה דרך Adel",
+      "amount": 7582.85,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 92,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/92/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-03-11",
+      "kind": "פרופורמה",
+      "party": "IPTAS / Adel",
+      "description": "פרופורמת בד מגבת 380GSM 600 ק״ג @ 7.65$ = 4,590$ ל-ADEL GROUP",
+      "amount": 4590,
+      "currency": "USD",
+      "ils": null,
+      "qty": "600 kg towel fabric",
+      "source": "ADEL GROUP İSRAİL MOSHE PROFORMA.pdf + WhatsApp Bilal 11.03.2025",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 93,
+      "attachments": [
+        {
+          "label": "ADEL GROUP פרופורמה",
+          "path": "import_documents/93/ADEL GROUP İSRAİL MOSHE PROFORMA.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-03-12",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "בוספור / Adel",
+      "description": "מקדמה 30% בד מגבת — 5,053 ₪ (~1,377$)",
+      "amount": 1377,
+      "currency": "USD",
+      "ils": 5053,
+      "qty": "30% of 4590",
+      "source": "סיכום חמודי / אדל_גרופ_חשבוניות",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 94,
+      "attachments": [
+        {
+          "label": "אדל גרופ חשבוניות מול תשלומים",
+          "path": "import_documents/94/אדל_גרופ_חשבוניות_מול_תשלומים.xlsx"
+        },
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/94/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-03-25",
+      "kind": "משלוח הגיע",
+      "party": "Akdem / חמודי",
+      "description": "משלוח אביב — קליטה מפוצלת ~25.3–6.4, 50 גלילים. מחלוקת קוב 3.82 מול 6.67",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "50 rolls",
+      "source": "סיכום חמודי משלוח #5",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 95,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/95/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-04-03",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "בוספור / חמודי",
+      "description": "העברה 8,657 ₪ ביום קליטת סחורה (לא מגבת)",
+      "amount": 8657,
+      "currency": "ILS",
+      "ils": 8657,
+      "qty": "",
+      "source": "סיכום חמודי",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 96,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/96/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-04-07",
+      "kind": "פרופורמה",
+      "party": "IPTAS / Adel",
+      "description": "פרופורמה מעודכנת 681 ק״ג מגבת @ 7.65$ = 5,209.65$; מקדמה 1,400$ ב-24.03, יתרה 3,809.65$",
+      "amount": 5209.65,
+      "currency": "USD",
+      "ils": null,
+      "qty": "681 kg",
+      "source": "OneDrive חמודי 3091.pdf (מוזכר בסיכום אדל)",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 97,
+      "attachments": [
+        {
+          "label": "3091.pdf",
+          "path": "import_documents/97/3091.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-04-15",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "בוספור",
+      "description": "יתרת בד מגבת 17,721 ₪ (דיסקונט אסמכתא 014696). חישוב: (5,209−1,377)=3,832$ × ~3.73",
+      "amount": 3832,
+      "currency": "USD",
+      "ils": 17721,
+      "qty": "",
+      "source": "סיכום חמודי + WhatsApp Hamoudi 15.07.2026 חישוב 5209-1377",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 98,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/98/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-04-22",
+      "kind": "משלוח הגיע",
+      "party": "חמודי",
+      "description": "משלוח אפריל כולל בד מגבת. מחלוקת קוב 5.95 מול 5.5",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "סיכום חמודי משלוח #6",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 99,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/99/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        },
+        {
+          "label": "CamScanner 30.04.2025",
+          "path": "import_documents/99/CamScanner 30-04-2025 11.18.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-04-30",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חמודי",
+      "description": "דרישת העברה 6,545 ₪ בהקשר מדידת קוב",
+      "amount": 6545,
+      "currency": "ILS",
+      "ils": 6545,
+      "qty": "",
+      "source": "סיכום חמודי הובלה",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 100,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/100/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-05-12",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "חמודי",
+      "description": "חישוב הובלה 5.5 קוב → 6,050+מע״מ = 7,139 ₪",
+      "amount": 7139,
+      "currency": "ILS",
+      "ils": 7139,
+      "qty": "5.5 cbm",
+      "source": "סיכום חמודי",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 101,
+      "attachments": [
+        {
+          "label": "סיכום משלוחים חמודי",
+          "path": "import_documents/101/סיכום_משלוחים_והעברות_סחורה.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-07-07",
+      "kind": "תשלום ספק",
+      "party": "Akdem",
+      "description": "העברה 7,582 USD בוצעה ב-7.7.2025 (חיוב מחשבון שקלים). SWIFT נשלח 8.7. כרטסת: תקבול 7,545$ ב-8.7 LEVI MOSHE. תשלום ישיר אחרון על חשבונית Adel 7,582.85$",
+      "amount": 7582,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 197cf9d827155096 + WhatsApp Bilal swift.pdf 8.7.2025 + כרטסת H/13680",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 102,
+      "attachments": [
+        {
+          "label": "SWIFT 7,582$ 07.2025",
+          "path": "import_documents/102/swift.pdf"
+        },
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/102/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "197cf9d827155096",
+          "label": "Gmail 197cf9d827155096"
+        }
+      ]
+    },
+    {
+      "date": "2025-07-24",
+      "kind": "מסמך",
+      "party": "סאקיס / יניב",
+      "description": "נשלח כרטיס איש קשר יניב שילוח מכולת טורקיה — משלח חדש במקום Adel",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 24.07.2025 vcf",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 103,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-08-20",
+      "kind": "חשבונית",
+      "party": "Akdem → Sakis",
+      "description": "כרטסת: חשבונית 25/1480 SAKIS 2,704.12$ + מע״מ 270.41$. Packing list 20.08.2025",
+      "amount": 2704.12,
+      "currency": "USD",
+      "ils": null,
+      "qty": "19 rolls / 403.6 kg / 1.8 cbm",
+      "source": "ARYE MOSHE balance.xlsx + packing_lists 20.08.2025 + shipping_costs 10/09/2025",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 104,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/104/ARYE MOSHE balance.xlsx"
+        },
+        {
+          "label": "20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx",
+          "path": "packing_lists/20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-08-27",
+      "kind": "חשבונית",
+      "party": "Akdem → Sakis",
+      "description": "כרטסת: חשבונית 25/629 SAKIS 30,500.64$ + מע״מ 2,938.89$ + 111.15$. המשלוח הגדול (arye new)",
+      "amount": 30500.64,
+      "currency": "USD",
+      "ils": null,
+      "qty": "218 rolls / 4493.65 kg / 19 cbm",
+      "source": "ARYE MOSHE balance.xlsx + packing_lists arye new + shipping_costs 11/09/2025 + akdem 07.09.25.xls",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 105,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/105/ARYE MOSHE balance.xlsx"
+        },
+        {
+          "label": "akdem 07.09.25.xls",
+          "path": "import_documents/105/akdem 07.09.25.xls"
+        },
+        {
+          "label": "arye new_20250910_161320.xls",
+          "path": "packing_lists/arye new_20250910_161320.xls"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-09-10",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "סאקיס קארגו",
+      "description": "דרישת תשלום אריה 783 — הובלה 1,185 ₪, 19 גלילים, 403.6 ק״ג, 1.8 קוב, בד 2,704.12$ שער 3.65",
+      "amount": 1185,
+      "currency": "ILS",
+      "ils": 1185,
+      "qty": "19 rolls / 403.6 kg / 1.8 cbm",
+      "source": "shipping_costs.json 10/09/2025 + payment_requests אריה 783",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 106,
+      "attachments": [
+        {
+          "label": "אריה 783_20250909_204109.pdf",
+          "path": "payment_requests/אריה 783_20250909_204109.pdf"
+        },
+        {
+          "label": "Packing list — 20.08.2025 - Arye Moshe Çeki Listesi master_20250910_062853.xlsx",
+          "path": "packing_lists/20.08.2025 - Arye Moshe Çeki Listesi master_20250910_062853.xlsx"
+        },
+        {
+          "label": "דרישת תשלום — אריה 783_20250910_062858.pdf",
+          "path": "payment_requests/אריה 783_20250910_062858.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-09-11",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "סאקיס קארגו",
+      "description": "דרישת תשלום אריה 816 חדש — הובלה 4,180 ₪, 218 גלילים, 4,493.65 ק״ג, 19 קוב, בד 30,500.41$ שער 3.68",
+      "amount": 4180,
+      "currency": "ILS",
+      "ils": 4180,
+      "qty": "218 rolls / 4494 kg / 19 cbm",
+      "source": "shipping_costs.json 11/09/2025 + payment_requests אריה 816 חדש",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 107,
+      "attachments": [
+        {
+          "label": "אריה 816 חדש_20250910_161326.pdf",
+          "path": "payment_requests/אריה 816 חדש_20250910_161326.pdf"
+        },
+        {
+          "label": "Packing list — arye new_20250911_073328.xls",
+          "path": "packing_lists/arye new_20250911_073328.xls"
+        },
+        {
+          "label": "דרישת תשלום — אריה 816 חדש_20250911_073333.pdf",
+          "path": "payment_requests/אריה 816 חדש_20250911_073333.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2025-10-12",
+      "kind": "תשלום ספק",
+      "party": "Asakis / Sakis / Akdem",
+      "description": "הוראת העברה 33,204.53 USD (2,704.12 + 30,500.41). הבנק החזיר את ההעברה כי החשבונית על חברה באיסטנבול",
+      "amount": 33204.53,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 199d755c4dd6be6e + WhatsApp Bilal 15–20.10.2025",
+      "certainty": "ודאי",
+      "notes": "נכשלה / הוחזרה — לא נספר כתשלום שהגיע",
+      "id": 108,
+      "attachments": [
+        {
+          "label": "CCF 15.10.2025",
+          "path": "import_documents/108/CCF15102025.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "199d755c4dd6be6e",
+          "label": "Gmail 199d755c4dd6be6e"
+        }
+      ]
+    },
+    {
+      "date": "2025-10-22",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Asakis DERI TEKSTIL / Sakis",
+      "description": "העברה חוזרת 33,204.53 USD למשלח Asakis (Vakifbank) שישולם לאקדם. כרטסת: תקבול 33,172$ ב-4.11.2025 SAKIS ARYE ÖDEME. בילאל אישר 12.11 שקיבל",
+      "amount": 33204.53,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 19a0a94e174be9e9 / 19a0a6279fb86340 + WhatsApp BANK DETAILS VAKIFBANK + כרטסת H/13444",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 109,
+      "attachments": [
+        {
+          "label": "BANK DETAILS VAKIFBANK",
+          "path": "import_documents/109/BANK DETAILS VAKIFBANK.pdf"
+        },
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/109/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "19a0a94e174be9e9",
+          "label": "Gmail 19a0a94e174be9e9"
+        },
+        {
+          "id": "19a0a6279fb86340",
+          "label": "Gmail 19a0a6279fb86340"
+        }
+      ]
+    },
+    {
+      "date": "2025-11-04",
+      "kind": "מסמך",
+      "party": "Akdem via Sakis",
+      "description": "כרטסת: נכנס 33,172 USD מ-SAKIS ARYE ÖDEME — אישור קבלה של העברת 22.10.2025 (33,204.53$), לא תשלום נוסף",
+      "amount": 33172,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "לא נספר בסה״כ תשלומים — כפילות של 22.10.2025",
+      "id": 110,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/110/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-02-24",
+      "kind": "משלוח יצא",
+      "party": "Akdem / Express Line",
+      "description": "Packing List Arye (גרסאות 1–4 באותו יום) — בד ריב/הדפס אחרי תיקון גוון",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Downloads Arye Packing List.xlsx + WhatsApp Bilal 24.02.2026",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 111,
+      "attachments": [
+        {
+          "label": "Arye Packing List 24.02.2026",
+          "path": "import_documents/111/Arye Packing List.xlsx"
+        },
+        {
+          "label": "20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx",
+          "path": "packing_lists/20.08.2025 - Arye Moshe Çeki Listesi master_20250909_202257.xlsx"
+        },
+        {
+          "label": "30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
+          "path": "packing_lists/30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx"
+        },
+        {
+          "label": "arye new_20250910_161320.xls",
+          "path": "packing_lists/arye new_20250910_161320.xls"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-03-30",
+      "kind": "חשבונית",
+      "party": "Akdem → Express Line",
+      "description": "כרטסת: חשבונית 26/390 EXSPRESS LINE 3,263.33$ + מע״מ 326.33$. Packing 30.03.2026",
+      "amount": 3263.33,
+      "currency": "USD",
+      "ils": null,
+      "qty": "25 rolls / 502 kg / 9 cbm (רשומת הובלה 9.4)",
+      "source": "ARYE MOSHE balance.xlsx + packing_lists 30.03.2026",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 112,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/112/ARYE MOSHE balance.xlsx"
+        },
+        {
+          "label": "30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
+          "path": "packing_lists/30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-04-09",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "סאקיס קארגו",
+      "description": "דרישת תשלום — הובלה 1,808.64 ₪, 25 גלילים, 502 ק״ג, בד 576$ שער 3.14. בדרישה נרשם 9 קוב (=9 יחידות × 64$); נפח בפועל 2.15 קוב (25×0.086) → 268 $/קוב, 1.15 $/ק״ג",
+      "amount": 1808.64,
+      "currency": "ILS",
+      "ils": 1808.64,
+      "qty": "25 גלילים / 502 ק״ג / 2.15 קוב (0.086 לגליל)",
+      "source": "shipping_costs.json 09/04/2026 + payment_requests דרישת תשלום_20260409",
+      "certainty": "ודאי",
+      "notes": "נפח בפועל 2.15 קוב (25 גלילים פתוחים × 0.086), לא 9 קוב כפי שנרשם בדרישה (9 יחידות × 64$). הובלה 576$ → 268 $/קוב, 1.15 $/ק״ג. מחיר בד ברשומת ההובלה (576$) לא תואם חשבונית Akdem 3,263$ — Express Line חייב על הבד 3,589$ כולל KDV.",
+      "id": 113,
+      "attachments": [
+        {
+          "label": "דרישת תשלום_20260409_143003.pdf",
+          "path": "payment_requests/דרישת תשלום_20260409_143003.pdf"
+        },
+        {
+          "label": "דרישת תשלום #2432 מאת אקספרסליין קרגו בעיימ 42 דולר לקרטון_20260909_152600.pdf",
+          "path": "payment_requests/דרישת תשלום #2432 מאת אקספרסליין קרגו בעיימ 42 דולר לקרטון_20260909_152600.pdf"
+        },
+        {
+          "label": "Packing list — 30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
+          "path": "packing_lists/30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx"
+        },
+        {
+          "label": "חישוב קוב אקספרסליין 2026",
+          "path": "import_documents/113/אקספרסליין_חישוב_קוב_2026.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-04-21",
+      "kind": "מסמך",
+      "party": "Akdem via Express Line",
+      "description": "בילאל אישר שקיבל תשלום על המשלוח האחרון. כרטסת 27.4: תקבול 3,544.40$ (כנראה אותה העברה, לא תשלום נוסף)",
+      "amount": 3544.4,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 21.04.2026 + כרטסת H/14066",
+      "certainty": "ודאי",
+      "notes": "לא נספר בסה״כ תשלומים — תקבול כרטסת",
+      "id": 114,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/114/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-04-27",
+      "kind": "חשבונית",
+      "party": "Akdem → Express Line",
+      "description": "כרטסת: חשבונית 26/497 EXSPRESS LINE 5,687.53$ + מע״מ 568.75$",
+      "amount": 5687.53,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 115,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/115/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-06-10",
+      "kind": "משלוח יצא",
+      "party": "Akdem",
+      "description": "ARYE ÇEKİ LİSTESİ 10.6.2026 / ARYE ÇEKİ LİSTESİ.xls",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Downloads ARYE ÇEKİ LİSTESİ.xls + WhatsApp Bilal",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 116,
+      "attachments": [
+        {
+          "label": "ARYE ÇEKİ LİSTESİ 10.6.2026",
+          "path": "import_documents/116/ARYE ÇEKİ LİSTESİ 10.6.2026.xls"
+        },
+        {
+          "label": "ARYE ÇEKİ LİSTESİ.xls",
+          "path": "import_documents/116/ARYE ÇEKİ LİSTESİ.xls"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-06-16",
+      "kind": "מסמך",
+      "party": "Akdem",
+      "description": "בילאל: יתרה 22,532$. ליאור שולח כרטסת ARYE MOSHE balance.xlsx ומפרט: Adel 11,193$ (שולם לאדל, לא הגיע לאקדם), Sakis/Express 9,655$, ישיר 1,684$",
+      "amount": 22532,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Bilal 16.06–15.07.2026 + ARYE MOSHE balance.xlsx",
+      "certainty": "ודאי",
+      "notes": "מחלוקת יתרה פתוחה — ראו גיליון יתרות",
+      "id": 117,
+      "attachments": [
+        {
+          "label": "כרטסת Akdem",
+          "path": "import_documents/117/ARYE MOSHE balance.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-08-20",
+      "kind": "פרופורמה",
+      "party": "Nibby / עומר",
+      "description": "הזמנת בדים צבעוניים לעומר (חורף 26/27) נשלחה ל-omerlevy16@gmail.com — לא משלוח שהגיע",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1a03... Re: חורף 26/27 הזמנה 20.08.2026",
+      "certainty": "סביר",
+      "notes": "",
+      "id": 118,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-08-26",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "Express Line Tekstil / עומר",
+      "description": "הוראת העברה 7,848 USD מחשבון דולרי. SWIFT 27.08.2026 ל-EXPRESS LINE TEKSTIL DIS VE TIC, Vakifbank IBAN TR730001500158048025399744. הבנק אישר שהספק קיבל. בצ'אט עומר דובר על מקדמה 19,314$ דרך המשלח — התקבל אצל עומר 3.9.2026",
+      "amount": 7848,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "source": "Gmail 1a03cea4fb07e99e SWIFT 484-06-9773559 + Downloads LEVI MOSHE ARIE - SWIFT WIRE TRANSFER.pdf + WhatsApp Omer",
+      "certainty": "ודאי",
+      "notes": "חלק ראשון של המקדמה. היתרה 11,469.86$ שולמה בש\"ח בארץ ב-30.08.2026 (34,639 ₪ @ 3.02) — ראה אירוע 127. סה\"כ מקדמה 19,317.86$; עומר רשם 19,250$ (הפרש ~68$ עמלות).",
+      "id": 119,
+      "attachments": [
+        {
+          "label": "SWIFT 7,848$ Express Line",
+          "path": "import_documents/119/LEVI MOSHE ARIE - SWIFT WIRE TRANSFER.pdf"
+        }
+      ],
+      "gmail_threads": [
+        {
+          "id": "1a03cea4fb07e99e",
+          "label": "Gmail 1a03cea4fb07e99e"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "kind": "משלוח יצא",
+      "party": "Nibby / עומר",
+      "description": "דגמים 200/201/202 מוכנים למשלוח; עומר שלח קובץ לאישור חשבונית",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "14,750 יח' / 53 קרטונים (לפי קובץ תשלום 7.9)",
+      "source": "WhatsApp Omer 1.09.2026 + omer first shipment payment USD 07.09.26.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 120,
+      "attachments": [
+        {
+          "label": "תשלום משלוח ראשון עומר",
+          "path": "supplier_documents/4/omer first shipment payment USD 07.09.26.xlsx"
+        },
+        {
+          "label": "first shipment omer 07.09.26",
+          "path": "supplier_documents/4/first shipment omer 07.09.26 .xlsb.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-09-03",
+      "kind": "תשלום ספק",
+      "party": "Nibby / עומר",
+      "description": "עומר: The payment has been received. Thank you. (מקדמה דרך חברת השילוח)",
+      "amount": null,
+      "currency": "",
+      "ils": null,
+      "qty": "",
+      "source": "WhatsApp Omer 3.09.2026",
+      "certainty": "ודאי",
+      "notes": "סכום שקיבל עומר לא מפורט בהודעה; ליאור אמר 19,314$",
+      "id": 121,
+      "attachments": [],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-09-07",
+      "kind": "חשבונית",
+      "party": "Nibby / עומר",
+      "description": "חישוב תשלום משלוח ראשון: 14,750 יח' דגמים 200/201/202 = 26,071.24$ ללא מע״מ טורקי. מקדמה 19,314$ כבר הועברה דרך המשלח",
+      "amount": 26071.24,
+      "currency": "USD",
+      "ils": null,
+      "qty": "14750 pcs / 53 cartons",
+      "source": "supplier_documents/4/omer first shipment payment USD 07.09.26.xlsx",
+      "certainty": "ודאי",
+      "notes": "",
+      "id": 122,
+      "attachments": [
+        {
+          "label": "תשלום משלוח ראשון עומר",
+          "path": "supplier_documents/4/omer first shipment payment USD 07.09.26.xlsx"
+        },
+        {
+          "label": "first shipment omer 07.09.26",
+          "path": "supplier_documents/4/first shipment omer 07.09.26 .xlsb.xlsx"
+        },
+        {
+          "label": "הזמנת בגדים 200-201-202",
+          "path": "supplier_documents/4/200-201-202.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-09-09",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "דרישת תשלום #2432 — 42$ לקרטון. בתוכנה: 53 קרטונים, בד/סחורה 19,310$, שער 3.02, הובלה 6,722.52 ₪. נפח בפועל 5.09 קוב (53×0.096) → 437 $/קוב",
+      "amount": 6722.52,
+      "currency": "ILS",
+      "ils": 6722.52,
+      "qty": "53 קרטונים / 5.09 קוב (0.096 לקרטון)",
+      "source": "shipping_costs.json 09/09/2026 + payment_requests דרישת תשלום #2432",
+      "certainty": "ודאי",
+      "notes": "נפח בפועל 5.09 קוב (53 קרטונים × 0.60×0.40×0.40=0.096). הובלה 2,226$ (42$ לקרטון) → 437 $/קוב. לפי מחיר הבדים ~280 $/קוב צפוי ~27$ לקרטון / 1,428$ = 4,313 ₪. ב-14.9.2026 נשלח ליניב חישוב: חויבתם 6,722 ₪, הפרש 2,409 ₪ יניב חייב לנו.",
+      "id": 123,
+      "attachments": [
+        {
+          "label": "דרישת תשלום #2432 מאת אקספרסליין קרגו בעיימ 42 דולר לקרטון_20260909_152600.pdf",
+          "path": "payment_requests/דרישת תשלום #2432 מאת אקספרסליין קרגו בעיימ 42 דולר לקרטון_20260909_152600.pdf"
+        },
+        {
+          "label": "חישוב קוב אקספרסליין 2026",
+          "path": "import_documents/123/אקספרסליין_חישוב_קוב_2026.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "date": "2026-09-10",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "הוראת העברה 18,429 ₪ מחשבון 93033 לפועלים סניף 658 חשבון 611610 אקספרסליין קרגו בע״מ",
+      "amount": 18429,
+      "currency": "ILS",
+      "ils": 18429,
+      "qty": "",
+      "source": "Gmail 1a08a0d9508274f7",
+      "certainty": "ודאי",
+      "notes": "גבוה מדרישת #2432 (6,722 ₪) — ייתכן שכולל מקדמת סחורה/יתרות נוספות מול המשלח",
+      "id": 124,
+      "attachments": [],
+      "gmail_threads": [
+        {
+          "id": "1a08a0d9508274f7",
+          "label": "Gmail 1a08a0d9508274f7"
+        }
+      ]
+    },
+    {
+      "id": 125,
+      "date": "2026-05-10",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "דרישת תשלום #1581 — בדרישה נרשם 40$ לקרטון (43×40=1,720$) אך בפועל חויבה הובלה 922$ (≈21.5$×43). בדים 5,533$ (= packing list 804.1 ק״ג RIB, 43 גלילים) + הובלה 922$ = 6,455$ + מע״מ 18% = 7,616.90$ ≈ 22,850.70 ₪ (שער 3.00). נפח בפועל 3.19 קוב (289 $/קוב, 1.15 $/ק״ג)",
+      "amount": 7616.9,
+      "currency": "USD",
+      "ils": 22850.7,
+      "qty": "43 גלילים / 804.1 ק״ג / 3.19 קוב",
+      "certainty": "ודאי",
+      "source": "Gmail 19ecab59aa17ac0e + 19ecab58c0e9b2d7 + packing list Bilal 14.5.2026 + payment_requests דרישת תשלום #1581",
+      "notes": "נפח: 17 גלילי design × 0.086 = 1.462 קוב; 26 גלילי RIB לבן טובולרי × 0.0666 = 1.732 קוב (מדידה: 70×74×90 ס״מ ל-7 גלילים = 0.4662 קוב). סה״כ 3.19 קוב. הובלה בפועל 922$ → 289 $/קוב, 1.15 $/ק״ג. חשבונית Akdem 26/497 מ-27.4.2026 (5,687.53$+568.75$ KDV) שייכת למשלוח; הסחורה התקבלה 14.5.2026. הדרישה המקורית #1581 רשמה הובלה 1,720$ בטעות.",
+      "attachments": [
+        {
+          "label": "דרישת תשלום #1581 (10.05.2026) — 40$ לקרטון",
+          "path": "import_documents/125/דרישת תשלום #1581 מאת אקספרסליין קרגו בעיימ 40 דולר לקרטון_20260510.pdf"
+        },
+        {
+          "label": "Packing list Bilal — ARYE ÇEKİ LİSTESİ (14.5.2026)",
+          "path": "import_documents/125/ARYE ÇEKİ LİSTESİ.xls"
+        },
+        {
+          "label": "חישוב קוב אקספרסליין 2026",
+          "path": "import_documents/125/אקספרסליין_חישוב_קוב_2026.xlsx"
+        }
+      ],
+      "gmail_threads": [
+        "19ecab59aa17ac0e",
+        "19ecab58c0e9b2d7"
+      ]
+    },
+    {
+      "id": 126,
+      "date": "2026-09-14",
+      "kind": "מסמך",
+      "party": "יניב / אקספרסליין",
+      "description": "מכתב ליניב (משה לוי / אקספרסליין, סימול 21340): 53 קרטונים 40×40×60, 0.096 קוב לקרטון, 0.096×53=5.088 קוב. מחיר לקוב 280$ → 280×5.1=1,428$ × שער 3.02 = 4,313 ₪. חויבתם 6,722 ₪. הפרש 6,722−4,313 = 2,409 ₪ — יניב חייב לנו",
+      "amount": 2409,
+      "currency": "ILS",
+      "ils": 2409,
+      "qty": "53 קרטונים / 5.088 קוב",
+      "certainty": "ודאי",
+      "source": "פתק חישוב שנשלח ליניב 14.09.2026",
+      "notes": "חיוב פתוח מול יניב. לפי מחיר הבדים 280 $/קוב הובלה צריכה להיות 4,313 ₪ ולא 6,722 ₪. הפרש 2,409 ₪. קשור לדרישה #2432 / אירוע 9.9.2026. סגור 06.10.2026: זוכה בדרישה 2630 הסופית (אירוע 130) — ההובלה ירדה ל-150$.",
+      "attachments": [
+        {
+          "label": "פתק חישוב ליניב 14.09.2026 — הפרש 2,409 ₪",
+          "path": "import_documents/126/חישוב_הפרש_יניב_14.09.2026.jpg"
+        },
+        {
+          "label": "חישוב קוב אקספרסליין 2026",
+          "path": "import_documents/126/אקספרסליין_חישוב_קוב_2026.xlsx"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 127,
+      "date": "2026-08-30",
+      "kind": "תשלום סחורה דרך משלח",
+      "party": "אקספרסליין קרגו / עומר",
+      "description": "העברה 34,639 ₪ לאקספרסליין קרגו בארץ (פועלים 658/611610) לפי שער 3.02 = 11,469.86$ — השלמת מקדמה לעומר. יחד עם SWIFT 7,848$ (27.8) סה\"כ 19,317.86$; עומר אישר קבלה 3.9.2026",
+      "amount": 11469.86,
+      "currency": "USD",
+      "ils": 34639,
+      "qty": "",
+      "certainty": "ודאי",
+      "source": "WhatsApp יניב 30.08.2026 (צילום מסך)",
+      "notes": "תקדים: תשלום סחורה בש\"ח בארץ לפי שער מוסכם במקום SWIFT.",
+      "attachments": [
+        {
+          "label": "וואטסאפ ליניב 30.08.2026 — פירוט מקדמה",
+          "path": "import_documents/127/WhatsApp_Yaniv_advance_30.08.2026.png"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 128,
+      "date": "2026-10-04",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "דרישת תשלום 2630 (מקורית): סחורה \"גופיות\" 50,500$ (= יתרת דף החשבון של עומר 50,550.14$ כולל מע\"מ טורקי 10% על שני המשלוחים) + 106 קרטונים × 35$ = 3,710$ + 18% מע\"מ = 63,968$ / 198,300.8 ₪ (שער 3.10). חותמת \"יתרה לתשלום 41,750 ₪\" = הובלה + מע\"מ ישראלי",
+      "amount": 63968,
+      "currency": "USD",
+      "ils": 198300.8,
+      "qty": "106 קרטונים / 18,278 יח' / 10.18 קוב",
+      "certainty": "ודאי",
+      "source": "צילום דרישה 2630 — supplier_documents/6",
+      "notes": "מחלוקת: הסחורה כוללת מע\"מ טורקי 6,345$ (משלוח 1: 26,071.24 → 28,678.36; משלוח 2: 37,383.44 → 41,121.78). דרשנו 44,204.68$. הובלה 35$/קרטון = 364 $/קוב (ירידה מ-42$).",
+      "attachments": [
+        {
+          "label": "דרישת תשלום 2630 מקורית 04.10.2026",
+          "path": "import_documents/128/דרישת תשלום 2630 אקספרסליין 04.10.2026.jpg"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 129,
+      "date": "2026-10-06",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "דרישת תשלום 2630 מתוקנת אחרי שיחה עם יניב: סחורה 50,550$ + הובלה 700$ (במקום 3,710$ — זיכוי 3,010$ ≈ מחצית המע\"מ הטורקי) = 51,250$ + 18% = 60,475$ / 187,472.5 ₪ (שער 3.10). לתשלום: 50,550$ לטורקיה + 30,767.5 ₪ בארץ",
+      "amount": 60475,
+      "currency": "USD",
+      "ils": 187472.5,
+      "qty": "106 קרטונים / 18,278 יח'",
+      "certainty": "ודאי",
+      "source": "צילום דרישה 2630 מתוקנת — supplier_documents/6",
+      "notes": "סגירת מחלוקת המע\"מ הטורקי: יניב ספג 2,960$ לפני מע\"מ ישראלי (46.6% מ-6,345$). הסחורה נשארה 50,550$ כדי שעומר יקבל את מלוא היתרה שבדף החשבון שלו — אין יותר מה לסגור מול עומר על המשלוחים האלה. הפרש ההובלה 2,409 ₪ ממשלוח 1 (אירוע 126) נשאר פתוח — הזיכוי כאן הוא על המע\"מ בלבד. עלות הסחורה האמיתית למחירון: 47,540$ (50,550 − 3,010). הוחלף בגרסה סופית — אירוע 130 (הובלה 150$, סה\"כ 59,826$).",
+      "attachments": [
+        {
+          "label": "דרישת תשלום 2630 מתוקנת 06.10.2026",
+          "path": "import_documents/129/דרישת תשלום 2630 מתוקנת אקספרסליין 06.10.2026.jpg"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 130,
+      "date": "2026-10-06",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "דרישת תשלום 2630 — גרסה סופית (3): סחורה 50,550$ + הובלה 150$ = 50,700$ + 18% = 59,826$ / 185,460.6 ₪ (שער 3.10). לתשלום: 50,550$ לטורקיה + 28,755.6 ₪ בארץ. זיכוי כולל 3,560$ מול הגרסה המקורית (הובלה 3,710$ → 150$)",
+      "amount": 59826,
+      "currency": "USD",
+      "ils": 185460.6,
+      "qty": "106 קרטונים / 18,278 יח'",
+      "certainty": "ודאי",
+      "source": "צילום דרישה 2630 סופית + e-Fatura של עומר ל-Express Line (נשלחה ע\"י יניב 06.10 11:14)",
+      "notes": "הרכב הזיכוי לפי יניב: 2,250$ חלקו במע\"מ הטורקי הרשמי (4,595$ = 225,316 TL בחשבונית עומר ל-Express Line, שער 49.03) + 2,409 ₪ הפרש הובלה ממשלוח 1 (אירוע 126 — סגור). 2,250+777=3,027$; 533$ נוספים לא מוסברים. המע\"מ לא נסגר — 2,345$ עדיין פתוחים (ראה אירוע 131: דרישה מעומר). הטענה על מע\"מ המקדמה (1,750$) ירדה — אין עליה חשבונית רשמית. מחליף את אירוע 129. חלק השקלים בארץ (28,755 ₪) שולם ב-07.10.2026 באסמכתא 324577 (אירוע 132). חלק הדולרים (50,550$) עדיין מעוכב עד לתשובת עומר.",
+      "attachments": [
+        {
+          "label": "דרישת תשלום 2630 סופית 06.10.2026",
+          "path": "import_documents/130/דרישת תשלום 2630 סופית אקספרסליין 06.10.2026.jpg"
+        },
+        {
+          "label": "e-Fatura עומר ל-Express Line 01.10.2026",
+          "path": "import_documents/130/Nibby_eFatura_NBY2026000000004_to_ExpressLine_01.10.2026.pdf"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 131,
+      "date": "2026-10-06",
+      "kind": "דרישה פתוחה",
+      "party": "Nibby / עומר",
+      "description": "דרישה מעומר לספוג 1,500$ מהמע\"מ הטורקי על עסקת 2026 (הודעת וואטסאפ 06.10). מע\"מ רשמי בחשבונית ל-Express Line 4,595$; יניב ספג 2,250$; נותרו 2,345$ — מבקשים מעומר 1,500$, אני 845$",
+      "amount": 1500,
+      "currency": "USD",
+      "ils": null,
+      "qty": "",
+      "certainty": "ודאי",
+      "source": "supplier_documents/4/Omer_VAT_request_message_06.10.2026.txt",
+      "notes": "אם עומר מאשר: היתרה לטורקיה 49,050.14$ במקום 50,550.14$ → לבקש מיניב דרישה 2630 מתוקנת (גרסה 4) ולעדכן shipping_costs (סחורה 46,800$). לא להעביר את ה-50,550$ עד תשובה. הטענה על 1,750$ מע\"מ המקדמה ירדה.",
+      "attachments": [
+        {
+          "label": "הודעה לעומר 06.10.2026",
+          "path": "supplier_documents/4/Omer_VAT_request_message_06.10.2026.txt"
+        }
+      ],
+      "gmail_threads": []
+    },
+    {
+      "id": 132,
+      "date": "2026-10-07",
+      "kind": "תשלום שילוח/עמילות",
+      "party": "אקספרסליין קרגו",
+      "description": "הוראת העברה 28,755 ₪ מדיסקונט (ח-ן 1093039 / 93033) לפועלים סניף 658 ח-ן 611610 אקספרסליין קרגו בע\"מ — תשלום הובלה ומע\"מ ישראלי עבור דרישת תשלום 2630 (ביגוד עומר, 106 קרטונים). אסמכתא 324577",
+      "amount": 28755,
+      "currency": "ILS",
+      "ils": 28755,
+      "qty": "106 קרטונים",
+      "certainty": "ודאי",
+      "source": "אישור העברה בנקאית דיסקונט 07/10/2026 10:00:15 (אסמכתא 324577)",
+      "notes": "סגירת החלק השקלי של דרישה 2630 סופית (אירוע 130: הובלה 150$ + מע\"מ ישראלי 9,126$ = 9,276$ × 3.10 = 28,755.60 ₪). חלקה הדולרי של הדרישה עבור הסחורה לטורקיה (50,550$ או 49,050$ בכפוף לאישור עומר לספיגת 1,500$ מע\"מ טורקי — אירוע 131) טרם הועבר וממתין לתשובת עומר.",
+      "attachments": [
+        {
+          "label": "אישור העברה 28,755 ₪ לאקספרסליין 07.10.2026 (אסמכתא 324577)",
+          "path": "import_documents/132/אישור_העברה_28755_אקספרסליין_2630_07.10.2026.jpg"
+        }
+      ],
+      "gmail_threads": []
+    }
+  ]
+}

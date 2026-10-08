@@ -29,7 +29,7 @@
     "final_cost_incl_domestic": 0,
     "total_price_per_kg": 0.0,
     "total_price_per_cubic": 0,
-    "fabric_shipping_cost_percent": NaN,
+    "fabric_shipping_cost_percent": 0.0,
     "packing_list": "",
     "payment_request": ""
   },
@@ -168,5 +168,39 @@
     "fabric_shipping_cost_percent": 100,
     "packing_list": "30.03.2026 - Arye Çeki Listesi_20260409_142854.xlsx",
     "payment_request": "דרישת תשלום_20260409_143003.pdf"
+  },
+  {
+    "name": "סאקיס קארגו בע\"מ",
+    "date": "09/09/2026",
+    "cub": 0,
+    "total_weight": 0,
+    "rolls_quantity": 53,
+    "product_price_usd": 19310.0,
+    "usd_rate": 3.02,
+    "final_shipping_cost": 6722.52,
+    "domestic_shipping": 0.0,
+    "final_cost_incl_domestic": 6722.52,
+    "total_price_per_kg": 0,
+    "total_price_per_cubic": 0,
+    "fabric_shipping_cost_percent": 0,
+    "packing_list": "",
+    "payment_request": "דרישת תשלום #2432 מאת אקספרסליין קרגו בעיימ 42 דולר לקרטון_20260909_152600.pdf"
+  },
+  {
+    "name": "סאקיס קארגו בע\"מ",
+    "date": "06/10/2026",
+    "cub": 10.18,
+    "total_weight": 0,
+    "rolls_quantity": 106,
+    "product_price_usd": 48300.0,
+    "usd_rate": 3.1,
+    "final_shipping_cost": 7440.0,
+    "domestic_shipping": 0.0,
+    "final_cost_incl_domestic": 7440.0,
+    "total_price_per_kg": 0,
+    "total_price_per_cubic": 730.84,
+    "fabric_shipping_cost_percent": 0,
+    "packing_list": "025-204 second shipment_20261005_080242.xlsx",
+    "payment_request": "דרישת תשלום 2630 סופית אקספרסליין 06.10.2026.jpg"
   }
 ]

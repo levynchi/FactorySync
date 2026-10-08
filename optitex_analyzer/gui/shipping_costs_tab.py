@@ -40,72 +40,72 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             bg=theme.PAGE_BG, 
             fg=theme.DARK
         )
-        title_label.pack(pady=(10, 20))
+        title_label.pack(pady=(6, 8))
         
         # Input form frame
-        input_frame = ttk.LabelFrame(container, text="הוספת משלוח חדש", padding=20)
-        input_frame.pack(fill='x', padx=20, pady=10)
+        input_frame = ttk.LabelFrame(container, text="הוספת משלוח חדש", padding=8)
+        input_frame.pack(fill='x', padx=20, pady=(0, 6))
         
         # Row 1 - Name and Date
-        tk.Label(input_frame, text="שם:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="שם:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5, pady=2)
         self.shipping_name_var = tk.StringVar()
         self.shipping_name_combo = ttk.Combobox(input_frame, textvariable=self.shipping_name_var, width=18, font=(theme.FONT_FAMILY, 10), state='readonly')
-        self.shipping_name_combo.grid(row=0, column=1, padx=5, pady=5)
+        self.shipping_name_combo.grid(row=0, column=1, padx=5, pady=2)
         
-        tk.Label(input_frame, text="תאריך משלוח:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="תאריך משלוח:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5, pady=2)
         self.shipping_date_var = tk.StringVar(value=datetime.now().strftime('%d/%m/%Y'))
-        tk.Entry(input_frame, textvariable=self.shipping_date_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=0, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.shipping_date_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=0, column=3, padx=5, pady=2)
         
         # Row 2 - Cub and Total Weight
-        tk.Label(input_frame, text="Cub:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="Cub:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5, pady=2)
         self.cub_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.cub_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.cub_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=1, padx=5, pady=2)
         
-        tk.Label(input_frame, text="משקל כולל:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="משקל כולל:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5, pady=2)
         self.total_weight_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.total_weight_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.total_weight_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=1, column=3, padx=5, pady=2)
         
         # Row 3 - Quantity and Product Price in USD
-        tk.Label(input_frame, text="כמות גלילים:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="כמות גלילים:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=0, sticky='w', padx=5, pady=2)
         self.rolls_quantity_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.rolls_quantity_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=1, padx=5, pady=2)
         
-        tk.Label(input_frame, text="מחיר סחורה בדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="מחיר סחורה בדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=2, column=2, sticky='w', padx=5, pady=2)
         self.product_price_usd_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.product_price_usd_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.product_price_usd_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=2, column=3, padx=5, pady=2)
         
         # Row 3 - USD Exchange Rate
-        tk.Label(input_frame, text="שער הדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="שער הדולר:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=3, column=0, sticky='w', padx=5, pady=2)
         self.usd_rate_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.usd_rate_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=3, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.usd_rate_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=3, column=1, padx=5, pady=2)
         
         # Row 4 - Shipping costs
-        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="עלות משלוח סופית (ללא מע״מ):", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=0, sticky='w', padx=5, pady=2)
         self.final_shipping_cost_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=1, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.final_shipping_cost_var, width=20, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=1, padx=5, pady=2)
         
-        tk.Label(input_frame, text="משלוח פנימי:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=2, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="משלוח פנימי:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=4, column=2, sticky='w', padx=5, pady=2)
         self.domestic_shipping_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.domestic_shipping_var, width=15, font=(theme.FONT_FAMILY, 10)).grid(row=4, column=3, padx=5, pady=2)
         
         
         # Row 5 - Packing List Upload
-        tk.Label(input_frame, text="PACKING LIST:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=5, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="PACKING LIST:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=5, column=0, sticky='w', padx=5, pady=2)
         self.packing_list_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.packing_list_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=5, column=1, padx=5, pady=5)
-        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_packing_list_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=2, padx=5, pady=5)
-        tk.Button(input_frame, text="🗑 נקה", command=self._clear_packing_list, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.packing_list_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=5, column=1, padx=5, pady=2)
+        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_packing_list_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=2, padx=5, pady=2)
+        tk.Button(input_frame, text="🗑 נקה", command=self._clear_packing_list, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=5, column=3, padx=5, pady=2)
         
         # Row 6 - Payment Request Upload
-        tk.Label(input_frame, text="דרישת תשלום:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=6, column=0, sticky='w', padx=5, pady=5)
+        tk.Label(input_frame, text="דרישת תשלום:", font=(theme.FONT_FAMILY, 10, 'bold')).grid(row=6, column=0, sticky='w', padx=5, pady=2)
         self.payment_request_var = tk.StringVar()
-        tk.Entry(input_frame, textvariable=self.payment_request_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=6, column=1, padx=5, pady=5)
-        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_payment_request_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=2, padx=5, pady=5)
-        tk.Button(input_frame, text="🗑 נקה", command=self._clear_payment_request, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=3, padx=5, pady=5)
+        tk.Entry(input_frame, textvariable=self.payment_request_var, width=30, font=(theme.FONT_FAMILY, 10), state='readonly').grid(row=6, column=1, padx=5, pady=2)
+        tk.Button(input_frame, text="📁 בחר קובץ", command=self._select_payment_request_file, bg=theme.PRIMARY, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=2, padx=5, pady=2)
+        tk.Button(input_frame, text="🗑 נקה", command=self._clear_payment_request, bg=theme.DANGER, fg='white', font=(theme.FONT_FAMILY, 9)).grid(row=6, column=3, padx=5, pady=2)
         
         # Buttons
         buttons_frame = tk.Frame(input_frame)
-        buttons_frame.grid(row=7, column=0, columnspan=4, pady=10)
+        buttons_frame.grid(row=7, column=0, columnspan=4, pady=6)
         
         tk.Button(
             buttons_frame,
@@ -137,33 +137,28 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             width=15
         ).pack(side='left', padx=5)
         
-        # Data table frame
-        table_frame = ttk.LabelFrame(container, text="רשימת משלוחים", padding=10)
-        table_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        # Data table frame — must expand; the form above is compact so rows stay visible
+        table_frame = ttk.LabelFrame(container, text="רשימת משלוחים", padding=6)
+        table_frame.pack(fill='both', expand=True, padx=20, pady=(0, 10))
         
-        # Add title above table
-        title_label = tk.Label(
-            table_frame, 
+        table_header = tk.Frame(table_frame)
+        table_header.pack(fill='x', pady=(0, 6))
+        tk.Label(
+            table_header, 
             text="מחירים ללא המע״מ של ישראל", 
             font=(theme.FONT_FAMILY, 12, 'bold'), 
             bg=theme.PAGE_BG, 
             fg=theme.DARK
-        )
-        title_label.pack(pady=(0, 10))
-        
-        # Add sorting button
-        sort_frame = tk.Frame(table_frame)
-        sort_frame.pack(fill='x', pady=(0, 10))
+        ).pack(side='right')
         tk.Button(
-            sort_frame,
+            table_header,
             text="📅 מיין לפי תאריך (חדש למעלה)",
             command=self._sort_shipping_table_by_date,
             bg=theme.PRIMARY,
             fg='white',
             font=(theme.FONT_FAMILY, 9, 'bold')
-        ).pack(side='right')
+        ).pack(side='left')
         
-        # Treeview for data display
         columns = ('name', 'date', 'cub', 'total_weight', 'rolls_quantity', 'product_price_usd', 'usd_rate',
                   'final_shipping_cost', 'domestic_shipping', 'final_cost_incl_domestic', 
                   'total_price_per_kg', 'total_price_per_cubic', 'fabric_shipping_cost_percent')
@@ -183,23 +178,39 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
             'total_price_per_cubic': 'מחיר כולל למטר מעוקב',
             'fabric_shipping_cost_percent': 'אחוז עלות משלוח בד'
         }
+        col_widths = {
+            'name': 140,
+            'date': 100,
+            'cub': 70,
+            'total_weight': 90,
+            'rolls_quantity': 90,
+            'product_price_usd': 120,
+            'usd_rate': 80,
+            'final_shipping_cost': 120,
+            'domestic_shipping': 100,
+            'final_cost_incl_domestic': 160,
+            'total_price_per_kg': 110,
+            'total_price_per_cubic': 140,
+            'fabric_shipping_cost_percent': 130,
+        }
         
-        self.shipping_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+        tree_container = tk.Frame(table_frame)
+        tree_container.pack(fill='both', expand=True)
+        tree_container.grid_rowconfigure(0, weight=1)
+        tree_container.grid_columnconfigure(0, weight=1)
         
-        # Configure columns
+        self.shipping_tree = ttk.Treeview(tree_container, columns=columns, show='headings')
         for col in columns:
             self.shipping_tree.heading(col, text=headers[col])
-            self.shipping_tree.column(col, width=100, anchor='center')
+            self.shipping_tree.column(col, width=col_widths.get(col, 100), minwidth=70, anchor='center', stretch=False)
         
-        # Scrollbars
-        v_scrollbar = ttk.Scrollbar(table_frame, orient='vertical', command=self.shipping_tree.yview)
-        h_scrollbar = ttk.Scrollbar(table_frame, orient='horizontal', command=self.shipping_tree.xview)
+        v_scrollbar = ttk.Scrollbar(tree_container, orient='vertical', command=self.shipping_tree.yview)
+        h_scrollbar = ttk.Scrollbar(tree_container, orient='horizontal', command=self.shipping_tree.xview)
         self.shipping_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
         
-        # Pack treeview and scrollbars
-        self.shipping_tree.pack(side='left', fill='both', expand=True)
-        v_scrollbar.pack(side='right', fill='y')
-        h_scrollbar.pack(side='bottom', fill='x')
+        self.shipping_tree.grid(row=0, column=0, sticky='nsew')
+        v_scrollbar.grid(row=0, column=1, sticky='ns')
+        h_scrollbar.grid(row=1, column=0, sticky='ew')
         
         # Bind double-click to open files
         self.shipping_tree.bind('<Double-1>', self._on_row_double_click)
@@ -515,22 +526,31 @@ class ShippingCostsTabMixin(ShippingCompaniesTabMixin):
                 for item in self.shipping_tree.get_children():
                     self.shipping_tree.delete(item)
                 
+                def _num(val, default=0.0):
+                    try:
+                        f = float(val)
+                        if f != f:  # NaN
+                            return default
+                        return f
+                    except (TypeError, ValueError):
+                        return default
+
                 # Load data into treeview
                 for record in data:
                     values = (
                         record.get('name', ''),
                         record.get('date', ''),
-                        f"{record.get('cub', 0):.2f}",
-                        f"{record.get('total_weight', 0):.1f}",
-                        str(record.get('rolls_quantity', 0)),
-                        f"{record.get('product_price_usd', 0):.2f}",
-                        f"{record.get('usd_rate', 0):.2f}",
-                        f"{record.get('final_shipping_cost', 0):.0f}",
-                        f"{record.get('domestic_shipping', 0):.0f}",
-                        f"{record.get('final_cost_incl_domestic', 0):.0f}",
-                        f"{record.get('total_price_per_kg', 0):.2f}",
-                        f"{record.get('total_price_per_cubic', 0):.0f}",
-                        f"{record.get('fabric_shipping_cost_percent', 0):.0f}%"
+                        f"{_num(record.get('cub', 0)):.2f}",
+                        f"{_num(record.get('total_weight', 0)):.1f}",
+                        str(int(_num(record.get('rolls_quantity', 0)))),
+                        f"{_num(record.get('product_price_usd', 0)):.2f}",
+                        f"{_num(record.get('usd_rate', 0)):.2f}",
+                        f"{_num(record.get('final_shipping_cost', 0)):.0f}",
+                        f"{_num(record.get('domestic_shipping', 0)):.0f}",
+                        f"{_num(record.get('final_cost_incl_domestic', 0)):.0f}",
+                        f"{_num(record.get('total_price_per_kg', 0)):.2f}",
+                        f"{_num(record.get('total_price_per_cubic', 0)):.0f}",
+                        f"{_num(record.get('fabric_shipping_cost_percent', 0)):.0f}%"
                     )
                     self.shipping_tree.insert('', 'end', values=values)
                     

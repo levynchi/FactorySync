@@ -556,5 +556,32 @@
     "color": "לבן",
     "shade": "",
     "notes": "Desen: חלק, רוחב: 180cm, ק\"ג: 20.00, מטרים: 50.00, מחיר: 0.00"
+  },
+  {
+    "id": 63,
+    "created_at": "2026-10-07 12:40:40",
+    "fabric_type": "INTERLOCK",
+    "manufacturer": "",
+    "color": "אפור",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 82cm, ק\"ג: 25.00, מטרים: 50.00, מחיר: 0.00"
+  },
+  {
+    "id": 64,
+    "created_at": "2026-10-07 12:41:00",
+    "fabric_type": "INTERLOCK",
+    "manufacturer": "",
+    "color": "כחול",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 82cm, ק\"ג: 25.00, מטרים: 55.00, מחיר: 0.00"
+  },
+  {
+    "id": 65,
+    "created_at": "2026-10-07 12:41:19",
+    "fabric_type": "INTERLOCK",
+    "manufacturer": "",
+    "color": "לבן",
+    "shade": "",
+    "notes": "Desen: חלק, רוחב: 82cm, ק\"ג: 26.00, מטרים: 58.00, מחיר: 0.00"
   }
 ]
