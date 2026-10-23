@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<title>עמק הפוצ'י — עלי חפר</title>
+<style>
+  @font-face {
+    font-family: "Frank Ruhl Libre";
+    src: url("Links/FrankRuhlLibre.ttf") format("truetype");
+    font-weight: 100 900;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "David Libre";
+    src: url("Links/DavidLibre-Regular.ttf") format("truetype");
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "David Libre";
+    src: url("Links/DavidLibre-Medium.ttf") format("truetype");
+    font-weight: 500;
+  }
+  @font-face {
+    font-family: "David Libre";
+    src: url("Links/DavidLibre-Bold.ttf") format("truetype");
+    font-weight: 700;
+  }
+  @font-face {
+    font-family: "Oswald";
+    src: url("Links/Oswald-Bold.ttf") format("truetype");
+    font-weight: 100 900;
+  }
+
+  :root {
+    --navy: #123a63;
+    --navy-deep: #0c2744;
+    --orange: #e36a2e;
+    --sand: #f7f1e8;
+    --paper: #fffdfb;
+    --ink: #1a2330;
+    --muted: #5c6570;
+    --yellow: #f2c230;
+    --net: #f2c230;
+    --sea: #1f6ea8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #d9d3cb;
+    color: var(--ink);
+    font-family: "Frank Ruhl Libre", "Noto Serif Hebrew", serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    overflow: hidden;
+    background: var(--paper);
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* header */
+  .mast {
+    height: 9.2mm;
+    background: var(--navy-deep);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10mm;
+    font-family: "David Libre", "Frank Ruhl Libre", serif;
+    font-size: 8.5pt;
+    letter-spacing: 0.02em;
+  }
+  .mast b {
+    font-family: "Frank Ruhl Libre", serif;
+    font-weight: 700;
+    font-size: 10.5pt;
+    letter-spacing: 0;
+  }
+  .mast .sec {
+    color: #f2c230;
+    font-weight: 700;
+    font-size: 8.5pt;
+  }
+  .mast .num {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+  }
+
+  .footer {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 8.6mm;
+    background: var(--navy-deep);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10mm;
+    font-family: "David Libre", serif;
+    font-size: 8pt;
+  }
+  .footer .pg {
+    background: var(--orange);
+    color: #fff;
+    min-width: 6.2mm;
+    height: 6.2mm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 9pt;
+  }
+
+  /* PAGE 1 hero */
+  .hero {
+    position: relative;
+    height: 128mm;
+    background: var(--navy);
+    overflow: hidden;
+  }
+  .hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 38%;
+    display: block;
+  }
+  .hero .veil {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to top, rgba(12,39,68,0.94) 0%, rgba(12,39,68,0.72) 22%, rgba(12,39,68,0.15) 48%, rgba(12,39,68,0.05) 100%);
+  }
+  .hero-copy {
+    position: absolute;
+    right: 10mm;
+    left: 10mm;
+    bottom: 5.5mm;
+    color: #fff;
+    text-align: right;
+  }
+  .kicker {
+    display: inline-block;
+    background: var(--orange);
+    color: #fff;
+    font-family: "David Libre", serif;
+    font-weight: 700;
+    font-size: 8.5pt;
+    letter-spacing: 0.04em;
+    padding: 0.7mm 2.4mm 0.4mm;
+    margin-bottom: 1.6mm;
+  }
+  .hero-copy h1 {
+    margin: 0;
+    font-weight: 800;
+    font-size: 38pt;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+  }
+  .wordmark {
+    margin: 1.2mm 0 0;
+    font-family: "Oswald", "Arial Black", sans-serif;
+    font-weight: 600;
+    font-size: 22pt;
+    letter-spacing: 0.12em;
+    color: #f2c230;
+    line-height: 1;
+  }
+  .hero-sub {
+    margin: 1.4mm 0 0;
+    font-weight: 500;
+    font-size: 13.5pt;
+    line-height: 1.25;
+    color: #f7f1e8;
+  }
+
+  .deck-wrap {
+    padding: 4.2mm 10mm 0;
+  }
+  .deck {
+    margin: 0;
+    font-weight: 600;
+    font-size: 12pt;
+    line-height: 1.38;
+    color: var(--navy-deep);
+  }
+  .byline {
+    margin: 1.6mm 0 0;
+    font-family: "David Libre", serif;
+    font-size: 9pt;
+    color: var(--orange);
+    font-weight: 700;
+  }
+  .rule {
+    height: 0.45mm;
+    background: var(--orange);
+    margin: 2.6mm 10mm 0;
+  }
+
+  .cols {
+    padding: 2.6mm 10mm 0;
+    column-count: 2;
+    column-gap: 6mm;
+    text-align: justify;
+    text-align-last: right;
+  }
+  .cols p, .body p, .prose p {
+    margin: 0 0 2.3mm;
+    font-weight: 450;
+    font-size: 10.05pt;
+    line-height: 1.36;
+    text-align: justify;
+    text-align-last: right;
+  }
+  .prose { padding: 0; }
+  h2.inflow { margin-top: 1.2mm; }
+  .cols p.drop::first-letter {
+    font-weight: 800;
+    font-size: 26pt;
+    float: right;
+    line-height: 0.82;
+    padding: 1.2mm 0 0 1.6mm;
+    color: var(--orange);
+  }
+  h2 {
+    font-weight: 800;
+    font-size: 15.5pt;
+    line-height: 1.15;
+    color: var(--navy);
+    margin: 1mm 0 2mm;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h2 .bar {
+    display: inline-block;
+    width: 7mm;
+    height: 1.15mm;
+    background: var(--orange);
+    margin-left: 2mm;
+    vertical-align: middle;
+    position: relative;
+    top: -0.4mm;
+  }
+
+  /* page 2 */
+  .p2 {
+    padding: 4mm 10mm 12mm;
+  }
+  .p2 h2:first-child { margin-top: 0.4mm; }
+  .photo {
+    margin: 1.5mm 0 1mm;
+    break-inside: avoid;
+  }
+  .photo img {
+    width: 100%;
+    height: 58mm;
+    object-fit: cover;
+    object-position: center 45%;
+    display: block;
+  }
+  .cap {
+    font-family: "David Libre", serif;
+    font-size: 8pt;
+    line-height: 1.3;
+    color: var(--muted);
+    margin: 1.1mm 0 2.4mm;
+    text-align: right;
+  }
+  .cap b { color: var(--navy); font-weight: 700; }
+
+  .chips {
+    display: flex;
+    flex-direction: row;
+    gap: 1.6mm;
+    margin: 0 0 3mm;
+  }
+  .chip {
+    flex: 1;
+    background: var(--sand);
+    border-top: 1.3mm solid var(--navy);
+    padding: 1.6mm 2mm 1.8mm;
+    text-align: center;
+  }
+  .chip strong {
+    display: block;
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    font-size: 11pt;
+    letter-spacing: 0.04em;
+    color: var(--orange);
+    line-height: 1.1;
+  }
+  .chip span {
+    display: block;
+    font-family: "David Libre", serif;
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--navy-deep);
+    margin-top: 0.4mm;
+  }
+
+  .quote {
+    background: var(--navy);
+    color: #fff;
+    padding: 3.2mm 4.2mm 3.4mm;
+    margin: 1mm 0 2.6mm;
+    position: relative;
+  }
+  .quote::before {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: 1.7mm;
+    background: var(--orange);
+  }
+  .quote p {
+    margin: 0;
+    font-weight: 650;
+    font-size: 12pt;
+    line-height: 1.35;
+    text-align: right;
+  }
+  .quote .who {
+    display: block;
+    margin-top: 1.3mm;
+    font-family: "David Libre", serif;
+    font-weight: 500;
+    font-size: 8pt;
+    color: #f2c230;
+  }
+
+  /* page 3 */
+  .p3 { padding: 4mm 10mm 12mm; }
+  .split {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 4mm;
+    margin: 1mm 0 2.2mm;
+    align-items: start;
+  }
+  .split img {
+    width: 100%;
+    height: 62mm;
+    object-fit: cover;
+    object-position: center 20%;
+    display: block;
+  }
+  .stats {
+    background: var(--sand);
+    padding: 2.4mm 3mm 2.6mm;
+    margin-top: 1.6mm;
+  }
+  .stats div {
+    border-bottom: 0.2mm solid rgba(18,58,99,0.18);
+    padding: 1.3mm 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+    align-items: baseline;
+  }
+  .stats div:last-child { border-bottom: 0; }
+  .stats b {
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    color: var(--orange);
+    font-size: 13pt;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .stats span {
+    font-family: "David Libre", serif;
+    font-size: 8.2pt;
+    font-weight: 700;
+    color: var(--navy-deep);
+    text-align: right;
+  }
+  .disclosure {
+    margin-top: 2mm;
+    padding-top: 2mm;
+    border-top: 0.3mm solid #e4ddd3;
+    font-family: "David Libre", serif;
+    font-size: 8pt;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+  .endmark {
+    text-align: center;
+    color: var(--orange);
+    font-size: 12pt;
+    letter-spacing: 0.4em;
+    margin: 1.5mm 0 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== PAGE 1 ===================== -->
+<section class="page">
+  <header class="mast">
+    <b>עלי חפר</b>
+    <span class="sec">ספורט העמק</span>
+    <span class="num">418</span>
+  </header>
+
+  <div class="hero">
+    <img src="Links/kick.jpg" alt="שחקן פוצ'יוולי בועט מעל הרשת על רקע הים"/>
+    <div class="veil"></div>
+    <div class="hero-copy">
+      <div class="kicker">כתבה</div>
+      <h1>עמק הפוצ'י</h1>
+      <p class="wordmark">FOOTVOLLEY</p>
+      <p class="hero-sub">הספורט שכובש את עמק חפר</p>
+    </div>
+  </div>
+
+  <div class="deck-wrap">
+    <p class="deck">שחר בן חמו, שגדל על מגרשי הכדורסל בעמק, חזר הביתה בתקופת הקורונה עם ענף ספורט חדש וחזון גדול. חמש שנים אחרי שהקים את מועדון הפוצ'יוולי בעמק חפר, עם כ־200 ילדים שמתאמנים בו, אליפויות והישגים ארציים מרשימים וקבוצות בוגרים בצמרת, הוא כבר מכוון הרבה יותר רחוק</p>
+    <p class="byline">מאת: טלי אשחר גוטליב</p>
+  </div>
+  <div class="rule"></div>
+
+  <div class="cols">
+    <p class="drop">אם תעברו בחוף ותראו אנשים מקפיצים כדור ברגליים ובראש, אל תתפלאו אם תגלו שבמרחק לא גדול משם מישהו כבר משחק את המשחק הזה על רשת, במסגרת תחרותית לכל דבר. קוראים לזה פוצ'יוולי, ענף שנולד בחופי ברזיל ומשלב בין כדורגל לכדורעף חופים, והוא צובר תאוצה מרשימה בעמק חפר.</p>
+    <p>מי שעומד מאחורי התפתחות הענף באזור הוא שחר בן חמו מחופית, מייסד ומנהל מועדון הפוצ'יוולי בעמק חפר. מה שהתחיל כרעיון שנולד בתקופה של חוסר ודאות, הפך בתוך שנים ספורות למועדון עם קבוצות ילדים ונוער, פעילות בבתי ספר ובכפרי נוער, השתתפות בתחרויות בארץ ובעולם, כולל זכיות במקומות הראשונים, וגם קבוצות בוגרים שרושמות הישגים מרשימים.</p>
+  </div>
+  <div class="p2" style="padding-top:1.5mm; padding-bottom:0;">
+    <h2 class="inflow"><span class="bar"></span>במקום לטוס לחו״ל</h2>
+    <div class="cols" style="padding:0;">
+      <p>בן חמו גדל בחופית, ומגיל הגן ועד סוף התיכון שיחק כדורסל באזור, כולל בקבוצות הבוגרים. אחרי הצבא עבר לתל אביב, סיים תואר ראשון בכלכלה ומנהל עסקים ועבד במשך שנים בתחום התיירות בחו״ל, בניהול מסגרות תיירות בקפריסין עבור משפחות וצעירים. ואז הגיעה הקורונה.</p>
+      <p>״זו הייתה הפעם הראשונה, אחרי שש שנים, שבה מצאתי את עצמי נשאר בארץ כל הקיץ, בלי עבודה״, הוא מספר. הוא החליט לחזור הביתה, לעמק חפר, ולחשוב על כיוון חדש. הוא נרשם לקורס מדריכים בווינגייט, ובמקביל התחיל להתאהב בענף ספורט שלא היה מוכר עדיין לרבים בישראל.</p>
+      <p>ההיכרות הראשונית שלו עם הפוצ'יוולי הייתה עוד קודם לכן, דרך חברים מהאזור ששיחקו בתל אביב. בתקופת הקורונה הוא חזר לשחק, הכיר את הענף מקרוב והתאהב בו. השילוב בין ספורט, ים וחוף דיבר אליו מיד. החזון שלו היה גדול כבר מההתחלה: להקים בעמק מועדון משמעותי שיוכל להצמיח דור של שחקנים ושחקניות, בדיוק כפי שראה שנעשה בקבוצת הכדורסל שבה גדל.</p>
+      <p>האימונים הראשונים התקיימו בחוף בית ינאי, אבל לא לאורך זמן. בן חמו לקח את הרשת ועבר עם השחקנים לדשא בחופית, ובהמשך נוצר החיבור עם בית חרות, שם החליטו להקים מגרש ייעודי לפוצ'יוולי. אלמוג חן ואבנר אביגדור מוועד היישוב הציעו לבן חמו להוביל את הפעילות ולהתחיל לקיים חוגים לילדים במקום. ״שם הכול באמת התחיל״, הוא אומר, ״שם נוסד מועדון ׳עמק הפוצ׳י׳״.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>עלי חפר</span>
+    <span>עמק הפוצ'י</span>
+    <span class="pg">1</span>
+  </footer>
+</section>
+
+<!-- ===================== PAGE 2 ===================== -->
+<section class="page">
+  <header class="mast">
+    <b>עלי חפר</b>
+    <span class="sec">ספורט העמק</span>
+    <span class="num">418</span>
+  </header>
+
+  <div class="p2">
+    <figure class="photo" style="margin-top:0;">
+      <img src="Links/net.jpg" alt="משחק פוצ'יוולי על החול, מול הים" style="height:108mm; object-position:center 48%;"/>
+      <figcaption class="cap"><b>על החול, מול הים.</b> הרשת, הזוג והכדור. פוצ'יוולי נולד בחופי ברזיל, ובעמק חפר הוא מצא בית.</figcaption>
+    </figure>
+
+    <h2><span class="bar"></span>זה לא כדורעף ולא כדורגל</h2>
+    <div class="chips">
+      <div class="chip"><strong>2×2</strong><span>על מגרש חול</span></div>
+      <div class="chip"><strong>3</strong><span>נגיעות לזוג</span></div>
+      <div class="chip"><strong>0</strong><span>ידיים על הכדור</span></div>
+      <div class="chip"><strong>ראש ורגליים</strong><span>מעבירים מצד לצד</span></div>
+    </div>
+    <p style="margin:0 0 2.4mm; font-size:10.15pt; line-height:1.38; font-weight:450; text-align:justify; text-align-last:right;">פוצ'יוולי משוחק על מגרש חול, עם רשת, במתכונת של שני שחקנים מול שני שחקנים. חוקי המשחק דומים לאלה של כדורעף חופים, אבל את הכדור מעבירים מצד לצד באמצעות הרגליים, הראש ושאר חלקי הגוף, למעט הידיים. לכל זוג מותר לגעת בכדור עד שלוש פעמים לפני שמעבירים אותו לצד השני, ואסור לאותו שחקן לגעת בכדור פעמיים ברציפות.</p>
+    <p style="margin:0 0 2.4mm; font-size:10.15pt; line-height:1.38; font-weight:450; text-align:justify; text-align-last:right;">הפוצ'יוולי הוא למעשה פיתוח של תרבות הקפצות הכדור בחוף. בישראל אפשר לראות לא מעט אנשים עומדים במעגל ומקפיצים כדור עם הרגליים והראש; בפוצ'יוולי לוקחים את המיומנות הזאת והופכים אותה למשחק תחרותי על רשת. הוא דורש שליטה בכדור, קואורדינציה, זריזות, תנועה נכונה על החול, תזמון ועבודת צוות. הוא לא קל למתחילים, אבל לדברי בן חמו, מי שמוכן להגיע עם ראש פתוח ולהתמיד עשוי לגלות ענף ממכר במיוחד.</p>
+
+    <aside class="quote">
+      <p>״אם לא מוותרים, פתאום הדברים מתחברים. לומדים איך לזוז על החול, איך להיכנס למכה, איך לא לבזבז אנרגיה סתם. ואז מתחילים לשחק באמת״<span class="who">שחר בן חמו</span></p>
+    </aside>
+
+    <h2><span class="bar"></span>ממגרש קטן למועדון תחרותי</h2>
+    <div class="cols" style="padding:0;">
+      <p>המועדון התרחב בהדרגה. לצד החוגים לילדים, בן חמו החל לעבוד גם עם כפר הנוער מבואות ים במכמורת, ובהמשך התקיימו פעילויות בכפרי נוער נוספים. הוא מספר על טורנירים שהפגישו קבוצות ממסגרות שונות ועל מסורת שהתגבשה סביב ליגת הפוצ'יוולי בקיץ במכמורת, בשיתוף המועצה.</p>
+      <p>״רצינו ליצור מועדון במובן המלא של המילה: מקום שיש בו שחקנים, מאמנים, ילדים, נוער, בוגרים, תחרויות, אירועים וחיבור לקהילה״. עמק חפר, הוא אומר, הוא סביבה כמעט טבעית לענף כזה: החוף, החול, תרבות הספורט והקהילתיות המקומית מתחברים אליו היטב.</p>
+      <p>היום, בתום חמש שנות פעילות, המועדון מונה כ־200 ילדים מתאמנים. לצד פעילות לילדים ולנוער מתקיימים אימונים לבוגרים, מחנות אימונים, ימים פתוחים, טורנירים ומסגרות תחרותיות. בקיץ 2026 התקיימה ליגת הקיץ עם קטגוריות גיל שונות וקטגוריית בוגרים, לצד פעילויות ואירועים נוספים במכמורת וביישובי האזור. המועדון גם קיים מחנות אימונים עם אנשי מקצוע ומאמנים מהעולם הברזילאי, שממנו מגיע הענף.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>עלי חפר</span>
+    <span>עמק הפוצ'י</span>
+    <span class="pg">2</span>
+  </footer>
+</section>
+
+<!-- ===================== PAGE 3 ===================== -->
+<section class="page">
+  <header class="mast">
+    <b>עלי חפר</b>
+    <span class="sec">ספורט העמק</span>
+    <span class="num">418</span>
+  </header>
+
+  <div class="p3">
+    <p style="margin:0 0 2.2mm; font-size:10.05pt; line-height:1.36; font-weight:450; text-align:justify; text-align-last:right;">יש למועדון כבר הישגים מרשימים. באליפות הארץ האחרונה שבה השתתפו, זכו שחקני המועדון במקום הראשון בקטגוריות עד גיל 13 ועד גיל 16, ובמקום השני בקטגוריית עד גיל 19. במקביל, קבוצות הבוגרים משחקות בליגות הבכירות, ובעונה האחרונה זכו קבוצות המועדון באליפות הארץ הן בליגה הראשונה והן בליגה השנייה. לצד התחרויות בישראל, הענף מתפתח גם בעולם. המועדון משתתף בפעילות תחרותית בין־לאומית, ובן חמו שואף להקים נבחרת מועדון שתורכב מהשחקנים והשחקניות הטובים ביותר ותוכל להתמודד על מקומות בסבבים בין־לאומיים.</p>
+
+    <div class="split">
+      <div>
+        <img src="Links/podium.jpg" alt="ילדי המועדון על הפודיום עם גביעים" style="height:48mm; object-position:center 18%;"/>
+        <p class="cap" style="margin-bottom:0;"><b>על הפודיום.</b> אליפויות ארציות בקטגוריות הגיל הצעירות, ובליגות הבוגרים.</p>
+      </div>
+      <div>
+        <div class="stats">
+          <div><b>200</b><span>ילדים מתאמנים</span></div>
+          <div><b>1</b><span>מקום ראשון, עד גיל 13 ו־16</span></div>
+          <div><b>2</b><span>עד גיל 19, אליפות הארץ</span></div>
+          <div><b>×2</b><span>אליפות בוגרים, ליגה א׳ ו־ב׳</span></div>
+        </div>
+        <p style="margin:2mm 0 0; font-size:9.5pt; line-height:1.34; font-weight:450; text-align:justify; text-align-last:right;">עבור בן חמו, ההישגים האלה הם לא רק סיבה לחגיגה, אלא חלק מתוכנית ארוכת טווח. ״חשוב שהילדים יראו את האופק״, הוא מסביר. ״שהם לא רק יתאמנו ויתחרו, אלא שידעו שיש להם לאן לשאוף; הילדים שגדלים אצלנו יכולים להגיע לקבוצות הבוגרים, ולשחק גם בהן ברמות הכי גבוהות״.</p>
+      </div>
+    </div>
+
+    <h2><span class="bar"></span>עמק של ספורט</h2>
+    <div class="cols" style="padding:0;">
+      <p>כשאני שואלת למה דווקא בעמק חפר הפוצ'יוולי נקלט כל כך טוב, בן חמו לא מהסס: ״העמק שלנו הוא עמק של ספורט״, הוא אומר בגאווה.</p>
+      <p>הוא עצמו גדל כאן, מכיר את התרבות הספורטיבית המקומית ורואה בה חלק מהאופי של האזור. מבחינתו, ילדים שגדלים בסביבה שבה ספורט הוא חלק מהחיים מגיעים עם פתיחות לענפים חדשים ועם מנטליות של ספורטאים. הפוצ'יוולי מציע להם הזדמנות להתנסות במשהו אחר, שמחבר בין הפעילות הגופנית שהם מכירים לבין האווירה המשוחררת של החוף.</p>
+      <p>גם המעבר של בן חמו מעולם התיירות לעולם האימון התברר כטבעי יותר מכפי שציפה. לאורך השנים הוא עבד עם ילדים בקייטנות כדורסל וכדורגל, הדריך חיילים והיה אחראי על קבוצות של משפחות וצעירים במסגרת עבודתו בתיירות. כשנכנס לתפקיד המאמן, גילה שהוא נהנה להעביר ידע, להסביר, ללוות ולקדם ילדים ושחקנים. כיום הוא רואה את תפקידו כרחב הרבה יותר מאימון טכני: הספורט הוא מסגרת שמאפשרת לילדים לצאת מהבית, לפגוש חברים, ללמוד להתמיד ולהרגיש חלק מקבוצה.</p>
+    </div>
+
+    <h2><span class="bar"></span>התמדה היא שם המשחק</h2>
+    <div class="cols" style="padding:0;">
+      <p>כששואלים את בן חמו מה מספק אותו במיוחד במועדון, הוא לא מתחיל לדבר על מדליות או על אליפויות, הוא מדבר על הילדים שמתמידים. יש במועדון שחקנים שהתחילו להתאמן בכיתה ג' והיום הם כבר בתיכון. לראות אותם גדלים, משתפרים, ממשיכים להגיע ונהנים מהמשחק, זו מבחינתו אחת ההצלחות הגדולות ביותר.</p>
+      <p>״זה ממלא אותי״, הוא אומר. ״אתה רואה ילדים שהגיעו בלי לדעת לזוז על החול, ועם הזמן הם מתאמנים, מאמצים אורח חיים ספורטיבי ומשתנים. יש הורים שמספרים לי שהילד שהיה כל היום במסכים פתאום לא נמצא בבית, כי הוא הולך להתאמן. הם רואים את השינוי הגדול שזה עושה לילדים״.</p>
+      <p>יש גם קשר מיוחד שנוצר בפוצ'יוולי בין שני השחקנים שמשתפים פעולה על המגרש. בניגוד לענפים קבוצתיים רבים, כאן כל משחק מתקיים בין זוג לזוג. המועדון הוא המסגרת הרחבה, אבל בתחרות השחקן תלוי במידה רבה בפרטנר שלו. הוא צריך ללמוד לתקשר, לסמוך עליו, להתמודד עם הפסדים ולא להישבר כשדברים לא הולכים כמתוכנן.</p>
+      <p>״אתה בא לשחק עם הפרטנר שלך ואתה מבטיח לו שאתה עולה איתו למגרש לאורך כל השנה. גם כשלא הולך טוב, אתה לא מוותר ולא נשבר, אלא מנסה למצוא פתרונות. גם כשמפסידים נשארים ביחד עד שמצליחים. התמדה היא שם המשחק״, מסביר בן חמו.</p>
+      <p>חשוב לציין שהפוצ'יוולי אינו מיועד לבנים בלבד. במועדון פועלות קבוצת בנות בבית חרות וקבוצת נשים בקיסריה, ויש גם נשים שמתאמנות בקבוצות עם גברים.</p>
+    </div>
+
+    <h2><span class="bar"></span>הדרך למעלה</h2>
+    <div class="cols" style="padding:0;">
+      <p>החזון של המועדון הוא להמשיך לפתח את הפוצ'יוולי בעמק חפר וליצור מקום שיש בו מסלול לכל אחד. ״מי שרוצה להתקדם מקצועית, יוכל להתאמן מגיל צעיר ולהשתתף בתחרויות ארציות ובין־לאומיות. אבל לא כל ילד צריך להפוך לשחקן תחרותי. חשוב לא פחות ליצור מסגרת שבה ילדים ובני נוער מגיעים ליהנות, להיות עם חברים, להרגיש חלק מקבוצה, להתחבר לקהילה ולפתח אהבה לספורט״, מסביר בן חמו. לדבריו, הוא רוצה להרחיב את הפעילות ביישובי עמק חפר והסביבה ובבתי הספר, להכניס עוד ילדים ונוער לענף ולהמשיך לפתח גם את הצד המקצועי וגם את הצד הקהילתי. חלק משמעותי מהחזון הוא החיבור לברזיל, מולדת הפוצ'יוולי; בן חמו רוצה להביא לאזור ידע, מאמנים ומתודולוגיות אימון ברמה גבוהה, ובמקביל לאפשר לשחקנים שמעוניינים בכך להיחשף לספורט במחנות אימונים ובתחרויות בחו״ל.</p>
+      <p>החלום הגדול שלו נוגע כבר לבמה העולמית: ״החזון הוא שהילדים שלנו יביאו מדליה באולימפיאדה!״ אומנם הפוצ'יוולי עדיין אינו ענף אולימפי, אבל בן חמו מסתכל קדימה על התפתחות הענף המהירה, באמונה גדולה. ובכלל, אחרי חמש שנים של בנייה, הוא כבר יודע שהדרך למעלה מורכבת מהמון צעדים קטנים: עוד אימון, עוד ילד שמגיע בפעם הראשונה, עוד שחקן שמגלה שהוא מסוגל, ועוד זוג שלומד לא לוותר זה על זה.</p>
+    </div>
+    <p class="disclosure">גילוי נאות: שני בניו של עורך ״עלי חפר״, אלעד וינגרד, מתאמנים במועדון הפוצ'יבולי של העמק</p>
+  </div>
+
+  <footer class="footer">
+    <span>עלי חפר</span>
+    <span>עמק הפוצ'י</span>
+    <span class="pg">3</span>
+  </footer>
+</section>
+
+</body>
+</html>
